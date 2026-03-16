@@ -1,6 +1,6 @@
 services:
   backend:
-    image: ghcr.io/${GITHUB_USERNAME:-usecontent}/usecontent-backend:latest
+    image: ghcr.io/akhmetov-kamil/usecontent-backend:latest
     ports:
       - "8080:8080"
     environment:
