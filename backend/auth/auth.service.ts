@@ -8,7 +8,7 @@ import type { AuthUser } from "./types";
 
 const jwtSecret = secret("JwtSecret");
 
-const NONCE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const NONCE_TTL_MS = 5 * 60 * 1000;
 const JWT_TTL = "24h";
 
 function jwtKey(): Uint8Array {
@@ -34,7 +34,7 @@ export async function authenticate(rawAddress: string, signature: string): Promi
 
   const doc = await findNonce(address);
   if (!doc) {
-    throw APIError.notFound("nonce not found — call GET /auth/nonce first");
+    throw APIError.notFound("nonce not found");
   }
   if (doc.expiresAt < new Date()) {
     throw APIError.failedPrecondition("nonce expired — request a new one");
