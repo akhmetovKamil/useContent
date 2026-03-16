@@ -7,7 +7,6 @@ services:
       - PORT=8080
       - MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/usecontent}
       - JWT_SECRET=${JWT_SECRET}
-      - MINIO_ENDPOINT=http://minio:9000
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
     depends_on:
