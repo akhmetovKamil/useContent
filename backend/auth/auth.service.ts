@@ -53,7 +53,6 @@ export async function authenticate(rawAddress: string, signature: string): Promi
     throw APIError.unauthenticated("signature does not match address");
   }
 
-  // Burn nonce — one-time use only
   await deleteNonce(address);
 
   return new SignJWT({ walletAddress: address })

@@ -13,7 +13,6 @@ async function getCollection(): Promise<Collection<NonceDoc>> {
 export async function upsertNonce(address: string, nonce: string, expiresAt: Date): Promise<void> {
   const col = await getCollection();
 
-  // Ensure MongoDB TTL index exists (idempotent — Mongo ignores duplicate index creation)
   await col.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
   await col.updateOne(

@@ -2,7 +2,6 @@ import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { userContent } from "./bucket";
 
-// POST /storage/upload/:key — upload a file (raw endpoint, auth required)
 export const upload = api.raw(
   { method: "POST", path: "/storage/upload/*key", expose: true, auth: true },
   async (req, resp) => {
@@ -30,7 +29,6 @@ export const upload = api.raw(
   }
 );
 
-// GET /storage/download/:key — download a file (raw endpoint, auth required)
 export const download = api.raw(
   { method: "GET", path: "/storage/download/*key", expose: true, auth: true },
   async (req, resp) => {
@@ -73,7 +71,6 @@ interface ListResponse {
   files: { key: string; size: number; lastModified: string }[];
 }
 
-// GET /storage/list — list user's files (auth required)
 export const list = api(
   { method: "GET", path: "/storage/list", expose: true, auth: true },
   async (): Promise<ListResponse> => {
@@ -97,7 +94,6 @@ interface DeleteRequest {
   key: string;
 }
 
-// DELETE /storage/file/:key — delete a file (auth required)
 export const remove = api(
   { method: "DELETE", path: "/storage/file/*key", expose: true, auth: true },
   async ({ key }: DeleteRequest): Promise<void> => {

@@ -11,7 +11,6 @@ import type {
   UpdateFileRequest,
 } from "./types";
 
-// POST /files/folder — create a folder
 export const createFolder = api(
   { method: "POST", path: "/files/folder", expose: true, auth: true },
   async (req: CreateFolderRequest): Promise<FileResponse> => {
@@ -25,7 +24,6 @@ export const createFolder = api(
   }
 );
 
-// GET /files/list — list folder contents
 export const listFiles = api(
   { method: "GET", path: "/files/list", expose: true, auth: true },
   async (req: ListFilesRequest): Promise<ListFilesResponse> => {
@@ -36,7 +34,6 @@ export const listFiles = api(
   }
 );
 
-// POST /files/upload/*key — upload a file (raw endpoint)
 export const uploadFile = api.raw(
   { method: "POST", path: "/files/upload/*key", expose: true, auth: true },
   async (req, resp) => {
@@ -75,7 +72,6 @@ export const uploadFile = api.raw(
   }
 );
 
-// GET /files/download/:id — download a file by id (raw endpoint)
 export const downloadFile = api.raw(
   { method: "GET", path: "/files/download/:id", expose: true, auth: true },
   async (req, resp) => {
@@ -112,7 +108,6 @@ export const downloadFile = api.raw(
   }
 );
 
-// DELETE /files/:id — delete a file or folder
 export const deleteFile = api(
   { method: "DELETE", path: "/files/:id", expose: true, auth: true },
   async (req: DeleteFileRequest): Promise<void> => {
@@ -128,7 +123,6 @@ export const deleteFile = api(
   }
 );
 
-// PATCH /files/:id — rename or move a file/folder
 export const updateFile = api(
   { method: "PATCH", path: "/files/:id", expose: true, auth: true },
   async (req: UpdateFileRequest): Promise<FileResponse> => {

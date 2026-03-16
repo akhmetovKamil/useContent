@@ -1,25 +1,18 @@
 import type { ObjectId } from "mongodb";
 import type { Query } from "encore.dev/api";
 
-// ─── MongoDB Document ────────────────────────────────────────────────────────
-
 export interface FileDoc {
   _id: ObjectId;
   walletAddress: string;
   name: string;
   type: "file" | "folder";
   parentId: ObjectId | null;
-
-  // Only for files
   storageKey: string | null;
   mimeType: string | null;
   size: number | null;
-
   createdAt: Date;
   updatedAt: Date;
 }
-
-// ─── API DTOs ────────────────────────────────────────────────────────────────
 
 export interface CreateFolderRequest {
   name: string;
