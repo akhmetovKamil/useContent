@@ -1,5 +1,5 @@
 import { api } from "encore.dev/api";
-
+console.log('sss');
 export const get = api(
   { expose: true, method: "GET", path: "/hello/:name" },
   async ({ name }: { name: string }): Promise<Response> => {
