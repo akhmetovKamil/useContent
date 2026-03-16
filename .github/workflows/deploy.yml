@@ -1,0 +1,48 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/usecontent-backend
+
+jobs:
+  build-backend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Encore CLI
+        run: curl -L https://encore.dev/install.sh | bash
+
+      - name: Build Docker image
+        working-directory: ./backend
+        run: |
+          encore build docker \
+            --config=infra-config.json \
+            ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+
+      - name: Tag as latest
+        run: docker tag ${{ env.BACKEND_IMAGE }}:${{ github.sha }} ${{ env.BACKEND_IMAGE }}:latest
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push images
+        run: |
+          docker push ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          docker push ${{ env.BACKEND_IMAGE }}:latest
+
+      - name: Trigger Coolify deploy
+        run: |
+          curl -sSf -X POST "${{ secrets.COOLIFY_WEBHOOK_URL }}"

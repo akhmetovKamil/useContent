@@ -1,0 +1,13 @@
+**/node_modules/
+**/.secrets.local.cue
+.DS_Store
+.claude/
+CLAUDE.md
+**/CLAUDE.md
+**/.claude/
+**/DS_Store
+
+backend/.DS_Store
+backend/.claude/
+backend/.mcp.json
+backend/.secrets.local.cue

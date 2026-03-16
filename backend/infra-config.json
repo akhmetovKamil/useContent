@@ -1,0 +1,14 @@
+{
+  "$schema": "https://encore.dev/schemas/infra.schema.json",
+  "metadata": {
+    "app_id": "backend-pig2",
+    "env_name": "production",
+    "env_type": "production",
+    "cloud": "local",
+    "base_url": "https://api.yourdomain.com"
+  },
+  "secrets": {
+    "MongoUri": { "$env": "MONGO_URI" },
+    "JwtSecret": { "$env": "JWT_SECRET" }
+  }
+}
