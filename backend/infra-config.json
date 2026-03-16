@@ -15,7 +15,7 @@
     {
       "type": "s3",
       "region": "us-east-1",
-      "endpoint": "http://minio:9000",
+      "endpoint": "http://95.217.209.126:9000",
       "access_key_id": "${MINIO_ACCESS_KEY}",
       "secret_access_key": "${MINIO_SECRET_KEY}",
       "buckets": {
