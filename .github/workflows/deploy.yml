@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ghcr.io/akhmetov-kamil/usecontent-backend
+  BACKEND_IMAGE: ghcr.io/akhmetovkamil/usecontent-backend
 
 jobs:
   build-backend:
