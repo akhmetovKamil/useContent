@@ -1,6 +1,6 @@
 services:
   backend:
-    image: ghcr.io/akhmetov-kamil/usecontent-backend:latest
+    image: ghcr.io/akhmetovkamil/usecontent-backend:latest
     ports:
       - "8080:8080"
     environment:
