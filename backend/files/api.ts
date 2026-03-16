@@ -66,8 +66,9 @@ export const uploadFile = api.raw(
       resp.writeHead(200, { "Content-Type": "application/json" });
       resp.end(JSON.stringify(toResponse(doc)));
     } catch (err: any) {
+      console.error("upload error:", err);
       resp.writeHead(500, { "Content-Type": "application/json" });
-      resp.end(JSON.stringify({ error: "upload failed" }));
+      resp.end(JSON.stringify({ error: "upload failed", detail: err?.message }));
     }
   }
 );
