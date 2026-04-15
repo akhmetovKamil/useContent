@@ -100,6 +100,31 @@ export async function getPostsCollection(): Promise<Collection<PostDoc>> {
   return getCollection<PostDoc>("posts");
 }
 
+export async function createPost(
+  doc: Omit<PostDoc, "_id">
+): Promise<PostDoc> {
+  const posts = await getPostsCollection();
+  const result = await posts.insertOne(doc as PostDoc);
+  return { _id: result.insertedId, ...doc };
+}
+
+export async function listPostsByAuthorId(
+  authorId: ObjectId
+): Promise<PostDoc[]> {
+  const posts = await getPostsCollection();
+  return posts.find({ authorId }).sort({ createdAt: -1 }).toArray();
+}
+
+export async function listPublishedPostsByAuthorId(
+  authorId: ObjectId
+): Promise<PostDoc[]> {
+  const posts = await getPostsCollection();
+  return posts
+    .find({ authorId, status: "published" })
+    .sort({ publishedAt: -1, createdAt: -1 })
+    .toArray();
+}
+
 export async function getProjectsCollection(): Promise<Collection<ProjectDoc>> {
   await ensureIndexes();
   return getCollection<ProjectDoc>("projects");

@@ -155,6 +155,20 @@ export interface SubscriptionPlanResponse {
   updatedAt: string;
 }
 
+export interface PostResponse {
+  id: string;
+  authorId: string;
+  title: string;
+  content: string;
+  status: "draft" | "published";
+  policyMode: PolicyMode;
+  policy: AccessPolicy | null;
+  attachmentIds: string[];
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface UpdateMyProfileRequest {
   username?: string | null;
   displayName?: string;
@@ -175,4 +189,13 @@ export interface UpsertSubscriptionPlanRequest {
   billingPeriodDays: number;
   contractAddress: string;
   active?: boolean;
+}
+
+export interface CreatePostRequest {
+  title: string;
+  content: string;
+  status?: "draft" | "published";
+  policyMode?: PolicyMode;
+  policy?: AccessPolicy | null;
+  attachmentIds?: string[];
 }

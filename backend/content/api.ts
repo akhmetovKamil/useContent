@@ -4,6 +4,8 @@ import * as service from "./content.service";
 import type {
   AuthorProfileResponse,
   CreateAuthorProfileRequest,
+  CreatePostRequest,
+  PostResponse,
   SubscriptionPlanResponse,
   SubscriptionEntitlementResponse,
   UpsertSubscriptionPlanRequest,
@@ -89,5 +91,31 @@ export const getAuthorSubscriptionPlan = api(
   async ({ slug }: { slug: string }): Promise<SubscriptionPlanResponse> => {
     const plan = await service.getAuthorSubscriptionPlanBySlug(slug);
     return service.toSubscriptionPlanResponse(plan);
+  }
+);
+
+export const createMyPost = api(
+  { method: "POST", path: "/me/posts", expose: true, auth: true },
+  async (req: CreatePostRequest): Promise<PostResponse> => {
+    const auth = getAuthData()!;
+    const post = await service.createMyPost(auth.walletAddress, req);
+    return service.toPostResponse(post);
+  }
+);
+
+export const listMyPosts = api(
+  { method: "GET", path: "/me/posts", expose: true, auth: true },
+  async (): Promise<{ posts: PostResponse[] }> => {
+    const auth = getAuthData()!;
+    const posts = await service.listMyPosts(auth.walletAddress);
+    return { posts: posts.map(service.toPostResponse) };
+  }
+);
+
+export const listAuthorPosts = api(
+  { method: "GET", path: "/authors/:slug/posts", expose: true },
+  async ({ slug }: { slug: string }): Promise<{ posts: PostResponse[] }> => {
+    const posts = await service.listAuthorPostsBySlug(slug);
+    return { posts: posts.map(service.toPostResponse) };
   }
 );

@@ -1,11 +1,14 @@
 import { APIError } from "encore.dev/api";
 import { ObjectId } from "mongodb";
-import { createPublicPolicy } from "../domain/access";
+import { createPublicPolicy, isAccessPolicy, resolveEntityPolicy } from "../domain/access";
 import * as repo from "./repository";
 import type {
   AuthorProfileDoc,
   AuthorProfileResponse,
   CreateAuthorProfileRequest,
+  CreatePostRequest,
+  PostDoc,
+  PostResponse,
   SubscriptionPlanDoc,
   SubscriptionPlanResponse,
   SubscriptionEntitlementDoc,
@@ -175,6 +178,49 @@ export async function upsertMySubscriptionPlan(
   return created;
 }
 
+export async function createMyPost(
+  walletAddress: string,
+  input: CreatePostRequest
+): Promise<PostDoc> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const now = new Date();
+  const title = normalizePostTitle(input.title);
+  const content = normalizePostContent(input.content);
+  const status = input.status ?? "draft";
+  const policyMode = input.policyMode ?? "inherited";
+  const policy = normalizePostPolicy(input.policy ?? null, policyMode);
+  const attachmentIds = normalizeAttachmentIds(input.attachmentIds ?? []);
+
+  resolveEntityPolicy(policyMode, author.defaultPolicy, policy);
+
+  return repo.createPost({
+    authorId: author._id,
+    title,
+    content,
+    status,
+    policyMode,
+    policy,
+    attachmentIds,
+    publishedAt: status === "published" ? now : null,
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
+export async function listMyPosts(
+  walletAddress: string
+): Promise<PostDoc[]> {
+  const author = await getMyAuthorProfile(walletAddress);
+  return repo.listPostsByAuthorId(author._id);
+}
+
+export async function listAuthorPostsBySlug(
+  slug: string
+): Promise<PostDoc[]> {
+  const author = await getAuthorProfileBySlug(slug);
+  return repo.listPublishedPostsByAuthorId(author._id);
+}
+
 export async function createAuthorProfile(
   walletAddress: string,
   input: CreateAuthorProfileRequest
@@ -269,6 +315,22 @@ export function toSubscriptionPlanResponse(
   };
 }
 
+export function toPostResponse(post: PostDoc): PostResponse {
+  return {
+    id: post._id.toHexString(),
+    authorId: post.authorId.toHexString(),
+    title: post.title,
+    content: post.content,
+    status: post.status,
+    policyMode: post.policyMode,
+    policy: post.policy,
+    attachmentIds: post.attachmentIds.map((id) => id.toHexString()),
+    publishedAt: post.publishedAt?.toISOString() ?? null,
+    createdAt: post.createdAt.toISOString(),
+    updatedAt: post.updatedAt.toISOString(),
+  };
+}
+
 function normalizeWallet(walletAddress: string): string {
   const value = walletAddress.trim().toLowerCase();
   if (!value) {
@@ -359,6 +421,49 @@ function normalizePositiveInteger(value: string, field: string): string {
     throw APIError.invalidArgument(`${field} must be greater than zero`);
   }
   return normalized;
+}
+
+function normalizePostTitle(title: string): string {
+  const value = title.trim();
+  if (!value) {
+    throw APIError.invalidArgument("post title is required");
+  }
+  if (value.length > 160) {
+    throw APIError.invalidArgument("post title is too long");
+  }
+  return value;
+}
+
+function normalizePostContent(content: string): string {
+  const value = content.trim();
+  if (!value) {
+    throw APIError.invalidArgument("post content is required");
+  }
+  if (value.length > 50000) {
+    throw APIError.invalidArgument("post content is too long");
+  }
+  return value;
+}
+
+function normalizePostPolicy(
+  policy: CreatePostRequest["policy"],
+  policyMode: CreatePostRequest["policyMode"] extends undefined
+    ? never
+    : NonNullable<CreatePostRequest["policyMode"]>
+) {
+  if (policyMode !== "custom") {
+    return null;
+  }
+
+  if (!policy || !isAccessPolicy(policy)) {
+    throw APIError.invalidArgument("custom policy is required");
+  }
+
+  return policy;
+}
+
+function normalizeAttachmentIds(attachmentIds: string[]): ObjectId[] {
+  return attachmentIds.map((id) => new ObjectId(id));
 }
 
 function shortenWallet(walletAddress: string): string {
