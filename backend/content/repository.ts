@@ -125,6 +125,14 @@ export async function listPublishedPostsByAuthorId(
     .toArray();
 }
 
+export async function findPublishedPostByIdAndAuthorId(
+  id: ObjectId,
+  authorId: ObjectId
+): Promise<PostDoc | null> {
+  const posts = await getPostsCollection();
+  return posts.findOne({ _id: id, authorId, status: "published" });
+}
+
 export async function getProjectsCollection(): Promise<Collection<ProjectDoc>> {
   await ensureIndexes();
   return getCollection<ProjectDoc>("projects");
@@ -194,6 +202,17 @@ export async function listSubscriptionEntitlementsByWallet(
   const entitlements = await getSubscriptionEntitlementsCollection();
   return entitlements
     .find({ subscriberWallet })
+    .sort({ validUntil: -1, createdAt: -1 })
+    .toArray();
+}
+
+export async function listSubscriptionEntitlementsByWalletAndAuthorId(
+  subscriberWallet: string,
+  authorId: ObjectId
+): Promise<SubscriptionEntitlementDoc[]> {
+  const entitlements = await getSubscriptionEntitlementsCollection();
+  return entitlements
+    .find({ subscriberWallet, authorId })
     .sort({ validUntil: -1, createdAt: -1 })
     .toArray();
 }

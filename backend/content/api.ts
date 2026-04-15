@@ -1,5 +1,6 @@
-import { api } from "encore.dev/api";
+import { api, APIError, Header } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
+import { validateToken } from "../auth/auth.service";
 import * as service from "./content.service";
 import type {
   AuthorProfileResponse,
@@ -119,3 +120,41 @@ export const listAuthorPosts = api(
     return { posts: posts.map(service.toPostResponse) };
   }
 );
+
+interface GetAuthorPostRequest {
+  slug: string;
+  postId: string;
+  authorization?: Header<"Authorization">;
+}
+
+export const getAuthorPost = api(
+  { method: "GET", path: "/authors/:slug/posts/:postId", expose: true },
+  async ({ slug, postId, authorization }: GetAuthorPostRequest): Promise<PostResponse> => {
+    const viewerWallet = await getOptionalViewerWallet(authorization);
+    const post = await service.getAuthorPostBySlugAndId(
+      slug,
+      postId,
+      viewerWallet
+    );
+    return service.toPostResponse(post);
+  }
+);
+
+async function getOptionalViewerWallet(
+  authorization?: string
+): Promise<string | undefined> {
+  const token = authorization?.replace(/^Bearer\s+/i, "").trim();
+  if (!token) {
+    return undefined;
+  }
+
+  try {
+    const auth = await validateToken(token);
+    return auth.walletAddress;
+  } catch (error) {
+    if (error instanceof APIError && error.code === "unauthenticated") {
+      return undefined;
+    }
+    throw error;
+  }
+}

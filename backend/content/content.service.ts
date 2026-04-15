@@ -1,6 +1,11 @@
 import { APIError } from "encore.dev/api";
 import { ObjectId } from "mongodb";
-import { createPublicPolicy, isAccessPolicy, resolveEntityPolicy } from "../domain/access";
+import {
+  createPublicPolicy,
+  evaluateAccessPolicy,
+  isAccessPolicy,
+  resolveEntityPolicy,
+} from "../domain/access";
 import * as repo from "./repository";
 import type {
   AuthorProfileDoc,
@@ -219,6 +224,39 @@ export async function listAuthorPostsBySlug(
 ): Promise<PostDoc[]> {
   const author = await getAuthorProfileBySlug(slug);
   return repo.listPublishedPostsByAuthorId(author._id);
+}
+
+export async function getAuthorPostBySlugAndId(
+  slug: string,
+  postId: string,
+  viewerWallet?: string
+): Promise<PostDoc> {
+  const author = await getAuthorProfileBySlug(slug);
+  const objectId = parseObjectId(postId, "postId");
+  const post = await repo.findPublishedPostByIdAndAuthorId(objectId, author._id);
+  if (!post) {
+    throw APIError.notFound("post not found");
+  }
+
+  const resolvedPolicy = resolveEntityPolicy(
+    post.policyMode,
+    author.defaultPolicy,
+    post.policy
+  );
+
+  const evaluation = evaluateAccessPolicy(resolvedPolicy, {
+    subscriptions: viewerWallet
+      ? await buildSubscriptionGrants(author._id, viewerWallet)
+      : [],
+    tokenBalances: [],
+    nftOwnerships: [],
+  });
+
+  if (!evaluation.allowed) {
+    throw APIError.permissionDenied("access to this post is restricted");
+  }
+
+  return post;
 }
 
 export async function createAuthorProfile(
@@ -464,6 +502,32 @@ function normalizePostPolicy(
 
 function normalizeAttachmentIds(attachmentIds: string[]): ObjectId[] {
   return attachmentIds.map((id) => new ObjectId(id));
+}
+
+function parseObjectId(value: string, field: string): ObjectId {
+  if (!ObjectId.isValid(value)) {
+    throw APIError.invalidArgument(`${field} is invalid`);
+  }
+
+  return new ObjectId(value);
+}
+
+async function buildSubscriptionGrants(
+  authorId: ObjectId,
+  viewerWallet: string
+) {
+  const entitlements = await repo.listSubscriptionEntitlementsByWalletAndAuthorId(
+    normalizeWallet(viewerWallet),
+    authorId
+  );
+
+  return entitlements.map((entitlement) => ({
+    authorId: entitlement.authorId.toHexString(),
+    planId: entitlement.planId.toHexString(),
+    active:
+      entitlement.status === "active" &&
+      entitlement.validUntil.getTime() > Date.now(),
+  }));
 }
 
 function shortenWallet(walletAddress: string): string {
