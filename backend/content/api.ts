@@ -4,6 +4,7 @@ import * as service from "./content.service";
 import type {
   AuthorProfileResponse,
   CreateAuthorProfileRequest,
+  SubscriptionEntitlementResponse,
   UpdateMyProfileRequest,
   UserProfileResponse,
 } from "./types";
@@ -32,6 +33,26 @@ export const createMyAuthorProfile = api(
     const auth = getAuthData()!;
     const author = await service.createAuthorProfile(auth.walletAddress, req);
     return service.toAuthorProfileResponse(author);
+  }
+);
+
+export const getMyAuthorProfile = api(
+  { method: "GET", path: "/me/author", expose: true, auth: true },
+  async (): Promise<AuthorProfileResponse> => {
+    const auth = getAuthData()!;
+    const author = await service.getMyAuthorProfile(auth.walletAddress);
+    return service.toAuthorProfileResponse(author);
+  }
+);
+
+export const listMyEntitlements = api(
+  { method: "GET", path: "/me/entitlements", expose: true, auth: true },
+  async (): Promise<{ entitlements: SubscriptionEntitlementResponse[] }> => {
+    const auth = getAuthData()!;
+    const entitlements = await service.listMyEntitlements(auth.walletAddress);
+    return {
+      entitlements: entitlements.map(service.toSubscriptionEntitlementResponse),
+    };
   }
 );
 

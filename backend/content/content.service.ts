@@ -6,6 +6,8 @@ import type {
   AuthorProfileDoc,
   AuthorProfileResponse,
   CreateAuthorProfileRequest,
+  SubscriptionEntitlementDoc,
+  SubscriptionEntitlementResponse,
   UpdateMyProfileRequest,
   UserDoc,
   UserProfileResponse,
@@ -76,6 +78,24 @@ export async function getAuthorProfileBySlug(
   return author;
 }
 
+export async function getMyAuthorProfile(
+  walletAddress: string
+): Promise<AuthorProfileDoc> {
+  const user = await getOrCreateUserByWallet(walletAddress);
+  const author = await repo.findAuthorProfileByUserId(user._id.toHexString());
+  if (!author) {
+    throw APIError.notFound("author profile not found");
+  }
+  return author;
+}
+
+export async function listMyEntitlements(
+  walletAddress: string
+): Promise<SubscriptionEntitlementDoc[]> {
+  const normalizedWallet = normalizeWallet(walletAddress);
+  return repo.listSubscriptionEntitlementsByWallet(normalizedWallet);
+}
+
 export async function createAuthorProfile(
   walletAddress: string,
   input: CreateAuthorProfileRequest
@@ -132,6 +152,22 @@ export function toAuthorProfileResponse(
     subscriptionPlanId: author.subscriptionPlanId?.toHexString() ?? null,
     createdAt: author.createdAt.toISOString(),
     updatedAt: author.updatedAt.toISOString(),
+  };
+}
+
+export function toSubscriptionEntitlementResponse(
+  entitlement: SubscriptionEntitlementDoc
+): SubscriptionEntitlementResponse {
+  return {
+    id: entitlement._id.toHexString(),
+    authorId: entitlement.authorId.toHexString(),
+    subscriberWallet: entitlement.subscriberWallet,
+    planId: entitlement.planId.toHexString(),
+    status: entitlement.status,
+    validUntil: entitlement.validUntil.toISOString(),
+    source: entitlement.source,
+    createdAt: entitlement.createdAt.toISOString(),
+    updatedAt: entitlement.updatedAt.toISOString(),
   };
 }
 

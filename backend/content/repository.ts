@@ -114,6 +114,16 @@ export async function getSubscriptionEntitlementsCollection(): Promise<
   return getCollection<SubscriptionEntitlementDoc>("subscription_entitlements");
 }
 
+export async function listSubscriptionEntitlementsByWallet(
+  subscriberWallet: string
+): Promise<SubscriptionEntitlementDoc[]> {
+  const entitlements = await getSubscriptionEntitlementsCollection();
+  return entitlements
+    .find({ subscriberWallet })
+    .sort({ validUntil: -1, createdAt: -1 })
+    .toArray();
+}
+
 async function ensureIndexes(): Promise<void> {
   if (indexesReady) {
     return;

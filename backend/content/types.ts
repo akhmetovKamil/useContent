@@ -128,6 +128,18 @@ export interface AuthorProfileResponse {
   updatedAt: string;
 }
 
+export interface SubscriptionEntitlementResponse {
+  id: string;
+  authorId: string;
+  subscriberWallet: string;
+  planId: string;
+  status: "active" | "expired";
+  validUntil: string;
+  source: "onchain";
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface UpdateMyProfileRequest {
   username?: string | null;
   displayName?: string;
