@@ -1,0 +1,21 @@
+{
+    "semi": false,
+    "singleQuote": false,
+    "tabWidth": 4,
+    "printWidth": 100,
+    "trailingComma": "es5",
+    "plugins": ["@ianvs/prettier-plugin-sort-imports"],
+    "importOrder": [
+        "^react$",
+        "^react-dom$",
+        "^react-router-dom$",
+        "^@tanstack/react-query$",
+        "^wagmi",
+        "^viem",
+        "",
+        "^@/",
+        "^\\./",
+        "^\\.\\./"
+    ],
+    "importOrderParserPlugins": ["typescript", "jsx"]
+}
