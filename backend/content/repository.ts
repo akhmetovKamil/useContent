@@ -161,6 +161,14 @@ export async function listPublishedProjectsByAuthorId(
     .toArray();
 }
 
+export async function findPublishedProjectByIdAndAuthorId(
+  id: ObjectId,
+  authorId: ObjectId
+): Promise<ProjectDoc | null> {
+  const projects = await getProjectsCollection();
+  return projects.findOne({ _id: id, authorId, status: "published" });
+}
+
 export async function getProjectNodesCollection(): Promise<
   Collection<ProjectNodeDoc>
 > {

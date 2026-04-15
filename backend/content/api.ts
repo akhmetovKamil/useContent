@@ -168,6 +168,25 @@ export const listAuthorProjects = api(
   }
 );
 
+interface GetAuthorProjectRequest {
+  slug: string;
+  projectId: string;
+  authorization?: Header<"Authorization">;
+}
+
+export const getAuthorProject = api(
+  { method: "GET", path: "/authors/:slug/projects/:projectId", expose: true },
+  async ({ slug, projectId, authorization }: GetAuthorProjectRequest): Promise<ProjectResponse> => {
+    const viewerWallet = await getOptionalViewerWallet(authorization);
+    const project = await service.getAuthorProjectBySlugAndId(
+      slug,
+      projectId,
+      viewerWallet
+    );
+    return service.toProjectResponse(project);
+  }
+);
+
 async function getOptionalViewerWallet(
   authorization?: string
 ): Promise<string | undefined> {

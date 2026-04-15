@@ -328,6 +328,42 @@ export async function listAuthorProjectsBySlug(
   return repo.listPublishedProjectsByAuthorId(author._id);
 }
 
+export async function getAuthorProjectBySlugAndId(
+  slug: string,
+  projectId: string,
+  viewerWallet?: string
+): Promise<ProjectDoc> {
+  const author = await getAuthorProfileBySlug(slug);
+  const objectId = parseObjectId(projectId, "projectId");
+  const project = await repo.findPublishedProjectByIdAndAuthorId(
+    objectId,
+    author._id
+  );
+  if (!project) {
+    throw APIError.notFound("project not found");
+  }
+
+  const resolvedPolicy = resolveEntityPolicy(
+    project.policyMode,
+    author.defaultPolicy,
+    project.policy
+  );
+
+  const evaluation = evaluateAccessPolicy(resolvedPolicy, {
+    subscriptions: viewerWallet
+      ? await buildSubscriptionGrants(author._id, viewerWallet)
+      : [],
+    tokenBalances: [],
+    nftOwnerships: [],
+  });
+
+  if (!evaluation.allowed) {
+    throw APIError.permissionDenied("access to this project is restricted");
+  }
+
+  return project;
+}
+
 export async function createAuthorProfile(
   walletAddress: string,
   input: CreateAuthorProfileRequest
