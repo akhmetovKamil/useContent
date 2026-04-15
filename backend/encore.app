@@ -1,4 +1,14 @@
 {
 	"id":   "backend-pig2",
-	"lang": "typescript"
+	"lang": "typescript",
+	"global_cors": {
+    	"debug": true,
+    	"allow_headers": ["Authorization", "Content-Type"],
+    	"allow_origins_with_credentials": [
+    		"http://95.217.209.126:3000"
+    	],
+    	"allow_origins_without_credentials": [
+    		"*"
+    	]
+	}
 }
