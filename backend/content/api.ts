@@ -6,7 +6,9 @@ import type {
   AuthorProfileResponse,
   CreateAuthorProfileRequest,
   CreatePostRequest,
+  CreateProjectRequest,
   PostResponse,
+  ProjectResponse,
   SubscriptionPlanResponse,
   SubscriptionEntitlementResponse,
   UpsertSubscriptionPlanRequest,
@@ -137,6 +139,32 @@ export const getAuthorPost = api(
       viewerWallet
     );
     return service.toPostResponse(post);
+  }
+);
+
+export const createMyProject = api(
+  { method: "POST", path: "/me/projects", expose: true, auth: true },
+  async (req: CreateProjectRequest): Promise<ProjectResponse> => {
+    const auth = getAuthData()!;
+    const project = await service.createMyProject(auth.walletAddress, req);
+    return service.toProjectResponse(project);
+  }
+);
+
+export const listMyProjects = api(
+  { method: "GET", path: "/me/projects", expose: true, auth: true },
+  async (): Promise<{ projects: ProjectResponse[] }> => {
+    const auth = getAuthData()!;
+    const projects = await service.listMyProjects(auth.walletAddress);
+    return { projects: projects.map(service.toProjectResponse) };
+  }
+);
+
+export const listAuthorProjects = api(
+  { method: "GET", path: "/authors/:slug/projects", expose: true },
+  async ({ slug }: { slug: string }): Promise<{ projects: ProjectResponse[] }> => {
+    const projects = await service.listAuthorProjectsBySlug(slug);
+    return { projects: projects.map(service.toProjectResponse) };
   }
 );
 

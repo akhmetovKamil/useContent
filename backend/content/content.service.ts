@@ -12,8 +12,11 @@ import type {
   AuthorProfileResponse,
   CreateAuthorProfileRequest,
   CreatePostRequest,
+  CreateProjectRequest,
   PostDoc,
   PostResponse,
+  ProjectDoc,
+  ProjectResponse,
   SubscriptionPlanDoc,
   SubscriptionPlanResponse,
   SubscriptionEntitlementDoc,
@@ -259,6 +262,72 @@ export async function getAuthorPostBySlugAndId(
   return post;
 }
 
+export async function createMyProject(
+  walletAddress: string,
+  input: CreateProjectRequest
+): Promise<ProjectDoc> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const now = new Date();
+  const projectId = new ObjectId();
+  const rootNodeId = new ObjectId();
+  const title = normalizeProjectTitle(input.title);
+  const description = normalizeProjectDescription(input.description ?? "");
+  const status = input.status ?? "draft";
+  const policyMode = input.policyMode ?? "inherited";
+  const policy = normalizeProjectPolicy(input.policy ?? null, policyMode);
+
+  resolveEntityPolicy(policyMode, author.defaultPolicy, policy);
+
+  const rootNode = await repo.createProjectNode({
+    _id: rootNodeId,
+    authorId: author._id,
+    projectId,
+    parentId: null,
+    kind: "folder",
+    name: title,
+    storageKey: null,
+    mimeType: null,
+    size: null,
+    visibility: "published",
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  const project = await repo.createProject({
+    _id: projectId,
+    authorId: author._id,
+    title,
+    description,
+    status,
+    policyMode,
+    policy,
+    rootNodeId,
+    publishedAt: status === "published" ? now : null,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  if (!project.rootNodeId.equals(rootNode._id)) {
+    throw APIError.internal("project root node mismatch");
+  }
+
+  return project;
+}
+
+export async function listMyProjects(
+  walletAddress: string
+): Promise<ProjectDoc[]> {
+  const author = await getMyAuthorProfile(walletAddress);
+  return repo.listProjectsByAuthorId(author._id);
+}
+
+export async function listAuthorProjectsBySlug(
+  slug: string
+): Promise<ProjectDoc[]> {
+  const author = await getAuthorProfileBySlug(slug);
+  return repo.listPublishedProjectsByAuthorId(author._id);
+}
+
 export async function createAuthorProfile(
   walletAddress: string,
   input: CreateAuthorProfileRequest
@@ -366,6 +435,22 @@ export function toPostResponse(post: PostDoc): PostResponse {
     publishedAt: post.publishedAt?.toISOString() ?? null,
     createdAt: post.createdAt.toISOString(),
     updatedAt: post.updatedAt.toISOString(),
+  };
+}
+
+export function toProjectResponse(project: ProjectDoc): ProjectResponse {
+  return {
+    id: project._id.toHexString(),
+    authorId: project.authorId.toHexString(),
+    title: project.title,
+    description: project.description,
+    status: project.status,
+    policyMode: project.policyMode,
+    policy: project.policy,
+    rootNodeId: project.rootNodeId.toHexString(),
+    publishedAt: project.publishedAt?.toISOString() ?? null,
+    createdAt: project.createdAt.toISOString(),
+    updatedAt: project.updatedAt.toISOString(),
   };
 }
 
@@ -488,6 +573,42 @@ function normalizePostPolicy(
   policyMode: CreatePostRequest["policyMode"] extends undefined
     ? never
     : NonNullable<CreatePostRequest["policyMode"]>
+) {
+  if (policyMode !== "custom") {
+    return null;
+  }
+
+  if (!policy || !isAccessPolicy(policy)) {
+    throw APIError.invalidArgument("custom policy is required");
+  }
+
+  return policy;
+}
+
+function normalizeProjectTitle(title: string): string {
+  const value = title.trim();
+  if (!value) {
+    throw APIError.invalidArgument("project title is required");
+  }
+  if (value.length > 160) {
+    throw APIError.invalidArgument("project title is too long");
+  }
+  return value;
+}
+
+function normalizeProjectDescription(description: string): string {
+  const value = description.trim();
+  if (value.length > 5000) {
+    throw APIError.invalidArgument("project description is too long");
+  }
+  return value;
+}
+
+function normalizeProjectPolicy(
+  policy: CreateProjectRequest["policy"],
+  policyMode: CreateProjectRequest["policyMode"] extends undefined
+    ? never
+    : NonNullable<CreateProjectRequest["policyMode"]>
 ) {
   if (policyMode !== "custom") {
     return null;

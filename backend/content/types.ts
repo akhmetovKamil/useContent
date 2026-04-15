@@ -169,6 +169,20 @@ export interface PostResponse {
   updatedAt: string;
 }
 
+export interface ProjectResponse {
+  id: string;
+  authorId: string;
+  title: string;
+  description: string;
+  status: "draft" | "published";
+  policyMode: PolicyMode;
+  policy: AccessPolicy | null;
+  rootNodeId: string;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface UpdateMyProfileRequest {
   username?: string | null;
   displayName?: string;
@@ -198,4 +212,12 @@ export interface CreatePostRequest {
   policyMode?: PolicyMode;
   policy?: AccessPolicy | null;
   attachmentIds?: string[];
+}
+
+export interface CreateProjectRequest {
+  title: string;
+  description?: string;
+  status?: "draft" | "published";
+  policyMode?: PolicyMode;
+  policy?: AccessPolicy | null;
 }

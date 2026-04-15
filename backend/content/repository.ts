@@ -138,11 +138,42 @@ export async function getProjectsCollection(): Promise<Collection<ProjectDoc>> {
   return getCollection<ProjectDoc>("projects");
 }
 
+export async function createProject(doc: ProjectDoc): Promise<ProjectDoc> {
+  const projects = await getProjectsCollection();
+  await projects.insertOne(doc);
+  return doc;
+}
+
+export async function listProjectsByAuthorId(
+  authorId: ObjectId
+): Promise<ProjectDoc[]> {
+  const projects = await getProjectsCollection();
+  return projects.find({ authorId }).sort({ createdAt: -1 }).toArray();
+}
+
+export async function listPublishedProjectsByAuthorId(
+  authorId: ObjectId
+): Promise<ProjectDoc[]> {
+  const projects = await getProjectsCollection();
+  return projects
+    .find({ authorId, status: "published" })
+    .sort({ publishedAt: -1, createdAt: -1 })
+    .toArray();
+}
+
 export async function getProjectNodesCollection(): Promise<
   Collection<ProjectNodeDoc>
 > {
   await ensureIndexes();
   return getCollection<ProjectNodeDoc>("project_nodes");
+}
+
+export async function createProjectNode(
+  doc: ProjectNodeDoc
+): Promise<ProjectNodeDoc> {
+  const projectNodes = await getProjectNodesCollection();
+  await projectNodes.insertOne(doc);
+  return doc;
 }
 
 export async function getSubscriptionPlansCollection(): Promise<
