@@ -15,7 +15,7 @@ export const upload = api.raw(
 
     const chunks: Buffer[] = [];
     for await (const chunk of req) {
-      chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+      chunks.push(toBuffer(chunk));
     }
     const body = Buffer.concat(chunks);
 
@@ -44,12 +44,7 @@ export const download = api.raw(
 
     try {
       const attrs = await userContent.attrs(namespacedKey);
-      const data = await userContent.download(namespacedKey);
-      const chunks: Buffer[] = [];
-      for await (const chunk of data) {
-        chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
-      }
-      const body = Buffer.concat(chunks);
+      const body = await userContent.download(namespacedKey);
 
       resp.writeHead(200, {
         "Content-Type": attrs.contentType || "application/octet-stream",
@@ -68,7 +63,7 @@ export const download = api.raw(
 );
 
 interface ListResponse {
-  files: { key: string; size: number; lastModified: string }[];
+  files: { key: string; size: number }[];
 }
 
 export const list = api(
@@ -80,9 +75,8 @@ export const list = api(
 
     for await (const entry of userContent.list({ prefix })) {
       files.push({
-        key: entry.key.slice(prefix.length),
+        key: entry.name.slice(prefix.length),
         size: entry.size,
-        lastModified: entry.lastModified.toISOString(),
       });
     }
 
@@ -105,3 +99,15 @@ export const remove = api(
     await userContent.remove(namespacedKey);
   }
 );
+
+function toBuffer(chunk: string | Buffer | Uint8Array): Buffer {
+  if (typeof chunk === "string") {
+    return Buffer.from(chunk);
+  }
+
+  if (Buffer.isBuffer(chunk)) {
+    return chunk;
+  }
+
+  return Buffer.from(chunk);
+}
