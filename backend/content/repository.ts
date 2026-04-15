@@ -1,5 +1,5 @@
 import { secret } from "encore.dev/config";
-import type { Collection, Document } from "mongodb";
+import { ObjectId, type Collection, type Document } from "mongodb";
 import { getDb } from "../lib/mongo";
 import type {
   AuthorProfileDoc,
@@ -27,11 +27,60 @@ export async function getUsersCollection(): Promise<Collection<UserDoc>> {
   return getCollection<UserDoc>("users");
 }
 
+export async function findUserByPrimaryWallet(
+  primaryWallet: string
+): Promise<UserDoc | null> {
+  const users = await getUsersCollection();
+  return users.findOne({ primaryWallet });
+}
+
+export async function createUser(
+  doc: Omit<UserDoc, "_id">
+): Promise<UserDoc> {
+  const users = await getUsersCollection();
+  const result = await users.insertOne(doc as UserDoc);
+  return { _id: result.insertedId, ...doc };
+}
+
+export async function updateUser(
+  id: ObjectId,
+  update: Partial<Omit<UserDoc, "_id" | "wallets" | "primaryWallet" | "role" | "createdAt">>
+): Promise<UserDoc | null> {
+  const users = await getUsersCollection();
+  return users.findOneAndUpdate(
+    { _id: id },
+    { $set: update },
+    { returnDocument: "after" }
+  );
+}
+
 export async function getAuthorProfilesCollection(): Promise<
   Collection<AuthorProfileDoc>
 > {
   await ensureIndexes();
   return getCollection<AuthorProfileDoc>("author_profiles");
+}
+
+export async function findAuthorProfileByUserId(
+  userId: string
+): Promise<AuthorProfileDoc | null> {
+  const authorProfiles = await getAuthorProfilesCollection();
+  return authorProfiles.findOne({ userId });
+}
+
+export async function findAuthorProfileBySlug(
+  slug: string
+): Promise<AuthorProfileDoc | null> {
+  const authorProfiles = await getAuthorProfilesCollection();
+  return authorProfiles.findOne({ slug });
+}
+
+export async function createAuthorProfile(
+  doc: Omit<AuthorProfileDoc, "_id">
+): Promise<AuthorProfileDoc> {
+  const authorProfiles = await getAuthorProfilesCollection();
+  const result = await authorProfiles.insertOne(doc as AuthorProfileDoc);
+  return { _id: result.insertedId, ...doc };
 }
 
 export async function getPostsCollection(): Promise<Collection<PostDoc>> {

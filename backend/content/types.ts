@@ -102,3 +102,40 @@ export interface SubscriptionEntitlementDoc {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface UserProfileResponse {
+  id: string;
+  username: string | null;
+  displayName: string;
+  bio: string;
+  avatarFileId: string | null;
+  primaryWallet: string;
+  wallets: UserWalletDoc[];
+  role: "user" | "admin";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuthorProfileResponse {
+  id: string;
+  userId: string;
+  slug: string;
+  displayName: string;
+  bio: string;
+  avatarFileId: string | null;
+  subscriptionPlanId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateMyProfileRequest {
+  username?: string | null;
+  displayName?: string;
+  bio?: string;
+}
+
+export interface CreateAuthorProfileRequest {
+  slug: string;
+  displayName: string;
+  bio?: string;
+}
