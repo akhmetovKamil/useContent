@@ -1,7 +1,13 @@
 import { useState } from "react"
 
 import { useCreateMyPostMutation, useMyPostsQuery } from "@/queries/posts"
-import { buildPolicyInput } from "@/shared/access/policy"
+import { AccessPolicyEditor } from "@/shared/access/AccessPolicyEditor"
+import {
+    buildContentPolicyInput,
+    createDefaultPolicyBuilderState,
+    summarizePolicyInput,
+    type AccessPolicyBuilderState,
+} from "@/shared/access/policy"
 import { useAuthStore } from "@/shared/session/auth-store"
 
 export function MePostsPage() {
@@ -12,7 +18,9 @@ export function MePostsPage() {
     const [content, setContent] = useState("")
     const [status, setStatus] = useState<"draft" | "published">("draft")
     const [policyMode, setPolicyMode] = useState<"public" | "inherited" | "custom">("inherited")
-    const [customPolicyText, setCustomPolicyText] = useState("")
+    const [policyBuilder, setPolicyBuilder] = useState<AccessPolicyBuilderState>(
+        createDefaultPolicyBuilderState()
+    )
     const [formError, setFormError] = useState<string | null>(null)
 
     return (
@@ -40,9 +48,9 @@ export function MePostsPage() {
                             setFormError(null)
 
                             try {
-                                const policyInput = buildPolicyInput({
+                                const policyPayload = buildContentPolicyInput({
                                     policyMode,
-                                    customPolicyText,
+                                    builder: policyBuilder,
                                 })
 
                                 void createPostMutation
@@ -50,14 +58,14 @@ export function MePostsPage() {
                                         title,
                                         content,
                                         status,
-                                        ...policyInput,
+                                        ...policyPayload,
                                     })
                                     .then(() => {
                                         setTitle("")
                                         setContent("")
                                         setStatus("draft")
                                         setPolicyMode("inherited")
-                                        setCustomPolicyText("")
+                                        setPolicyBuilder(createDefaultPolicyBuilderState())
                                     })
                             } catch (error) {
                                 setFormError(
@@ -73,8 +81,8 @@ export function MePostsPage() {
                                 create post
                             </div>
                             <p className="mt-2 text-sm text-[var(--muted)]">
-                                Базовая форма для первого контентного сценария. Дальше добавим
-                                редактор, медиа и вложения.
+                                Базовая форма для первого контентного сценария. Теперь custom access
+                                rule собирается визуально, без raw JSON.
                             </p>
                         </div>
 
@@ -130,15 +138,19 @@ export function MePostsPage() {
                         </div>
 
                         {policyMode === "custom" ? (
-                            <label className="grid gap-2 text-sm text-[var(--foreground)]">
-                                Custom policy JSON
-                                <textarea
-                                    className="min-h-32 rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 font-mono text-sm outline-none"
-                                    onChange={(event) => setCustomPolicyText(event.target.value)}
-                                    placeholder='{"version":1,"root":{"type":"public"}}'
-                                    value={customPolicyText}
+                            <div className="grid gap-3">
+                                <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
+                                    custom access policy
+                                </div>
+                                <AccessPolicyEditor
+                                    builder={policyBuilder}
+                                    disabled={createPostMutation.isPending}
+                                    onChange={setPolicyBuilder}
                                 />
-                            </label>
+                                <p className="text-sm text-[var(--muted)]">
+                                    Preview: {summarizePolicyInput(policyBuilder)}
+                                </p>
+                            </div>
                         ) : null}
 
                         {formError ? <p className="text-sm text-rose-600">{formError}</p> : null}

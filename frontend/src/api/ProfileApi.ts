@@ -2,6 +2,7 @@ import type {
     AuthorProfileDto,
     CreateAuthorProfileInput,
     SubscriptionEntitlementDto,
+    UpdateAuthorProfileInput,
     UpdateMyProfileInput,
     UserProfileDto,
 } from "@contracts/types/content"
@@ -26,6 +27,11 @@ class ProfileApi {
 
     async createMyAuthorProfile(input: CreateAuthorProfileInput) {
         const response = await http.post<AuthorProfileDto>("/authors", input)
+        return response.data
+    }
+
+    async updateMyAuthorProfile(input: UpdateAuthorProfileInput) {
+        const response = await http.patch<AuthorProfileDto>("/me/author", input)
         return response.data
     }
 
