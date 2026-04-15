@@ -6,8 +6,11 @@ import type {
   AuthorProfileDoc,
   AuthorProfileResponse,
   CreateAuthorProfileRequest,
+  SubscriptionPlanDoc,
+  SubscriptionPlanResponse,
   SubscriptionEntitlementDoc,
   SubscriptionEntitlementResponse,
+  UpsertSubscriptionPlanRequest,
   UpdateMyProfileRequest,
   UserDoc,
   UserProfileResponse,
@@ -96,6 +99,82 @@ export async function listMyEntitlements(
   return repo.listSubscriptionEntitlementsByWallet(normalizedWallet);
 }
 
+export async function getMySubscriptionPlan(
+  walletAddress: string
+): Promise<SubscriptionPlanDoc> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const plan = await getAuthorMainSubscriptionPlan(author);
+  if (!plan) {
+    throw APIError.notFound("subscription plan not found");
+  }
+  return plan;
+}
+
+export async function getAuthorSubscriptionPlanBySlug(
+  slug: string
+): Promise<SubscriptionPlanDoc> {
+  const author = await getAuthorProfileBySlug(slug);
+  const plan = await getAuthorMainSubscriptionPlan(author);
+  if (!plan || !plan.active) {
+    throw APIError.notFound("subscription plan not found");
+  }
+  return plan;
+}
+
+export async function upsertMySubscriptionPlan(
+  walletAddress: string,
+  input: UpsertSubscriptionPlanRequest
+): Promise<SubscriptionPlanDoc> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const now = new Date();
+  const title = normalizePlanTitle(input.title);
+  const chainId = normalizeChainId(input.chainId);
+  const tokenAddress = normalizeWallet(input.tokenAddress);
+  const price = normalizePositiveInteger(input.price, "price");
+  const billingPeriodDays = normalizeBillingPeriodDays(input.billingPeriodDays);
+  const contractAddress = normalizeWallet(input.contractAddress);
+  const active = input.active ?? true;
+
+  const existing = await getAuthorMainSubscriptionPlan(author);
+  if (existing) {
+    const updated = await repo.updateSubscriptionPlan(existing._id, {
+      title,
+      chainId,
+      tokenAddress,
+      price,
+      billingPeriodDays,
+      contractAddress,
+      active,
+      updatedAt: now,
+    });
+    if (!updated) {
+      throw APIError.notFound("subscription plan not found");
+    }
+    return updated;
+  }
+
+  const created = await repo.createSubscriptionPlan({
+    authorId: author._id,
+    code: "main",
+    title,
+    chainId,
+    tokenAddress,
+    price,
+    billingPeriodDays,
+    contractAddress,
+    active,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  await repo.updateAuthorProfile(author._id, {
+    subscriptionPlanId: created._id,
+    updatedAt: now,
+  });
+
+  return created;
+}
+
 export async function createAuthorProfile(
   walletAddress: string,
   input: CreateAuthorProfileRequest
@@ -171,6 +250,25 @@ export function toSubscriptionEntitlementResponse(
   };
 }
 
+export function toSubscriptionPlanResponse(
+  plan: SubscriptionPlanDoc
+): SubscriptionPlanResponse {
+  return {
+    id: plan._id.toHexString(),
+    authorId: plan.authorId.toHexString(),
+    code: plan.code,
+    title: plan.title,
+    chainId: plan.chainId,
+    tokenAddress: plan.tokenAddress,
+    price: plan.price,
+    billingPeriodDays: plan.billingPeriodDays,
+    contractAddress: plan.contractAddress,
+    active: plan.active,
+    createdAt: plan.createdAt.toISOString(),
+    updatedAt: plan.updatedAt.toISOString(),
+  };
+}
+
 function normalizeWallet(walletAddress: string): string {
   const value = walletAddress.trim().toLowerCase();
   if (!value) {
@@ -225,10 +323,61 @@ function normalizeSlug(slug: string): string {
   return value;
 }
 
+function normalizePlanTitle(title: string): string {
+  const value = title.trim();
+  if (!value) {
+    throw APIError.invalidArgument("plan title is required");
+  }
+  if (value.length > 120) {
+    throw APIError.invalidArgument("plan title is too long");
+  }
+  return value;
+}
+
+function normalizeChainId(chainId: number): number {
+  if (!Number.isInteger(chainId) || chainId <= 0) {
+    throw APIError.invalidArgument("chainId must be a positive integer");
+  }
+  return chainId;
+}
+
+function normalizeBillingPeriodDays(days: number): number {
+  if (!Number.isInteger(days) || days <= 0 || days > 3650) {
+    throw APIError.invalidArgument(
+      "billingPeriodDays must be an integer between 1 and 3650"
+    );
+  }
+  return days;
+}
+
+function normalizePositiveInteger(value: string, field: string): string {
+  const normalized = value.trim();
+  if (!/^[0-9]+$/.test(normalized)) {
+    throw APIError.invalidArgument(`${field} must be a positive integer string`);
+  }
+  if (BigInt(normalized) <= 0n) {
+    throw APIError.invalidArgument(`${field} must be greater than zero`);
+  }
+  return normalized;
+}
+
 function shortenWallet(walletAddress: string): string {
   if (walletAddress.length <= 10) {
     return walletAddress;
   }
 
   return `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+}
+
+async function getAuthorMainSubscriptionPlan(
+  author: AuthorProfileDoc
+): Promise<SubscriptionPlanDoc | null> {
+  if (author.subscriptionPlanId) {
+    const byId = await repo.findSubscriptionPlanById(author.subscriptionPlanId);
+    if (byId) {
+      return byId;
+    }
+  }
+
+  return repo.findSubscriptionPlanByAuthorIdAndCode(author._id, "main");
 }

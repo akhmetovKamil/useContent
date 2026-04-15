@@ -83,6 +83,18 @@ export async function createAuthorProfile(
   return { _id: result.insertedId, ...doc };
 }
 
+export async function updateAuthorProfile(
+  id: ObjectId,
+  update: Partial<Omit<AuthorProfileDoc, "_id" | "userId" | "createdAt">>
+): Promise<AuthorProfileDoc | null> {
+  const authorProfiles = await getAuthorProfilesCollection();
+  return authorProfiles.findOneAndUpdate(
+    { _id: id },
+    { $set: update },
+    { returnDocument: "after" }
+  );
+}
+
 export async function getPostsCollection(): Promise<Collection<PostDoc>> {
   await ensureIndexes();
   return getCollection<PostDoc>("posts");
@@ -105,6 +117,43 @@ export async function getSubscriptionPlansCollection(): Promise<
 > {
   await ensureIndexes();
   return getCollection<SubscriptionPlanDoc>("subscription_plans");
+}
+
+export async function findSubscriptionPlanById(
+  id: ObjectId
+): Promise<SubscriptionPlanDoc | null> {
+  const plans = await getSubscriptionPlansCollection();
+  return plans.findOne({ _id: id });
+}
+
+export async function findSubscriptionPlanByAuthorIdAndCode(
+  authorId: ObjectId,
+  code: string
+): Promise<SubscriptionPlanDoc | null> {
+  const plans = await getSubscriptionPlansCollection();
+  return plans.findOne({ authorId, code });
+}
+
+export async function createSubscriptionPlan(
+  doc: Omit<SubscriptionPlanDoc, "_id">
+): Promise<SubscriptionPlanDoc> {
+  const plans = await getSubscriptionPlansCollection();
+  const result = await plans.insertOne(doc as SubscriptionPlanDoc);
+  return { _id: result.insertedId, ...doc };
+}
+
+export async function updateSubscriptionPlan(
+  id: ObjectId,
+  update: Partial<
+    Omit<SubscriptionPlanDoc, "_id" | "authorId" | "code" | "createdAt">
+  >
+): Promise<SubscriptionPlanDoc | null> {
+  const plans = await getSubscriptionPlansCollection();
+  return plans.findOneAndUpdate(
+    { _id: id },
+    { $set: update },
+    { returnDocument: "after" }
+  );
 }
 
 export async function getSubscriptionEntitlementsCollection(): Promise<

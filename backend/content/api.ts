@@ -4,7 +4,9 @@ import * as service from "./content.service";
 import type {
   AuthorProfileResponse,
   CreateAuthorProfileRequest,
+  SubscriptionPlanResponse,
   SubscriptionEntitlementResponse,
+  UpsertSubscriptionPlanRequest,
   UpdateMyProfileRequest,
   UserProfileResponse,
 } from "./types";
@@ -56,10 +58,36 @@ export const listMyEntitlements = api(
   }
 );
 
+export const getMySubscriptionPlan = api(
+  { method: "GET", path: "/me/subscription-plan", expose: true, auth: true },
+  async (): Promise<SubscriptionPlanResponse> => {
+    const auth = getAuthData()!;
+    const plan = await service.getMySubscriptionPlan(auth.walletAddress);
+    return service.toSubscriptionPlanResponse(plan);
+  }
+);
+
+export const upsertMySubscriptionPlan = api(
+  { method: "PUT", path: "/me/subscription-plan", expose: true, auth: true },
+  async (req: UpsertSubscriptionPlanRequest): Promise<SubscriptionPlanResponse> => {
+    const auth = getAuthData()!;
+    const plan = await service.upsertMySubscriptionPlan(auth.walletAddress, req);
+    return service.toSubscriptionPlanResponse(plan);
+  }
+);
+
 export const getAuthorProfile = api(
   { method: "GET", path: "/authors/:slug", expose: true },
   async ({ slug }: { slug: string }): Promise<AuthorProfileResponse> => {
     const author = await service.getAuthorProfileBySlug(slug);
     return service.toAuthorProfileResponse(author);
+  }
+);
+
+export const getAuthorSubscriptionPlan = api(
+  { method: "GET", path: "/authors/:slug/subscription-plan", expose: true },
+  async ({ slug }: { slug: string }): Promise<SubscriptionPlanResponse> => {
+    const plan = await service.getAuthorSubscriptionPlanBySlug(slug);
+    return service.toSubscriptionPlanResponse(plan);
   }
 );

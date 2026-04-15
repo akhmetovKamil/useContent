@@ -140,6 +140,21 @@ export interface SubscriptionEntitlementResponse {
   updatedAt: string;
 }
 
+export interface SubscriptionPlanResponse {
+  id: string;
+  authorId: string;
+  code: string;
+  title: string;
+  chainId: number;
+  tokenAddress: string;
+  price: string;
+  billingPeriodDays: number;
+  contractAddress: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface UpdateMyProfileRequest {
   username?: string | null;
   displayName?: string;
@@ -150,4 +165,14 @@ export interface CreateAuthorProfileRequest {
   slug: string;
   displayName: string;
   bio?: string;
+}
+
+export interface UpsertSubscriptionPlanRequest {
+  title: string;
+  chainId: number;
+  tokenAddress: string;
+  price: string;
+  billingPeriodDays: number;
+  contractAddress: string;
+  active?: boolean;
 }
