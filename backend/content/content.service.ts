@@ -1,6 +1,9 @@
 import { APIError } from "encore.dev/api";
 import { ObjectId } from "mongodb";
 import {
+  ACCESS_POLICY_VERSION,
+  type AccessPolicy,
+  type AccessPolicyNode,
   createPublicPolicy,
   evaluateAccessPolicy,
   isAccessPolicy,
@@ -116,9 +119,13 @@ export async function updateMyAuthorProfile(
       : normalizeDisplayName(update.displayName);
   const nextBio = update.bio === undefined ? author.bio : normalizeBio(update.bio);
   const nextDefaultPolicy =
-    update.defaultPolicy === undefined
+    update.defaultPolicy === undefined && update.defaultPolicyInput === undefined
       ? author.defaultPolicy
-      : normalizeAccessPolicy(update.defaultPolicy, "default policy");
+      : await normalizeRequestedAuthorDefaultPolicy(
+          author,
+          update.defaultPolicy,
+          update.defaultPolicyInput
+        );
 
   const updated = await repo.updateAuthorProfile(author._id, {
     displayName: nextDisplayName,
@@ -227,7 +234,7 @@ export async function createMyPost(
   const content = normalizePostContent(input.content);
   const status = input.status ?? "draft";
   const policyMode = input.policyMode ?? "inherited";
-  const policy = normalizePostPolicy(input.policy ?? null, policyMode);
+  const policy = await normalizePostPolicy(author, input, policyMode);
   const attachmentIds = normalizeAttachmentIds(input.attachmentIds ?? []);
 
   resolveEntityPolicy(policyMode, author.defaultPolicy, policy);
@@ -305,7 +312,7 @@ export async function createMyProject(
   const description = normalizeProjectDescription(input.description ?? "");
   const status = input.status ?? "draft";
   const policyMode = input.policyMode ?? "inherited";
-  const policy = normalizeProjectPolicy(input.policy ?? null, policyMode);
+  const policy = await normalizeProjectPolicy(author, input, policyMode);
 
   resolveEntityPolicy(policyMode, author.defaultPolicy, policy);
 
@@ -408,10 +415,11 @@ export async function createAuthorProfile(
   const slug = normalizeSlug(input.slug);
   const displayName = normalizeDisplayName(input.displayName);
   const bio = normalizeBio(input.bio ?? "");
-  const defaultPolicy =
-    input.defaultPolicy === undefined
-      ? createPublicPolicy()
-      : normalizeAccessPolicy(input.defaultPolicy, "default policy");
+  const defaultPolicy = await normalizeRequestedAuthorDefaultPolicy(
+    null,
+    input.defaultPolicy,
+    input.defaultPolicyInput
+  );
   const now = new Date();
 
   return repo.createAuthorProfile({
@@ -644,8 +652,9 @@ function normalizePostContent(content: string): string {
   return value;
 }
 
-function normalizePostPolicy(
-  policy: CreatePostRequest["policy"],
+async function normalizePostPolicy(
+  author: AuthorProfileDoc,
+  input: CreatePostRequest,
   policyMode: CreatePostRequest["policyMode"] extends undefined
     ? never
     : NonNullable<CreatePostRequest["policyMode"]>
@@ -654,11 +663,11 @@ function normalizePostPolicy(
     return null;
   }
 
-  if (!policy || !isAccessPolicy(policy)) {
-    throw APIError.invalidArgument("custom policy is required");
-  }
-
-  return policy;
+  return normalizeRequestedCustomPolicy(
+    author,
+    input.policy ?? null,
+    input.policyInput
+  );
 }
 
 function normalizeAccessPolicy(policy: unknown, field: string) {
@@ -688,14 +697,59 @@ function normalizeProjectDescription(description: string): string {
   return value;
 }
 
-function normalizeProjectPolicy(
-  policy: CreateProjectRequest["policy"],
+async function normalizeProjectPolicy(
+  author: AuthorProfileDoc,
+  input: CreateProjectRequest,
   policyMode: CreateProjectRequest["policyMode"] extends undefined
     ? never
     : NonNullable<CreateProjectRequest["policyMode"]>
 ) {
   if (policyMode !== "custom") {
     return null;
+  }
+
+  return normalizeRequestedCustomPolicy(
+    author,
+    input.policy ?? null,
+    input.policyInput
+  );
+}
+
+async function normalizeRequestedAuthorDefaultPolicy(
+  author: AuthorProfileDoc | null,
+  policy: CreateAuthorProfileRequest["defaultPolicy"] | UpdateAuthorProfileRequest["defaultPolicy"],
+  policyInput:
+    | CreateAuthorProfileRequest["defaultPolicyInput"]
+    | UpdateAuthorProfileRequest["defaultPolicyInput"]
+) {
+  if (policy !== undefined && policyInput !== undefined) {
+    throw APIError.invalidArgument(
+      "provide either defaultPolicy or defaultPolicyInput"
+    );
+  }
+
+  if (policyInput !== undefined) {
+    return buildAccessPolicyFromInput(policyInput, author);
+  }
+
+  if (policy !== undefined) {
+    return normalizeAccessPolicy(policy, "default policy");
+  }
+
+  return createPublicPolicy();
+}
+
+async function normalizeRequestedCustomPolicy(
+  author: AuthorProfileDoc,
+  policy: CreatePostRequest["policy"] | CreateProjectRequest["policy"],
+  policyInput: CreatePostRequest["policyInput"] | CreateProjectRequest["policyInput"]
+) {
+  if (policy !== undefined && policyInput !== undefined) {
+    throw APIError.invalidArgument("provide either policy or policyInput");
+  }
+
+  if (policyInput !== undefined) {
+    return buildAccessPolicyFromInput(policyInput, author);
   }
 
   if (!policy || !isAccessPolicy(policy)) {
@@ -754,4 +808,127 @@ async function getAuthorMainSubscriptionPlan(
   }
 
   return repo.findSubscriptionPlanByAuthorIdAndCode(author._id, "main");
+}
+
+export async function buildAccessPolicyFromInput(
+  policyInput:
+    | NonNullable<CreateAuthorProfileRequest["defaultPolicyInput"]>
+    | NonNullable<UpdateAuthorProfileRequest["defaultPolicyInput"]>
+    | NonNullable<CreatePostRequest["policyInput"]>
+    | NonNullable<CreateProjectRequest["policyInput"]>,
+  author: AuthorProfileDoc | null
+): Promise<AccessPolicy> {
+  return {
+    version: ACCESS_POLICY_VERSION as 1,
+    root: await buildAccessPolicyNodeFromInput(policyInput.root, author),
+  };
+}
+
+async function buildAccessPolicyNodeFromInput(
+  node:
+    | NonNullable<NonNullable<CreateAuthorProfileRequest["defaultPolicyInput"]>["root"]>
+    | NonNullable<NonNullable<UpdateAuthorProfileRequest["defaultPolicyInput"]>["root"]>
+    | NonNullable<NonNullable<CreatePostRequest["policyInput"]>["root"]>
+    | NonNullable<NonNullable<CreateProjectRequest["policyInput"]>["root"]>,
+  author: AuthorProfileDoc | null
+): Promise<AccessPolicyNode> {
+  switch (node.type) {
+    case "public":
+      return { type: "public" } as const;
+    case "subscription": {
+      if (!author) {
+        throw APIError.invalidArgument(
+          "subscription policy input requires an existing author profile"
+        );
+      }
+
+      const planCode = normalizePlanCode(node.planCode ?? "main");
+      const plan = await repo.findSubscriptionPlanByAuthorIdAndCode(
+        author._id,
+        planCode
+      );
+      if (!plan) {
+        throw APIError.invalidArgument(
+          `subscription plan with code '${planCode}' was not found`
+        );
+      }
+
+      return {
+        type: "subscription",
+        authorId: author._id.toHexString(),
+        planId: plan._id.toHexString(),
+      } as const;
+    }
+    case "token_balance":
+      return {
+        type: "token_balance",
+        chainId: normalizeChainId(node.chainId),
+        contractAddress: normalizeWallet(node.contractAddress),
+        minAmount: normalizePositiveInteger(node.minAmount, "minAmount"),
+        decimals: normalizeTokenDecimals(node.decimals),
+      } as const;
+    case "nft_ownership":
+      return {
+        type: "nft_ownership",
+        chainId: normalizeChainId(node.chainId),
+        contractAddress: normalizeWallet(node.contractAddress),
+        standard: normalizeNftStandard(node.standard),
+        tokenId: normalizeOptionalIdString(node.tokenId),
+        minBalance:
+          node.minBalance === undefined
+            ? undefined
+            : normalizePositiveInteger(node.minBalance, "minBalance"),
+      } as const;
+    case "or":
+      return {
+        type: "or",
+        children: await Promise.all(
+          node.children.map((child) => buildAccessPolicyNodeFromInput(child, author))
+        ),
+      } as const;
+    case "and":
+      return {
+        type: "and",
+        children: await Promise.all(
+          node.children.map((child) => buildAccessPolicyNodeFromInput(child, author))
+        ),
+      } as const;
+    default:
+      throw APIError.invalidArgument("policy input node type is not supported");
+  }
+}
+
+function normalizePlanCode(code: string) {
+  const value = code.trim().toLowerCase();
+  if (!/^[a-z0-9_-]{1,32}$/.test(value)) {
+    throw APIError.invalidArgument("planCode is invalid");
+  }
+  return value;
+}
+
+function normalizeTokenDecimals(decimals: number) {
+  if (!Number.isInteger(decimals) || decimals < 0 || decimals > 255) {
+    throw APIError.invalidArgument("decimals must be an integer between 0 and 255");
+  }
+  return decimals;
+}
+
+function normalizeNftStandard(standard: string) {
+  if (standard !== "erc721" && standard !== "erc1155") {
+    throw APIError.invalidArgument("standard must be erc721 or erc1155");
+  }
+  return standard;
+}
+
+function normalizeOptionalIdString(value: string | undefined) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    throw APIError.invalidArgument("tokenId is invalid");
+  }
+
+  return trimmed;
 }

@@ -1,5 +1,53 @@
 import type { AccessPolicy, PolicyMode } from "./access"
 
+export interface AccessPolicyInputPublicNode {
+    type: "public"
+}
+
+export interface AccessPolicyInputSubscriptionNode {
+    type: "subscription"
+    planCode?: string
+}
+
+export interface AccessPolicyInputTokenBalanceNode {
+    type: "token_balance"
+    chainId: number
+    contractAddress: string
+    minAmount: string
+    decimals: number
+}
+
+export interface AccessPolicyInputNftOwnershipNode {
+    type: "nft_ownership"
+    chainId: number
+    contractAddress: string
+    standard: "erc721" | "erc1155"
+    tokenId?: string
+    minBalance?: string
+}
+
+export interface AccessPolicyInputOrNode {
+    type: "or"
+    children: AccessPolicyInputNode[]
+}
+
+export interface AccessPolicyInputAndNode {
+    type: "and"
+    children: AccessPolicyInputNode[]
+}
+
+export type AccessPolicyInputNode =
+    | AccessPolicyInputPublicNode
+    | AccessPolicyInputSubscriptionNode
+    | AccessPolicyInputTokenBalanceNode
+    | AccessPolicyInputNftOwnershipNode
+    | AccessPolicyInputOrNode
+    | AccessPolicyInputAndNode
+
+export interface AccessPolicyInput {
+    root: AccessPolicyInputNode
+}
+
 export interface UserWalletDto {
     address: string
     kind: "primary" | "secondary"
@@ -98,12 +146,14 @@ export interface CreateAuthorProfileInput {
     displayName: string
     bio?: string
     defaultPolicy?: AccessPolicy
+    defaultPolicyInput?: AccessPolicyInput
 }
 
 export interface UpdateAuthorProfileInput {
     displayName?: string
     bio?: string
     defaultPolicy?: AccessPolicy
+    defaultPolicyInput?: AccessPolicyInput
 }
 
 export interface UpsertSubscriptionPlanInput {
@@ -122,6 +172,7 @@ export interface CreatePostInput {
     status?: "draft" | "published"
     policyMode?: PolicyMode
     policy?: AccessPolicy | null
+    policyInput?: AccessPolicyInput
     attachmentIds?: string[]
 }
 
@@ -131,4 +182,5 @@ export interface CreateProjectInput {
     status?: "draft" | "published"
     policyMode?: PolicyMode
     policy?: AccessPolicy | null
+    policyInput?: AccessPolicyInput
 }
