@@ -2,6 +2,7 @@ export {
   ACCESS_POLICY_VERSION,
   type AccessPolicy,
   type AccessPolicyNode,
+  type AndPolicyNode,
   type NftOwnershipPolicyNode,
   type OrPolicyNode,
   type PolicyMode,
@@ -15,7 +16,6 @@ import {
   type AccessPolicy,
   type AccessPolicyNode,
   type NftOwnershipPolicyNode,
-  type PolicyMode,
   type SubscriptionPolicyNode,
   type TokenBalancePolicyNode,
 } from "../../contracts/types/access";
@@ -54,6 +54,7 @@ export interface AccessEvaluationResult {
     | "token_balance"
     | "nft_ownership"
     | "or"
+    | "and"
     | "missing_subscription"
     | "missing_token_balance"
     | "missing_nft_ownership"
@@ -74,11 +75,14 @@ export function isAccessPolicy(value: unknown): value is AccessPolicy {
   }
 
   const candidate = value as Partial<AccessPolicy>;
-  return candidate.version === ACCESS_POLICY_VERSION && !!candidate.root;
+  return (
+    candidate.version === ACCESS_POLICY_VERSION &&
+    isAccessPolicyNode(candidate.root)
+  );
 }
 
 export function resolveEntityPolicy(
-  policyMode: PolicyMode,
+  policyMode: "public" | "inherited" | "custom",
   authorDefaultPolicy: AccessPolicy,
   customPolicy?: AccessPolicy | null
 ): AccessPolicy {
@@ -127,10 +131,6 @@ function evaluatePolicyNode(
         ? { allowed: true, reason: "nft_ownership" }
         : { allowed: false, reason: "missing_nft_ownership" };
     case "or":
-      if (node.children.length === 0) {
-        return { allowed: false, reason: "invalid_policy" };
-      }
-
       for (const child of node.children) {
         const result = evaluatePolicyNode(child, context);
         if (result.allowed) {
@@ -139,8 +139,84 @@ function evaluatePolicyNode(
       }
 
       return { allowed: false, reason: "invalid_policy" };
+    case "and":
+      for (const child of node.children) {
+        const result = evaluatePolicyNode(child, context);
+        if (!result.allowed) {
+          return result;
+        }
+      }
+
+      return { allowed: true, reason: "and" };
     default:
       return { allowed: false, reason: "unsupported_policy" };
+  }
+}
+
+function isAccessPolicyNode(value: unknown): value is AccessPolicyNode {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as {
+    type?: string;
+    authorId?: unknown;
+    planId?: unknown;
+    chainId?: unknown;
+    contractAddress?: unknown;
+    minAmount?: unknown;
+    decimals?: unknown;
+    standard?: unknown;
+    tokenId?: unknown;
+    minBalance?: unknown;
+    children?: unknown;
+  };
+
+  switch (candidate.type) {
+    case "public":
+      return true;
+    case "subscription":
+      return (
+        typeof candidate.authorId === "string" &&
+        candidate.authorId.length > 0 &&
+        typeof candidate.planId === "string" &&
+        candidate.planId.length > 0
+      );
+    case "token_balance":
+      return (
+        typeof candidate.chainId === "number" &&
+        Number.isInteger(candidate.chainId) &&
+        candidate.chainId > 0 &&
+        typeof candidate.contractAddress === "string" &&
+        candidate.contractAddress.length > 0 &&
+        typeof candidate.minAmount === "string" &&
+        /^[0-9]+$/.test(candidate.minAmount) &&
+        typeof candidate.decimals === "number" &&
+        Number.isInteger(candidate.decimals) &&
+        candidate.decimals >= 0
+      );
+    case "nft_ownership":
+      return (
+        typeof candidate.chainId === "number" &&
+        Number.isInteger(candidate.chainId) &&
+        candidate.chainId > 0 &&
+        typeof candidate.contractAddress === "string" &&
+        candidate.contractAddress.length > 0 &&
+        (candidate.standard === "erc721" || candidate.standard === "erc1155") &&
+        (candidate.tokenId === undefined || typeof candidate.tokenId === "string") &&
+        (candidate.minBalance === undefined ||
+          (typeof candidate.minBalance === "string" &&
+            /^[0-9]+$/.test(candidate.minBalance)))
+      );
+    case "or":
+    case "and":
+      return (
+        Array.isArray(candidate.children) &&
+        candidate.children.length > 0 &&
+        candidate.children.every((child) => isAccessPolicyNode(child))
+      );
+    default:
+      return false;
   }
 }
 

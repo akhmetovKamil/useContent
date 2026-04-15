@@ -11,6 +11,7 @@ import type {
   ProjectResponse,
   SubscriptionPlanResponse,
   SubscriptionEntitlementResponse,
+  UpdateAuthorProfileRequest,
   UpsertSubscriptionPlanRequest,
   UpdateMyProfileRequest,
   UserProfileResponse,
@@ -48,6 +49,15 @@ export const getMyAuthorProfile = api(
   async (): Promise<AuthorProfileResponse> => {
     const auth = getAuthData()!;
     const author = await service.getMyAuthorProfile(auth.walletAddress);
+    return service.toAuthorProfileResponse(author);
+  }
+);
+
+export const updateMyAuthorProfile = api(
+  { method: "PATCH", path: "/me/author", expose: true, auth: true },
+  async (req: UpdateAuthorProfileRequest): Promise<AuthorProfileResponse> => {
+    const auth = getAuthData()!;
+    const author = await service.updateMyAuthorProfile(auth.walletAddress, req);
     return service.toAuthorProfileResponse(author);
   }
 );

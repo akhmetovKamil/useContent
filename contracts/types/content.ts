@@ -26,6 +26,7 @@ export interface AuthorProfileDto {
     displayName: string
     bio: string
     avatarFileId: string | null
+    defaultPolicy: AccessPolicy
     subscriptionPlanId: string | null
     createdAt: string
     updatedAt: string
@@ -96,6 +97,13 @@ export interface CreateAuthorProfileInput {
     slug: string
     displayName: string
     bio?: string
+    defaultPolicy?: AccessPolicy
+}
+
+export interface UpdateAuthorProfileInput {
+    displayName?: string
+    bio?: string
+    defaultPolicy?: AccessPolicy
 }
 
 export interface UpsertSubscriptionPlanInput {

@@ -9,6 +9,7 @@ import type {
   ProjectDto,
   SubscriptionEntitlementDto,
   SubscriptionPlanDto,
+  UpdateAuthorProfileInput,
   UpdateMyProfileInput,
   UpsertSubscriptionPlanInput,
   UserProfileDto,
@@ -124,6 +125,7 @@ export type PostResponse = PostDto;
 export type ProjectResponse = ProjectDto;
 export type UpdateMyProfileRequest = UpdateMyProfileInput;
 export type CreateAuthorProfileRequest = CreateAuthorProfileInput;
+export type UpdateAuthorProfileRequest = UpdateAuthorProfileInput;
 export type UpsertSubscriptionPlanRequest = UpsertSubscriptionPlanInput;
 export type CreatePostRequest = CreatePostInput;
 export type CreateProjectRequest = CreateProjectInput;

@@ -21,6 +21,7 @@ import type {
   SubscriptionPlanResponse,
   SubscriptionEntitlementDoc,
   SubscriptionEntitlementResponse,
+  UpdateAuthorProfileRequest,
   UpsertSubscriptionPlanRequest,
   UpdateMyProfileRequest,
   UserDoc,
@@ -101,6 +102,36 @@ export async function getMyAuthorProfile(
     throw APIError.notFound("author profile not found");
   }
   return author;
+}
+
+export async function updateMyAuthorProfile(
+  walletAddress: string,
+  update: UpdateAuthorProfileRequest
+): Promise<AuthorProfileDoc> {
+  const author = await getMyAuthorProfile(walletAddress);
+
+  const nextDisplayName =
+    update.displayName === undefined
+      ? author.displayName
+      : normalizeDisplayName(update.displayName);
+  const nextBio = update.bio === undefined ? author.bio : normalizeBio(update.bio);
+  const nextDefaultPolicy =
+    update.defaultPolicy === undefined
+      ? author.defaultPolicy
+      : normalizeAccessPolicy(update.defaultPolicy, "default policy");
+
+  const updated = await repo.updateAuthorProfile(author._id, {
+    displayName: nextDisplayName,
+    bio: nextBio,
+    defaultPolicy: nextDefaultPolicy,
+    updatedAt: new Date(),
+  });
+
+  if (!updated) {
+    throw APIError.notFound("author profile not found");
+  }
+
+  return updated;
 }
 
 export async function listMyEntitlements(
@@ -377,6 +408,10 @@ export async function createAuthorProfile(
   const slug = normalizeSlug(input.slug);
   const displayName = normalizeDisplayName(input.displayName);
   const bio = normalizeBio(input.bio ?? "");
+  const defaultPolicy =
+    input.defaultPolicy === undefined
+      ? createPublicPolicy()
+      : normalizeAccessPolicy(input.defaultPolicy, "default policy");
   const now = new Date();
 
   return repo.createAuthorProfile({
@@ -385,7 +420,7 @@ export async function createAuthorProfile(
     displayName,
     bio,
     avatarFileId: user.avatarFileId,
-    defaultPolicy: createPublicPolicy(),
+    defaultPolicy,
     subscriptionPlanId: null,
     createdAt: now,
     updatedAt: now,
@@ -421,6 +456,7 @@ export function toAuthorProfileResponse(
     displayName: author.displayName,
     bio: author.bio,
     avatarFileId: author.avatarFileId?.toHexString() ?? null,
+    defaultPolicy: author.defaultPolicy,
     subscriptionPlanId: author.subscriptionPlanId?.toHexString() ?? null,
     createdAt: author.createdAt.toISOString(),
     updatedAt: author.updatedAt.toISOString(),
@@ -620,6 +656,14 @@ function normalizePostPolicy(
 
   if (!policy || !isAccessPolicy(policy)) {
     throw APIError.invalidArgument("custom policy is required");
+  }
+
+  return policy;
+}
+
+function normalizeAccessPolicy(policy: unknown, field: string) {
+  if (!isAccessPolicy(policy)) {
+    throw APIError.invalidArgument(`${field} is invalid`);
   }
 
   return policy;

@@ -34,12 +34,18 @@ export interface OrPolicyNode {
     children: AccessPolicyNode[]
 }
 
+export interface AndPolicyNode {
+    type: "and"
+    children: AccessPolicyNode[]
+}
+
 export type AccessPolicyNode =
     | PublicPolicyNode
     | SubscriptionPolicyNode
     | TokenBalancePolicyNode
     | NftOwnershipPolicyNode
     | OrPolicyNode
+    | AndPolicyNode
 
 export interface AccessPolicy {
     version: typeof ACCESS_POLICY_VERSION

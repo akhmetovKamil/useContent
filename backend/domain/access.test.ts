@@ -3,6 +3,7 @@ import {
   ACCESS_POLICY_VERSION,
   createPublicPolicy,
   evaluateAccessPolicy,
+  isAccessPolicy,
   resolveEntityPolicy,
   type AccessPolicy,
 } from "./access";
@@ -171,6 +172,74 @@ describe("evaluateAccessPolicy", () => {
     });
   });
 
+  test("allows and policy when every child matches", () => {
+    const policy: AccessPolicy = {
+      version: ACCESS_POLICY_VERSION,
+      root: {
+        type: "and",
+        children: [
+          {
+            type: "subscription",
+            authorId: "author_1",
+            planId: "main",
+          },
+          {
+            type: "token_balance",
+            chainId: 1,
+            contractAddress: "0xabcdef",
+            minAmount: "100",
+            decimals: 18,
+          },
+        ],
+      },
+    };
+
+    expect(
+      evaluateAccessPolicy(policy, {
+        subscriptions: [{ authorId: "author_1", planId: "main", active: true }],
+        tokenBalances: [
+          { chainId: 1, contractAddress: "0xabcdef", balance: "100" },
+        ],
+      })
+    ).toEqual({
+      allowed: true,
+      reason: "and",
+    });
+  });
+
+  test("denies and policy when one child fails", () => {
+    const policy: AccessPolicy = {
+      version: ACCESS_POLICY_VERSION,
+      root: {
+        type: "and",
+        children: [
+          {
+            type: "subscription",
+            authorId: "author_1",
+            planId: "main",
+          },
+          {
+            type: "token_balance",
+            chainId: 1,
+            contractAddress: "0xabcdef",
+            minAmount: "100",
+            decimals: 18,
+          },
+        ],
+      },
+    };
+
+    expect(
+      evaluateAccessPolicy(policy, {
+        subscriptions: [{ authorId: "author_1", planId: "main", active: true }],
+        tokenBalances: [{ chainId: 1, contractAddress: "0xabcdef", balance: "99" }],
+      })
+    ).toEqual({
+      allowed: false,
+      reason: "missing_token_balance",
+    });
+  });
+
   test("rejects empty or policy as invalid", () => {
     const policy: AccessPolicy = {
       version: ACCESS_POLICY_VERSION,
@@ -184,5 +253,14 @@ describe("evaluateAccessPolicy", () => {
       allowed: false,
       reason: "invalid_policy",
     });
+  });
+
+  test("rejects malformed policy tree", () => {
+    expect(
+      isAccessPolicy({
+        version: ACCESS_POLICY_VERSION,
+        root: { type: "and", children: [] },
+      })
+    ).toBe(false);
   });
 });
