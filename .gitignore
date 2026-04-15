@@ -6,6 +6,7 @@ CLAUDE.md
 **/CLAUDE.md
 **/.claude/
 **/DS_Store
+/docs/
 
 backend/.DS_Store
 backend/.claude/
