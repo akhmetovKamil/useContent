@@ -1,4 +1,14 @@
 services:
+  frontend:
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
   backend:
     image: ghcr.io/akhmetovkamil/usecontent-backend:latest
     pull_policy: always

@@ -12,3 +12,6 @@ backend/.DS_Store
 backend/.claude/
 backend/.mcp.json
 backend/.secrets.local.cue
+
+backend/scripts/
+files/
