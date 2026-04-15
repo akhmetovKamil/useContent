@@ -6,6 +6,8 @@
     "target": "ES2022",
     "module": "ES2022",
     "types": ["node"],
+    "rootDir": "..",
+    "rootDirs": ["./", "../contracts"],
     "paths": {
       "~encore/*": ["./encore.gen/*"]
     },
@@ -27,5 +29,6 @@
     /* Advanced Options */
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
-  }
+  },
+  "include": ["./**/*.ts", "../contracts/types/**/*.ts"]
 }

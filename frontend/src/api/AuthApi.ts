@@ -1,0 +1,31 @@
+import { http } from "@/lib/api/http"
+
+export interface GetNonceResponse {
+    message: string
+}
+
+export interface VerifySignatureInput {
+    address: string
+    signature: string
+}
+
+export interface VerifySignatureResponse {
+    token: string
+}
+
+class AuthApi {
+    async getNonce(address: string) {
+        const response = await http.get<GetNonceResponse>("/auth/nonce", {
+            params: { address },
+        })
+
+        return response.data
+    }
+
+    async verifySignature(input: VerifySignatureInput) {
+        const response = await http.post<VerifySignatureResponse>("/auth/verify", input)
+        return response.data
+    }
+}
+
+export const authApi = new AuthApi()

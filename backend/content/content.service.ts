@@ -400,7 +400,11 @@ export function toUserProfileResponse(user: UserDoc): UserProfileResponse {
     bio: user.bio,
     avatarFileId: user.avatarFileId?.toHexString() ?? null,
     primaryWallet: user.primaryWallet,
-    wallets: user.wallets,
+    wallets: user.wallets.map((wallet) => ({
+      address: wallet.address,
+      kind: wallet.kind,
+      addedAt: wallet.addedAt.toISOString(),
+    })),
     role: user.role,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),

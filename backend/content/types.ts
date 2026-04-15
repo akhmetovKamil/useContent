@@ -1,5 +1,18 @@
 import type { ObjectId } from "mongodb";
 import type { AccessPolicy, PolicyMode } from "../domain/access";
+import type {
+  AuthorProfileDto,
+  CreateAuthorProfileInput,
+  CreatePostInput,
+  CreateProjectInput,
+  PostDto,
+  ProjectDto,
+  SubscriptionEntitlementDto,
+  SubscriptionPlanDto,
+  UpdateMyProfileInput,
+  UpsertSubscriptionPlanInput,
+  UserProfileDto,
+} from "../../contracts/types/content";
 
 export interface UserWalletDoc {
   address: string;
@@ -103,121 +116,14 @@ export interface SubscriptionEntitlementDoc {
   updatedAt: Date;
 }
 
-export interface UserProfileResponse {
-  id: string;
-  username: string | null;
-  displayName: string;
-  bio: string;
-  avatarFileId: string | null;
-  primaryWallet: string;
-  wallets: UserWalletDoc[];
-  role: "user" | "admin";
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface AuthorProfileResponse {
-  id: string;
-  userId: string;
-  slug: string;
-  displayName: string;
-  bio: string;
-  avatarFileId: string | null;
-  subscriptionPlanId: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface SubscriptionEntitlementResponse {
-  id: string;
-  authorId: string;
-  subscriberWallet: string;
-  planId: string;
-  status: "active" | "expired";
-  validUntil: string;
-  source: "onchain";
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface SubscriptionPlanResponse {
-  id: string;
-  authorId: string;
-  code: string;
-  title: string;
-  chainId: number;
-  tokenAddress: string;
-  price: string;
-  billingPeriodDays: number;
-  contractAddress: string;
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface PostResponse {
-  id: string;
-  authorId: string;
-  title: string;
-  content: string;
-  status: "draft" | "published";
-  policyMode: PolicyMode;
-  policy: AccessPolicy | null;
-  attachmentIds: string[];
-  publishedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ProjectResponse {
-  id: string;
-  authorId: string;
-  title: string;
-  description: string;
-  status: "draft" | "published";
-  policyMode: PolicyMode;
-  policy: AccessPolicy | null;
-  rootNodeId: string;
-  publishedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface UpdateMyProfileRequest {
-  username?: string | null;
-  displayName?: string;
-  bio?: string;
-}
-
-export interface CreateAuthorProfileRequest {
-  slug: string;
-  displayName: string;
-  bio?: string;
-}
-
-export interface UpsertSubscriptionPlanRequest {
-  title: string;
-  chainId: number;
-  tokenAddress: string;
-  price: string;
-  billingPeriodDays: number;
-  contractAddress: string;
-  active?: boolean;
-}
-
-export interface CreatePostRequest {
-  title: string;
-  content: string;
-  status?: "draft" | "published";
-  policyMode?: PolicyMode;
-  policy?: AccessPolicy | null;
-  attachmentIds?: string[];
-}
-
-export interface CreateProjectRequest {
-  title: string;
-  description?: string;
-  status?: "draft" | "published";
-  policyMode?: PolicyMode;
-  policy?: AccessPolicy | null;
-}
+export type UserProfileResponse = UserProfileDto;
+export type AuthorProfileResponse = AuthorProfileDto;
+export type SubscriptionEntitlementResponse = SubscriptionEntitlementDto;
+export type SubscriptionPlanResponse = SubscriptionPlanDto;
+export type PostResponse = PostDto;
+export type ProjectResponse = ProjectDto;
+export type UpdateMyProfileRequest = UpdateMyProfileInput;
+export type CreateAuthorProfileRequest = CreateAuthorProfileInput;
+export type UpsertSubscriptionPlanRequest = UpsertSubscriptionPlanInput;
+export type CreatePostRequest = CreatePostInput;
+export type CreateProjectRequest = CreateProjectInput;

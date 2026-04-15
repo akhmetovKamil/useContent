@@ -14,6 +14,12 @@
         "moduleDetection": "force",
         "noEmit": true,
         "jsx": "react-jsx",
+        "ignoreDeprecations": "6.0",
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["src/*"],
+            "@contracts/*": ["../contracts/*"]
+        },
 
         /* Linting */
         "noUnusedLocals": true,
@@ -21,5 +27,5 @@
         "erasableSyntaxOnly": true,
         "noFallthroughCasesInSwitch": true
     },
-    "include": ["src"]
+    "include": ["src", "../contracts/types/**/*.ts"]
 }
