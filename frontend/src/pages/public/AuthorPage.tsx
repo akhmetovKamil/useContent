@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom"
+import { Link, useParams } from "react-router-dom"
 
 import { useAuthorProfileQuery } from "@/queries/authors"
 import { useAuthorPostsQuery } from "@/queries/posts"
@@ -81,9 +81,12 @@ export function AuthorPage() {
                                             className="rounded-[20px] border border-[var(--line)] bg-[var(--surface-strong)] p-4"
                                             key={post.id}
                                         >
-                                            <div className="text-lg text-[var(--foreground)]">
+                                            <Link
+                                                className="text-lg text-[var(--foreground)] underline-offset-4 hover:underline"
+                                                to={`/authors/${authorSlug}/posts/${post.id}`}
+                                            >
                                                 {post.title}
-                                            </div>
+                                            </Link>
                                             <div className="mt-2 text-sm text-[var(--muted)]">
                                                 {post.content.slice(0, 180)}
                                             </div>
@@ -106,9 +109,12 @@ export function AuthorPage() {
                                             className="rounded-[20px] border border-[var(--line)] bg-[var(--surface-strong)] p-4"
                                             key={project.id}
                                         >
-                                            <div className="text-lg text-[var(--foreground)]">
+                                            <Link
+                                                className="text-lg text-[var(--foreground)] underline-offset-4 hover:underline"
+                                                to={`/authors/${authorSlug}/projects/${project.id}`}
+                                            >
                                                 {project.title}
-                                            </div>
+                                            </Link>
                                             <div className="mt-2 text-sm text-[var(--muted)]">
                                                 {project.description || "No description yet"}
                                             </div>

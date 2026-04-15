@@ -5,6 +5,7 @@ import { WalletStatus } from "../../shared/wallet/WalletStatus"
 const navItems = [
     { to: "/", label: "Home", end: true },
     { to: "/me", label: "Me" },
+    { to: "/me/author", label: "Author" },
     { to: "/me/posts", label: "Posts" },
     { to: "/me/projects", label: "Projects" },
     { to: "/me/subscription-plan", label: "Plan" },

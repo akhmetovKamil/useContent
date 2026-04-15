@@ -7,6 +7,9 @@ export const queryKeys = {
     mySubscriptionPlan: ["me", "subscription-plan"] as const,
     author: (slug: string) => ["authors", slug] as const,
     authorPosts: (slug: string) => ["authors", slug, "posts"] as const,
+    authorPost: (slug: string, postId: string) => ["authors", slug, "posts", postId] as const,
     authorProjects: (slug: string) => ["authors", slug, "projects"] as const,
+    authorProject: (slug: string, projectId: string) =>
+        ["authors", slug, "projects", projectId] as const,
     authorSubscriptionPlan: (slug: string) => ["authors", slug, "subscription-plan"] as const,
 } as const

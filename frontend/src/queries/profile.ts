@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query"
+import type { CreateAuthorProfileInput } from "@contracts/types/content"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { profileApi } from "@/api/ProfileApi"
 import { queryKeys } from "./queryKeys"
@@ -24,5 +25,18 @@ export function useMyEntitlementsQuery(enabled = true) {
         queryKey: queryKeys.myEntitlements,
         queryFn: () => profileApi.getMyEntitlements(),
         enabled,
+    })
+}
+
+export function useCreateMyAuthorProfileMutation() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (input: CreateAuthorProfileInput) => profileApi.createMyAuthorProfile(input),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: queryKeys.myAuthor })
+            void queryClient.invalidateQueries({ queryKey: queryKeys.me })
+            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+        },
     })
 }

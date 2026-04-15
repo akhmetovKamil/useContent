@@ -1,5 +1,6 @@
 import type {
     AuthorProfileDto,
+    CreateAuthorProfileInput,
     SubscriptionEntitlementDto,
     UpdateMyProfileInput,
     UserProfileDto,
@@ -20,6 +21,11 @@ class ProfileApi {
 
     async getMyAuthorProfile() {
         const response = await http.get<AuthorProfileDto>("/me/author")
+        return response.data
+    }
+
+    async createMyAuthorProfile(input: CreateAuthorProfileInput) {
+        const response = await http.post<AuthorProfileDto>("/authors", input)
         return response.data
     }
 

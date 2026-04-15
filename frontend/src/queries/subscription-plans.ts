@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query"
+import type { UpsertSubscriptionPlanInput } from "@contracts/types/content"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { authorsApi } from "@/api/AuthorsApi"
 import { subscriptionPlansApi } from "@/api/SubscriptionPlansApi"
@@ -17,5 +18,18 @@ export function useAuthorSubscriptionPlanQuery(slug: string) {
         queryKey: queryKeys.authorSubscriptionPlan(slug),
         queryFn: () => authorsApi.getAuthorSubscriptionPlan(slug),
         enabled: Boolean(slug),
+    })
+}
+
+export function useUpsertMySubscriptionPlanMutation() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (input: UpsertSubscriptionPlanInput) =>
+            subscriptionPlansApi.upsertMySubscriptionPlan(input),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: queryKeys.mySubscriptionPlan })
+            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+        },
     })
 }

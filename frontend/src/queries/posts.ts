@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query"
+import type { CreatePostInput } from "@contracts/types/content"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { authorsApi } from "@/api/AuthorsApi"
 import { postsApi } from "@/api/PostsApi"
@@ -17,5 +18,25 @@ export function useAuthorPostsQuery(slug: string) {
         queryKey: queryKeys.authorPosts(slug),
         queryFn: () => authorsApi.listAuthorPosts(slug),
         enabled: Boolean(slug),
+    })
+}
+
+export function useAuthorPostQuery(slug: string, postId: string) {
+    return useQuery({
+        queryKey: queryKeys.authorPost(slug, postId),
+        queryFn: () => postsApi.getAuthorPost(slug, postId),
+        enabled: Boolean(slug) && Boolean(postId),
+    })
+}
+
+export function useCreateMyPostMutation() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (input: CreatePostInput) => postsApi.createMyPost(input),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: queryKeys.myPosts })
+            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+        },
     })
 }
