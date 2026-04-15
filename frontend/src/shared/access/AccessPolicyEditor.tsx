@@ -1,4 +1,5 @@
 import type { AccessComposer, AccessPolicyBuilderState, AccessRuleForm } from "./policy"
+import { v4 as uuidv4 } from "uuid"
 
 interface AccessPolicyEditorProps {
     builder: AccessPolicyBuilderState
@@ -271,6 +272,6 @@ function LabeledInput({ disabled, label, onChange, value }: LabeledInputProps) {
 function createRuleFromTemplate(rule: AccessRuleForm): AccessRuleForm {
     return {
         ...rule,
-        id: crypto.randomUUID(),
+        id: uuidv4(),
     }
 }

@@ -13,6 +13,7 @@ import type {
     AccessPolicyInputSubscriptionNode,
     AccessPolicyInputTokenBalanceNode,
 } from "@contracts/types/content"
+import { v4 as uuidv4 } from "uuid"
 
 export type AccessRuleType = "public" | "subscription" | "token_balance" | "nft_ownership"
 export type AccessComposer = "single" | "and" | "or"
@@ -49,7 +50,7 @@ export function createDefaultPolicyBuilderState(): AccessPolicyBuilderState {
 
 export function createDefaultRule(): AccessRuleForm {
     return {
-        id: crypto.randomUUID(),
+        id: uuidv4(),
         type: "public",
         planCode: "main",
         chainId: "11155111",
