@@ -147,9 +147,6 @@ export function AuthorProfileForm({
                                 placeholder="kamil"
                                 value={slug}
                             />
-                            <span className="mt-1 block text-xs text-[var(--muted)]">
-                                Public URL: /authors/{slug || "username"}
-                            </span>
                             {fieldErrors.slug || apiSlugError ? (
                                 <span className="mt-1 block text-xs text-rose-600">
                                     {fieldErrors.slug ?? apiSlugError}
