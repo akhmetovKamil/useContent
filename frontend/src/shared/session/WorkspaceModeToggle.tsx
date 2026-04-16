@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom"
 
 import { useWorkspaceStore } from "@/shared/session/workspace-store"
 
+
 export function WorkspaceModeToggle() {
     const navigate = useNavigate()
     const mode = useWorkspaceStore((state) => state.mode)
@@ -25,6 +26,7 @@ export function WorkspaceModeToggle() {
                 ].join(" ")}
             />
             <span className="relative grid h-full grid-cols-2 items-center">
+                
                 <span
                     className={[
                         "transition-colors",

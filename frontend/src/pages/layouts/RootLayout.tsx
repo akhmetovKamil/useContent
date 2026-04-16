@@ -7,6 +7,7 @@ import { useAuthStore } from "@/shared/session/auth-store"
 import { useWorkspaceStore } from "@/shared/session/workspace-store"
 import { WorkspaceModeToggle } from "@/shared/session/WorkspaceModeToggle"
 import { WalletStatus } from "../../shared/wallet/WalletStatus"
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 
 const readerNavItems = [
     { to: "/", label: "Home", end: true },
@@ -50,6 +51,7 @@ export function RootLayout() {
                         <WalletStatus />
                     </div>
                 </header>
+                <AnimatedThemeToggler />
 
                 <nav className="flex flex-wrap gap-2 border-b border-[var(--line)] px-5 py-4 md:px-8">
                     {navItems.map((item) => (
