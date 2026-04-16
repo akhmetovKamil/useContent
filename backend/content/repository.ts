@@ -18,7 +18,7 @@ const mongoUri = secret("MongoUri");
 let indexesReady = false;
 
 async function getCollection<T extends Document>(
-  name: string
+  name: string,
 ): Promise<Collection<T>> {
   const db = await getDb(mongoUri());
   return db.collection<T>(name);
@@ -30,15 +30,18 @@ export async function getUsersCollection(): Promise<Collection<UserDoc>> {
 }
 
 export async function findUserByPrimaryWallet(
-  primaryWallet: string
+  primaryWallet: string,
 ): Promise<UserDoc | null> {
   const users = await getUsersCollection();
   return users.findOne({ primaryWallet });
 }
 
-export async function createUser(
-  doc: Omit<UserDoc, "_id">
-): Promise<UserDoc> {
+export async function findUserById(id: ObjectId): Promise<UserDoc | null> {
+  const users = await getUsersCollection();
+  return users.findOne({ _id: id });
+}
+
+export async function createUser(doc: Omit<UserDoc, "_id">): Promise<UserDoc> {
   const users = await getUsersCollection();
   const result = await users.insertOne(doc as UserDoc);
   return { _id: result.insertedId, ...doc };
@@ -46,13 +49,15 @@ export async function createUser(
 
 export async function updateUser(
   id: ObjectId,
-  update: Partial<Omit<UserDoc, "_id" | "wallets" | "primaryWallet" | "role" | "createdAt">>
+  update: Partial<
+    Omit<UserDoc, "_id" | "wallets" | "primaryWallet" | "role" | "createdAt">
+  >,
 ): Promise<UserDoc | null> {
   const users = await getUsersCollection();
   return users.findOneAndUpdate(
     { _id: id },
     { $set: update },
-    { returnDocument: "after" }
+    { returnDocument: "after" },
   );
 }
 
@@ -64,21 +69,21 @@ export async function getAuthorProfilesCollection(): Promise<
 }
 
 export async function findAuthorProfileByUserId(
-  userId: string
+  userId: string,
 ): Promise<AuthorProfileDoc | null> {
   const authorProfiles = await getAuthorProfilesCollection();
   return authorProfiles.findOne({ userId });
 }
 
 export async function findAuthorProfileBySlug(
-  slug: string
+  slug: string,
 ): Promise<AuthorProfileDoc | null> {
   const authorProfiles = await getAuthorProfilesCollection();
   return authorProfiles.findOne({ slug });
 }
 
 export async function createAuthorProfile(
-  doc: Omit<AuthorProfileDoc, "_id">
+  doc: Omit<AuthorProfileDoc, "_id">,
 ): Promise<AuthorProfileDoc> {
   const authorProfiles = await getAuthorProfilesCollection();
   const result = await authorProfiles.insertOne(doc as AuthorProfileDoc);
@@ -87,13 +92,13 @@ export async function createAuthorProfile(
 
 export async function updateAuthorProfile(
   id: ObjectId,
-  update: Partial<Omit<AuthorProfileDoc, "_id" | "userId" | "createdAt">>
+  update: Partial<Omit<AuthorProfileDoc, "_id" | "userId" | "createdAt">>,
 ): Promise<AuthorProfileDoc | null> {
   const authorProfiles = await getAuthorProfilesCollection();
   return authorProfiles.findOneAndUpdate(
     { _id: id },
     { $set: update },
-    { returnDocument: "after" }
+    { returnDocument: "after" },
   );
 }
 
@@ -105,7 +110,7 @@ export async function getAccessPolicyPresetsCollection(): Promise<
 }
 
 export async function createAccessPolicyPreset(
-  doc: Omit<AccessPolicyPresetDoc, "_id">
+  doc: Omit<AccessPolicyPresetDoc, "_id">,
 ): Promise<AccessPolicyPresetDoc> {
   const presets = await getAccessPolicyPresetsCollection();
   const result = await presets.insertOne(doc as AccessPolicyPresetDoc);
@@ -113,15 +118,18 @@ export async function createAccessPolicyPreset(
 }
 
 export async function listAccessPolicyPresetsByAuthorId(
-  authorId: ObjectId
+  authorId: ObjectId,
 ): Promise<AccessPolicyPresetDoc[]> {
   const presets = await getAccessPolicyPresetsCollection();
-  return presets.find({ authorId }).sort({ isDefault: -1, createdAt: -1 }).toArray();
+  return presets
+    .find({ authorId })
+    .sort({ isDefault: -1, createdAt: -1 })
+    .toArray();
 }
 
 export async function findAccessPolicyPresetByIdAndAuthorId(
   id: ObjectId,
-  authorId: ObjectId
+  authorId: ObjectId,
 ): Promise<AccessPolicyPresetDoc | null> {
   const presets = await getAccessPolicyPresetsCollection();
   return presets.findOne({ _id: id, authorId });
@@ -130,30 +138,38 @@ export async function findAccessPolicyPresetByIdAndAuthorId(
 export async function updateAccessPolicyPreset(
   id: ObjectId,
   authorId: ObjectId,
-  update: Partial<Omit<AccessPolicyPresetDoc, "_id" | "authorId" | "createdAt">>
+  update: Partial<
+    Omit<AccessPolicyPresetDoc, "_id" | "authorId" | "createdAt">
+  >,
 ): Promise<AccessPolicyPresetDoc | null> {
   const presets = await getAccessPolicyPresetsCollection();
   return presets.findOneAndUpdate(
     { _id: id, authorId },
     { $set: update },
-    { returnDocument: "after" }
+    { returnDocument: "after" },
   );
 }
 
-export async function clearDefaultAccessPolicyPreset(authorId: ObjectId): Promise<void> {
+export async function clearDefaultAccessPolicyPreset(
+  authorId: ObjectId,
+): Promise<void> {
   const presets = await getAccessPolicyPresetsCollection();
   await presets.updateMany(
     { authorId },
-    { $set: { isDefault: false, updatedAt: new Date() } }
+    { $set: { isDefault: false, updatedAt: new Date() } },
   );
 }
 
 export async function deleteAccessPolicyPreset(
   id: ObjectId,
-  authorId: ObjectId
+  authorId: ObjectId,
 ): Promise<boolean> {
   const presets = await getAccessPolicyPresetsCollection();
-  const result = await presets.deleteOne({ _id: id, authorId, isDefault: false });
+  const result = await presets.deleteOne({
+    _id: id,
+    authorId,
+    isDefault: false,
+  });
   return result.deletedCount === 1;
 }
 
@@ -162,23 +178,21 @@ export async function getPostsCollection(): Promise<Collection<PostDoc>> {
   return getCollection<PostDoc>("posts");
 }
 
-export async function createPost(
-  doc: Omit<PostDoc, "_id">
-): Promise<PostDoc> {
+export async function createPost(doc: Omit<PostDoc, "_id">): Promise<PostDoc> {
   const posts = await getPostsCollection();
   const result = await posts.insertOne(doc as PostDoc);
   return { _id: result.insertedId, ...doc };
 }
 
 export async function listPostsByAuthorId(
-  authorId: ObjectId
+  authorId: ObjectId,
 ): Promise<PostDoc[]> {
   const posts = await getPostsCollection();
   return posts.find({ authorId }).sort({ createdAt: -1 }).toArray();
 }
 
 export async function listPublishedPostsByAuthorId(
-  authorId: ObjectId
+  authorId: ObjectId,
 ): Promise<PostDoc[]> {
   const posts = await getPostsCollection();
   return posts
@@ -189,7 +203,7 @@ export async function listPublishedPostsByAuthorId(
 
 export async function findPublishedPostByIdAndAuthorId(
   id: ObjectId,
-  authorId: ObjectId
+  authorId: ObjectId,
 ): Promise<PostDoc | null> {
   const posts = await getPostsCollection();
   return posts.findOne({ _id: id, authorId, status: "published" });
@@ -197,7 +211,7 @@ export async function findPublishedPostByIdAndAuthorId(
 
 export async function findPostByIdAndAuthorId(
   id: ObjectId,
-  authorId: ObjectId
+  authorId: ObjectId,
 ): Promise<PostDoc | null> {
   const posts = await getPostsCollection();
   return posts.findOne({ _id: id, authorId });
@@ -206,19 +220,19 @@ export async function findPostByIdAndAuthorId(
 export async function updatePost(
   id: ObjectId,
   authorId: ObjectId,
-  update: Partial<Omit<PostDoc, "_id" | "authorId" | "createdAt">>
+  update: Partial<Omit<PostDoc, "_id" | "authorId" | "createdAt">>,
 ): Promise<PostDoc | null> {
   const posts = await getPostsCollection();
   return posts.findOneAndUpdate(
     { _id: id, authorId },
     { $set: update },
-    { returnDocument: "after" }
+    { returnDocument: "after" },
   );
 }
 
 export async function deletePost(
   id: ObjectId,
-  authorId: ObjectId
+  authorId: ObjectId,
 ): Promise<boolean> {
   const posts = await getPostsCollection();
   const result = await posts.deleteOne({ _id: id, authorId });
@@ -227,7 +241,7 @@ export async function deletePost(
 
 export async function countPostsByAccessPolicyId(
   authorId: ObjectId,
-  accessPolicyId: ObjectId
+  accessPolicyId: ObjectId,
 ): Promise<number> {
   const posts = await getPostsCollection();
   return posts.countDocuments({ authorId, accessPolicyId });
@@ -245,14 +259,14 @@ export async function createProject(doc: ProjectDoc): Promise<ProjectDoc> {
 }
 
 export async function listProjectsByAuthorId(
-  authorId: ObjectId
+  authorId: ObjectId,
 ): Promise<ProjectDoc[]> {
   const projects = await getProjectsCollection();
   return projects.find({ authorId }).sort({ createdAt: -1 }).toArray();
 }
 
 export async function listPublishedProjectsByAuthorId(
-  authorId: ObjectId
+  authorId: ObjectId,
 ): Promise<ProjectDoc[]> {
   const projects = await getProjectsCollection();
   return projects
@@ -263,7 +277,7 @@ export async function listPublishedProjectsByAuthorId(
 
 export async function findPublishedProjectByIdAndAuthorId(
   id: ObjectId,
-  authorId: ObjectId
+  authorId: ObjectId,
 ): Promise<ProjectDoc | null> {
   const projects = await getProjectsCollection();
   return projects.findOne({ _id: id, authorId, status: "published" });
@@ -271,7 +285,7 @@ export async function findPublishedProjectByIdAndAuthorId(
 
 export async function findProjectByIdAndAuthorId(
   id: ObjectId,
-  authorId: ObjectId
+  authorId: ObjectId,
 ): Promise<ProjectDoc | null> {
   const projects = await getProjectsCollection();
   return projects.findOne({ _id: id, authorId });
@@ -280,19 +294,21 @@ export async function findProjectByIdAndAuthorId(
 export async function updateProject(
   id: ObjectId,
   authorId: ObjectId,
-  update: Partial<Omit<ProjectDoc, "_id" | "authorId" | "rootNodeId" | "createdAt">>
+  update: Partial<
+    Omit<ProjectDoc, "_id" | "authorId" | "rootNodeId" | "createdAt">
+  >,
 ): Promise<ProjectDoc | null> {
   const projects = await getProjectsCollection();
   return projects.findOneAndUpdate(
     { _id: id, authorId },
     { $set: update },
-    { returnDocument: "after" }
+    { returnDocument: "after" },
   );
 }
 
 export async function deleteProject(
   id: ObjectId,
-  authorId: ObjectId
+  authorId: ObjectId,
 ): Promise<boolean> {
   const projects = await getProjectsCollection();
   const result = await projects.deleteOne({ _id: id, authorId });
@@ -301,7 +317,7 @@ export async function deleteProject(
 
 export async function countProjectsByAccessPolicyId(
   authorId: ObjectId,
-  accessPolicyId: ObjectId
+  accessPolicyId: ObjectId,
 ): Promise<number> {
   const projects = await getProjectsCollection();
   return projects.countDocuments({ authorId, accessPolicyId });
@@ -315,7 +331,7 @@ export async function getProjectNodesCollection(): Promise<
 }
 
 export async function createProjectNode(
-  doc: ProjectNodeDoc
+  doc: ProjectNodeDoc,
 ): Promise<ProjectNodeDoc> {
   const projectNodes = await getProjectNodesCollection();
   await projectNodes.insertOne(doc);
@@ -324,7 +340,7 @@ export async function createProjectNode(
 
 export async function findProjectNodeByIdAndProjectId(
   id: ObjectId,
-  projectId: ObjectId
+  projectId: ObjectId,
 ): Promise<ProjectNodeDoc | null> {
   const projectNodes = await getProjectNodesCollection();
   return projectNodes.findOne({ _id: id, projectId });
@@ -332,7 +348,7 @@ export async function findProjectNodeByIdAndProjectId(
 
 export async function listProjectNodesByParent(
   projectId: ObjectId,
-  parentId: ObjectId
+  parentId: ObjectId,
 ): Promise<ProjectNodeDoc[]> {
   const projectNodes = await getProjectNodesCollection();
   return projectNodes
@@ -343,7 +359,7 @@ export async function listProjectNodesByParent(
 
 export async function listPublishedProjectNodesByParent(
   projectId: ObjectId,
-  parentId: ObjectId
+  parentId: ObjectId,
 ): Promise<ProjectNodeDoc[]> {
   const projectNodes = await getProjectNodesCollection();
   return projectNodes
@@ -353,7 +369,7 @@ export async function listPublishedProjectNodesByParent(
 }
 
 export async function listProjectNodesByProjectId(
-  projectId: ObjectId
+  projectId: ObjectId,
 ): Promise<ProjectNodeDoc[]> {
   const projectNodes = await getProjectNodesCollection();
   return projectNodes.find({ projectId }).toArray();
@@ -361,7 +377,7 @@ export async function listProjectNodesByProjectId(
 
 export async function findProjectNodeChildrenRecursive(
   projectId: ObjectId,
-  parentId: ObjectId
+  parentId: ObjectId,
 ): Promise<ProjectNodeDoc[]> {
   const projectNodes = await getProjectNodesCollection();
   const children = await projectNodes.find({ projectId, parentId }).toArray();
@@ -369,7 +385,10 @@ export async function findProjectNodeChildrenRecursive(
 
   for (const child of children) {
     if (child.kind === "folder") {
-      const nested = await findProjectNodeChildrenRecursive(projectId, child._id);
+      const nested = await findProjectNodeChildrenRecursive(
+        projectId,
+        child._id,
+      );
       all.push(...nested);
     }
   }
@@ -382,13 +401,13 @@ export async function updateProjectNode(
   projectId: ObjectId,
   update: Partial<
     Pick<ProjectNodeDoc, "name" | "parentId" | "visibility" | "updatedAt">
-  >
+  >,
 ): Promise<ProjectNodeDoc | null> {
   const projectNodes = await getProjectNodesCollection();
   return projectNodes.findOneAndUpdate(
     { _id: id, projectId },
     { $set: update },
-    { returnDocument: "after" }
+    { returnDocument: "after" },
   );
 }
 
@@ -402,7 +421,7 @@ export async function deleteProjectNodes(ids: ObjectId[]): Promise<void> {
 }
 
 export async function deleteProjectNodesByProjectId(
-  projectId: ObjectId
+  projectId: ObjectId,
 ): Promise<void> {
   const projectNodes = await getProjectNodesCollection();
   await projectNodes.deleteMany({ projectId });
@@ -416,7 +435,7 @@ export async function getSubscriptionPlansCollection(): Promise<
 }
 
 export async function findSubscriptionPlanById(
-  id: ObjectId
+  id: ObjectId,
 ): Promise<SubscriptionPlanDoc | null> {
   const plans = await getSubscriptionPlansCollection();
   return plans.findOne({ _id: id });
@@ -424,28 +443,31 @@ export async function findSubscriptionPlanById(
 
 export async function findSubscriptionPlanByAuthorIdAndCode(
   authorId: ObjectId,
-  code: string
+  code: string,
 ): Promise<SubscriptionPlanDoc | null> {
   const plans = await getSubscriptionPlansCollection();
   return plans.findOne({ authorId, code });
 }
 
 export async function listSubscriptionPlansByAuthorId(
-  authorId: ObjectId
+  authorId: ObjectId,
 ): Promise<SubscriptionPlanDoc[]> {
   const plans = await getSubscriptionPlansCollection();
   return plans.find({ authorId }).sort({ createdAt: -1 }).toArray();
 }
 
 export async function listActiveSubscriptionPlansByAuthorId(
-  authorId: ObjectId
+  authorId: ObjectId,
 ): Promise<SubscriptionPlanDoc[]> {
   const plans = await getSubscriptionPlansCollection();
-  return plans.find({ authorId, active: true }).sort({ createdAt: -1 }).toArray();
+  return plans
+    .find({ authorId, active: true })
+    .sort({ createdAt: -1 })
+    .toArray();
 }
 
 export async function createSubscriptionPlan(
-  doc: Omit<SubscriptionPlanDoc, "_id">
+  doc: Omit<SubscriptionPlanDoc, "_id">,
 ): Promise<SubscriptionPlanDoc> {
   const plans = await getSubscriptionPlansCollection();
   const result = await plans.insertOne(doc as SubscriptionPlanDoc);
@@ -456,13 +478,13 @@ export async function updateSubscriptionPlan(
   id: ObjectId,
   update: Partial<
     Omit<SubscriptionPlanDoc, "_id" | "authorId" | "code" | "createdAt">
-  >
+  >,
 ): Promise<SubscriptionPlanDoc | null> {
   const plans = await getSubscriptionPlansCollection();
   return plans.findOneAndUpdate(
     { _id: id },
     { $set: update },
-    { returnDocument: "after" }
+    { returnDocument: "after" },
   );
 }
 
@@ -474,7 +496,7 @@ export async function getSubscriptionEntitlementsCollection(): Promise<
 }
 
 export async function listSubscriptionEntitlementsByWallet(
-  subscriberWallet: string
+  subscriberWallet: string,
 ): Promise<SubscriptionEntitlementDoc[]> {
   const entitlements = await getSubscriptionEntitlementsCollection();
   return entitlements
@@ -485,7 +507,7 @@ export async function listSubscriptionEntitlementsByWallet(
 
 export async function listSubscriptionEntitlementsByWalletAndAuthorId(
   subscriberWallet: string,
-  authorId: ObjectId
+  authorId: ObjectId,
 ): Promise<SubscriptionEntitlementDoc[]> {
   const entitlements = await getSubscriptionEntitlementsCollection();
   return entitlements
@@ -495,10 +517,12 @@ export async function listSubscriptionEntitlementsByWalletAndAuthorId(
 }
 
 export async function createSubscriptionEntitlement(
-  doc: Omit<SubscriptionEntitlementDoc, "_id">
+  doc: Omit<SubscriptionEntitlementDoc, "_id">,
 ): Promise<SubscriptionEntitlementDoc> {
   const entitlements = await getSubscriptionEntitlementsCollection();
-  const result = await entitlements.insertOne(doc as SubscriptionEntitlementDoc);
+  const result = await entitlements.insertOne(
+    doc as SubscriptionEntitlementDoc,
+  );
   return { _id: result.insertedId, ...doc };
 }
 
@@ -527,7 +551,7 @@ export async function upsertActiveSubscriptionEntitlement(input: {
         createdAt: input.now,
       },
     },
-    { upsert: true, returnDocument: "after" }
+    { upsert: true, returnDocument: "after" },
   ) as Promise<SubscriptionEntitlementDoc>;
 }
 
@@ -535,11 +559,13 @@ export async function getSubscriptionPaymentIntentsCollection(): Promise<
   Collection<SubscriptionPaymentIntentDoc>
 > {
   await ensureIndexes();
-  return getCollection<SubscriptionPaymentIntentDoc>("subscription_payment_intents");
+  return getCollection<SubscriptionPaymentIntentDoc>(
+    "subscription_payment_intents",
+  );
 }
 
 export async function createSubscriptionPaymentIntent(
-  doc: Omit<SubscriptionPaymentIntentDoc, "_id">
+  doc: Omit<SubscriptionPaymentIntentDoc, "_id">,
 ): Promise<SubscriptionPaymentIntentDoc> {
   const intents = await getSubscriptionPaymentIntentsCollection();
   const result = await intents.insertOne(doc as SubscriptionPaymentIntentDoc);
@@ -548,14 +574,14 @@ export async function createSubscriptionPaymentIntent(
 
 export async function findSubscriptionPaymentIntentByIdAndWallet(
   id: ObjectId,
-  subscriberWallet: string
+  subscriberWallet: string,
 ): Promise<SubscriptionPaymentIntentDoc | null> {
   const intents = await getSubscriptionPaymentIntentsCollection();
   return intents.findOne({ _id: id, subscriberWallet });
 }
 
 export async function findSubscriptionPaymentIntentByTxHash(
-  txHash: string
+  txHash: string,
 ): Promise<SubscriptionPaymentIntentDoc | null> {
   const intents = await getSubscriptionPaymentIntentsCollection();
   return intents.findOne({ txHash });
@@ -563,20 +589,18 @@ export async function findSubscriptionPaymentIntentByTxHash(
 
 export async function updateSubscriptionPaymentIntent(
   id: ObjectId,
-  update: Partial<
-    Omit<SubscriptionPaymentIntentDoc, "_id" | "createdAt">
-  >
+  update: Partial<Omit<SubscriptionPaymentIntentDoc, "_id" | "createdAt">>,
 ): Promise<SubscriptionPaymentIntentDoc | null> {
   const intents = await getSubscriptionPaymentIntentsCollection();
   return intents.findOneAndUpdate(
     { _id: id },
     { $set: update },
-    { returnDocument: "after" }
+    { returnDocument: "after" },
   );
 }
 
 export async function listSubscriptionPaymentIntentsByWallet(
-  subscriberWallet: string
+  subscriberWallet: string,
 ): Promise<SubscriptionPaymentIntentDoc[]> {
   const intents = await getSubscriptionPaymentIntentsCollection();
   return intents
@@ -630,20 +654,27 @@ async function ensureIndexes(): Promise<void> {
     projectNodes.createIndex({ projectId: 1, visibility: 1 }),
     subscriptionPlans.createIndex({ authorId: 1, code: 1 }, { unique: true }),
     subscriptionPlans.createIndex(
+      { chainId: 1, planKey: 1 },
+      { unique: true, partialFilterExpression: { planKey: { $exists: true } } },
+    ),
+    subscriptionPlans.createIndex(
       { authorId: 1, active: 1 },
-      { partialFilterExpression: { active: true } }
+      { partialFilterExpression: { active: true } },
     ),
     subscriptionEntitlements.createIndex({ authorId: 1, subscriberWallet: 1 }),
     subscriptionEntitlements.createIndex(
       { authorId: 1, subscriberWallet: 1, planId: 1 },
-      { unique: true }
+      { unique: true },
     ),
     subscriptionEntitlements.createIndex({ planId: 1, validUntil: -1 }),
-    subscriptionPaymentIntents.createIndex({ subscriberWallet: 1, createdAt: -1 }),
+    subscriptionPaymentIntents.createIndex({
+      subscriberWallet: 1,
+      createdAt: -1,
+    }),
     subscriptionPaymentIntents.createIndex({ authorId: 1, status: 1 }),
     subscriptionPaymentIntents.createIndex(
       { txHash: 1 },
-      { unique: true, sparse: true }
+      { unique: true, sparse: true },
     ),
   ]);
 

@@ -30,5 +30,9 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
-  "include": ["./**/*.ts", "../contracts/types/**/*.ts"]
+  "include": [
+    "./**/*.ts",
+    "../contracts/types/**/*.ts",
+    "../contracts/abi/**/*.ts"
+  ]
 }

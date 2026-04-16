@@ -1,4 +1,8 @@
-import type { UpsertSubscriptionPlanInput } from "@contracts/types/content"
+import type {
+    ConfirmSubscriptionPaymentInput,
+    CreateSubscriptionPaymentIntentInput,
+    UpsertSubscriptionPlanInput,
+} from "@contracts/types/content"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { authorsApi } from "@/api/AuthorsApi"
@@ -29,6 +33,14 @@ export function useAuthorSubscriptionPlanQuery(slug: string) {
     })
 }
 
+export function useAuthorSubscriptionPlansQuery(slug: string) {
+    return useQuery({
+        queryKey: queryKeys.authorSubscriptionPlans(slug),
+        queryFn: () => authorsApi.listAuthorSubscriptionPlans(slug),
+        enabled: Boolean(slug),
+    })
+}
+
 export function useUpsertMySubscriptionPlanMutation() {
     const queryClient = useQueryClient()
 
@@ -38,6 +50,31 @@ export function useUpsertMySubscriptionPlanMutation() {
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: queryKeys.mySubscriptionPlan })
             void queryClient.invalidateQueries({ queryKey: queryKeys.mySubscriptionPlans })
+            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+        },
+    })
+}
+
+export function useCreateSubscriptionPaymentIntentMutation(slug: string) {
+    return useMutation({
+        mutationFn: (input: CreateSubscriptionPaymentIntentInput) =>
+            subscriptionPlansApi.createSubscriptionPaymentIntent(slug, input),
+    })
+}
+
+export function useConfirmSubscriptionPaymentMutation() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: ({
+            intentId,
+            input,
+        }: {
+            intentId: string
+            input: ConfirmSubscriptionPaymentInput
+        }) => subscriptionPlansApi.confirmSubscriptionPayment(intentId, input),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: queryKeys.myEntitlements })
             void queryClient.invalidateQueries({ queryKey: ["authors"] })
         },
     })

@@ -1,295 +1,301 @@
-import type { AccessPolicy, PolicyMode } from "./access"
+import type { AccessPolicy, PolicyMode } from "./access";
 
 export interface AccessPolicyInputPublicNode {
-    type: "public"
+  type: "public";
 }
 
 export interface AccessPolicyInputSubscriptionNode {
-    type: "subscription"
-    planCode?: string
+  type: "subscription";
+  planCode?: string;
 }
 
 export interface AccessPolicyInputTokenBalanceNode {
-    type: "token_balance"
-    chainId: number
-    contractAddress: string
-    minAmount: string
-    decimals: number
+  type: "token_balance";
+  chainId: number;
+  contractAddress: string;
+  minAmount: string;
+  decimals: number;
 }
 
 export interface AccessPolicyInputNftOwnershipNode {
-    type: "nft_ownership"
-    chainId: number
-    contractAddress: string
-    standard: "erc721" | "erc1155"
-    tokenId?: string
-    minBalance?: string
+  type: "nft_ownership";
+  chainId: number;
+  contractAddress: string;
+  standard: "erc721" | "erc1155";
+  tokenId?: string;
+  minBalance?: string;
 }
 
 export interface AccessPolicyInputOrNode {
-    type: "or"
-    children: AccessPolicyInputNode[]
+  type: "or";
+  children: AccessPolicyInputNode[];
 }
 
 export interface AccessPolicyInputAndNode {
-    type: "and"
-    children: AccessPolicyInputNode[]
+  type: "and";
+  children: AccessPolicyInputNode[];
 }
 
 export type AccessPolicyInputNode =
-    | AccessPolicyInputPublicNode
-    | AccessPolicyInputSubscriptionNode
-    | AccessPolicyInputTokenBalanceNode
-    | AccessPolicyInputNftOwnershipNode
-    | AccessPolicyInputOrNode
-    | AccessPolicyInputAndNode
+  | AccessPolicyInputPublicNode
+  | AccessPolicyInputSubscriptionNode
+  | AccessPolicyInputTokenBalanceNode
+  | AccessPolicyInputNftOwnershipNode
+  | AccessPolicyInputOrNode
+  | AccessPolicyInputAndNode;
 
 export interface AccessPolicyInput {
-    root: AccessPolicyInputNode
+  root: AccessPolicyInputNode;
 }
 
 export interface UserWalletDto {
-    address: string
-    kind: "primary" | "secondary"
-    addedAt: string
+  address: string;
+  kind: "primary" | "secondary";
+  addedAt: string;
 }
 
 export interface UserProfileDto {
-    id: string
-    username: string | null
-    displayName: string
-    bio: string
-    avatarFileId: string | null
-    primaryWallet: string
-    wallets: UserWalletDto[]
-    role: "user" | "admin"
-    createdAt: string
-    updatedAt: string
+  id: string;
+  username: string | null;
+  displayName: string;
+  bio: string;
+  avatarFileId: string | null;
+  primaryWallet: string;
+  wallets: UserWalletDto[];
+  role: "user" | "admin";
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AuthorProfileDto {
-    id: string
-    userId: string
-    slug: string
-    displayName: string
-    bio: string
-    avatarFileId: string | null
-    defaultPolicy: AccessPolicy
-    defaultPolicyId: string | null
-    subscriptionPlanId: string | null
-    createdAt: string
-    updatedAt: string
+  id: string;
+  userId: string;
+  slug: string;
+  displayName: string;
+  bio: string;
+  avatarFileId: string | null;
+  defaultPolicy: AccessPolicy;
+  defaultPolicyId: string | null;
+  subscriptionPlanId: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AccessPolicyPresetDto {
-    id: string
-    authorId: string
-    name: string
-    description: string
-    policy: AccessPolicy
-    isDefault: boolean
-    createdAt: string
-    updatedAt: string
+  id: string;
+  authorId: string;
+  name: string;
+  description: string;
+  policy: AccessPolicy;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface SubscriptionEntitlementDto {
-    id: string
-    authorId: string
-    subscriberWallet: string
-    planId: string
-    status: "active" | "expired"
-    validUntil: string
-    source: "onchain"
-    createdAt: string
-    updatedAt: string
+  id: string;
+  authorId: string;
+  subscriberWallet: string;
+  planId: string;
+  status: "active" | "expired";
+  validUntil: string;
+  source: "onchain";
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface SubscriptionPaymentIntentDto {
-    id: string
-    authorId: string
-    subscriberWallet: string
-    planId: string
-    planCode: string
-    chainId: number
-    tokenAddress: string
-    contractAddress: string
-    price: string
-    billingPeriodDays: number
-    status: "pending" | "submitted" | "confirmed" | "expired" | "cancelled"
-    txHash: string | null
-    entitlementId: string | null
-    expiresAt: string
-    createdAt: string
-    updatedAt: string
+  id: string;
+  authorId: string;
+  subscriberWallet: string;
+  planId: string;
+  planCode: string;
+  planKey: string;
+  chainId: number;
+  tokenAddress: string;
+  contractAddress: string;
+  price: string;
+  billingPeriodDays: number;
+  status: "pending" | "submitted" | "confirmed" | "expired" | "cancelled";
+  txHash: string | null;
+  entitlementId: string | null;
+  paidUntil: string | null;
+  expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface SubscriptionPlanDto {
-    id: string
-    authorId: string
-    code: string
-    title: string
-    chainId: number
-    tokenAddress: string
-    price: string
-    billingPeriodDays: number
-    contractAddress: string
-    active: boolean
-    createdAt: string
-    updatedAt: string
+  id: string;
+  authorId: string;
+  code: string;
+  title: string;
+  chainId: number;
+  tokenAddress: string;
+  price: string;
+  billingPeriodDays: number;
+  contractAddress: string;
+  planKey: string;
+  registrationTxHash: string | null;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface PostDto {
-    id: string
-    authorId: string
-    title: string
-    content: string
-    status: "draft" | "published"
-    policyMode: PolicyMode
-    policy: AccessPolicy | null
-    accessPolicyId: string | null
-    attachmentIds: string[]
-    publishedAt: string | null
-    createdAt: string
-    updatedAt: string
+  id: string;
+  authorId: string;
+  title: string;
+  content: string;
+  status: "draft" | "published";
+  policyMode: PolicyMode;
+  policy: AccessPolicy | null;
+  accessPolicyId: string | null;
+  attachmentIds: string[];
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ProjectDto {
-    id: string
-    authorId: string
-    title: string
-    description: string
-    status: "draft" | "published"
-    policyMode: PolicyMode
-    policy: AccessPolicy | null
-    accessPolicyId: string | null
-    rootNodeId: string
-    publishedAt: string | null
-    createdAt: string
-    updatedAt: string
+  id: string;
+  authorId: string;
+  title: string;
+  description: string;
+  status: "draft" | "published";
+  policyMode: PolicyMode;
+  policy: AccessPolicy | null;
+  accessPolicyId: string | null;
+  rootNodeId: string;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ProjectNodeDto {
-    id: string
-    authorId: string
-    projectId: string
-    parentId: string | null
-    kind: "file" | "folder"
-    name: string
-    storageKey: string | null
-    mimeType: string | null
-    size: number | null
-    visibility: "author" | "published"
-    createdAt: string
-    updatedAt: string
+  id: string;
+  authorId: string;
+  projectId: string;
+  parentId: string | null;
+  kind: "file" | "folder";
+  name: string;
+  storageKey: string | null;
+  mimeType: string | null;
+  size: number | null;
+  visibility: "author" | "published";
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface UpdateMyProfileInput {
-    username?: string | null
-    displayName?: string
-    bio?: string
+  username?: string | null;
+  displayName?: string;
+  bio?: string;
 }
 
 export interface CreateAuthorProfileInput {
-    slug: string
-    displayName: string
-    bio?: string
-    defaultPolicy?: AccessPolicy
-    defaultPolicyInput?: AccessPolicyInput
+  slug: string;
+  displayName: string;
+  bio?: string;
+  defaultPolicy?: AccessPolicy;
+  defaultPolicyInput?: AccessPolicyInput;
 }
 
 export interface UpdateAuthorProfileInput {
-    displayName?: string
-    bio?: string
-    defaultPolicy?: AccessPolicy
-    defaultPolicyInput?: AccessPolicyInput
-    defaultPolicyId?: string | null
+  displayName?: string;
+  bio?: string;
+  defaultPolicy?: AccessPolicy;
+  defaultPolicyInput?: AccessPolicyInput;
+  defaultPolicyId?: string | null;
 }
 
 export interface UpsertSubscriptionPlanInput {
-    code?: string
-    title: string
-    chainId: number
-    tokenAddress: string
-    price: string
-    billingPeriodDays: number
-    contractAddress: string
-    active?: boolean
+  code?: string;
+  title: string;
+  chainId: number;
+  tokenAddress: string;
+  price: string;
+  billingPeriodDays: number;
+  contractAddress: string;
+  planKey?: string;
+  registrationTxHash?: string | null;
+  active?: boolean;
 }
 
 export interface CreateAccessPolicyPresetInput {
-    name: string
-    description?: string
-    policy?: AccessPolicy
-    policyInput?: AccessPolicyInput
-    isDefault?: boolean
+  name: string;
+  description?: string;
+  policy?: AccessPolicy;
+  policyInput?: AccessPolicyInput;
+  isDefault?: boolean;
 }
 
 export interface UpdateAccessPolicyPresetInput {
-    name?: string
-    description?: string
-    policy?: AccessPolicy
-    policyInput?: AccessPolicyInput
-    isDefault?: boolean
+  name?: string;
+  description?: string;
+  policy?: AccessPolicy;
+  policyInput?: AccessPolicyInput;
+  isDefault?: boolean;
 }
 
 export interface CreateSubscriptionPaymentIntentInput {
-    planCode?: string
+  planCode?: string;
 }
 
 export interface ConfirmSubscriptionPaymentInput {
-    txHash: string
+  txHash: string;
 }
 
 export interface CreatePostInput {
-    title: string
-    content: string
-    status?: "draft" | "published"
-    policyMode?: PolicyMode
-    policy?: AccessPolicy | null
-    policyInput?: AccessPolicyInput
-    accessPolicyId?: string | null
-    attachmentIds?: string[]
+  title: string;
+  content: string;
+  status?: "draft" | "published";
+  policyMode?: PolicyMode;
+  policy?: AccessPolicy | null;
+  policyInput?: AccessPolicyInput;
+  accessPolicyId?: string | null;
+  attachmentIds?: string[];
 }
 
 export interface UpdatePostInput {
-    title?: string
-    content?: string
-    status?: "draft" | "published"
-    policyMode?: PolicyMode
-    policy?: AccessPolicy | null
-    policyInput?: AccessPolicyInput
-    accessPolicyId?: string | null
-    attachmentIds?: string[]
+  title?: string;
+  content?: string;
+  status?: "draft" | "published";
+  policyMode?: PolicyMode;
+  policy?: AccessPolicy | null;
+  policyInput?: AccessPolicyInput;
+  accessPolicyId?: string | null;
+  attachmentIds?: string[];
 }
 
 export interface CreateProjectInput {
-    title: string
-    description?: string
-    status?: "draft" | "published"
-    policyMode?: PolicyMode
-    policy?: AccessPolicy | null
-    policyInput?: AccessPolicyInput
-    accessPolicyId?: string | null
+  title: string;
+  description?: string;
+  status?: "draft" | "published";
+  policyMode?: PolicyMode;
+  policy?: AccessPolicy | null;
+  policyInput?: AccessPolicyInput;
+  accessPolicyId?: string | null;
 }
 
 export interface UpdateProjectInput {
-    title?: string
-    description?: string
-    status?: "draft" | "published"
-    policyMode?: PolicyMode
-    policy?: AccessPolicy | null
-    policyInput?: AccessPolicyInput
-    accessPolicyId?: string | null
+  title?: string;
+  description?: string;
+  status?: "draft" | "published";
+  policyMode?: PolicyMode;
+  policy?: AccessPolicy | null;
+  policyInput?: AccessPolicyInput;
+  accessPolicyId?: string | null;
 }
 
 export interface CreateProjectFolderInput {
-    name: string
-    parentId?: string | null
-    visibility?: "author" | "published"
+  name: string;
+  parentId?: string | null;
+  visibility?: "author" | "published";
 }
 
 export interface UpdateProjectNodeInput {
-    name?: string
-    parentId?: string | null
-    visibility?: "author" | "published"
+  name?: string;
+  parentId?: string | null;
+  visibility?: "author" | "published";
 }

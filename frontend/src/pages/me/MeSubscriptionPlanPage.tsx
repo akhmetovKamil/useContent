@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 
 import { AccessPolicyEditor } from "@/components/access/AccessPolicyEditor"
+import { OnChainPlanPublisher } from "@/components/subscriptions/OnChainPlanPublisher"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -44,6 +45,8 @@ export function MeSubscriptionPlanPage() {
     const [contractAddress, setContractAddress] = useState(
         "0x0000000000000000000000000000000000000000"
     )
+    const [planKey, setPlanKey] = useState("")
+    const [registrationTxHash, setRegistrationTxHash] = useState("")
     const [active, setActive] = useState(true)
     const [policyName, setPolicyName] = useState("Subscribers only")
     const [policyDescription, setPolicyDescription] = useState("")
@@ -66,8 +69,12 @@ export function MeSubscriptionPlanPage() {
         setPrice(plan.price)
         setBillingPeriodDays(String(plan.billingPeriodDays))
         setContractAddress(plan.contractAddress)
+        setPlanKey(plan.planKey)
+        setRegistrationTxHash(plan.registrationTxHash ?? "")
         setActive(plan.active)
     }, [plansQuery.data])
+
+    const selectedPlan = plansQuery.data?.find((plan) => plan.code === code)
 
     return (
         <PageSection>
@@ -101,6 +108,8 @@ export function MeSubscriptionPlanPage() {
                                         price,
                                         billingPeriodDays: Number(billingPeriodDays),
                                         contractAddress,
+                                        planKey: planKey || undefined,
+                                        registrationTxHash: registrationTxHash || null,
                                         active,
                                     })
                                 }}
@@ -146,7 +155,7 @@ export function MeSubscriptionPlanPage() {
                                     />
                                 </Label>
                                 <Label>
-                                    Contract address
+                                    Manager contract address
                                     <Input
                                         className="font-mono"
                                         onChange={(event) => setContractAddress(event.target.value)}
@@ -158,6 +167,26 @@ export function MeSubscriptionPlanPage() {
                                     <Input
                                         onChange={(event) => setPrice(event.target.value)}
                                         value={price}
+                                    />
+                                </Label>
+                                <Label>
+                                    Plan key
+                                    <Input
+                                        className="font-mono"
+                                        onChange={(event) => setPlanKey(event.target.value)}
+                                        placeholder="Generated after on-chain publish"
+                                        value={planKey}
+                                    />
+                                </Label>
+                                <Label>
+                                    Registration tx hash
+                                    <Input
+                                        className="font-mono"
+                                        onChange={(event) =>
+                                            setRegistrationTxHash(event.target.value)
+                                        }
+                                        placeholder="0x..."
+                                        value={registrationTxHash}
                                     />
                                 </Label>
                                 <label className="flex items-center gap-3 text-sm">
@@ -180,6 +209,33 @@ export function MeSubscriptionPlanPage() {
                                 >
                                     {upsertPlanMutation.isPending ? "Saving..." : "Save plan"}
                                 </Button>
+                                <OnChainPlanPublisher
+                                    active={active}
+                                    billingPeriodDays={Number(billingPeriodDays)}
+                                    chainId={Number(chainId)}
+                                    code={code}
+                                    contractAddress={contractAddress}
+                                    disabled={upsertPlanMutation.isPending}
+                                    existingPlanKey={selectedPlan?.planKey}
+                                    onPublished={(published) => {
+                                        setPlanKey(published.planKey ?? "")
+                                        setRegistrationTxHash(published.registrationTxHash ?? "")
+                                        void upsertPlanMutation.mutateAsync({
+                                            code,
+                                            title,
+                                            chainId: Number(chainId),
+                                            tokenAddress,
+                                            price,
+                                            billingPeriodDays: Number(billingPeriodDays),
+                                            contractAddress,
+                                            planKey: published.planKey,
+                                            registrationTxHash: published.registrationTxHash,
+                                            active,
+                                        })
+                                    }}
+                                    price={price}
+                                    tokenAddress={tokenAddress}
+                                />
                             </form>
 
                             <div className="mt-6 grid gap-3">
@@ -195,6 +251,8 @@ export function MeSubscriptionPlanPage() {
                                             setPrice(plan.price)
                                             setBillingPeriodDays(String(plan.billingPeriodDays))
                                             setContractAddress(plan.contractAddress)
+                                            setPlanKey(plan.planKey)
+                                            setRegistrationTxHash(plan.registrationTxHash ?? "")
                                             setActive(plan.active)
                                         }}
                                         type="button"
@@ -208,6 +266,9 @@ export function MeSubscriptionPlanPage() {
                                         </div>
                                         <div className="mt-2 text-sm text-[var(--muted)]">
                                             {plan.price} every {plan.billingPeriodDays} days
+                                        </div>
+                                        <div className="mt-2 break-all font-mono text-xs text-[var(--muted)]">
+                                            {plan.planKey}
                                         </div>
                                     </button>
                                 ))}

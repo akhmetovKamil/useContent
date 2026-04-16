@@ -59,7 +59,7 @@ describe("buildAccessPolicyFromInput", () => {
           ],
         },
       },
-      author
+      author,
     );
 
     expect(policy).toEqual({
@@ -99,6 +99,9 @@ describe("buildAccessPolicyFromInput", () => {
       price: "1000000",
       billingPeriodDays: 30,
       contractAddress: "0x0000000000000000000000000000000000000000",
+      planKey:
+        "0x1111111111111111111111111111111111111111111111111111111111111111",
+      registrationTxHash: null,
       active: true,
       createdAt: new Date("2026-01-01T00:00:00.000Z"),
       updatedAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -111,12 +114,12 @@ describe("buildAccessPolicyFromInput", () => {
           planCode: "main",
         },
       },
-      author
+      author,
     );
 
     expect(repo.findSubscriptionPlanByAuthorIdAndCode).toHaveBeenCalledWith(
       author._id,
-      "main"
+      "main",
     );
     expect(policy).toEqual({
       version: 1,
@@ -136,9 +139,11 @@ describe("buildAccessPolicyFromInput", () => {
             type: "subscription",
           },
         },
-        null
-      )
-    ).rejects.toThrowError("subscription policy input requires an existing author profile");
+        null,
+      ),
+    ).rejects.toThrowError(
+      "subscription policy input requires an existing author profile",
+    );
   });
 });
 

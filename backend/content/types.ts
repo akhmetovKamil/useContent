@@ -125,6 +125,8 @@ export interface SubscriptionPlanDoc {
   price: string;
   billingPeriodDays: number;
   contractAddress: string;
+  planKey: string;
+  registrationTxHash: string | null;
   active: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -148,6 +150,7 @@ export interface SubscriptionPaymentIntentDoc {
   subscriberWallet: string;
   planId: ObjectId;
   planCode: string;
+  planKey: string;
   chainId: number;
   tokenAddress: string;
   contractAddress: string;
@@ -156,6 +159,7 @@ export interface SubscriptionPaymentIntentDoc {
   status: "pending" | "submitted" | "confirmed" | "expired" | "cancelled";
   txHash: string | null;
   entitlementId: ObjectId | null;
+  paidUntil: Date | null;
   expiresAt: Date;
   createdAt: Date;
   updatedAt: Date;

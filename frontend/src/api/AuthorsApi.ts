@@ -18,6 +18,13 @@ class AuthorsApi {
         return response.data
     }
 
+    async listAuthorSubscriptionPlans(slug: string) {
+        const response = await http.get<{ plans: SubscriptionPlanDto[] }>(
+            `/authors/${slug}/subscription-plans`
+        )
+        return response.data.plans
+    }
+
     async listAuthorPosts(slug: string) {
         const response = await http.get<{ posts: PostDto[] }>(`/authors/${slug}/posts`)
         return response.data.posts

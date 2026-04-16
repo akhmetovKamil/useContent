@@ -27,5 +27,5 @@
         "erasableSyntaxOnly": true,
         "noFallthroughCasesInSwitch": true
     },
-    "include": ["src", "../contracts/types/**/*.ts"]
+    "include": ["src", "../contracts/types/**/*.ts", "../contracts/abi/**/*.ts"]
 }

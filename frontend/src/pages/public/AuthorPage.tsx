@@ -1,9 +1,10 @@
 import { Link, useParams } from "react-router-dom"
 
+import { SubscribeButton } from "@/components/subscriptions/SubscribeButton"
 import { useAuthorProfileQuery } from "@/queries/authors"
 import { useAuthorPostsQuery } from "@/queries/posts"
 import { useAuthorProjectsQuery } from "@/queries/projects"
-import { useAuthorSubscriptionPlanQuery } from "@/queries/subscription-plans"
+import { useAuthorSubscriptionPlansQuery } from "@/queries/subscription-plans"
 
 export function AuthorPage() {
     const { slug } = useParams()
@@ -11,7 +12,7 @@ export function AuthorPage() {
     const authorQuery = useAuthorProfileQuery(authorSlug)
     const postsQuery = useAuthorPostsQuery(authorSlug)
     const projectsQuery = useAuthorProjectsQuery(authorSlug)
-    const planQuery = useAuthorSubscriptionPlanQuery(authorSlug)
+    const plansQuery = useAuthorSubscriptionPlansQuery(authorSlug)
 
     return (
         <section className="rounded-[28px] border border-[var(--line)] bg-[var(--surface-strong)] p-6 md:p-8">
@@ -62,12 +63,39 @@ export function AuthorPage() {
                                 subscription
                             </div>
                             <div className="mt-3 text-sm text-[var(--foreground)]">
-                                {planQuery.data
-                                    ? `${planQuery.data.price} every ${planQuery.data.billingPeriodDays} days`
+                                {plansQuery.data?.length
+                                    ? `${plansQuery.data.length} active plan(s)`
                                     : "No active plan yet"}
                             </div>
                         </article>
                     </div>
+
+                    {plansQuery.data?.length ? (
+                        <div className="mt-6 grid gap-3 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">
+                            <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
+                                subscribe
+                            </div>
+                            {plansQuery.data.map((plan) => (
+                                <article
+                                    className="grid gap-3 rounded-[20px] border border-[var(--line)] bg-[var(--surface-strong)] p-4"
+                                    key={plan.id}
+                                >
+                                    <div>
+                                        <div className="text-lg text-[var(--foreground)]">
+                                            {plan.title}
+                                        </div>
+                                        <div className="mt-1 text-sm text-[var(--muted)]">
+                                            {plan.price} every {plan.billingPeriodDays} days
+                                        </div>
+                                        <div className="mt-2 break-all font-mono text-xs text-[var(--muted)]">
+                                            {plan.planKey}
+                                        </div>
+                                    </div>
+                                    <SubscribeButton authorSlug={authorSlug} plan={plan} />
+                                </article>
+                            ))}
+                        </div>
+                    ) : null}
 
                     <div className="mt-8 grid gap-6 lg:grid-cols-2">
                         <div className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">

@@ -1,4 +1,10 @@
-import type { SubscriptionPlanDto, UpsertSubscriptionPlanInput } from "@contracts/types/content"
+import type {
+    ConfirmSubscriptionPaymentInput,
+    CreateSubscriptionPaymentIntentInput,
+    SubscriptionPaymentIntentDto,
+    SubscriptionPlanDto,
+    UpsertSubscriptionPlanInput,
+} from "@contracts/types/content"
 
 import { http } from "@/utils/api/http"
 
@@ -15,6 +21,25 @@ class SubscriptionPlansApi {
 
     async upsertMySubscriptionPlan(input: UpsertSubscriptionPlanInput) {
         const response = await http.put<SubscriptionPlanDto>("/me/subscription-plan", input)
+        return response.data
+    }
+
+    async createSubscriptionPaymentIntent(
+        slug: string,
+        input: CreateSubscriptionPaymentIntentInput
+    ) {
+        const response = await http.post<SubscriptionPaymentIntentDto>(
+            `/authors/${slug}/subscription-payment-intents`,
+            input
+        )
+        return response.data
+    }
+
+    async confirmSubscriptionPayment(intentId: string, input: ConfirmSubscriptionPaymentInput) {
+        const response = await http.post<SubscriptionPaymentIntentDto>(
+            `/me/subscription-payment-intents/${intentId}/confirm`,
+            input
+        )
         return response.data
     }
 }
