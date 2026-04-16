@@ -7,15 +7,19 @@ import { cn } from "@/utils/cn"
 
 interface AnimatedThemeTogglerProps extends React.ComponentPropsWithoutRef<"button"> {
     checked?: boolean
+    checkedIcon?: React.ReactNode
     duration?: number
     onCheckedChange?: (checked: boolean) => void
+    uncheckedIcon?: React.ReactNode
 }
 
 export const AnimatedThemeToggler = ({
     checked,
+    checkedIcon,
     className,
     duration = 400,
     onCheckedChange,
+    uncheckedIcon,
     ...props
 }: AnimatedThemeTogglerProps) => {
     const [internalDark, setInternalDark] = useState(false)
@@ -108,7 +112,7 @@ export const AnimatedThemeToggler = ({
             type="button"
             {...props}
         >
-            {isDark ? <Sun /> : <Moon />}
+            {isDark ? (checkedIcon ?? <Sun />) : (uncheckedIcon ?? <Moon />)}
             <span className="sr-only">Toggle theme</span>
         </button>
     )

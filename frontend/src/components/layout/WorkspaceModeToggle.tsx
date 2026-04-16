@@ -1,3 +1,4 @@
+import { PenTool, UserRound } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
@@ -27,6 +28,7 @@ export function WorkspaceModeToggle() {
             <AnimatedThemeToggler
                 aria-label={isAuthor ? "Switch to reader mode" : "Switch to author mode"}
                 checked={isAuthor}
+                checkedIcon={<PenTool className="size-5" />}
                 className="grid size-9 place-items-center rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] transition-transform hover:scale-105"
                 disabled={disabled}
                 onCheckedChange={(checked) => {
@@ -45,6 +47,7 @@ export function WorkspaceModeToggle() {
                     setMode("author")
                     navigate(isApiNotFoundError(authorQuery.error) ? "/author/onboarding" : "/author")
                 }}
+                uncheckedIcon={<UserRound className="size-5" />}
             />
         </div>
     )

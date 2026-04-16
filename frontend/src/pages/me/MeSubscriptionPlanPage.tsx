@@ -211,50 +211,6 @@ export function MeSubscriptionPlanPage() {
                                         />
                                     </Label>
                                     <Label>
-                                        Network
-                                        <div className="grid gap-2 sm:grid-cols-2">
-                                            {supportedChainOptions.map((chain) => (
-                                                <button
-                                                    className={`rounded-2xl border p-3 text-left transition ${
-                                                        chainId === String(chain.id)
-                                                            ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                                                            : "border-[var(--line)] bg-[var(--surface)] hover:border-[var(--accent)]"
-                                                    }`}
-                                                    key={chain.id}
-                                                    onClick={() => {
-                                                        setChainId(String(chain.id))
-                                                        const nextToken = getTokenPresets(
-                                                            chain.id
-                                                        ).find((preset) => preset.kind === "erc20")
-                                                        setSelectedTokenId(
-                                                            nextToken
-                                                                ? getTokenId(nextToken)
-                                                                : "custom"
-                                                        )
-                                                        setTokenAddress(nextToken?.address ?? "")
-                                                        setCustomTokenName("")
-                                                        setCustomTokenSymbol("")
-                                                        setCustomTokenLookupState("idle")
-                                                        setCustomTokenLookupError("")
-                                                    }}
-                                                    type="button"
-                                                >
-                                                    <span
-                                                        className={`inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br ${chain.accent} text-xs font-semibold text-white`}
-                                                    >
-                                                        {chain.icon}
-                                                    </span>
-                                                    <span className="ml-3 font-medium">
-                                                        {chain.shortName}
-                                                    </span>
-                                                    <span className="ml-2 text-xs text-[var(--muted)]">
-                                                        {chain.testnet ? "testnet" : "mainnet"}
-                                                    </span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </Label>
-                                    <Label>
                                         Billing days
                                         <Input
                                             onChange={(event) =>
@@ -264,8 +220,64 @@ export function MeSubscriptionPlanPage() {
                                         />
                                     </Label>
                                 </div>
-                                <Label>
-                                    Payment token
+                                <div className="grid gap-2">
+                                    <div>
+                                        <div className="text-sm font-medium text-[var(--foreground)]">
+                                            Network
+                                        </div>
+                                        <p className="mt-1 text-xs text-[var(--muted)]">
+                                            Select where this subscription plan will be registered.
+                                        </p>
+                                    </div>
+                                    <div className="grid gap-2 sm:grid-cols-2">
+                                        {supportedChainOptions.map((chain) => (
+                                            <button
+                                                className={`rounded-2xl border p-4 text-left transition ${
+                                                    chainId === String(chain.id)
+                                                        ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                                                        : "border-[var(--line)] bg-[var(--surface)] hover:border-[var(--accent)]"
+                                                }`}
+                                                key={chain.id}
+                                                onClick={() => {
+                                                    setChainId(String(chain.id))
+                                                    const nextToken = getTokenPresets(
+                                                        chain.id
+                                                    ).find((preset) => preset.kind === "erc20")
+                                                    setSelectedTokenId(
+                                                        nextToken ? getTokenId(nextToken) : "custom"
+                                                    )
+                                                    setTokenAddress(nextToken?.address ?? "")
+                                                    setCustomTokenName("")
+                                                    setCustomTokenSymbol("")
+                                                    setCustomTokenLookupState("idle")
+                                                    setCustomTokenLookupError("")
+                                                }}
+                                                type="button"
+                                            >
+                                                <span
+                                                    className={`inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br ${chain.accent} text-xs font-semibold text-white`}
+                                                >
+                                                    {chain.icon}
+                                                </span>
+                                                <span className="ml-3 font-medium">
+                                                    {chain.shortName}
+                                                </span>
+                                                <span className="ml-2 text-xs text-[var(--muted)]">
+                                                    {chain.testnet ? "testnet" : "mainnet"}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="grid gap-2">
+                                    <div>
+                                        <div className="text-sm font-medium text-[var(--foreground)]">
+                                            Token type
+                                        </div>
+                                        <p className="mt-1 text-xs text-[var(--muted)]">
+                                            Use a native chain token or pick an ERC-20 token preset.
+                                        </p>
+                                    </div>
                                     <div className="grid gap-2 sm:grid-cols-2">
                                         {tokenPresets.map((preset) => (
                                             <button
@@ -306,7 +318,7 @@ export function MeSubscriptionPlanPage() {
                                             </button>
                                         ))}
                                     </div>
-                                </Label>
+                                </div>
                                 {selectedToken?.kind === "custom" ? (
                                     <div className="grid gap-4 md:grid-cols-[1fr_140px]">
                                         <Label>

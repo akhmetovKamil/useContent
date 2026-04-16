@@ -1,27 +1,45 @@
 import { useEffect } from "react"
 import { NavLink, Outlet } from "react-router-dom"
+import {
+    FileText,
+    FolderKanban,
+    Home,
+    Info,
+    LayoutDashboard,
+    Settings,
+    ShieldCheck,
+    UserRound,
+    type LucideIcon,
+} from "lucide-react"
 
 import { WorkspaceModeToggle } from "@/components/layout/WorkspaceModeToggle"
-import { buttonVariants } from "@/components/ui/button"
+import { Dock, DockItem, DockSeparator } from "@/components/ui/dock"
 import { WalletStatus } from "@/components/wallet/WalletStatus"
 import { useAuthStore } from "@/stores/auth-store"
 import { useWorkspaceStore } from "@/stores/workspace-store"
-import { cn } from "@/utils/cn"
 
-const publicNavItems = [{ to: "/", label: "Home", end: true }]
+interface NavItemConfig {
+    end?: boolean
+    icon: LucideIcon
+    label: string
+    separatorAfter?: boolean
+    to: string
+}
 
-const readerNavItems = [
-    { to: "/", label: "Home", end: true },
-    { to: "/me", label: "Me" },
+const publicNavItems: NavItemConfig[] = [{ to: "/", label: "Home", icon: Home, end: true }]
+
+const readerNavItems: NavItemConfig[] = [
+    { to: "/", label: "Home", icon: Home, end: true, separatorAfter: true },
+    { to: "/me", label: "Me", icon: UserRound },
 ]
 
-const authorNavItems = [
-    { to: "/author", label: "Workspace", end: true },
-    { to: "/author/about", label: "About" },
-    { to: "/me/author", label: "Settings" },
-    { to: "/me/posts", label: "Posts" },
-    { to: "/me/projects", label: "Projects" },
-    { to: "/me/subscription-plan", label: "Access" },
+const authorNavItems: NavItemConfig[] = [
+    { to: "/author", label: "Workspace", icon: LayoutDashboard, end: true },
+    { to: "/author/about", label: "About", icon: Info, separatorAfter: true },
+    { to: "/me/author", label: "Settings", icon: Settings },
+    { to: "/me/posts", label: "Posts", icon: FileText },
+    { to: "/me/projects", label: "Projects", icon: FolderKanban },
+    { to: "/me/subscription-plan", label: "Access", icon: ShieldCheck },
 ]
 
 export function RootLayout() {
@@ -59,10 +77,12 @@ export function RootLayout() {
                     </div>
                 </header>
 
-                <nav className="flex flex-wrap gap-2 border-b border-[var(--line)] px-5 py-4 md:px-8">
-                    {navItems.map((item) => (
-                        <NavItem end={item.end} key={item.to} label={item.label} to={item.to} />
-                    ))}
+                <nav className="border-b border-[var(--line)] px-4 py-5 md:px-8">
+                    <Dock>
+                        {navItems.map((item) => (
+                            <NavItem item={item} key={item.to} />
+                        ))}
+                    </Dock>
                 </nav>
 
                 <main className="flex-1 px-5 py-6 md:px-8 md:py-8">
@@ -73,22 +93,21 @@ export function RootLayout() {
     )
 }
 
-function NavItem({ end, label, to }: { end?: boolean; label: string; to: string }) {
+function NavItem({ item }: { item: NavItemConfig }) {
+    const Icon = item.icon
+
     return (
-        <NavLink
-            className={({ isActive }) =>
-                cn(
-                    buttonVariants({
-                        size: "sm",
-                        variant: isActive ? "default" : "secondary",
-                    }),
-                    "rounded-full"
-                )
-            }
-            end={end}
-            to={to}
-        >
-            {label}
-        </NavLink>
+        <>
+            <NavLink end={item.end} to={item.to}>
+                {({ isActive }) => (
+                    <DockItem
+                        active={isActive}
+                        icon={<Icon className="size-6" strokeWidth={2.2} />}
+                        label={item.label}
+                    />
+                )}
+            </NavLink>
+            {item.separatorAfter ? <DockSeparator /> : null}
+        </>
     )
 }
