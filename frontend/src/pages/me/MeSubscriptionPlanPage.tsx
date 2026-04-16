@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { formatUnits, parseUnits } from "viem"
 
 import { AccessPolicyEditor } from "@/components/access/AccessPolicyEditor"
 import { OnChainPlanPublisher } from "@/components/subscriptions/OnChainPlanPublisher"
@@ -29,6 +30,11 @@ import {
     type AccessPolicyBuilderState,
 } from "@/utils/access-policy"
 import { defaultSubscriptionChain, supportedChainOptions } from "@/utils/config/chains"
+import { getTokenPresets, type TokenPreset } from "@/utils/config/tokens"
+
+const defaultToken = getTokenPresets(defaultSubscriptionChain.id).find(
+    (preset) => preset.kind === "erc20"
+)
 
 export function MeSubscriptionPlanPage() {
     const token = useAuthStore((state) => state.token)
@@ -43,8 +49,12 @@ export function MeSubscriptionPlanPage() {
     const [code, setCode] = useState("main")
     const [title, setTitle] = useState("Main subscription")
     const [chainId, setChainId] = useState(String(defaultSubscriptionChain.id))
-    const [tokenAddress, setTokenAddress] = useState("0x0000000000000000000000000000000000000000")
-    const [amount, setAmount] = useState("1000000")
+    const [tokenAddress, setTokenAddress] = useState(defaultToken?.address ?? "")
+    const [selectedTokenId, setSelectedTokenId] = useState(
+        defaultToken ? getTokenId(defaultToken) : "custom"
+    )
+    const [customTokenDecimals, setCustomTokenDecimals] = useState("18")
+    const [amount, setAmount] = useState("1")
     const [billingPeriodDays, setBillingPeriodDays] = useState("30")
     const [planKey, setPlanKey] = useState("")
     const [registrationTxHash, setRegistrationTxHash] = useState("")
@@ -57,6 +67,13 @@ export function MeSubscriptionPlanPage() {
     const [policyError, setPolicyError] = useState<string | null>(null)
     const selectedChainId = Number(chainId)
     const managerDeploymentQuery = useSubscriptionManagerDeploymentQuery(selectedChainId)
+    const tokenPresets = getTokenPresets(selectedChainId)
+    const selectedToken = tokenPresets.find((preset) => getTokenId(preset) === selectedTokenId)
+    const tokenDecimals =
+        selectedToken?.kind === "custom"
+            ? Number(customTokenDecimals)
+            : (selectedToken?.decimals ?? 18)
+    const amountInBaseUnits = toBaseUnits(amount, tokenDecimals)
 
     useEffect(() => {
         if (!plansQuery.data?.length) {
@@ -64,18 +81,23 @@ export function MeSubscriptionPlanPage() {
         }
 
         const plan = plansQuery.data.find((item) => item.code === "main") ?? plansQuery.data[0]
+        const tokenPreset = getTokenPresetByAddress(plan.chainId, plan.tokenAddress)
+        const decimals = tokenPreset?.decimals ?? 18
         setCode(plan.code)
         setTitle(plan.title)
         setChainId(String(plan.chainId))
         setTokenAddress(plan.tokenAddress)
-        setAmount(plan.price)
+        setSelectedTokenId(tokenPreset ? getTokenId(tokenPreset) : "custom")
+        setCustomTokenDecimals(String(decimals))
+        setAmount(formatUnits(BigInt(plan.price), decimals))
         setBillingPeriodDays(String(plan.billingPeriodDays))
         setPlanKey(plan.planKey)
         setRegistrationTxHash(plan.registrationTxHash ?? "")
     }, [plansQuery.data])
 
     const selectedPlan = plansQuery.data?.find((plan) => plan.code === code)
-    const managerAddress = managerDeploymentQuery.data?.address ?? selectedPlan?.contractAddress ?? ""
+    const managerAddress =
+        managerDeploymentQuery.data?.address ?? selectedPlan?.contractAddress ?? ""
 
     return (
         <PageSection>
@@ -104,9 +126,9 @@ export function MeSubscriptionPlanPage() {
                                     void upsertPlanMutation.mutateAsync({
                                         code,
                                         title,
-                                        chainId: Number(chainId),
+                                        chainId: selectedChainId,
                                         tokenAddress,
-                                        price: amount,
+                                        price: amountInBaseUnits,
                                         billingPeriodDays: Number(billingPeriodDays),
                                         contractAddress: managerAddress,
                                         planKey: planKey || undefined,
@@ -130,19 +152,44 @@ export function MeSubscriptionPlanPage() {
                                         />
                                     </Label>
                                     <Label>
-                                        Chain ID
-                                        <select
-                                            className="h-10 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 text-sm text-[var(--foreground)] outline-none"
-                                            onChange={(event) => setChainId(event.target.value)}
-                                            value={chainId}
-                                        >
+                                        Network
+                                        <div className="grid gap-2 sm:grid-cols-2">
                                             {supportedChainOptions.map((chain) => (
-                                                <option key={chain.id} value={chain.id}>
-                                                    {chain.name} ({chain.id}
-                                                    {chain.testnet ? ", testnet" : ""})
-                                                </option>
+                                                <button
+                                                    className={`rounded-2xl border p-3 text-left transition ${
+                                                        chainId === String(chain.id)
+                                                            ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                                                            : "border-[var(--line)] bg-[var(--surface)] hover:border-[var(--accent)]"
+                                                    }`}
+                                                    key={chain.id}
+                                                    onClick={() => {
+                                                        setChainId(String(chain.id))
+                                                        const nextToken = getTokenPresets(
+                                                            chain.id
+                                                        ).find((preset) => preset.kind === "erc20")
+                                                        setSelectedTokenId(
+                                                            nextToken
+                                                                ? getTokenId(nextToken)
+                                                                : "custom"
+                                                        )
+                                                        setTokenAddress(nextToken?.address ?? "")
+                                                    }}
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        className={`inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br ${chain.accent} text-xs font-semibold text-white`}
+                                                    >
+                                                        {chain.icon}
+                                                    </span>
+                                                    <span className="ml-3 font-medium">
+                                                        {chain.shortName}
+                                                    </span>
+                                                    <span className="ml-2 text-xs text-[var(--muted)]">
+                                                        {chain.testnet ? "testnet" : "mainnet"}
+                                                    </span>
+                                                </button>
                                             ))}
-                                        </select>
+                                        </div>
                                     </Label>
                                     <Label>
                                         Billing days
@@ -155,19 +202,75 @@ export function MeSubscriptionPlanPage() {
                                     </Label>
                                 </div>
                                 <Label>
-                                    Token address
-                                    <Input
-                                        className="font-mono"
-                                        onChange={(event) => setTokenAddress(event.target.value)}
-                                        value={tokenAddress}
-                                    />
+                                    Payment token
+                                    <div className="grid gap-2 sm:grid-cols-2">
+                                        {tokenPresets.map((preset) => (
+                                            <button
+                                                className={`rounded-2xl border p-3 text-left transition ${
+                                                    selectedTokenId === getTokenId(preset)
+                                                        ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                                                        : "border-[var(--line)] bg-[var(--surface)] hover:border-[var(--accent)]"
+                                                } ${preset.disabled ? "cursor-not-allowed opacity-55" : ""}`}
+                                                disabled={preset.disabled}
+                                                key={getTokenId(preset)}
+                                                onClick={() => {
+                                                    setSelectedTokenId(getTokenId(preset))
+                                                    setTokenAddress(preset.address ?? "")
+                                                    setCustomTokenDecimals(String(preset.decimals))
+                                                }}
+                                                type="button"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--foreground)] text-xs font-semibold text-[var(--surface)]">
+                                                        {preset.symbol.slice(0, 4)}
+                                                    </span>
+                                                    <span className="font-medium">
+                                                        {preset.symbol}
+                                                    </span>
+                                                    {preset.disabled ? <Badge>soon</Badge> : null}
+                                                </div>
+                                                <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
+                                                    {preset.helper}
+                                                </p>
+                                            </button>
+                                        ))}
+                                    </div>
                                 </Label>
+                                {selectedToken?.kind === "custom" ? (
+                                    <div className="grid gap-4 md:grid-cols-[1fr_140px]">
+                                        <Label>
+                                            Custom token address
+                                            <Input
+                                                className="font-mono"
+                                                onChange={(event) =>
+                                                    setTokenAddress(event.target.value)
+                                                }
+                                                placeholder="0x..."
+                                                value={tokenAddress}
+                                            />
+                                        </Label>
+                                        <Label>
+                                            Decimals
+                                            <Input
+                                                onChange={(event) =>
+                                                    setCustomTokenDecimals(event.target.value)
+                                                }
+                                                value={customTokenDecimals}
+                                            />
+                                        </Label>
+                                    </div>
+                                ) : null}
                                 <Label>
                                     Amount
                                     <Input
                                         onChange={(event) => setAmount(event.target.value)}
+                                        placeholder="10"
                                         value={amount}
                                     />
+                                    <span className="mt-1 block text-xs text-[var(--muted)]">
+                                        Saved on-chain amount:{" "}
+                                        <span className="font-mono">{amountInBaseUnits}</span>
+                                    </span>
                                 </Label>
                                 <div className="grid gap-1 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 text-xs text-[var(--muted)]">
                                     <div>
@@ -210,7 +313,12 @@ export function MeSubscriptionPlanPage() {
                                 ) : null}
                                 <Button
                                     className="w-fit rounded-full"
-                                    disabled={upsertPlanMutation.isPending || !managerAddress}
+                                    disabled={
+                                        upsertPlanMutation.isPending ||
+                                        !managerAddress ||
+                                        !tokenAddress ||
+                                        !amountInBaseUnits
+                                    }
                                     type="submit"
                                 >
                                     {upsertPlanMutation.isPending ? "Saving..." : "Save plan"}
@@ -218,10 +326,15 @@ export function MeSubscriptionPlanPage() {
                                 <OnChainPlanPublisher
                                     active
                                     billingPeriodDays={Number(billingPeriodDays)}
-                                    chainId={Number(chainId)}
+                                    chainId={selectedChainId}
                                     code={code}
                                     contractAddress={managerAddress}
-                                    disabled={upsertPlanMutation.isPending || !managerAddress}
+                                    disabled={
+                                        upsertPlanMutation.isPending ||
+                                        !managerAddress ||
+                                        !tokenAddress ||
+                                        !amountInBaseUnits
+                                    }
                                     existingPlanKey={selectedPlan?.planKey}
                                     onPublished={(published) => {
                                         setPlanKey(published.planKey ?? "")
@@ -229,9 +342,9 @@ export function MeSubscriptionPlanPage() {
                                         void upsertPlanMutation.mutateAsync({
                                             code,
                                             title,
-                                            chainId: Number(chainId),
+                                            chainId: selectedChainId,
                                             tokenAddress,
-                                            price: amount,
+                                            price: amountInBaseUnits,
                                             billingPeriodDays: Number(billingPeriodDays),
                                             contractAddress: managerAddress,
                                             planKey: published.planKey,
@@ -239,7 +352,7 @@ export function MeSubscriptionPlanPage() {
                                             active: true,
                                         })
                                     }}
-                                    price={amount}
+                                    price={amountInBaseUnits}
                                     tokenAddress={tokenAddress}
                                 />
                             </form>
@@ -257,12 +370,19 @@ export function MeSubscriptionPlanPage() {
                                                 setTitle(plan.title)
                                                 setChainId(String(plan.chainId))
                                                 setTokenAddress(plan.tokenAddress)
-                                                setAmount(plan.price)
+                                                const tokenPreset = getTokenPresetByAddress(
+                                                    plan.chainId,
+                                                    plan.tokenAddress
+                                                )
+                                                const decimals = tokenPreset?.decimals ?? 18
+                                                setSelectedTokenId(
+                                                    tokenPreset ? getTokenId(tokenPreset) : "custom"
+                                                )
+                                                setCustomTokenDecimals(String(decimals))
+                                                setAmount(formatUnits(BigInt(plan.price), decimals))
                                                 setBillingPeriodDays(String(plan.billingPeriodDays))
                                                 setPlanKey(plan.planKey)
-                                                setRegistrationTxHash(
-                                                    plan.registrationTxHash ?? ""
-                                                )
+                                                setRegistrationTxHash(plan.registrationTxHash ?? "")
                                             }}
                                             type="button"
                                         >
@@ -271,7 +391,12 @@ export function MeSubscriptionPlanPage() {
                                                 <Badge>{plan.chainId}</Badge>
                                             </div>
                                             <div className="mt-2 text-sm text-[var(--muted)]">
-                                                {plan.price} every {plan.billingPeriodDays} days
+                                                {formatPlanAmount(
+                                                    plan.chainId,
+                                                    plan.tokenAddress,
+                                                    plan.price
+                                                )}{" "}
+                                                every {plan.billingPeriodDays} days
                                             </div>
                                             <div className="mt-2 break-all font-mono text-xs text-[var(--muted)]">
                                                 {plan.planKey}
@@ -280,7 +405,9 @@ export function MeSubscriptionPlanPage() {
                                         <Button
                                             className="mt-3 rounded-full"
                                             disabled={deletePlanMutation.isPending}
-                                            onClick={() => void deletePlanMutation.mutateAsync(plan.id)}
+                                            onClick={() =>
+                                                void deletePlanMutation.mutateAsync(plan.id)
+                                            }
                                             type="button"
                                             variant="outline"
                                         >
@@ -448,4 +575,38 @@ function buildPlanCode(title: string) {
         .replace(/^-+|-+$/g, "")
 
     return value || "main"
+}
+
+function getTokenId(token: TokenPreset) {
+    return token.address?.toLowerCase() ?? token.kind
+}
+
+function getTokenPresetByAddress(chainId: number, address: string) {
+    return getTokenPresets(chainId).find(
+        (preset) => preset.address?.toLowerCase() === address.toLowerCase()
+    )
+}
+
+function toBaseUnits(amount: string, decimals: number) {
+    if (!Number.isInteger(decimals) || decimals < 0 || decimals > 255) {
+        return ""
+    }
+
+    try {
+        return parseUnits(amount || "0", decimals).toString()
+    } catch {
+        return ""
+    }
+}
+
+function formatPlanAmount(chainId: number, tokenAddress: string, price: string) {
+    const token = getTokenPresetByAddress(chainId, tokenAddress)
+    const decimals = token?.decimals ?? 18
+    const symbol = token?.symbol ?? "tokens"
+
+    try {
+        return `${formatUnits(BigInt(price), decimals)} ${symbol}`
+    } catch {
+        return `${price} ${symbol}`
+    }
 }
