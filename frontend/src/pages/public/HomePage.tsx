@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom"
 
-import { Globe } from "@/components/ui/globe"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import { Globe } from "@/components/ui/globe"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
 import { useMyPostsQuery } from "@/queries/posts"
 import { useMeQuery, useMyAuthorProfileQuery } from "@/queries/profile"
