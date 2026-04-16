@@ -213,10 +213,6 @@ export function AuthorPage() {
                         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <CardTitle>Posts by {authorQuery.data.displayName}</CardTitle>
-                                <CardDescription>
-                                    Locked posts stay visible as cards, but their content is hidden
-                                    until the required tier is active.
-                                </CardDescription>
                             </div>
                             <Button className="rounded-full" disabled variant="outline">
                                 Projects coming soon
