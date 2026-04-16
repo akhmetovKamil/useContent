@@ -21,7 +21,7 @@ export interface TokenPreset {
 const nativeToken: TokenPreset = {
     address: null,
     decimals: 18,
-    helper: "Native chain token. Users pay directly without ERC-20 approve.",
+    helper: "Native token.",
     kind: "native",
     name: "Native ETH",
     symbol: "ETH",
@@ -30,7 +30,7 @@ const nativeToken: TokenPreset = {
 const customToken: TokenPreset = {
     address: null,
     decimals: 18,
-    helper: "Use this for your own ERC-20 token address.",
+    helper: "ERC-20 token address.",
     kind: "custom",
     name: "Custom ERC-20",
     symbol: "CUSTOM",
@@ -47,7 +47,7 @@ function getKnownTokens(chainId: number): TokenPreset[] {
                 {
                     address: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
                     decimals: 6,
-                    helper: "Circle USDC test token on Ethereum Sepolia.",
+                    helper: "Circle USDC on Sepolia.",
                     kind: "erc20",
                     name: "USDC Sepolia",
                     symbol: "USDC",
@@ -58,7 +58,7 @@ function getKnownTokens(chainId: number): TokenPreset[] {
                 {
                     address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
                     decimals: 6,
-                    helper: "Circle USDC test token on Base Sepolia.",
+                    helper: "Circle USDC on Base Sepolia.",
                     kind: "erc20",
                     name: "USDC Base Sepolia",
                     symbol: "USDC",
@@ -69,7 +69,7 @@ function getKnownTokens(chainId: number): TokenPreset[] {
                 {
                     address: "0x5fd84259d66Cd46123540766Be93DFE6D43130D7",
                     decimals: 6,
-                    helper: "Circle USDC test token on OP Sepolia.",
+                    helper: "Circle USDC on OP Sepolia.",
                     kind: "erc20",
                     name: "USDC OP Sepolia",
                     symbol: "USDC",
@@ -80,7 +80,7 @@ function getKnownTokens(chainId: number): TokenPreset[] {
                 {
                     address: "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
                     decimals: 6,
-                    helper: "Circle USDC test token on Arbitrum Sepolia.",
+                    helper: "Circle USDC on Arbitrum Sepolia.",
                     kind: "erc20",
                     name: "USDC Arbitrum Sepolia",
                     symbol: "USDC",

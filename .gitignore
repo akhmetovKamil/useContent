@@ -2,9 +2,13 @@
 **/.secrets.local.cue
 .DS_Store
 .claude/
+.agents/
+.skills/
 CLAUDE.md
 **/CLAUDE.md
 **/.claude/
+**/.agents/
+**/.skills/
 **/DS_Store
 **/.env
 **/.env.local

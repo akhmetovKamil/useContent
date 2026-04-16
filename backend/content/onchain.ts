@@ -3,6 +3,13 @@ import { Contract, Interface, JsonRpcProvider, isAddress } from "ethers";
 import { subscriptionManagerAbi } from "../../contracts/abi/SubscriptionManager";
 
 const managerInterface = new Interface(subscriptionManagerAbi);
+const legacyManagerAbi = [
+  "event PlanRegistered(bytes32 indexed planKey,address indexed author,address indexed token,uint256 price,uint64 periodSeconds,bytes32 externalId)",
+  "event PlanUpdated(bytes32 indexed planKey,address indexed author,address indexed token,uint256 price,uint64 periodSeconds,bool active,bytes32 externalId)",
+  "event SubscriptionPaid(bytes32 indexed planKey,address indexed subscriber,address indexed author,address token,uint256 amount,uint256 platformFee,uint256 paidUntil)",
+  "function plans(bytes32 planKey) view returns (address author,address token,uint256 price,uint64 periodSeconds,bool active,bytes32 externalId)",
+] as const;
+const legacyManagerInterface = new Interface(legacyManagerAbi);
 const PAYMENT_ASSET_CODE = {
   erc20: 0,
   native: 1,
@@ -49,7 +56,7 @@ export async function verifyPlanRegistration(
 
   const event = receipt.logs
     .filter((log) => normalizeAddress(log.address) === contractAddress)
-    .map((log) => tryParseLog(log))
+    .map((log) => tryParseManagerLog(log))
     .find(
       (log) =>
         log &&
@@ -61,12 +68,7 @@ export async function verifyPlanRegistration(
     throw APIError.failedPrecondition("plan registration event not found");
   }
 
-  const manager = new Contract(
-    contractAddress,
-    subscriptionManagerAbi,
-    provider,
-  );
-  const plan = await manager.plans(input.planKey);
+  const plan = await readPlan(provider, contractAddress, input.planKey);
   const periodSeconds = BigInt(input.billingPeriodDays) * 24n * 60n * 60n;
 
   if (normalizeAddress(plan.author) !== normalizeAddress(input.authorWallet)) {
@@ -74,7 +76,15 @@ export async function verifyPlanRegistration(
       "on-chain plan author does not match wallet",
     );
   }
-  if (Number(plan.paymentAsset) !== PAYMENT_ASSET_CODE[input.paymentAsset]) {
+  if (plan.isLegacy && input.paymentAsset === "native") {
+    throw APIError.failedPrecondition(
+      "deployed subscription manager does not support native payments",
+    );
+  }
+  if (
+    !plan.isLegacy &&
+    Number(plan.paymentAsset) !== PAYMENT_ASSET_CODE[input.paymentAsset]
+  ) {
     throw APIError.failedPrecondition(
       "on-chain plan payment asset does not match input",
     );
@@ -114,7 +124,7 @@ export async function verifySubscriptionPayment(
 
   const event = receipt.logs
     .filter((log) => normalizeAddress(log.address) === contractAddress)
-    .map((log) => tryParseLog(log))
+    .map((log) => tryParseManagerLog(log))
     .find(
       (log) =>
         log &&
@@ -134,9 +144,9 @@ export async function verifySubscriptionPayment(
       "subscription event subscriber does not match wallet",
     );
   }
-  if (
-    Number(event.args.paymentAsset) !== PAYMENT_ASSET_CODE[input.paymentAsset]
-  ) {
+  const eventPaymentAsset =
+    "paymentAsset" in event.args ? Number(event.args.paymentAsset) : 0;
+  if (eventPaymentAsset !== PAYMENT_ASSET_CODE[input.paymentAsset]) {
     throw APIError.failedPrecondition(
       "subscription event payment asset does not match plan",
     );
@@ -180,15 +190,70 @@ async function getReceipt(provider: JsonRpcProvider, txHash: string) {
   return receipt;
 }
 
-function tryParseLog(log: { topics: readonly string[]; data: string }) {
+async function readPlan(
+  provider: JsonRpcProvider,
+  contractAddress: string,
+  planKey: string,
+) {
+  const manager = new Contract(
+    contractAddress,
+    subscriptionManagerAbi,
+    provider,
+  );
+  try {
+    const plan = await manager.plans(planKey);
+    return {
+      isLegacy: false,
+      author: plan.author,
+      paymentAsset: plan.paymentAsset,
+      token: plan.token,
+      price: plan.price,
+      periodSeconds: plan.periodSeconds,
+      active: plan.active,
+    };
+  } catch (error) {
+    if (!isOutOfBoundsDecodeError(error)) {
+      throw error;
+    }
+
+    const legacyManager = new Contract(
+      contractAddress,
+      legacyManagerAbi,
+      provider,
+    );
+    const plan = await legacyManager.plans(planKey);
+    return {
+      isLegacy: true,
+      author: plan.author,
+      paymentAsset: 0,
+      token: plan.token,
+      price: plan.price,
+      periodSeconds: plan.periodSeconds,
+      active: plan.active,
+    };
+  }
+}
+
+function tryParseManagerLog(log: { topics: readonly string[]; data: string }) {
   try {
     return managerInterface.parseLog({
       topics: [...log.topics],
       data: log.data,
     });
   } catch {
-    return null;
+    try {
+      return legacyManagerInterface.parseLog({
+        topics: [...log.topics],
+        data: log.data,
+      });
+    } catch {
+      return null;
+    }
   }
+}
+
+function isOutOfBoundsDecodeError(error: unknown): boolean {
+  return error instanceof Error && error.message.includes("out of bounds");
 }
 
 function normalizeAddress(address: string): string {

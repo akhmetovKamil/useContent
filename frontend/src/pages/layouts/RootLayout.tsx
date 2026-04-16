@@ -71,9 +71,7 @@ export function RootLayout() {
     const subtitle = visibleMode === "author" ? "Author Workspace" : "User Workspace"
     const isAuthorOnboarding = location.pathname === "/author/onboarding"
     const showDock = Boolean(token && !isAuthorOnboarding)
-    const showWorkspaceToggle = Boolean(
-        token && !authorMissing && (hasAuthorProfile || hasAuthorProfileHint) && !isAuthorOnboarding
-    )
+    const showWorkspaceToggle = Boolean(token && !isAuthorOnboarding)
 
     useEffect(() => {
         document.documentElement.dataset.palette = palette

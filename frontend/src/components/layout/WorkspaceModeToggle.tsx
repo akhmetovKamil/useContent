@@ -46,7 +46,9 @@ export function WorkspaceModeToggle() {
 
                     setMode("author")
                     navigate(
-                        isApiNotFoundError(authorQuery.error) ? "/author/onboarding" : "/author"
+                        authorQuery.data && !isApiNotFoundError(authorQuery.error)
+                            ? "/author"
+                            : "/author/onboarding"
                     )
                 }}
                 uncheckedIcon={<UserRound className="size-5 text-white" />}
