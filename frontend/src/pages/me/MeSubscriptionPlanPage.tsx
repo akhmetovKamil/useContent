@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
-import { formatUnits, parseUnits } from "viem"
+import { usePublicClient } from "wagmi"
+import { formatUnits, isAddress, parseUnits, type Address } from "viem"
 
 import { AccessPolicyEditor } from "@/components/access/AccessPolicyEditor"
 import { OnChainPlanPublisher } from "@/components/subscriptions/OnChainPlanPublisher"
@@ -31,6 +32,7 @@ import {
 } from "@/utils/access-policy"
 import { defaultSubscriptionChain, supportedChainOptions } from "@/utils/config/chains"
 import { getTokenPresets, type TokenPreset } from "@/utils/config/tokens"
+import { erc20Abi } from "@/utils/web3/erc20"
 
 const defaultToken = getTokenPresets(defaultSubscriptionChain.id).find(
     (preset) => preset.kind === "erc20"
@@ -54,6 +56,12 @@ export function MeSubscriptionPlanPage() {
         defaultToken ? getTokenId(defaultToken) : "custom"
     )
     const [customTokenDecimals, setCustomTokenDecimals] = useState("18")
+    const [customTokenName, setCustomTokenName] = useState("")
+    const [customTokenSymbol, setCustomTokenSymbol] = useState("")
+    const [customTokenLookupState, setCustomTokenLookupState] = useState<
+        "idle" | "loading" | "success" | "error"
+    >("idle")
+    const [customTokenLookupError, setCustomTokenLookupError] = useState("")
     const [amount, setAmount] = useState("1")
     const [billingPeriodDays, setBillingPeriodDays] = useState("30")
     const [planKey, setPlanKey] = useState("")
@@ -66,6 +74,7 @@ export function MeSubscriptionPlanPage() {
     )
     const [policyError, setPolicyError] = useState<string | null>(null)
     const selectedChainId = Number(chainId)
+    const publicClient = usePublicClient({ chainId: selectedChainId })
     const managerDeploymentQuery = useSubscriptionManagerDeploymentQuery(selectedChainId)
     const tokenPresets = getTokenPresets(selectedChainId)
     const selectedToken = tokenPresets.find((preset) => getTokenId(preset) === selectedTokenId)
@@ -74,6 +83,65 @@ export function MeSubscriptionPlanPage() {
             ? Number(customTokenDecimals)
             : (selectedToken?.decimals ?? 18)
     const amountInBaseUnits = toBaseUnits(amount, tokenDecimals)
+
+    useEffect(() => {
+        if (selectedToken?.kind !== "custom") {
+            setCustomTokenLookupState("idle")
+            setCustomTokenLookupError("")
+            return
+        }
+        if (!isAddress(tokenAddress) || !publicClient) {
+            setCustomTokenLookupState("idle")
+            setCustomTokenLookupError("")
+            return
+        }
+
+        let cancelled = false
+        setCustomTokenLookupState("loading")
+        setCustomTokenLookupError("")
+
+        Promise.all([
+            publicClient.readContract({
+                address: tokenAddress as Address,
+                abi: erc20Abi,
+                functionName: "decimals",
+            }),
+            publicClient.readContract({
+                address: tokenAddress as Address,
+                abi: erc20Abi,
+                functionName: "symbol",
+            }),
+            publicClient.readContract({
+                address: tokenAddress as Address,
+                abi: erc20Abi,
+                functionName: "name",
+            }),
+        ])
+            .then(([decimals, symbol, name]) => {
+                if (cancelled) {
+                    return
+                }
+                setCustomTokenDecimals(String(decimals))
+                setCustomTokenSymbol(symbol)
+                setCustomTokenName(name)
+                setCustomTokenLookupState("success")
+            })
+            .catch(() => {
+                if (cancelled) {
+                    return
+                }
+                setCustomTokenSymbol("")
+                setCustomTokenName("")
+                setCustomTokenLookupState("error")
+                setCustomTokenLookupError(
+                    "Could not read ERC-20 metadata. Check network/address or enter decimals manually."
+                )
+            })
+
+        return () => {
+            cancelled = true
+        }
+    }, [publicClient, selectedToken?.kind, tokenAddress])
 
     useEffect(() => {
         if (!plansQuery.data?.length) {
@@ -173,6 +241,10 @@ export function MeSubscriptionPlanPage() {
                                                                 : "custom"
                                                         )
                                                         setTokenAddress(nextToken?.address ?? "")
+                                                        setCustomTokenName("")
+                                                        setCustomTokenSymbol("")
+                                                        setCustomTokenLookupState("idle")
+                                                        setCustomTokenLookupError("")
                                                     }}
                                                     type="button"
                                                 >
@@ -217,6 +289,10 @@ export function MeSubscriptionPlanPage() {
                                                     setSelectedTokenId(getTokenId(preset))
                                                     setTokenAddress(preset.address ?? "")
                                                     setCustomTokenDecimals(String(preset.decimals))
+                                                    setCustomTokenName("")
+                                                    setCustomTokenSymbol("")
+                                                    setCustomTokenLookupState("idle")
+                                                    setCustomTokenLookupError("")
                                                 }}
                                                 type="button"
                                             >
@@ -242,9 +318,11 @@ export function MeSubscriptionPlanPage() {
                                             Custom token address
                                             <Input
                                                 className="font-mono"
-                                                onChange={(event) =>
+                                                onChange={(event) => {
                                                     setTokenAddress(event.target.value)
-                                                }
+                                                    setCustomTokenName("")
+                                                    setCustomTokenSymbol("")
+                                                }}
                                                 placeholder="0x..."
                                                 value={tokenAddress}
                                             />
@@ -258,6 +336,27 @@ export function MeSubscriptionPlanPage() {
                                                 value={customTokenDecimals}
                                             />
                                         </Label>
+                                        <div className="md:col-span-2">
+                                            {customTokenLookupState === "loading" ? (
+                                                <p className="text-xs text-[var(--muted)]">
+                                                    Reading ERC-20 metadata...
+                                                </p>
+                                            ) : null}
+                                            {customTokenLookupState === "success" ? (
+                                                <p className="text-xs text-emerald-700">
+                                                    Detected {customTokenName || "token"}{" "}
+                                                    {customTokenSymbol
+                                                        ? `(${customTokenSymbol})`
+                                                        : ""}{" "}
+                                                    with {customTokenDecimals} decimals.
+                                                </p>
+                                            ) : null}
+                                            {customTokenLookupState === "error" ? (
+                                                <p className="text-xs text-amber-700">
+                                                    {customTokenLookupError}
+                                                </p>
+                                            ) : null}
+                                        </div>
                                     </div>
                                 ) : null}
                                 <Label>
