@@ -678,7 +678,14 @@ export async function createSubscriptionPaymentIntent(
   doc: Omit<SubscriptionPaymentIntentDoc, "_id">,
 ): Promise<SubscriptionPaymentIntentDoc> {
   const intents = await getSubscriptionPaymentIntentsCollection();
-  const result = await intents.insertOne(doc as SubscriptionPaymentIntentDoc);
+  const insertDoc = { ...doc } as Partial<SubscriptionPaymentIntentDoc>;
+  if (insertDoc.txHash === null) {
+    delete insertDoc.txHash;
+  }
+
+  const result = await intents.insertOne(
+    insertDoc as SubscriptionPaymentIntentDoc,
+  );
   return { _id: result.insertedId, ...doc };
 }
 
@@ -833,7 +840,10 @@ async function ensureIndexes(): Promise<void> {
     subscriptionPaymentIntents.createIndex({ authorId: 1, status: 1 }),
     subscriptionPaymentIntents.createIndex(
       { txHash: 1 },
-      { unique: true, sparse: true },
+      {
+        unique: true,
+        partialFilterExpression: { txHash: { $type: "string" } },
+      },
     ),
     contractDeployments.createIndex(
       { chainId: 1, contractName: 1 },
