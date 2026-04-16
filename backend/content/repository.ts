@@ -803,6 +803,8 @@ async function ensureIndexes(): Promise<void> {
     getCollection<ContractDeploymentDoc>("contract_deployments"),
   ]);
 
+  await migrateSubscriptionPaymentIntentIndexes(subscriptionPaymentIntents);
+
   await Promise.all([
     users.createIndex({ primaryWallet: 1 }, { unique: true }),
     users.createIndex({ username: 1 }, { unique: true, sparse: true }),
@@ -852,4 +854,30 @@ async function ensureIndexes(): Promise<void> {
   ]);
 
   indexesReady = true;
+}
+
+async function migrateSubscriptionPaymentIntentIndexes(
+  subscriptionPaymentIntents: Collection<SubscriptionPaymentIntentDoc>,
+): Promise<void> {
+  await subscriptionPaymentIntents.updateMany(
+    { txHash: null },
+    { $unset: { txHash: "" } },
+  );
+
+  try {
+    await subscriptionPaymentIntents.dropIndex("txHash_1");
+  } catch (error) {
+    if (!isMongoIndexNotFoundError(error)) {
+      throw error;
+    }
+  }
+}
+
+function isMongoIndexNotFoundError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "codeName" in error &&
+    (error as { codeName?: unknown }).codeName === "IndexNotFound"
+  );
 }
