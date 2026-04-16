@@ -12,6 +12,8 @@ import {
     toAddress,
 } from "@/utils/web3/subscriptions"
 
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+
 interface OnChainPlanPublisherProps {
     active: boolean
     billingPeriodDays: number
@@ -63,12 +65,25 @@ export function OnChainPlanPublisher({
         setStatus(existingPlanKey ? "Updating plan on-chain..." : "Publishing plan on-chain...")
 
         try {
+            const onChainPlan = await publicClient.readContract({
+                address: toAddress(contractAddress),
+                abi: subscriptionManagerAbi,
+                functionName: "plans",
+                args: [planKey],
+            })
+            const onChainAuthor = String(onChainPlan[0]).toLowerCase()
+            const planExists = onChainAuthor !== ZERO_ADDRESS
+            if (planExists && onChainAuthor !== address?.toLowerCase()) {
+                throw new Error("This on-chain plan key is already owned by another wallet.")
+            }
+            const shouldUpdate = Boolean(existingPlanKey || planExists)
+
             const txHash = await writeContractAsync({
                 address: toAddress(contractAddress),
                 abi: subscriptionManagerAbi,
-                functionName: existingPlanKey ? "updatePlan" : "registerPlan",
+                functionName: shouldUpdate ? "updatePlan" : "registerPlan",
                 chainId,
-                args: existingPlanKey
+                args: shouldUpdate
                     ? [
                           planKey,
                           paymentAssetCode,

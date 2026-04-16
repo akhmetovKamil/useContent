@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom"
 
 import { Button } from "@/components/ui/button"
-import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
+import { PageSection, PageTitle } from "@/components/ui/page"
 
 interface HomeHeroProps {
     authorSlug?: string
@@ -12,7 +12,6 @@ export function HomeHero({ authorSlug, isSignedIn }: HomeHeroProps) {
     return (
         <PageSection className="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
             <div>
-                <Eyebrow>workspace</Eyebrow>
                 <PageTitle className="max-w-3xl md:text-6xl">
                     Content, access rules, and subscriptions in one place.
                 </PageTitle>

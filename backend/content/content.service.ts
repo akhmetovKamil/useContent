@@ -1906,7 +1906,9 @@ async function buildAccessPolicyNodeFromInput(
         );
       }
 
-      const planCode = normalizePlanCode(node.planCode ?? "main");
+      const planCode = normalizePlanCode(
+        node.planCode && node.planCode.trim() ? node.planCode : "main",
+      );
       const plan = await repo.findSubscriptionPlanByAuthorIdAndCode(
         author._id,
         planCode,

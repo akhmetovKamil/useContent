@@ -163,10 +163,7 @@ function buildNodeFromRule(rule: AccessRuleForm): AccessPolicyInputNode {
 }
 
 function buildSubscriptionNode(rule: AccessRuleForm): AccessPolicyInputSubscriptionNode {
-    const planCode = rule.planCode.trim().toLowerCase()
-    if (!planCode) {
-        throw new Error("Plan code is required")
-    }
+    const planCode = rule.planCode.trim().toLowerCase() || "main"
 
     return {
         type: "subscription",
