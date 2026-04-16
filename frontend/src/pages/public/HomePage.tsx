@@ -4,9 +4,11 @@ import { useMyPostsQuery } from "@/queries/posts"
 import { useMeQuery, useMyAuthorProfileQuery } from "@/queries/profile"
 import { useMyProjectsQuery } from "@/queries/projects"
 import { useAuthStore } from "@/shared/session/auth-store"
+import { useWorkspaceStore } from "@/shared/session/workspace-store"
 
 export function HomePage() {
     const token = useAuthStore((state) => state.token)
+    const setMode = useWorkspaceStore((state) => state.setMode)
     const meQuery = useMeQuery(Boolean(token))
     const authorQuery = useMyAuthorProfileQuery(Boolean(token))
     const postsQuery = useMyPostsQuery(Boolean(token))
@@ -30,10 +32,11 @@ export function HomePage() {
 
                 <div className="grid gap-3 self-end">
                     <ActionLink label="Open profile" to="/me" />
-                    <ActionLink label="Create author profile" to="/me/author" />
-                    <ActionLink label="Manage posts" to="/me/posts" />
-                    <ActionLink label="Manage projects" to="/me/projects" />
-                    <ActionLink label="Configure subscription" to="/me/subscription-plan" />
+                    <ActionLink
+                        label={authorQuery.data ? "Open author workspace" : "Become an author"}
+                        onClick={() => setMode("author")}
+                        to="/author"
+                    />
                     {authorQuery.data ? (
                         <ActionLink
                             label="View public page"
@@ -53,10 +56,11 @@ export function HomePage() {
     )
 }
 
-function ActionLink({ label, to }: { label: string; to: string }) {
+function ActionLink({ label, onClick, to }: { label: string; onClick?: () => void; to: string }) {
     return (
         <Link
             className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--accent-soft)]"
+            onClick={onClick}
             to={to}
         >
             {label}

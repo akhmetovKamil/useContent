@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router-dom"
 
+import { AuthorWorkspacePage } from "../pages/author/AuthorWorkspacePage"
 import { RootLayout } from "../pages/layouts/RootLayout"
 import { MeAuthorPage } from "../pages/me/MeAuthorPage"
 import { MePage } from "../pages/me/MePage"
@@ -17,6 +18,7 @@ export const router = createBrowserRouter([
         element: <RootLayout />,
         children: [
             { index: true, element: <HomePage /> },
+            { path: "author", element: <AuthorWorkspacePage /> },
             { path: "me", element: <MePage /> },
             { path: "me/author", element: <MeAuthorPage /> },
             { path: "me/posts", element: <MePostsPage /> },

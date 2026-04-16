@@ -1,17 +1,36 @@
 import { NavLink, Outlet } from "react-router-dom"
 
+import { useMyAuthorProfileQuery } from "@/queries/profile"
+import { useAuthStore } from "@/shared/session/auth-store"
+import { useWorkspaceStore } from "@/shared/session/workspace-store"
+import { WorkspaceModeToggle } from "@/shared/session/WorkspaceModeToggle"
 import { WalletStatus } from "../../shared/wallet/WalletStatus"
 
-const navItems = [
+const readerNavItems = [
     { to: "/", label: "Home", end: true },
     { to: "/me", label: "Me" },
-    { to: "/me/author", label: "Author" },
+]
+
+const authorNavItems = [
+    { to: "/author", label: "Workspace", end: true },
+    { to: "/me/author", label: "Profile" },
     { to: "/me/posts", label: "Posts" },
     { to: "/me/projects", label: "Projects" },
     { to: "/me/subscription-plan", label: "Plan" },
 ]
 
 export function RootLayout() {
+    const mode = useWorkspaceStore((state) => state.mode)
+    const token = useAuthStore((state) => state.token)
+    const authorQuery = useMyAuthorProfileQuery(Boolean(token))
+    const navItems = mode === "author" ? authorNavItems : readerNavItems
+    const subtitle =
+        mode === "author"
+            ? authorQuery.data
+                ? `Author workspace for @${authorQuery.data.slug}`
+                : "Author workspace and onboarding"
+            : "Reader workspace for subscriptions and gated content"
+
     return (
         <div className="min-h-screen px-4 py-4 md:px-6 md:py-6">
             <div className="mx-auto flex min-h-[calc(100vh-2rem)] max-w-7xl flex-col rounded-[32px] border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)] backdrop-blur-sm">
@@ -21,11 +40,13 @@ export function RootLayout() {
                             useContent
                         </div>
                         <div className="mt-2 max-w-xl font-[var(--serif)] text-2xl leading-tight text-[var(--foreground)] md:text-4xl">
-                            Web3 content platform for gated posts, projects, and author
-                            subscriptions.
+                            {subtitle}
                         </div>
                     </div>
-                    <WalletStatus />
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <WorkspaceModeToggle />
+                        <WalletStatus />
+                    </div>
                 </header>
 
                 <nav className="flex flex-wrap gap-2 border-b border-[var(--line)] px-5 py-4 md:px-8">

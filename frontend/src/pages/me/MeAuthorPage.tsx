@@ -46,7 +46,7 @@ export function MeAuthorPage() {
                 Author settings
             </div>
             <h2 className="mt-3 font-[var(--serif)] text-3xl text-[var(--foreground)]">
-                Public author identity
+                Author profile and publishing identity
             </h2>
             {!token ? (
                 <p className="mt-3 text-[var(--muted)]">
@@ -85,8 +85,8 @@ export function MeAuthorPage() {
                                 create author profile
                             </div>
                             <p className="mt-2 text-sm text-[var(--muted)]">
-                                Сначала создаем публичный author profile. Сразу же можно задать
-                                дефолтное правило доступа для будущих постов и проектов.
+                                Your wallet already works as a reader account. This step adds an
+                                author profile, public slug, and default access policy for content.
                             </p>
                         </div>
 
