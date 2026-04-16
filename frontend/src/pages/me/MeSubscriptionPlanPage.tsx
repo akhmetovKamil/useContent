@@ -29,7 +29,6 @@ import {
     type AccessPolicyBuilderState,
 } from "@/utils/access-policy"
 import { defaultSubscriptionChain, supportedChainOptions } from "@/utils/config/chains"
-import { getSubscriptionManagerAddress } from "@/utils/config/env"
 
 export function MeSubscriptionPlanPage() {
     const token = useAuthStore((state) => state.token)
@@ -76,11 +75,7 @@ export function MeSubscriptionPlanPage() {
     }, [plansQuery.data])
 
     const selectedPlan = plansQuery.data?.find((plan) => plan.code === code)
-    const managerAddress =
-        managerDeploymentQuery.data?.address ??
-        getSubscriptionManagerAddress(selectedChainId) ??
-        selectedPlan?.contractAddress ??
-        ""
+    const managerAddress = managerDeploymentQuery.data?.address ?? selectedPlan?.contractAddress ?? ""
 
     return (
         <PageSection>
@@ -209,8 +204,8 @@ export function MeSubscriptionPlanPage() {
                                 ) : null}
                                 {!managerAddress ? (
                                     <p className="text-sm text-amber-700">
-                                        Add VITE_SUBSCRIPTION_MANAGER_{chainId} after deploying the
-                                        manager contract.
+                                        Deploy SubscriptionManager for this network first. The
+                                        deployment address will be loaded from backend registry.
                                     </p>
                                 ) : null}
                                 <Button

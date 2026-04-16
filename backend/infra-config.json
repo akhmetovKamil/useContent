@@ -9,7 +9,8 @@
   },
   "secrets": {
     "MongoUri": { "$env": "MONGO_URI" },
-    "JwtSecret": { "$env": "JWT_SECRET" }
+    "JwtSecret": { "$env": "JWT_SECRET" },
+    "DeploymentRegistryToken": { "$env": "DEPLOYMENT_REGISTRY_TOKEN" }
   },
   "object_storage": [
     {

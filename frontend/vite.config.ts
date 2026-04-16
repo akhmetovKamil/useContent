@@ -5,8 +5,7 @@ import { defineConfig } from "vite"
 
 // https://vite.dev/config/
 export default defineConfig({
-    envDir: "../",
-    envPrefix: ["VITE_", "API_BASE_URL", "RPC_URL_", "SUBSCRIPTION_MANAGER_"],
+    envPrefix: ["API_BASE_URL", "RPC_URL_"],
     plugins: [react(), tailwindcss()],
     resolve: {
         alias: {

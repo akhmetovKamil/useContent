@@ -1,4 +1,5 @@
 import { api, APIError, Header } from "encore.dev/api";
+import { secret } from "encore.dev/config";
 import { getAuthData } from "~encore/auth";
 import { validateToken } from "../auth/auth.service";
 import * as service from "./content.service";
@@ -26,6 +27,8 @@ import type {
   UpdateProjectRequest,
   UserProfileResponse,
 } from "./types";
+
+const deploymentRegistryToken = secret("DeploymentRegistryToken");
 
 export const getMe = api(
   { method: "GET", path: "/me", expose: true, auth: true },
@@ -392,9 +395,17 @@ export const deleteMyProject = api(
 function assertDeploymentRegistryToken(
   deploymentRegistryToken: string | undefined,
 ): void {
-  const expected = process.env.DEPLOYMENT_REGISTRY_TOKEN;
+  const expected = getDeploymentRegistryToken();
   if (!expected || deploymentRegistryToken !== expected) {
     throw APIError.permissionDenied("invalid deployment registry token");
+  }
+}
+
+function getDeploymentRegistryToken(): string {
+  try {
+    return deploymentRegistryToken();
+  } catch {
+    return process.env.DEPLOYMENT_REGISTRY_TOKEN ?? "";
   }
 }
 
