@@ -244,6 +244,92 @@ export async function createProjectNode(
   return doc;
 }
 
+export async function findProjectNodeByIdAndProjectId(
+  id: ObjectId,
+  projectId: ObjectId
+): Promise<ProjectNodeDoc | null> {
+  const projectNodes = await getProjectNodesCollection();
+  return projectNodes.findOne({ _id: id, projectId });
+}
+
+export async function listProjectNodesByParent(
+  projectId: ObjectId,
+  parentId: ObjectId
+): Promise<ProjectNodeDoc[]> {
+  const projectNodes = await getProjectNodesCollection();
+  return projectNodes
+    .find({ projectId, parentId })
+    .sort({ kind: 1, name: 1, createdAt: 1 })
+    .toArray();
+}
+
+export async function listPublishedProjectNodesByParent(
+  projectId: ObjectId,
+  parentId: ObjectId
+): Promise<ProjectNodeDoc[]> {
+  const projectNodes = await getProjectNodesCollection();
+  return projectNodes
+    .find({ projectId, parentId, visibility: "published" })
+    .sort({ kind: 1, name: 1, createdAt: 1 })
+    .toArray();
+}
+
+export async function listProjectNodesByProjectId(
+  projectId: ObjectId
+): Promise<ProjectNodeDoc[]> {
+  const projectNodes = await getProjectNodesCollection();
+  return projectNodes.find({ projectId }).toArray();
+}
+
+export async function findProjectNodeChildrenRecursive(
+  projectId: ObjectId,
+  parentId: ObjectId
+): Promise<ProjectNodeDoc[]> {
+  const projectNodes = await getProjectNodesCollection();
+  const children = await projectNodes.find({ projectId, parentId }).toArray();
+  const all: ProjectNodeDoc[] = [...children];
+
+  for (const child of children) {
+    if (child.kind === "folder") {
+      const nested = await findProjectNodeChildrenRecursive(projectId, child._id);
+      all.push(...nested);
+    }
+  }
+
+  return all;
+}
+
+export async function updateProjectNode(
+  id: ObjectId,
+  projectId: ObjectId,
+  update: Partial<
+    Pick<ProjectNodeDoc, "name" | "parentId" | "visibility" | "updatedAt">
+  >
+): Promise<ProjectNodeDoc | null> {
+  const projectNodes = await getProjectNodesCollection();
+  return projectNodes.findOneAndUpdate(
+    { _id: id, projectId },
+    { $set: update },
+    { returnDocument: "after" }
+  );
+}
+
+export async function deleteProjectNodes(ids: ObjectId[]): Promise<void> {
+  if (!ids.length) {
+    return;
+  }
+
+  const projectNodes = await getProjectNodesCollection();
+  await projectNodes.deleteMany({ _id: { $in: ids } });
+}
+
+export async function deleteProjectNodesByProjectId(
+  projectId: ObjectId
+): Promise<void> {
+  const projectNodes = await getProjectNodesCollection();
+  await projectNodes.deleteMany({ projectId });
+}
+
 export async function getSubscriptionPlansCollection(): Promise<
   Collection<SubscriptionPlanDoc>
 > {

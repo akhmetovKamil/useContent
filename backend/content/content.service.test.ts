@@ -13,6 +13,12 @@ vi.mock("encore.dev/api", () => {
   };
 });
 
+vi.mock("../storage/object-storage", () => {
+  return {
+    deleteObject: vi.fn(),
+  };
+});
+
 import * as repo from "./repository";
 import { buildAccessPolicyFromInput } from "./content.service";
 import type { AuthorProfileDoc } from "./types";

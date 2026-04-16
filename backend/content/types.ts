@@ -5,14 +5,17 @@ import type {
   CreateAuthorProfileInput,
   CreatePostInput,
   CreateProjectInput,
+  CreateProjectFolderInput,
   PostDto,
   ProjectDto,
+  ProjectNodeDto,
   SubscriptionEntitlementDto,
   SubscriptionPlanDto,
   UpdateAuthorProfileInput,
   UpdateMyProfileInput,
   UpdatePostInput,
   UpdateProjectInput,
+  UpdateProjectNodeInput,
   UpsertSubscriptionPlanInput,
   UserProfileDto,
 } from "../../contracts/types/content";
@@ -125,6 +128,7 @@ export type SubscriptionEntitlementResponse = SubscriptionEntitlementDto;
 export type SubscriptionPlanResponse = SubscriptionPlanDto;
 export type PostResponse = PostDto;
 export type ProjectResponse = ProjectDto;
+export type ProjectNodeResponse = ProjectNodeDto;
 export type UpdateMyProfileRequest = UpdateMyProfileInput;
 export type CreateAuthorProfileRequest = CreateAuthorProfileInput;
 export type UpdateAuthorProfileRequest = UpdateAuthorProfileInput;
@@ -133,3 +137,5 @@ export type CreatePostRequest = CreatePostInput;
 export type UpdatePostRequest = UpdatePostInput;
 export type CreateProjectRequest = CreateProjectInput;
 export type UpdateProjectRequest = UpdateProjectInput;
+export type CreateProjectFolderRequest = CreateProjectFolderInput;
+export type UpdateProjectNodeRequest = UpdateProjectNodeInput;

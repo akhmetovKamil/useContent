@@ -9,6 +9,7 @@ import {
   isAccessPolicy,
   resolveEntityPolicy,
 } from "../domain/access";
+import { deleteObject } from "../storage/object-storage";
 import * as repo from "./repository";
 import type {
   AuthorProfileDoc,
@@ -463,6 +464,13 @@ export async function updateMyProject(
     throw APIError.notFound("project not found");
   }
 
+  if (input.title !== undefined) {
+    await repo.updateProjectNode(existing.rootNodeId, existing._id, {
+      name: updated.title,
+      updatedAt: new Date(),
+    });
+  }
+
   return updated;
 }
 
@@ -471,10 +479,21 @@ export async function deleteMyProject(
   projectId: string
 ): Promise<void> {
   const author = await getMyAuthorProfile(walletAddress);
-  const deleted = await repo.deleteProject(
-    parseObjectId(projectId, "projectId"),
-    author._id
-  );
+  const objectId = parseObjectId(projectId, "projectId");
+  const project = await repo.findProjectByIdAndAuthorId(objectId, author._id);
+  if (!project) {
+    throw APIError.notFound("project not found");
+  }
+
+  const nodes = await repo.listProjectNodesByProjectId(project._id);
+  for (const node of nodes) {
+    if (node.kind === "file" && node.storageKey) {
+      await deleteObject(node.storageKey);
+    }
+  }
+
+  await repo.deleteProjectNodesByProjectId(project._id);
+  const deleted = await repo.deleteProject(objectId, author._id);
   if (!deleted) {
     throw APIError.notFound("project not found");
   }

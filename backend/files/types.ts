@@ -1,5 +1,10 @@
 import type { ObjectId } from "mongodb";
 import type { Query } from "encore.dev/api";
+import type {
+  CreateProjectFolderInput,
+  ProjectNodeDto,
+  UpdateProjectNodeInput,
+} from "../../contracts/types/content";
 
 export interface FileDoc {
   _id: ObjectId;
@@ -48,3 +53,29 @@ export interface UpdateFileRequest {
   name?: string;
   parentId?: string | null;
 }
+
+export interface ListProjectNodesRequest {
+  projectId: string;
+  parentId?: Query<string>;
+}
+
+export interface PublicListProjectNodesRequest {
+  slug: string;
+  projectId: string;
+  parentId?: Query<string>;
+}
+
+export interface ProjectNodeRouteRequest {
+  projectId: string;
+  nodeId: string;
+}
+
+export interface PublicProjectNodeRouteRequest {
+  slug: string;
+  projectId: string;
+  nodeId: string;
+}
+
+export type CreateProjectFolderRequest = CreateProjectFolderInput;
+export type UpdateProjectNodeRequest = UpdateProjectNodeInput;
+export type ProjectNodeResponse = ProjectNodeDto;

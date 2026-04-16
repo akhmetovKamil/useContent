@@ -1,6 +1,6 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
-import { userContent } from "./bucket";
+import { deleteObject, getObject, listObjects, putObject } from "./object-storage";
 
 export const upload = api.raw(
   { method: "POST", path: "/storage/upload/*key", expose: true, auth: true },
@@ -22,7 +22,7 @@ export const upload = api.raw(
     const namespacedKey = `${auth.walletAddress}/${key}`;
     const contentType = req.headers["content-type"] || "application/octet-stream";
 
-    await userContent.upload(namespacedKey, body, { contentType });
+    await putObject(namespacedKey, body, String(contentType));
 
     resp.writeHead(200, { "Content-Type": "application/json" });
     resp.end(JSON.stringify({ key, size: body.length }));
@@ -43,14 +43,13 @@ export const download = api.raw(
     const namespacedKey = `${auth.walletAddress}/${key}`;
 
     try {
-      const attrs = await userContent.attrs(namespacedKey);
-      const body = await userContent.download(namespacedKey);
+      const object = await getObject(namespacedKey);
 
       resp.writeHead(200, {
-        "Content-Type": attrs.contentType || "application/octet-stream",
-        "Content-Length": String(body.length),
+        "Content-Type": object.contentType,
+        "Content-Length": String(object.body.length),
       });
-      resp.end(body);
+      resp.end(object.body);
     } catch (err: any) {
       if (err?.code === "object_not_found" || err?.name === "ObjectNotFound") {
         resp.writeHead(404, { "Content-Type": "application/json" });
@@ -73,7 +72,7 @@ export const list = api(
     const prefix = `${auth.walletAddress}/`;
     const files: ListResponse["files"] = [];
 
-    for await (const entry of userContent.list({ prefix })) {
+    for await (const entry of listObjects(prefix)) {
       files.push({
         key: entry.name.slice(prefix.length),
         size: entry.size,
@@ -96,7 +95,7 @@ export const remove = api(
       throw APIError.invalidArgument("key is required");
     }
     const namespacedKey = `${auth.walletAddress}/${key}`;
-    await userContent.remove(namespacedKey);
+    await deleteObject(namespacedKey);
   }
 );
 

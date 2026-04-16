@@ -135,6 +135,21 @@ export interface ProjectDto {
     updatedAt: string
 }
 
+export interface ProjectNodeDto {
+    id: string
+    authorId: string
+    projectId: string
+    parentId: string | null
+    kind: "file" | "folder"
+    name: string
+    storageKey: string | null
+    mimeType: string | null
+    size: number | null
+    visibility: "author" | "published"
+    createdAt: string
+    updatedAt: string
+}
+
 export interface UpdateMyProfileInput {
     username?: string | null
     displayName?: string
@@ -202,4 +217,16 @@ export interface UpdateProjectInput {
     policyMode?: PolicyMode
     policy?: AccessPolicy | null
     policyInput?: AccessPolicyInput
+}
+
+export interface CreateProjectFolderInput {
+    name: string
+    parentId?: string | null
+    visibility?: "author" | "published"
+}
+
+export interface UpdateProjectNodeInput {
+    name?: string
+    parentId?: string | null
+    visibility?: "author" | "published"
 }
