@@ -30,6 +30,9 @@ export function HomeHero({ authorSlug, isSignedIn }: HomeHeroProps) {
                         />
                         <ActionLink label="Open settings" to="/me/settings" />
                         <ActionLink label="My subscriptions" to="/me/subscriptions" />
+                        {!authorSlug ? (
+                            <ActionLink label="Become an author" to="/author/onboarding" />
+                        ) : null}
                     </>
                 ) : (
                     <div className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5 text-sm leading-6 text-[var(--muted)]">

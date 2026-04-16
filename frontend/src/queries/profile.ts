@@ -102,6 +102,7 @@ export function useDeleteMyAuthorProfileMutation() {
         mutationFn: () => profileApi.deleteMyAuthorProfile(),
         onSuccess: () => {
             useWorkspaceStore.getState().setHasAuthorProfileHint(false)
+            queryClient.setQueryData(queryKeys.myAuthor, null)
             void queryClient.invalidateQueries({ queryKey: queryKeys.myAuthor })
             void queryClient.invalidateQueries({ queryKey: queryKeys.me })
             void queryClient.invalidateQueries({ queryKey: ["authors"] })
