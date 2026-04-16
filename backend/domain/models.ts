@@ -27,7 +27,19 @@ export interface AuthorProfile {
   bio: string;
   avatarFileId: string | null;
   defaultPolicy: AccessPolicy;
+  defaultPolicyId: string | null;
   subscriptionPlanId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AccessPolicyPreset {
+  id: string;
+  authorId: string;
+  name: string;
+  description: string;
+  policy: AccessPolicy;
+  isDefault: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,6 +52,7 @@ export interface Post {
   status: "draft" | "published";
   policyMode: PolicyMode;
   policy: AccessPolicy | null;
+  accessPolicyId: string | null;
   attachmentIds: string[];
   publishedAt: Date | null;
   createdAt: Date;
@@ -54,6 +67,7 @@ export interface Project {
   status: "draft" | "published";
   policyMode: PolicyMode;
   policy: AccessPolicy | null;
+  accessPolicyId: string | null;
   rootNodeId: string;
   publishedAt: Date | null;
   createdAt: Date;

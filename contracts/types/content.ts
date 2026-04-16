@@ -75,7 +75,19 @@ export interface AuthorProfileDto {
     bio: string
     avatarFileId: string | null
     defaultPolicy: AccessPolicy
+    defaultPolicyId: string | null
     subscriptionPlanId: string | null
+    createdAt: string
+    updatedAt: string
+}
+
+export interface AccessPolicyPresetDto {
+    id: string
+    authorId: string
+    name: string
+    description: string
+    policy: AccessPolicy
+    isDefault: boolean
     createdAt: string
     updatedAt: string
 }
@@ -134,6 +146,7 @@ export interface PostDto {
     status: "draft" | "published"
     policyMode: PolicyMode
     policy: AccessPolicy | null
+    accessPolicyId: string | null
     attachmentIds: string[]
     publishedAt: string | null
     createdAt: string
@@ -148,6 +161,7 @@ export interface ProjectDto {
     status: "draft" | "published"
     policyMode: PolicyMode
     policy: AccessPolicy | null
+    accessPolicyId: string | null
     rootNodeId: string
     publishedAt: string | null
     createdAt: string
@@ -188,9 +202,11 @@ export interface UpdateAuthorProfileInput {
     bio?: string
     defaultPolicy?: AccessPolicy
     defaultPolicyInput?: AccessPolicyInput
+    defaultPolicyId?: string | null
 }
 
 export interface UpsertSubscriptionPlanInput {
+    code?: string
     title: string
     chainId: number
     tokenAddress: string
@@ -198,6 +214,22 @@ export interface UpsertSubscriptionPlanInput {
     billingPeriodDays: number
     contractAddress: string
     active?: boolean
+}
+
+export interface CreateAccessPolicyPresetInput {
+    name: string
+    description?: string
+    policy?: AccessPolicy
+    policyInput?: AccessPolicyInput
+    isDefault?: boolean
+}
+
+export interface UpdateAccessPolicyPresetInput {
+    name?: string
+    description?: string
+    policy?: AccessPolicy
+    policyInput?: AccessPolicyInput
+    isDefault?: boolean
 }
 
 export interface CreateSubscriptionPaymentIntentInput {
@@ -215,6 +247,7 @@ export interface CreatePostInput {
     policyMode?: PolicyMode
     policy?: AccessPolicy | null
     policyInput?: AccessPolicyInput
+    accessPolicyId?: string | null
     attachmentIds?: string[]
 }
 
@@ -225,6 +258,7 @@ export interface UpdatePostInput {
     policyMode?: PolicyMode
     policy?: AccessPolicy | null
     policyInput?: AccessPolicyInput
+    accessPolicyId?: string | null
     attachmentIds?: string[]
 }
 
@@ -235,6 +269,7 @@ export interface CreateProjectInput {
     policyMode?: PolicyMode
     policy?: AccessPolicy | null
     policyInput?: AccessPolicyInput
+    accessPolicyId?: string | null
 }
 
 export interface UpdateProjectInput {
@@ -244,6 +279,7 @@ export interface UpdateProjectInput {
     policyMode?: PolicyMode
     policy?: AccessPolicy | null
     policyInput?: AccessPolicyInput
+    accessPolicyId?: string | null
 }
 
 export interface CreateProjectFolderInput {

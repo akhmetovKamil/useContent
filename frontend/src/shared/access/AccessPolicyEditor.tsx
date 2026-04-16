@@ -10,6 +10,7 @@ interface AccessPolicyEditorProps {
     builder: AccessPolicyBuilderState
     disabled?: boolean
     onChange: (nextState: AccessPolicyBuilderState) => void
+    subscriptionPlans?: Array<{ code: string; title: string }>
 }
 
 const ruleTypeOptions: Array<{ label: string; value: AccessRuleForm["type"] }> = [
@@ -25,7 +26,12 @@ const composerOptions: Array<{ label: string; value: AccessComposer }> = [
     { label: "OR", value: "or" },
 ]
 
-export function AccessPolicyEditor({ builder, disabled, onChange }: AccessPolicyEditorProps) {
+export function AccessPolicyEditor({
+    builder,
+    disabled,
+    onChange,
+    subscriptionPlans = [],
+}: AccessPolicyEditorProps) {
     return (
         <div className="grid gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">
             <div className="grid gap-4 md:grid-cols-[220px_1fr]">
@@ -68,6 +74,7 @@ export function AccessPolicyEditor({ builder, disabled, onChange }: AccessPolicy
                         key={rule.id}
                         onChange={onChange}
                         rule={rule}
+                        subscriptionPlans={subscriptionPlans}
                     />
                 ))}
             </div>
@@ -81,9 +88,10 @@ interface RuleCardProps {
     index: number
     onChange: (nextState: AccessPolicyBuilderState) => void
     rule: AccessRuleForm
+    subscriptionPlans: Array<{ code: string; title: string }>
 }
 
-function RuleCard({ builder, disabled, index, onChange, rule }: RuleCardProps) {
+function RuleCard({ builder, disabled, index, onChange, rule, subscriptionPlans }: RuleCardProps) {
     const canRemove = builder.rules.length > 1
     const canAdd = builder.composer !== "single" && builder.rules.length < 4
 
@@ -160,13 +168,31 @@ function RuleCard({ builder, disabled, index, onChange, rule }: RuleCardProps) {
 
             {rule.type === "subscription" ? (
                 <Label>
-                    Plan code
-                    <Input
-                        disabled={disabled}
-                        onChange={(event) => updateRule({ ...rule, planCode: event.target.value })}
-                        placeholder="main"
-                        value={rule.planCode}
-                    />
+                    Subscription plan
+                    {subscriptionPlans.length ? (
+                        <Select
+                            disabled={disabled}
+                            onChange={(event) =>
+                                updateRule({ ...rule, planCode: event.target.value })
+                            }
+                            value={rule.planCode}
+                        >
+                            {subscriptionPlans.map((plan) => (
+                                <option key={plan.code} value={plan.code}>
+                                    {plan.title} ({plan.code})
+                                </option>
+                            ))}
+                        </Select>
+                    ) : (
+                        <Input
+                            disabled={disabled}
+                            onChange={(event) =>
+                                updateRule({ ...rule, planCode: event.target.value })
+                            }
+                            placeholder="main"
+                            value={rule.planCode}
+                        />
+                    )}
                 </Label>
             ) : null}
 

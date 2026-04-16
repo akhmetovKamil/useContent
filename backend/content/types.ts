@@ -1,8 +1,10 @@
 import type { ObjectId } from "mongodb";
 import type { AccessPolicy, PolicyMode } from "../domain/access";
 import type {
+  AccessPolicyPresetDto,
   AuthorProfileDto,
   ConfirmSubscriptionPaymentInput,
+  CreateAccessPolicyPresetInput,
   CreateAuthorProfileInput,
   CreatePostInput,
   CreateProjectInput,
@@ -15,6 +17,7 @@ import type {
   SubscriptionPaymentIntentDto,
   SubscriptionPlanDto,
   UpdateAuthorProfileInput,
+  UpdateAccessPolicyPresetInput,
   UpdateMyProfileInput,
   UpdatePostInput,
   UpdateProjectInput,
@@ -50,7 +53,19 @@ export interface AuthorProfileDoc {
   bio: string;
   avatarFileId: ObjectId | null;
   defaultPolicy: AccessPolicy;
+  defaultPolicyId: ObjectId | null;
   subscriptionPlanId: ObjectId | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AccessPolicyPresetDoc {
+  _id: ObjectId;
+  authorId: ObjectId;
+  name: string;
+  description: string;
+  policy: AccessPolicy;
+  isDefault: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -63,6 +78,7 @@ export interface PostDoc {
   status: "draft" | "published";
   policyMode: PolicyMode;
   policy: AccessPolicy | null;
+  accessPolicyId: ObjectId | null;
   attachmentIds: ObjectId[];
   publishedAt: Date | null;
   createdAt: Date;
@@ -77,6 +93,7 @@ export interface ProjectDoc {
   status: "draft" | "published";
   policyMode: PolicyMode;
   policy: AccessPolicy | null;
+  accessPolicyId: ObjectId | null;
   rootNodeId: ObjectId;
   publishedAt: Date | null;
   createdAt: Date;
@@ -146,6 +163,7 @@ export interface SubscriptionPaymentIntentDoc {
 
 export type UserProfileResponse = UserProfileDto;
 export type AuthorProfileResponse = AuthorProfileDto;
+export type AccessPolicyPresetResponse = AccessPolicyPresetDto;
 export type SubscriptionEntitlementResponse = SubscriptionEntitlementDto;
 export type SubscriptionPaymentIntentResponse = SubscriptionPaymentIntentDto;
 export type SubscriptionPlanResponse = SubscriptionPlanDto;
@@ -153,6 +171,8 @@ export type PostResponse = PostDto;
 export type ProjectResponse = ProjectDto;
 export type ProjectNodeResponse = ProjectNodeDto;
 export type UpdateMyProfileRequest = UpdateMyProfileInput;
+export type CreateAccessPolicyPresetRequest = CreateAccessPolicyPresetInput;
+export type UpdateAccessPolicyPresetRequest = UpdateAccessPolicyPresetInput;
 export type CreateAuthorProfileRequest = CreateAuthorProfileInput;
 export type UpdateAuthorProfileRequest = UpdateAuthorProfileInput;
 export type UpsertSubscriptionPlanRequest = UpsertSubscriptionPlanInput;

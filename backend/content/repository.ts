@@ -2,6 +2,7 @@ import { secret } from "encore.dev/config";
 import { ObjectId, type Collection, type Document } from "mongodb";
 import { getDb } from "../lib/mongo";
 import type {
+  AccessPolicyPresetDoc,
   AuthorProfileDoc,
   PostDoc,
   ProjectDoc,
@@ -96,6 +97,66 @@ export async function updateAuthorProfile(
   );
 }
 
+export async function getAccessPolicyPresetsCollection(): Promise<
+  Collection<AccessPolicyPresetDoc>
+> {
+  await ensureIndexes();
+  return getCollection<AccessPolicyPresetDoc>("access_policy_presets");
+}
+
+export async function createAccessPolicyPreset(
+  doc: Omit<AccessPolicyPresetDoc, "_id">
+): Promise<AccessPolicyPresetDoc> {
+  const presets = await getAccessPolicyPresetsCollection();
+  const result = await presets.insertOne(doc as AccessPolicyPresetDoc);
+  return { _id: result.insertedId, ...doc };
+}
+
+export async function listAccessPolicyPresetsByAuthorId(
+  authorId: ObjectId
+): Promise<AccessPolicyPresetDoc[]> {
+  const presets = await getAccessPolicyPresetsCollection();
+  return presets.find({ authorId }).sort({ isDefault: -1, createdAt: -1 }).toArray();
+}
+
+export async function findAccessPolicyPresetByIdAndAuthorId(
+  id: ObjectId,
+  authorId: ObjectId
+): Promise<AccessPolicyPresetDoc | null> {
+  const presets = await getAccessPolicyPresetsCollection();
+  return presets.findOne({ _id: id, authorId });
+}
+
+export async function updateAccessPolicyPreset(
+  id: ObjectId,
+  authorId: ObjectId,
+  update: Partial<Omit<AccessPolicyPresetDoc, "_id" | "authorId" | "createdAt">>
+): Promise<AccessPolicyPresetDoc | null> {
+  const presets = await getAccessPolicyPresetsCollection();
+  return presets.findOneAndUpdate(
+    { _id: id, authorId },
+    { $set: update },
+    { returnDocument: "after" }
+  );
+}
+
+export async function clearDefaultAccessPolicyPreset(authorId: ObjectId): Promise<void> {
+  const presets = await getAccessPolicyPresetsCollection();
+  await presets.updateMany(
+    { authorId },
+    { $set: { isDefault: false, updatedAt: new Date() } }
+  );
+}
+
+export async function deleteAccessPolicyPreset(
+  id: ObjectId,
+  authorId: ObjectId
+): Promise<boolean> {
+  const presets = await getAccessPolicyPresetsCollection();
+  const result = await presets.deleteOne({ _id: id, authorId, isDefault: false });
+  return result.deletedCount === 1;
+}
+
 export async function getPostsCollection(): Promise<Collection<PostDoc>> {
   await ensureIndexes();
   return getCollection<PostDoc>("posts");
@@ -164,6 +225,14 @@ export async function deletePost(
   return result.deletedCount === 1;
 }
 
+export async function countPostsByAccessPolicyId(
+  authorId: ObjectId,
+  accessPolicyId: ObjectId
+): Promise<number> {
+  const posts = await getPostsCollection();
+  return posts.countDocuments({ authorId, accessPolicyId });
+}
+
 export async function getProjectsCollection(): Promise<Collection<ProjectDoc>> {
   await ensureIndexes();
   return getCollection<ProjectDoc>("projects");
@@ -228,6 +297,14 @@ export async function deleteProject(
   const projects = await getProjectsCollection();
   const result = await projects.deleteOne({ _id: id, authorId });
   return result.deletedCount === 1;
+}
+
+export async function countProjectsByAccessPolicyId(
+  authorId: ObjectId,
+  accessPolicyId: ObjectId
+): Promise<number> {
+  const projects = await getProjectsCollection();
+  return projects.countDocuments({ authorId, accessPolicyId });
 }
 
 export async function getProjectNodesCollection(): Promise<
@@ -351,6 +428,20 @@ export async function findSubscriptionPlanByAuthorIdAndCode(
 ): Promise<SubscriptionPlanDoc | null> {
   const plans = await getSubscriptionPlansCollection();
   return plans.findOne({ authorId, code });
+}
+
+export async function listSubscriptionPlansByAuthorId(
+  authorId: ObjectId
+): Promise<SubscriptionPlanDoc[]> {
+  const plans = await getSubscriptionPlansCollection();
+  return plans.find({ authorId }).sort({ createdAt: -1 }).toArray();
+}
+
+export async function listActiveSubscriptionPlansByAuthorId(
+  authorId: ObjectId
+): Promise<SubscriptionPlanDoc[]> {
+  const plans = await getSubscriptionPlansCollection();
+  return plans.find({ authorId, active: true }).sort({ createdAt: -1 }).toArray();
 }
 
 export async function createSubscriptionPlan(
@@ -503,6 +594,7 @@ async function ensureIndexes(): Promise<void> {
   const [
     users,
     authorProfiles,
+    accessPolicyPresets,
     posts,
     projects,
     projectNodes,
@@ -512,6 +604,7 @@ async function ensureIndexes(): Promise<void> {
   ] = await Promise.all([
     getCollection<UserDoc>("users"),
     getCollection<AuthorProfileDoc>("author_profiles"),
+    getCollection<AccessPolicyPresetDoc>("access_policy_presets"),
     getCollection<PostDoc>("posts"),
     getCollection<ProjectDoc>("projects"),
     getCollection<ProjectNodeDoc>("project_nodes"),
@@ -526,9 +619,13 @@ async function ensureIndexes(): Promise<void> {
     users.createIndex({ "wallets.address": 1 }, { unique: true }),
     authorProfiles.createIndex({ slug: 1 }, { unique: true }),
     authorProfiles.createIndex({ userId: 1 }, { unique: true }),
+    accessPolicyPresets.createIndex({ authorId: 1, isDefault: 1 }),
+    accessPolicyPresets.createIndex({ authorId: 1, createdAt: -1 }),
     posts.createIndex({ authorId: 1, status: 1, publishedAt: -1 }),
+    posts.createIndex({ authorId: 1, accessPolicyId: 1 }),
     posts.createIndex({ authorId: 1, createdAt: -1 }),
     projects.createIndex({ authorId: 1, status: 1, publishedAt: -1 }),
+    projects.createIndex({ authorId: 1, accessPolicyId: 1 }),
     projectNodes.createIndex({ projectId: 1, parentId: 1, name: 1 }),
     projectNodes.createIndex({ projectId: 1, visibility: 1 }),
     subscriptionPlans.createIndex({ authorId: 1, code: 1 }, { unique: true }),

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
 
+import { Select } from "@/components/ui/select"
 import { isApiNotFoundError } from "@/lib/api/errors"
+import { useMyAccessPoliciesQuery } from "@/queries/access-policies"
 import {
     useCreateMyAuthorProfileMutation,
     useMyAuthorProfileQuery,
@@ -19,11 +21,13 @@ import { useAuthStore } from "@/shared/session/auth-store"
 export function MeAuthorPage() {
     const token = useAuthStore((state) => state.token)
     const authorQuery = useMyAuthorProfileQuery(Boolean(token))
+    const policiesQuery = useMyAccessPoliciesQuery(Boolean(token))
     const createAuthorMutation = useCreateMyAuthorProfileMutation()
     const updateAuthorMutation = useUpdateMyAuthorProfileMutation()
     const [slug, setSlug] = useState("")
     const [displayName, setDisplayName] = useState("")
     const [bio, setBio] = useState("")
+    const [defaultPolicyId, setDefaultPolicyId] = useState("")
     const [defaultPolicyBuilder, setDefaultPolicyBuilder] = useState<AccessPolicyBuilderState>(
         createDefaultPolicyBuilderState()
     )
@@ -37,6 +41,7 @@ export function MeAuthorPage() {
 
         setDisplayName(authorQuery.data.displayName)
         setBio(authorQuery.data.bio)
+        setDefaultPolicyId(authorQuery.data.defaultPolicyId ?? "")
         setDefaultPolicyBuilder(parsePolicyToBuilder(authorQuery.data.defaultPolicy))
     }, [authorQuery.data])
 
@@ -200,8 +205,7 @@ export function MeAuthorPage() {
                                 void updateAuthorMutation.mutateAsync({
                                     displayName,
                                     bio,
-                                    defaultPolicyInput:
-                                        buildPolicyInputFromBuilder(defaultPolicyBuilder),
+                                    defaultPolicyId: defaultPolicyId || null,
                                 })
                             } catch (error) {
                                 setFormError(
@@ -244,13 +248,20 @@ export function MeAuthorPage() {
                             <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
                                 default access policy
                             </div>
-                            <AccessPolicyEditor
-                                builder={defaultPolicyBuilder}
-                                disabled={updateAuthorMutation.isPending}
-                                onChange={setDefaultPolicyBuilder}
-                            />
+                            <Select
+                                onChange={(event) => setDefaultPolicyId(event.target.value)}
+                                value={defaultPolicyId}
+                            >
+                                <option value="">Public fallback</option>
+                                {policiesQuery.data?.map((policy) => (
+                                    <option key={policy.id} value={policy.id}>
+                                        {policy.name}
+                                        {policy.isDefault ? " (current default)" : ""}
+                                    </option>
+                                ))}
+                            </Select>
                             <p className="text-sm text-[var(--muted)]">
-                                Preview: {summarizePolicyInput(defaultPolicyBuilder)}
+                                Сами условия теперь редактируются на странице Access.
                             </p>
                         </div>
 

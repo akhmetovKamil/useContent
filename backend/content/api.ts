@@ -3,8 +3,10 @@ import { getAuthData } from "~encore/auth";
 import { validateToken } from "../auth/auth.service";
 import * as service from "./content.service";
 import type {
+  AccessPolicyPresetResponse,
   AuthorProfileResponse,
   ConfirmSubscriptionPaymentRequest,
+  CreateAccessPolicyPresetRequest,
   CreateAuthorProfileRequest,
   CreatePostRequest,
   CreateProjectRequest,
@@ -15,6 +17,7 @@ import type {
   SubscriptionPlanResponse,
   SubscriptionEntitlementResponse,
   UpdateAuthorProfileRequest,
+  UpdateAccessPolicyPresetRequest,
   UpsertSubscriptionPlanRequest,
   UpdateMyProfileRequest,
   UpdatePostRequest,
@@ -67,6 +70,48 @@ export const updateMyAuthorProfile = api(
   }
 );
 
+export const listMyAccessPolicyPresets = api(
+  { method: "GET", path: "/me/access-policies", expose: true, auth: true },
+  async (): Promise<{ policies: AccessPolicyPresetResponse[] }> => {
+    const auth = getAuthData()!;
+    const policies = await service.listMyAccessPolicyPresets(auth.walletAddress);
+    return { policies: policies.map(service.toAccessPolicyPresetResponse) };
+  }
+);
+
+export const createMyAccessPolicyPreset = api(
+  { method: "POST", path: "/me/access-policies", expose: true, auth: true },
+  async (req: CreateAccessPolicyPresetRequest): Promise<AccessPolicyPresetResponse> => {
+    const auth = getAuthData()!;
+    const policy = await service.createMyAccessPolicyPreset(auth.walletAddress, req);
+    return service.toAccessPolicyPresetResponse(policy);
+  }
+);
+
+export const updateMyAccessPolicyPreset = api(
+  { method: "PATCH", path: "/me/access-policies/:policyId", expose: true, auth: true },
+  async ({
+    policyId,
+    ...req
+  }: UpdateAccessPolicyPresetRequest & { policyId: string }): Promise<AccessPolicyPresetResponse> => {
+    const auth = getAuthData()!;
+    const policy = await service.updateMyAccessPolicyPreset(
+      auth.walletAddress,
+      policyId,
+      req
+    );
+    return service.toAccessPolicyPresetResponse(policy);
+  }
+);
+
+export const deleteMyAccessPolicyPreset = api(
+  { method: "DELETE", path: "/me/access-policies/:policyId", expose: true, auth: true },
+  async ({ policyId }: { policyId: string }): Promise<void> => {
+    const auth = getAuthData()!;
+    await service.deleteMyAccessPolicyPreset(auth.walletAddress, policyId);
+  }
+);
+
 export const listMyEntitlements = api(
   { method: "GET", path: "/me/entitlements", expose: true, auth: true },
   async (): Promise<{ entitlements: SubscriptionEntitlementResponse[] }> => {
@@ -103,6 +148,15 @@ export const getMySubscriptionPlan = api(
   }
 );
 
+export const listMySubscriptionPlans = api(
+  { method: "GET", path: "/me/subscription-plans", expose: true, auth: true },
+  async (): Promise<{ plans: SubscriptionPlanResponse[] }> => {
+    const auth = getAuthData()!;
+    const plans = await service.listMySubscriptionPlans(auth.walletAddress);
+    return { plans: plans.map(service.toSubscriptionPlanResponse) };
+  }
+);
+
 export const upsertMySubscriptionPlan = api(
   { method: "PUT", path: "/me/subscription-plan", expose: true, auth: true },
   async (req: UpsertSubscriptionPlanRequest): Promise<SubscriptionPlanResponse> => {
@@ -125,6 +179,14 @@ export const getAuthorSubscriptionPlan = api(
   async ({ slug }: { slug: string }): Promise<SubscriptionPlanResponse> => {
     const plan = await service.getAuthorSubscriptionPlanBySlug(slug);
     return service.toSubscriptionPlanResponse(plan);
+  }
+);
+
+export const listAuthorSubscriptionPlans = api(
+  { method: "GET", path: "/authors/:slug/subscription-plans", expose: true },
+  async ({ slug }: { slug: string }): Promise<{ plans: SubscriptionPlanResponse[] }> => {
+    const plans = await service.listAuthorSubscriptionPlansBySlug(slug);
+    return { plans: plans.map(service.toSubscriptionPlanResponse) };
   }
 );
 

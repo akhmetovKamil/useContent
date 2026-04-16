@@ -3,6 +3,11 @@ import type { SubscriptionPlanDto, UpsertSubscriptionPlanInput } from "@contract
 import { http } from "@/lib/api/http"
 
 class SubscriptionPlansApi {
+    async listMySubscriptionPlans() {
+        const response = await http.get<{ plans: SubscriptionPlanDto[] }>("/me/subscription-plans")
+        return response.data.plans
+    }
+
     async getMySubscriptionPlan() {
         const response = await http.get<SubscriptionPlanDto>("/me/subscription-plan")
         return response.data

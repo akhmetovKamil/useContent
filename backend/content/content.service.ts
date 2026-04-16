@@ -12,9 +12,12 @@ import {
 import { deleteObject } from "../storage/object-storage";
 import * as repo from "./repository";
 import type {
+  AccessPolicyPresetDoc,
+  AccessPolicyPresetResponse,
   AuthorProfileDoc,
   AuthorProfileResponse,
   ConfirmSubscriptionPaymentRequest,
+  CreateAccessPolicyPresetRequest,
   CreateAuthorProfileRequest,
   CreatePostRequest,
   CreateProjectRequest,
@@ -30,6 +33,7 @@ import type {
   SubscriptionPaymentIntentDoc,
   SubscriptionPaymentIntentResponse,
   UpdateAuthorProfileRequest,
+  UpdateAccessPolicyPresetRequest,
   UpsertSubscriptionPlanRequest,
   UpdateMyProfileRequest,
   UpdatePostRequest,
@@ -126,7 +130,9 @@ export async function updateMyAuthorProfile(
       : normalizeDisplayName(update.displayName);
   const nextBio = update.bio === undefined ? author.bio : normalizeBio(update.bio);
   const nextDefaultPolicy =
-    update.defaultPolicy === undefined && update.defaultPolicyInput === undefined
+    update.defaultPolicyId !== undefined
+      ? await resolveDefaultPolicyFromPreset(author, update.defaultPolicyId)
+      : update.defaultPolicy === undefined && update.defaultPolicyInput === undefined
       ? author.defaultPolicy
       : await normalizeRequestedAuthorDefaultPolicy(
           author,
@@ -138,6 +144,12 @@ export async function updateMyAuthorProfile(
     displayName: nextDisplayName,
     bio: nextBio,
     defaultPolicy: nextDefaultPolicy,
+    defaultPolicyId:
+      update.defaultPolicyId === undefined
+        ? author.defaultPolicyId
+        : update.defaultPolicyId
+          ? parseObjectId(update.defaultPolicyId, "defaultPolicyId")
+          : null,
     updatedAt: new Date(),
   });
 
@@ -146,6 +158,123 @@ export async function updateMyAuthorProfile(
   }
 
   return updated;
+}
+
+export async function listMyAccessPolicyPresets(
+  walletAddress: string
+): Promise<AccessPolicyPresetDoc[]> {
+  const author = await getMyAuthorProfile(walletAddress);
+  return repo.listAccessPolicyPresetsByAuthorId(author._id);
+}
+
+export async function createMyAccessPolicyPreset(
+  walletAddress: string,
+  input: CreateAccessPolicyPresetRequest
+): Promise<AccessPolicyPresetDoc> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const now = new Date();
+  const isDefault = input.isDefault ?? false;
+  const policy = await normalizePresetPolicy(author, input.policy, input.policyInput);
+
+  if (isDefault) {
+    await repo.clearDefaultAccessPolicyPreset(author._id);
+  }
+
+  const preset = await repo.createAccessPolicyPreset({
+    authorId: author._id,
+    name: normalizePresetName(input.name),
+    description: normalizePresetDescription(input.description ?? ""),
+    policy,
+    isDefault,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  if (isDefault) {
+    await repo.updateAuthorProfile(author._id, {
+      defaultPolicy: preset.policy,
+      defaultPolicyId: preset._id,
+      updatedAt: now,
+    });
+  }
+
+  return preset;
+}
+
+export async function updateMyAccessPolicyPreset(
+  walletAddress: string,
+  presetId: string,
+  input: UpdateAccessPolicyPresetRequest
+): Promise<AccessPolicyPresetDoc> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const objectId = parseObjectId(presetId, "presetId");
+  const existing = await repo.findAccessPolicyPresetByIdAndAuthorId(objectId, author._id);
+  if (!existing) {
+    throw APIError.notFound("access policy preset not found");
+  }
+
+  const isDefault = input.isDefault ?? existing.isDefault;
+  const policy =
+    input.policy === undefined && input.policyInput === undefined
+      ? existing.policy
+      : await normalizePresetPolicy(author, input.policy, input.policyInput);
+
+  if (isDefault) {
+    await repo.clearDefaultAccessPolicyPreset(author._id);
+  }
+
+  const updated = await repo.updateAccessPolicyPreset(objectId, author._id, {
+    name: input.name === undefined ? existing.name : normalizePresetName(input.name),
+    description:
+      input.description === undefined
+        ? existing.description
+        : normalizePresetDescription(input.description),
+    policy,
+    isDefault,
+    updatedAt: new Date(),
+  });
+
+  if (!updated) {
+    throw APIError.notFound("access policy preset not found");
+  }
+
+  if (updated.isDefault) {
+    await repo.updateAuthorProfile(author._id, {
+      defaultPolicy: updated.policy,
+      defaultPolicyId: updated._id,
+      updatedAt: updated.updatedAt,
+    });
+  }
+
+  return updated;
+}
+
+export async function deleteMyAccessPolicyPreset(
+  walletAddress: string,
+  presetId: string
+): Promise<void> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const objectId = parseObjectId(presetId, "presetId");
+  const preset = await repo.findAccessPolicyPresetByIdAndAuthorId(objectId, author._id);
+  if (!preset) {
+    throw APIError.notFound("access policy preset not found");
+  }
+  if (preset.isDefault || author.defaultPolicyId?.equals(preset._id)) {
+    throw APIError.failedPrecondition("default access policy cannot be deleted");
+  }
+
+  const [postCount, projectCount] = await Promise.all([
+    repo.countPostsByAccessPolicyId(author._id, objectId),
+    repo.countProjectsByAccessPolicyId(author._id, objectId),
+  ]);
+  if (postCount + projectCount > 0) {
+    throw APIError.failedPrecondition("access policy is used by content");
+  }
+
+  const deleted = await repo.deleteAccessPolicyPreset(objectId, author._id);
+  if (!deleted) {
+    throw APIError.notFound("access policy preset not found");
+  }
 }
 
 export async function listMyEntitlements(
@@ -166,6 +295,13 @@ export async function getMySubscriptionPlan(
   return plan;
 }
 
+export async function listMySubscriptionPlans(
+  walletAddress: string
+): Promise<SubscriptionPlanDoc[]> {
+  const author = await getMyAuthorProfile(walletAddress);
+  return repo.listSubscriptionPlansByAuthorId(author._id);
+}
+
 export async function getAuthorSubscriptionPlanBySlug(
   slug: string
 ): Promise<SubscriptionPlanDoc> {
@@ -177,12 +313,20 @@ export async function getAuthorSubscriptionPlanBySlug(
   return plan;
 }
 
+export async function listAuthorSubscriptionPlansBySlug(
+  slug: string
+): Promise<SubscriptionPlanDoc[]> {
+  const author = await getAuthorProfileBySlug(slug);
+  return repo.listActiveSubscriptionPlansByAuthorId(author._id);
+}
+
 export async function upsertMySubscriptionPlan(
   walletAddress: string,
   input: UpsertSubscriptionPlanRequest
 ): Promise<SubscriptionPlanDoc> {
   const author = await getMyAuthorProfile(walletAddress);
   const now = new Date();
+  const code = normalizePlanCode(input.code ?? "main");
   const title = normalizePlanTitle(input.title);
   const chainId = normalizeChainId(input.chainId);
   const tokenAddress = normalizeWallet(input.tokenAddress);
@@ -191,7 +335,7 @@ export async function upsertMySubscriptionPlan(
   const contractAddress = normalizeWallet(input.contractAddress);
   const active = input.active ?? true;
 
-  const existing = await getAuthorMainSubscriptionPlan(author);
+  const existing = await repo.findSubscriptionPlanByAuthorIdAndCode(author._id, code);
   if (existing) {
     const updated = await repo.updateSubscriptionPlan(existing._id, {
       title,
@@ -211,7 +355,7 @@ export async function upsertMySubscriptionPlan(
 
   const created = await repo.createSubscriptionPlan({
     authorId: author._id,
-    code: "main",
+    code,
     title,
     chainId,
     tokenAddress,
@@ -223,10 +367,12 @@ export async function upsertMySubscriptionPlan(
     updatedAt: now,
   });
 
-  await repo.updateAuthorProfile(author._id, {
-    subscriptionPlanId: created._id,
-    updatedAt: now,
-  });
+  if (code === "main" || !author.subscriptionPlanId) {
+    await repo.updateAuthorProfile(author._id, {
+      subscriptionPlanId: created._id,
+      updatedAt: now,
+    });
+  }
 
   return created;
 }
@@ -343,10 +489,10 @@ export async function createMyPost(
   const content = normalizePostContent(input.content);
   const status = input.status ?? "draft";
   const policyMode = input.policyMode ?? "inherited";
-  const policy = await normalizePostPolicy(author, input, policyMode);
+  const policySelection = await normalizeContentPolicy(author, input, policyMode);
   const attachmentIds = normalizeAttachmentIds(input.attachmentIds ?? []);
 
-  resolveEntityPolicy(policyMode, author.defaultPolicy, policy);
+  resolveEntityPolicy(policyMode, author.defaultPolicy, policySelection.policy);
 
   return repo.createPost({
     authorId: author._id,
@@ -354,7 +500,8 @@ export async function createMyPost(
     content,
     status,
     policyMode,
-    policy,
+    policy: policySelection.policy,
+    accessPolicyId: policySelection.accessPolicyId,
     attachmentIds,
     publishedAt: status === "published" ? now : null,
     createdAt: now,
@@ -383,14 +530,15 @@ export async function updateMyPost(
 
   const nextStatus = input.status ?? existing.status;
   const nextPolicyMode = input.policyMode ?? existing.policyMode;
-  const nextPolicy =
+  const nextPolicySelection =
     input.policyMode === undefined &&
     input.policy === undefined &&
-    input.policyInput === undefined
-      ? existing.policy
-      : await normalizePostPolicy(author, input, nextPolicyMode);
+    input.policyInput === undefined &&
+    input.accessPolicyId === undefined
+      ? { policy: existing.policy, accessPolicyId: existing.accessPolicyId }
+      : await normalizeContentPolicy(author, input, nextPolicyMode);
 
-  resolveEntityPolicy(nextPolicyMode, author.defaultPolicy, nextPolicy);
+  resolveEntityPolicy(nextPolicyMode, author.defaultPolicy, nextPolicySelection.policy);
 
   const updated = await repo.updatePost(objectId, author._id, {
     title:
@@ -401,7 +549,8 @@ export async function updateMyPost(
         : normalizePostContent(input.content),
     status: nextStatus,
     policyMode: nextPolicyMode,
-    policy: nextPolicy,
+    policy: nextPolicySelection.policy,
+    accessPolicyId: nextPolicySelection.accessPolicyId,
     attachmentIds:
       input.attachmentIds === undefined
         ? existing.attachmentIds
@@ -480,9 +629,9 @@ export async function createMyProject(
   const description = normalizeProjectDescription(input.description ?? "");
   const status = input.status ?? "draft";
   const policyMode = input.policyMode ?? "inherited";
-  const policy = await normalizeProjectPolicy(author, input, policyMode);
+  const policySelection = await normalizeContentPolicy(author, input, policyMode);
 
-  resolveEntityPolicy(policyMode, author.defaultPolicy, policy);
+  resolveEntityPolicy(policyMode, author.defaultPolicy, policySelection.policy);
 
   const rootNode = await repo.createProjectNode({
     _id: rootNodeId,
@@ -506,7 +655,8 @@ export async function createMyProject(
     description,
     status,
     policyMode,
-    policy,
+    policy: policySelection.policy,
+    accessPolicyId: policySelection.accessPolicyId,
     rootNodeId,
     publishedAt: status === "published" ? now : null,
     createdAt: now,
@@ -541,14 +691,15 @@ export async function updateMyProject(
 
   const nextStatus = input.status ?? existing.status;
   const nextPolicyMode = input.policyMode ?? existing.policyMode;
-  const nextPolicy =
+  const nextPolicySelection =
     input.policyMode === undefined &&
     input.policy === undefined &&
-    input.policyInput === undefined
-      ? existing.policy
-      : await normalizeProjectPolicy(author, input, nextPolicyMode);
+    input.policyInput === undefined &&
+    input.accessPolicyId === undefined
+      ? { policy: existing.policy, accessPolicyId: existing.accessPolicyId }
+      : await normalizeContentPolicy(author, input, nextPolicyMode);
 
-  resolveEntityPolicy(nextPolicyMode, author.defaultPolicy, nextPolicy);
+  resolveEntityPolicy(nextPolicyMode, author.defaultPolicy, nextPolicySelection.policy);
 
   const updated = await repo.updateProject(objectId, author._id, {
     title:
@@ -561,7 +712,8 @@ export async function updateMyProject(
         : normalizeProjectDescription(input.description),
     status: nextStatus,
     policyMode: nextPolicyMode,
-    policy: nextPolicy,
+    policy: nextPolicySelection.policy,
+    accessPolicyId: nextPolicySelection.accessPolicyId,
     publishedAt: resolvePublishedAt(existing.publishedAt, existing.status, nextStatus),
     updatedAt: new Date(),
   });
@@ -668,17 +820,35 @@ export async function createAuthorProfile(
   );
   const now = new Date();
 
-  return repo.createAuthorProfile({
+  const author = await repo.createAuthorProfile({
     userId: user._id.toHexString(),
     slug,
     displayName,
     bio,
     avatarFileId: user.avatarFileId,
     defaultPolicy,
+    defaultPolicyId: null,
     subscriptionPlanId: null,
     createdAt: now,
     updatedAt: now,
   });
+
+  const preset = await repo.createAccessPolicyPreset({
+    authorId: author._id,
+    name: "Default access",
+    description: "Default access policy for inherited content.",
+    policy: defaultPolicy,
+    isDefault: true,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  const updated = await repo.updateAuthorProfile(author._id, {
+    defaultPolicyId: preset._id,
+    updatedAt: now,
+  });
+
+  return updated ?? { ...author, defaultPolicyId: preset._id };
 }
 
 export function toUserProfileResponse(user: UserDoc): UserProfileResponse {
@@ -711,9 +881,25 @@ export function toAuthorProfileResponse(
     bio: author.bio,
     avatarFileId: author.avatarFileId?.toHexString() ?? null,
     defaultPolicy: author.defaultPolicy,
+    defaultPolicyId: author.defaultPolicyId?.toHexString() ?? null,
     subscriptionPlanId: author.subscriptionPlanId?.toHexString() ?? null,
     createdAt: author.createdAt.toISOString(),
     updatedAt: author.updatedAt.toISOString(),
+  };
+}
+
+export function toAccessPolicyPresetResponse(
+  preset: AccessPolicyPresetDoc
+): AccessPolicyPresetResponse {
+  return {
+    id: preset._id.toHexString(),
+    authorId: preset.authorId.toHexString(),
+    name: preset.name,
+    description: preset.description,
+    policy: preset.policy,
+    isDefault: preset.isDefault,
+    createdAt: preset.createdAt.toISOString(),
+    updatedAt: preset.updatedAt.toISOString(),
   };
 }
 
@@ -784,6 +970,7 @@ export function toPostResponse(post: PostDoc): PostResponse {
     status: post.status,
     policyMode: post.policyMode,
     policy: post.policy,
+    accessPolicyId: post.accessPolicyId?.toHexString() ?? null,
     attachmentIds: post.attachmentIds.map((id) => id.toHexString()),
     publishedAt: post.publishedAt?.toISOString() ?? null,
     createdAt: post.createdAt.toISOString(),
@@ -800,6 +987,7 @@ export function toProjectResponse(project: ProjectDoc): ProjectResponse {
     status: project.status,
     policyMode: project.policyMode,
     policy: project.policy,
+    accessPolicyId: project.accessPolicyId?.toHexString() ?? null,
     rootNodeId: project.rootNodeId.toHexString(),
     publishedAt: project.publishedAt?.toISOString() ?? null,
     createdAt: project.createdAt.toISOString(),
@@ -872,6 +1060,25 @@ function normalizePlanTitle(title: string): string {
   return value;
 }
 
+function normalizePresetName(name: string): string {
+  const value = name.trim();
+  if (!value) {
+    throw APIError.invalidArgument("access policy name is required");
+  }
+  if (value.length > 120) {
+    throw APIError.invalidArgument("access policy name is too long");
+  }
+  return value;
+}
+
+function normalizePresetDescription(description: string): string {
+  const value = description.trim();
+  if (value.length > 500) {
+    throw APIError.invalidArgument("access policy description is too long");
+  }
+  return value;
+}
+
 function normalizeChainId(chainId: number): number {
   if (!Number.isInteger(chainId) || chainId <= 0) {
     throw APIError.invalidArgument("chainId must be a positive integer");
@@ -921,20 +1128,46 @@ function normalizePostContent(content: string): string {
   return value;
 }
 
-async function normalizePostPolicy(
+async function normalizeContentPolicy(
   author: AuthorProfileDoc,
-  input: CreatePostRequest | UpdatePostRequest,
-  policyMode: NonNullable<CreatePostRequest["policyMode"] | UpdatePostRequest["policyMode"]>
-) {
+  input: CreatePostRequest | UpdatePostRequest | CreateProjectRequest | UpdateProjectRequest,
+  policyMode: NonNullable<
+    | CreatePostRequest["policyMode"]
+    | UpdatePostRequest["policyMode"]
+    | CreateProjectRequest["policyMode"]
+    | UpdateProjectRequest["policyMode"]
+  >
+): Promise<{ policy: AccessPolicy | null; accessPolicyId: ObjectId | null }> {
   if (policyMode !== "custom") {
-    return null;
+    return { policy: null, accessPolicyId: null };
   }
 
-  return normalizeRequestedCustomPolicy(
-    author,
-    input.policy ?? null,
-    input.policyInput
-  );
+  if (input.accessPolicyId) {
+    if (input.policy !== undefined || input.policyInput !== undefined) {
+      throw APIError.invalidArgument(
+        "provide either accessPolicyId or inline policy"
+      );
+    }
+
+    const preset = await repo.findAccessPolicyPresetByIdAndAuthorId(
+      parseObjectId(input.accessPolicyId, "accessPolicyId"),
+      author._id
+    );
+    if (!preset) {
+      throw APIError.notFound("access policy preset not found");
+    }
+
+    return { policy: preset.policy, accessPolicyId: preset._id };
+  }
+
+  return {
+    policy: await normalizeRequestedCustomPolicy(
+      author,
+      input.policy ?? null,
+      input.policyInput
+    ),
+    accessPolicyId: null,
+  };
 }
 
 function normalizeAccessPolicy(policy: unknown, field: string) {
@@ -964,24 +1197,6 @@ function normalizeProjectDescription(description: string): string {
   return value;
 }
 
-async function normalizeProjectPolicy(
-  author: AuthorProfileDoc,
-  input: CreateProjectRequest | UpdateProjectRequest,
-  policyMode: NonNullable<
-    CreateProjectRequest["policyMode"] | UpdateProjectRequest["policyMode"]
-  >
-) {
-  if (policyMode !== "custom") {
-    return null;
-  }
-
-  return normalizeRequestedCustomPolicy(
-    author,
-    input.policy ?? null,
-    input.policyInput
-  );
-}
-
 async function normalizeRequestedAuthorDefaultPolicy(
   author: AuthorProfileDoc | null,
   policy: CreateAuthorProfileRequest["defaultPolicy"] | UpdateAuthorProfileRequest["defaultPolicy"],
@@ -1004,6 +1219,40 @@ async function normalizeRequestedAuthorDefaultPolicy(
   }
 
   return createPublicPolicy();
+}
+
+async function resolveDefaultPolicyFromPreset(
+  author: AuthorProfileDoc,
+  presetId: string | null
+): Promise<AccessPolicy> {
+  if (!presetId) {
+    return createPublicPolicy();
+  }
+
+  const preset = await repo.findAccessPolicyPresetByIdAndAuthorId(
+    parseObjectId(presetId, "defaultPolicyId"),
+    author._id
+  );
+  if (!preset) {
+    throw APIError.notFound("access policy preset not found");
+  }
+  return preset.policy;
+}
+
+async function normalizePresetPolicy(
+  author: AuthorProfileDoc,
+  policy: CreateAccessPolicyPresetRequest["policy"] | UpdateAccessPolicyPresetRequest["policy"],
+  policyInput:
+    | CreateAccessPolicyPresetRequest["policyInput"]
+    | UpdateAccessPolicyPresetRequest["policyInput"]
+) {
+  if (policy !== undefined && policyInput !== undefined) {
+    throw APIError.invalidArgument("provide either policy or policyInput");
+  }
+  if (policyInput !== undefined) {
+    return buildAccessPolicyFromInput(policyInput, author);
+  }
+  return normalizeAccessPolicy(policy ?? createPublicPolicy(), "access policy");
 }
 
 async function normalizeRequestedCustomPolicy(

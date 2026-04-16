@@ -8,24 +8,19 @@ import { Label } from "@/components/ui/label"
 import { Eyebrow, PageSection } from "@/components/ui/page"
 import { Select } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { useMyAccessPoliciesQuery } from "@/queries/access-policies"
 import {
     useCreateMyProjectMutation,
     useDeleteMyProjectMutation,
     useMyProjectsQuery,
     useUpdateMyProjectMutation,
 } from "@/queries/projects"
-import { AccessPolicyEditor } from "@/shared/access/AccessPolicyEditor"
-import {
-    buildContentPolicyInput,
-    createDefaultPolicyBuilderState,
-    summarizePolicyInput,
-    type AccessPolicyBuilderState,
-} from "@/shared/access/policy"
 import { useAuthStore } from "@/shared/session/auth-store"
 
 export function MeProjectsPage() {
     const token = useAuthStore((state) => state.token)
     const projectsQuery = useMyProjectsQuery(Boolean(token))
+    const policiesQuery = useMyAccessPoliciesQuery(Boolean(token))
     const createProjectMutation = useCreateMyProjectMutation()
     const updateProjectMutation = useUpdateMyProjectMutation()
     const deleteProjectMutation = useDeleteMyProjectMutation()
@@ -33,10 +28,7 @@ export function MeProjectsPage() {
     const [description, setDescription] = useState("")
     const [status, setStatus] = useState<"draft" | "published">("draft")
     const [policyMode, setPolicyMode] = useState<"public" | "inherited" | "custom">("inherited")
-    const [policyBuilder, setPolicyBuilder] = useState<AccessPolicyBuilderState>(
-        createDefaultPolicyBuilderState()
-    )
-    const [formError, setFormError] = useState<string | null>(null)
+    const [accessPolicyId, setAccessPolicyId] = useState("")
 
     return (
         <PageSection>
@@ -58,42 +50,28 @@ export function MeProjectsPage() {
                         className="grid gap-4 rounded-lg border border-[var(--line)] bg-[var(--surface)] p-5"
                         onSubmit={(event) => {
                             event.preventDefault()
-                            setFormError(null)
-
-                            try {
-                                const policyPayload = buildContentPolicyInput({
+                            void createProjectMutation
+                                .mutateAsync({
+                                    title,
+                                    description,
+                                    status,
                                     policyMode,
-                                    builder: policyBuilder,
+                                    accessPolicyId: policyMode === "custom" ? accessPolicyId : null,
                                 })
-
-                                void createProjectMutation
-                                    .mutateAsync({
-                                        title,
-                                        description,
-                                        status,
-                                        ...policyPayload,
-                                    })
-                                    .then(() => {
-                                        setTitle("")
-                                        setDescription("")
-                                        setStatus("draft")
-                                        setPolicyMode("inherited")
-                                        setPolicyBuilder(createDefaultPolicyBuilderState())
-                                    })
-                            } catch (error) {
-                                setFormError(
-                                    error instanceof Error
-                                        ? error.message
-                                        : "Failed to build policy"
-                                )
-                            }
+                                .then(() => {
+                                    setTitle("")
+                                    setDescription("")
+                                    setStatus("draft")
+                                    setPolicyMode("inherited")
+                                    setAccessPolicyId("")
+                                })
                         }}
                     >
                         <div>
                             <Eyebrow className="tracking-[0.3em]">create project</Eyebrow>
                             <p className="mt-2 text-sm text-[var(--muted)]">
-                                Базовый контейнер проекта. Custom access policy теперь тоже
-                                собирается через визуальный builder.
+                                Для custom-доступа выбери сохраненную access policy. Новые условия
+                                создаются на странице Access.
                             </p>
                         </div>
 
@@ -129,7 +107,7 @@ export function MeProjectsPage() {
                             </Label>
 
                             <Label>
-                                Policy mode
+                                Access mode
                                 <Select
                                     onChange={(event) =>
                                         setPolicyMode(
@@ -146,20 +124,23 @@ export function MeProjectsPage() {
                         </div>
 
                         {policyMode === "custom" ? (
-                            <div className="grid gap-3">
-                                <Eyebrow className="tracking-[0.3em]">custom access policy</Eyebrow>
-                                <AccessPolicyEditor
-                                    builder={policyBuilder}
-                                    disabled={createProjectMutation.isPending}
-                                    onChange={setPolicyBuilder}
-                                />
-                                <p className="text-sm text-[var(--muted)]">
-                                    Preview: {summarizePolicyInput(policyBuilder)}
-                                </p>
-                            </div>
+                            <Label>
+                                Saved access policy
+                                <Select
+                                    onChange={(event) => setAccessPolicyId(event.target.value)}
+                                    value={accessPolicyId}
+                                >
+                                    <option value="">Select policy</option>
+                                    {policiesQuery.data?.map((policy) => (
+                                        <option key={policy.id} value={policy.id}>
+                                            {policy.name}
+                                            {policy.isDefault ? " (default)" : ""}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </Label>
                         ) : null}
 
-                        {formError ? <p className="text-sm text-rose-600">{formError}</p> : null}
                         {createProjectMutation.isError ? (
                             <p className="text-sm text-rose-600">
                                 {createProjectMutation.error.message}

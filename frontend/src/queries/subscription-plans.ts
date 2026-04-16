@@ -13,6 +13,14 @@ export function useMySubscriptionPlanQuery(enabled = true) {
     })
 }
 
+export function useMySubscriptionPlansQuery(enabled = true) {
+    return useQuery({
+        queryKey: queryKeys.mySubscriptionPlans,
+        queryFn: () => subscriptionPlansApi.listMySubscriptionPlans(),
+        enabled,
+    })
+}
+
 export function useAuthorSubscriptionPlanQuery(slug: string) {
     return useQuery({
         queryKey: queryKeys.authorSubscriptionPlan(slug),
@@ -29,6 +37,7 @@ export function useUpsertMySubscriptionPlanMutation() {
             subscriptionPlansApi.upsertMySubscriptionPlan(input),
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: queryKeys.mySubscriptionPlan })
+            void queryClient.invalidateQueries({ queryKey: queryKeys.mySubscriptionPlans })
             void queryClient.invalidateQueries({ queryKey: ["authors"] })
         },
     })

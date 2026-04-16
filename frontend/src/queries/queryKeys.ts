@@ -4,7 +4,9 @@ export const queryKeys = {
     myPosts: ["me", "posts"] as const,
     myProjects: ["me", "projects"] as const,
     myEntitlements: ["me", "entitlements"] as const,
+    myAccessPolicies: ["me", "access-policies"] as const,
     mySubscriptionPlan: ["me", "subscription-plan"] as const,
+    mySubscriptionPlans: ["me", "subscription-plans"] as const,
     author: (slug: string) => ["authors", slug] as const,
     authorPosts: (slug: string) => ["authors", slug, "posts"] as const,
     authorPost: (slug: string, postId: string) => ["authors", slug, "posts", postId] as const,
@@ -12,4 +14,5 @@ export const queryKeys = {
     authorProject: (slug: string, projectId: string) =>
         ["authors", slug, "projects", projectId] as const,
     authorSubscriptionPlan: (slug: string) => ["authors", slug, "subscription-plan"] as const,
+    authorSubscriptionPlans: (slug: string) => ["authors", slug, "subscription-plans"] as const,
 } as const

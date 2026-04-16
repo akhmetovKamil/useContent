@@ -18,7 +18,7 @@ const authorNavItems = [
     { to: "/me/author", label: "Profile" },
     { to: "/me/posts", label: "Posts" },
     { to: "/me/projects", label: "Projects" },
-    { to: "/me/subscription-plan", label: "Plan" },
+    { to: "/me/subscription-plan", label: "Access" },
 ]
 
 export function RootLayout() {

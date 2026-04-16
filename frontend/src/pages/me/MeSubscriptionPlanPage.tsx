@@ -1,16 +1,41 @@
 import { useEffect, useState } from "react"
 
-import { isApiNotFoundError } from "@/lib/api/errors"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Eyebrow, PageSection } from "@/components/ui/page"
+import { Textarea } from "@/components/ui/textarea"
 import {
-    useMySubscriptionPlanQuery,
+    useCreateMyAccessPolicyMutation,
+    useDeleteMyAccessPolicyMutation,
+    useMyAccessPoliciesQuery,
+    useUpdateMyAccessPolicyMutation,
+} from "@/queries/access-policies"
+import {
+    useMySubscriptionPlansQuery,
     useUpsertMySubscriptionPlanMutation,
 } from "@/queries/subscription-plans"
+import { AccessPolicyEditor } from "@/shared/access/AccessPolicyEditor"
+import {
+    buildPolicyInputFromBuilder,
+    createDefaultPolicyBuilderState,
+    summarizePolicyInput,
+    type AccessPolicyBuilderState,
+} from "@/shared/access/policy"
 import { useAuthStore } from "@/shared/session/auth-store"
 
 export function MeSubscriptionPlanPage() {
     const token = useAuthStore((state) => state.token)
-    const planQuery = useMySubscriptionPlanQuery(Boolean(token))
+    const plansQuery = useMySubscriptionPlansQuery(Boolean(token))
+    const policiesQuery = useMyAccessPoliciesQuery(Boolean(token))
     const upsertPlanMutation = useUpsertMySubscriptionPlanMutation()
+    const createPolicyMutation = useCreateMyAccessPolicyMutation()
+    const updatePolicyMutation = useUpdateMyAccessPolicyMutation()
+    const deletePolicyMutation = useDeleteMyAccessPolicyMutation()
+
+    const [code, setCode] = useState("main")
     const [title, setTitle] = useState("Main subscription")
     const [chainId, setChainId] = useState("11155111")
     const [tokenAddress, setTokenAddress] = useState("0x0000000000000000000000000000000000000000")
@@ -20,180 +45,315 @@ export function MeSubscriptionPlanPage() {
         "0x0000000000000000000000000000000000000000"
     )
     const [active, setActive] = useState(true)
+    const [policyName, setPolicyName] = useState("Subscribers only")
+    const [policyDescription, setPolicyDescription] = useState("")
+    const [policyIsDefault, setPolicyIsDefault] = useState(false)
+    const [policyBuilder, setPolicyBuilder] = useState<AccessPolicyBuilderState>(
+        createDefaultPolicyBuilderState()
+    )
+    const [policyError, setPolicyError] = useState<string | null>(null)
 
     useEffect(() => {
-        if (!planQuery.data) {
+        if (!plansQuery.data?.length) {
             return
         }
 
-        setTitle(planQuery.data.title)
-        setChainId(String(planQuery.data.chainId))
-        setTokenAddress(planQuery.data.tokenAddress)
-        setPrice(planQuery.data.price)
-        setBillingPeriodDays(String(planQuery.data.billingPeriodDays))
-        setContractAddress(planQuery.data.contractAddress)
-        setActive(planQuery.data.active)
-    }, [planQuery.data])
+        const plan = plansQuery.data.find((item) => item.code === "main") ?? plansQuery.data[0]
+        setCode(plan.code)
+        setTitle(plan.title)
+        setChainId(String(plan.chainId))
+        setTokenAddress(plan.tokenAddress)
+        setPrice(plan.price)
+        setBillingPeriodDays(String(plan.billingPeriodDays))
+        setContractAddress(plan.contractAddress)
+        setActive(plan.active)
+    }, [plansQuery.data])
 
     return (
-        <section className="rounded-[28px] border border-[var(--line)] bg-[var(--surface-strong)] p-6 md:p-8">
-            <div className="font-mono text-xs uppercase tracking-[0.35em] text-[var(--muted)]">
-                Monetization
-            </div>
+        <PageSection>
+            <Eyebrow>Access rules</Eyebrow>
             <h2 className="mt-3 font-[var(--serif)] text-3xl text-[var(--foreground)]">
-                Main author subscription plan
+                Subscription plans and reusable access policies
             </h2>
             {!token ? (
                 <p className="mt-3 text-[var(--muted)]">
-                    После авторизации тут будет форма для главного subscription plan автора.
+                    После авторизации здесь будут планы подписки и сохраненные условия доступа.
                 </p>
             ) : (
-                <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-                    <form
-                        className="grid gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5"
-                        onSubmit={(event) => {
-                            event.preventDefault()
-                            void upsertPlanMutation.mutateAsync({
-                                title,
-                                chainId: Number(chainId),
-                                tokenAddress,
-                                price,
-                                billingPeriodDays: Number(billingPeriodDays),
-                                contractAddress,
-                                active,
-                            })
-                        }}
-                    >
-                        <div>
-                            <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-                                subscription plan
+                <div className="mt-6 grid gap-6 xl:grid-cols-2">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Subscription plans</CardTitle>
+                            <CardDescription>
+                                Можно создать несколько планов и потом выбирать их в policy builder.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <form
+                                className="grid gap-4"
+                                onSubmit={(event) => {
+                                    event.preventDefault()
+                                    void upsertPlanMutation.mutateAsync({
+                                        code,
+                                        title,
+                                        chainId: Number(chainId),
+                                        tokenAddress,
+                                        price,
+                                        billingPeriodDays: Number(billingPeriodDays),
+                                        contractAddress,
+                                        active,
+                                    })
+                                }}
+                            >
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <Label>
+                                        Code
+                                        <Input
+                                            onChange={(event) => setCode(event.target.value)}
+                                            value={code}
+                                        />
+                                    </Label>
+                                    <Label>
+                                        Title
+                                        <Input
+                                            onChange={(event) => setTitle(event.target.value)}
+                                            value={title}
+                                        />
+                                    </Label>
+                                    <Label>
+                                        Chain ID
+                                        <Input
+                                            onChange={(event) => setChainId(event.target.value)}
+                                            value={chainId}
+                                        />
+                                    </Label>
+                                    <Label>
+                                        Billing days
+                                        <Input
+                                            onChange={(event) =>
+                                                setBillingPeriodDays(event.target.value)
+                                            }
+                                            value={billingPeriodDays}
+                                        />
+                                    </Label>
+                                </div>
+                                <Label>
+                                    Token address
+                                    <Input
+                                        className="font-mono"
+                                        onChange={(event) => setTokenAddress(event.target.value)}
+                                        value={tokenAddress}
+                                    />
+                                </Label>
+                                <Label>
+                                    Contract address
+                                    <Input
+                                        className="font-mono"
+                                        onChange={(event) => setContractAddress(event.target.value)}
+                                        value={contractAddress}
+                                    />
+                                </Label>
+                                <Label>
+                                    Price
+                                    <Input
+                                        onChange={(event) => setPrice(event.target.value)}
+                                        value={price}
+                                    />
+                                </Label>
+                                <label className="flex items-center gap-3 text-sm">
+                                    <input
+                                        checked={active}
+                                        onChange={(event) => setActive(event.target.checked)}
+                                        type="checkbox"
+                                    />
+                                    Active
+                                </label>
+                                {upsertPlanMutation.isError ? (
+                                    <p className="text-sm text-rose-600">
+                                        {upsertPlanMutation.error.message}
+                                    </p>
+                                ) : null}
+                                <Button
+                                    className="w-fit rounded-full"
+                                    disabled={upsertPlanMutation.isPending}
+                                    type="submit"
+                                >
+                                    {upsertPlanMutation.isPending ? "Saving..." : "Save plan"}
+                                </Button>
+                            </form>
+
+                            <div className="mt-6 grid gap-3">
+                                {plansQuery.data?.map((plan) => (
+                                    <button
+                                        className="rounded-lg border border-[var(--line)] p-4 text-left transition-colors hover:bg-[var(--accent-soft)]"
+                                        key={plan.id}
+                                        onClick={() => {
+                                            setCode(plan.code)
+                                            setTitle(plan.title)
+                                            setChainId(String(plan.chainId))
+                                            setTokenAddress(plan.tokenAddress)
+                                            setPrice(plan.price)
+                                            setBillingPeriodDays(String(plan.billingPeriodDays))
+                                            setContractAddress(plan.contractAddress)
+                                            setActive(plan.active)
+                                        }}
+                                        type="button"
+                                    >
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span className="font-medium">{plan.title}</span>
+                                            <Badge>{plan.code}</Badge>
+                                            <Badge variant={plan.active ? "success" : "warning"}>
+                                                {plan.active ? "active" : "inactive"}
+                                            </Badge>
+                                        </div>
+                                        <div className="mt-2 text-sm text-[var(--muted)]">
+                                            {plan.price} every {plan.billingPeriodDays} days
+                                        </div>
+                                    </button>
+                                ))}
                             </div>
-                            <p className="mt-2 text-sm text-[var(--muted)]">
-                                Один основной план автора. Позже поверх этого спокойно нарастим
-                                гибкие policy-комбинации.
-                            </p>
-                        </div>
+                        </CardContent>
+                    </Card>
 
-                        <label className="grid gap-2 text-sm text-[var(--foreground)]">
-                            Title
-                            <input
-                                className="rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 outline-none"
-                                onChange={(event) => setTitle(event.target.value)}
-                                value={title}
-                            />
-                        </label>
-
-                        <div className="grid gap-4 md:grid-cols-2">
-                            <label className="grid gap-2 text-sm text-[var(--foreground)]">
-                                Chain ID
-                                <input
-                                    className="rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 outline-none"
-                                    onChange={(event) => setChainId(event.target.value)}
-                                    value={chainId}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Access policies</CardTitle>
+                            <CardDescription>
+                                Эти условия потом выбираются у постов и проектов.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <form
+                                className="grid gap-4"
+                                onSubmit={(event) => {
+                                    event.preventDefault()
+                                    setPolicyError(null)
+                                    try {
+                                        void createPolicyMutation.mutateAsync({
+                                            name: policyName,
+                                            description: policyDescription,
+                                            isDefault: policyIsDefault,
+                                            policyInput: buildPolicyInputFromBuilder(policyBuilder),
+                                        })
+                                    } catch (error) {
+                                        setPolicyError(
+                                            error instanceof Error
+                                                ? error.message
+                                                : "Failed to build policy"
+                                        )
+                                    }
+                                }}
+                            >
+                                <Label>
+                                    Name
+                                    <Input
+                                        onChange={(event) => setPolicyName(event.target.value)}
+                                        value={policyName}
+                                    />
+                                </Label>
+                                <Label>
+                                    Description
+                                    <Textarea
+                                        onChange={(event) =>
+                                            setPolicyDescription(event.target.value)
+                                        }
+                                        value={policyDescription}
+                                    />
+                                </Label>
+                                <AccessPolicyEditor
+                                    builder={policyBuilder}
+                                    disabled={createPolicyMutation.isPending}
+                                    onChange={setPolicyBuilder}
+                                    subscriptionPlans={plansQuery.data ?? []}
                                 />
-                            </label>
+                                <p className="text-sm text-[var(--muted)]">
+                                    Preview: {summarizePolicyInput(policyBuilder)}
+                                </p>
+                                <label className="flex items-center gap-3 text-sm">
+                                    <input
+                                        checked={policyIsDefault}
+                                        onChange={(event) =>
+                                            setPolicyIsDefault(event.target.checked)
+                                        }
+                                        type="checkbox"
+                                    />
+                                    Make default
+                                </label>
+                                {policyError ? (
+                                    <p className="text-sm text-rose-600">{policyError}</p>
+                                ) : null}
+                                {createPolicyMutation.isError ? (
+                                    <p className="text-sm text-rose-600">
+                                        {createPolicyMutation.error.message}
+                                    </p>
+                                ) : null}
+                                <Button
+                                    className="w-fit rounded-full"
+                                    disabled={createPolicyMutation.isPending}
+                                    type="submit"
+                                >
+                                    {createPolicyMutation.isPending ? "Saving..." : "Create policy"}
+                                </Button>
+                            </form>
 
-                            <label className="grid gap-2 text-sm text-[var(--foreground)]">
-                                Billing period days
-                                <input
-                                    className="rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 outline-none"
-                                    onChange={(event) => setBillingPeriodDays(event.target.value)}
-                                    value={billingPeriodDays}
-                                />
-                            </label>
-                        </div>
-
-                        <label className="grid gap-2 text-sm text-[var(--foreground)]">
-                            Token address
-                            <input
-                                className="rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 font-mono text-sm outline-none"
-                                onChange={(event) => setTokenAddress(event.target.value)}
-                                value={tokenAddress}
-                            />
-                        </label>
-
-                        <label className="grid gap-2 text-sm text-[var(--foreground)]">
-                            Price
-                            <input
-                                className="rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 outline-none"
-                                onChange={(event) => setPrice(event.target.value)}
-                                value={price}
-                            />
-                        </label>
-
-                        <label className="grid gap-2 text-sm text-[var(--foreground)]">
-                            Contract address
-                            <input
-                                className="rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 font-mono text-sm outline-none"
-                                onChange={(event) => setContractAddress(event.target.value)}
-                                value={contractAddress}
-                            />
-                        </label>
-
-                        <label className="flex items-center gap-3 text-sm text-[var(--foreground)]">
-                            <input
-                                checked={active}
-                                onChange={(event) => setActive(event.target.checked)}
-                                type="checkbox"
-                            />
-                            Plan is active
-                        </label>
-
-                        {upsertPlanMutation.isError ? (
-                            <p className="text-sm text-rose-600">
-                                {upsertPlanMutation.error.message}
-                            </p>
-                        ) : null}
-
-                        <button
-                            className="w-fit rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-medium text-[var(--accent-foreground)] disabled:opacity-60"
-                            disabled={upsertPlanMutation.isPending}
-                            type="submit"
-                        >
-                            {upsertPlanMutation.isPending ? "Saving..." : "Save plan"}
-                        </button>
-                    </form>
-
-                    <div className="grid gap-4">
-                        {planQuery.isLoading ? (
-                            <p className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5 text-[var(--muted)]">
-                                Загружаем текущий план...
-                            </p>
-                        ) : null}
-
-                        {planQuery.isError && !isApiNotFoundError(planQuery.error) ? (
-                            <p className="rounded-[24px] border border-rose-200 bg-rose-50 p-5 text-rose-600">
-                                Не удалось загрузить план: {planQuery.error.message}
-                            </p>
-                        ) : null}
-
-                        {planQuery.data ? (
-                            <article className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">
-                                <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-                                    current plan
-                                </div>
-                                <div className="mt-3 text-2xl text-[var(--foreground)]">
-                                    {planQuery.data.title}
-                                </div>
-                                <div className="mt-2 text-sm text-[var(--muted)]">
-                                    {planQuery.data.price} units every{" "}
-                                    {planQuery.data.billingPeriodDays} days
-                                </div>
-                                <div className="mt-4 font-mono text-xs leading-6 text-[var(--muted)]">
-                                    token: {planQuery.data.tokenAddress}
-                                    <br />
-                                    contract: {planQuery.data.contractAddress}
-                                </div>
-                            </article>
-                        ) : !planQuery.isLoading ? (
-                            <p className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5 text-[var(--muted)]">
-                                План еще не создан. Форму слева уже можно использовать для первого
-                                сохранения.
-                            </p>
-                        ) : null}
-                    </div>
+                            <div className="mt-6 grid gap-3">
+                                {policiesQuery.data?.map((policy) => (
+                                    <div
+                                        className="rounded-lg border border-[var(--line)] p-4"
+                                        key={policy.id}
+                                    >
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span className="font-medium">{policy.name}</span>
+                                            {policy.isDefault ? (
+                                                <Badge variant="success">default</Badge>
+                                            ) : null}
+                                            <Badge>{policy.policy.root.type}</Badge>
+                                        </div>
+                                        <p className="mt-2 text-sm text-[var(--muted)]">
+                                            {policy.description || "No description"}
+                                        </p>
+                                        <div className="mt-4 flex flex-wrap gap-2">
+                                            {!policy.isDefault ? (
+                                                <Button
+                                                    className="rounded-full"
+                                                    onClick={() =>
+                                                        void updatePolicyMutation.mutateAsync({
+                                                            policyId: policy.id,
+                                                            input: { isDefault: true },
+                                                        })
+                                                    }
+                                                    size="sm"
+                                                    type="button"
+                                                    variant="outline"
+                                                >
+                                                    Make default
+                                                </Button>
+                                            ) : null}
+                                            {!policy.isDefault ? (
+                                                <Button
+                                                    className="rounded-full"
+                                                    onClick={() => {
+                                                        if (window.confirm("Delete policy?")) {
+                                                            void deletePolicyMutation.mutateAsync(
+                                                                policy.id
+                                                            )
+                                                        }
+                                                    }}
+                                                    size="sm"
+                                                    type="button"
+                                                    variant="destructive"
+                                                >
+                                                    Delete
+                                                </Button>
+                                            ) : null}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
             )}
-        </section>
+        </PageSection>
     )
 }
