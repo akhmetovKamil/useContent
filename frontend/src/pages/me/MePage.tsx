@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react"
 
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Eyebrow, PageSection } from "@/components/ui/page"
+import { Textarea } from "@/components/ui/textarea"
 import { useMeQuery, useMyEntitlementsQuery, useUpdateMeMutation } from "@/queries/profile"
 import { useAuthStore } from "@/shared/session/auth-store"
 
@@ -23,10 +29,8 @@ export function MePage() {
     }, [meQuery.data])
 
     return (
-        <section className="rounded-[28px] border border-[var(--line)] bg-[var(--surface-strong)] p-6 md:p-8">
-            <div className="font-mono text-xs uppercase tracking-[0.35em] text-[var(--muted)]">
-                Personal cabinet
-            </div>
+        <PageSection>
+            <Eyebrow>Personal cabinet</Eyebrow>
             <h2 className="mt-3 font-[var(--serif)] text-3xl text-[var(--foreground)]">
                 Wallet, profile, and private dashboard
             </h2>
@@ -44,51 +48,56 @@ export function MePage() {
             ) : meQuery.data ? (
                 <div className="mt-6 grid gap-6">
                     <div className="grid gap-4 md:grid-cols-3">
-                        <article className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">
-                            <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-                                profile
-                            </div>
-                            <div className="mt-3 text-xl text-[var(--foreground)]">
-                                {meQuery.data.displayName}
-                            </div>
-                            <div className="mt-2 text-sm text-[var(--muted)]">
-                                @{meQuery.data.username ?? "username not set"}
-                            </div>
-                            <div className="mt-4 text-sm text-[var(--muted)]">
-                                {meQuery.data.bio || "Bio is empty"}
-                            </div>
-                        </article>
+                        <Card>
+                            <CardHeader>
+                                <Eyebrow className="tracking-[0.3em]">profile</Eyebrow>
+                                <CardTitle>{meQuery.data.displayName}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-sm text-[var(--muted)]">
+                                    @{meQuery.data.username ?? "username not set"}
+                                </div>
+                                <div className="mt-4 text-sm text-[var(--muted)]">
+                                    {meQuery.data.bio || "Bio is empty"}
+                                </div>
+                            </CardContent>
+                        </Card>
 
-                        <article className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">
-                            <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-                                wallet
-                            </div>
-                            <div className="mt-3 break-all font-mono text-sm text-[var(--foreground)]">
-                                {meQuery.data.primaryWallet}
-                            </div>
-                            <div className="mt-4 text-sm text-[var(--muted)]">
-                                Connected wallets: {meQuery.data.wallets.length}
-                            </div>
-                            <div className="mt-2 text-sm text-[var(--muted)]">
-                                Role: {meQuery.data.role}
-                            </div>
-                        </article>
+                        <Card>
+                            <CardHeader>
+                                <Eyebrow className="tracking-[0.3em]">wallet</Eyebrow>
+                                <CardTitle className="break-all font-mono text-sm">
+                                    {meQuery.data.primaryWallet}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-sm text-[var(--muted)]">
+                                    Connected wallets: {meQuery.data.wallets.length}
+                                </div>
+                                <div className="mt-2 text-sm text-[var(--muted)]">
+                                    Role: {meQuery.data.role}
+                                </div>
+                            </CardContent>
+                        </Card>
 
-                        <article className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">
-                            <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-                                entitlements
-                            </div>
-                            <div className="mt-3 text-3xl text-[var(--foreground)]">
-                                {entitlementsQuery.data?.length ?? 0}
-                            </div>
-                            <div className="mt-2 text-sm text-[var(--muted)]">
-                                Active or historical subscription grants attached to this wallet.
-                            </div>
-                        </article>
+                        <Card>
+                            <CardHeader>
+                                <Eyebrow className="tracking-[0.3em]">entitlements</Eyebrow>
+                                <CardTitle className="text-3xl">
+                                    {entitlementsQuery.data?.length ?? 0}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-sm text-[var(--muted)]">
+                                    Active or historical subscription grants attached to this
+                                    wallet.
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
 
                     <form
-                        className="grid gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5"
+                        className="grid gap-4 rounded-lg border border-[var(--line)] bg-[var(--surface)] p-5"
                         onSubmit={(event) => {
                             event.preventDefault()
                             void updateMeMutation.mutateAsync({
@@ -98,50 +107,45 @@ export function MePage() {
                             })
                         }}
                     >
-                        <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-                            edit profile
-                        </div>
+                        <Eyebrow className="tracking-[0.3em]">edit profile</Eyebrow>
                         <div className="grid gap-4 md:grid-cols-2">
-                            <label className="grid gap-2 text-sm text-[var(--foreground)]">
+                            <Label>
                                 Username
-                                <input
-                                    className="rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 outline-none"
+                                <Input
                                     onChange={(event) => setUsername(event.target.value)}
                                     value={username}
                                 />
-                            </label>
-                            <label className="grid gap-2 text-sm text-[var(--foreground)]">
+                            </Label>
+                            <Label>
                                 Display name
-                                <input
-                                    className="rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 outline-none"
+                                <Input
                                     onChange={(event) => setDisplayName(event.target.value)}
                                     value={displayName}
                                 />
-                            </label>
+                            </Label>
                         </div>
-                        <label className="grid gap-2 text-sm text-[var(--foreground)]">
+                        <Label>
                             Bio
-                            <textarea
-                                className="min-h-28 rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 outline-none"
+                            <Textarea
                                 onChange={(event) => setBio(event.target.value)}
                                 value={bio}
                             />
-                        </label>
+                        </Label>
                         {updateMeMutation.isError ? (
                             <p className="text-sm text-rose-600">
                                 {updateMeMutation.error.message}
                             </p>
                         ) : null}
-                        <button
-                            className="w-fit rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-medium text-[var(--accent-foreground)] disabled:opacity-60"
+                        <Button
+                            className="w-fit rounded-full"
                             disabled={updateMeMutation.isPending}
                             type="submit"
                         >
                             {updateMeMutation.isPending ? "Saving..." : "Save profile"}
-                        </button>
+                        </Button>
                     </form>
                 </div>
             ) : null}
-        </section>
+        </PageSection>
     )
 }

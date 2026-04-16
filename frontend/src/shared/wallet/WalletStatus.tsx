@@ -1,5 +1,7 @@
 import { useConnect } from "wagmi"
 
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { useWalletSession } from "@/features/auth/useWalletSession"
 import { useAuthStore } from "@/shared/session/auth-store"
 
@@ -17,42 +19,40 @@ export function WalletStatus() {
             {isConnected && shortAddress ? (
                 <>
                     <div className="font-mono text-sm text-[var(--foreground)]">{shortAddress}</div>
-                    <div
-                        className={`rounded-full px-3 py-1 text-xs font-medium ${
-                            token
-                                ? "bg-emerald-100 text-emerald-800"
-                                : "bg-amber-100 text-amber-800"
-                        }`}
-                    >
+                    <Badge variant={token ? "success" : "warning"}>
                         {token ? "session active" : "signature required"}
-                    </div>
+                    </Badge>
                     {!token ? (
-                        <button
-                            className="rounded-full bg-[var(--accent)] px-3 py-1 text-sm font-medium text-[var(--accent-foreground)] disabled:opacity-60"
+                        <Button
+                            className="rounded-full"
                             disabled={signInPending}
                             onClick={() => void signIn()}
+                            size="sm"
                             type="button"
                         >
                             {signInPending ? "Signing..." : "Sign in"}
-                        </button>
+                        </Button>
                     ) : null}
-                    <button
-                        className="rounded-full border border-[var(--line)] px-3 py-1 text-sm font-medium text-[var(--foreground)]"
+                    <Button
+                        className="rounded-full"
                         onClick={signOut}
+                        size="sm"
                         type="button"
+                        variant="outline"
                     >
                         Disconnect
-                    </button>
+                    </Button>
                 </>
             ) : (
-                <button
-                    className="rounded-full bg-[var(--accent)] px-3 py-1 text-sm font-medium text-[var(--accent-foreground)] disabled:opacity-60"
+                <Button
+                    className="rounded-full"
                     disabled={!connector || connectPending}
                     onClick={() => connector && connect({ connector })}
+                    size="sm"
                     type="button"
                 >
                     {connectPending ? "Connecting..." : "Connect wallet"}
-                </button>
+                </Button>
             )}
             {signInError ? (
                 <div className="basis-full text-xs text-rose-600">{signInError.message}</div>

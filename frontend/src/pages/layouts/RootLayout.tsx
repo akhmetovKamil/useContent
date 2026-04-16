@@ -1,5 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom"
 
+import { buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useAuthStore } from "@/shared/session/auth-store"
 import { useWorkspaceStore } from "@/shared/session/workspace-store"
@@ -51,21 +53,7 @@ export function RootLayout() {
 
                 <nav className="flex flex-wrap gap-2 border-b border-[var(--line)] px-5 py-4 md:px-8">
                     {navItems.map((item) => (
-                        <NavLink
-                            className={({ isActive }) =>
-                                [
-                                    "rounded-full px-4 py-2 text-sm transition-colors",
-                                    isActive
-                                        ? "bg-[var(--accent)] text-[var(--accent-foreground)]"
-                                        : "bg-[var(--accent-soft)] text-[var(--foreground)]",
-                                ].join(" ")
-                            }
-                            end={item.end}
-                            key={item.to}
-                            to={item.to}
-                        >
-                            {item.label}
-                        </NavLink>
+                        <NavItem end={item.end} key={item.to} label={item.label} to={item.to} />
                     ))}
                 </nav>
 
@@ -74,5 +62,25 @@ export function RootLayout() {
                 </main>
             </div>
         </div>
+    )
+}
+
+function NavItem({ end, label, to }: { end?: boolean; label: string; to: string }) {
+    return (
+        <NavLink
+            className={({ isActive }) =>
+                cn(
+                    buttonVariants({
+                        size: "sm",
+                        variant: isActive ? "default" : "secondary",
+                    }),
+                    "rounded-full"
+                )
+            }
+            end={end}
+            to={to}
+        >
+            {label}
+        </NavLink>
     )
 }

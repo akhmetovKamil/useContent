@@ -1,5 +1,13 @@
 import { useState } from "react"
 
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Eyebrow, PageSection } from "@/components/ui/page"
+import { Select } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 import {
     useCreateMyPostMutation,
     useDeleteMyPostMutation,
@@ -31,10 +39,8 @@ export function MePostsPage() {
     const [formError, setFormError] = useState<string | null>(null)
 
     return (
-        <section className="rounded-[28px] border border-[var(--line)] bg-[var(--surface-strong)] p-6 md:p-8">
-            <div className="font-mono text-xs uppercase tracking-[0.35em] text-[var(--muted)]">
-                Post manager
-            </div>
+        <PageSection>
+            <Eyebrow>Post manager</Eyebrow>
             <h2 className="mt-3 font-[var(--serif)] text-3xl text-[var(--foreground)]">
                 Drafts, published posts, and access rules
             </h2>
@@ -49,7 +55,7 @@ export function MePostsPage() {
             ) : (
                 <div className="mt-6 grid gap-6">
                     <form
-                        className="grid gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5"
+                        className="grid gap-4 rounded-lg border border-[var(--line)] bg-[var(--surface)] p-5"
                         onSubmit={(event) => {
                             event.preventDefault()
                             setFormError(null)
@@ -84,38 +90,34 @@ export function MePostsPage() {
                         }}
                     >
                         <div>
-                            <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-                                create post
-                            </div>
+                            <Eyebrow className="tracking-[0.3em]">create post</Eyebrow>
                             <p className="mt-2 text-sm text-[var(--muted)]">
                                 Базовая форма для первого контентного сценария. Теперь custom access
                                 rule собирается визуально, без raw JSON.
                             </p>
                         </div>
 
-                        <label className="grid gap-2 text-sm text-[var(--foreground)]">
+                        <Label>
                             Title
-                            <input
-                                className="rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 outline-none"
+                            <Input
                                 onChange={(event) => setTitle(event.target.value)}
                                 value={title}
                             />
-                        </label>
+                        </Label>
 
-                        <label className="grid gap-2 text-sm text-[var(--foreground)]">
+                        <Label>
                             Content
-                            <textarea
+                            <Textarea
                                 className="min-h-36 rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 outline-none"
                                 onChange={(event) => setContent(event.target.value)}
                                 value={content}
                             />
-                        </label>
+                        </Label>
 
                         <div className="grid gap-4 md:grid-cols-2">
-                            <label className="grid gap-2 text-sm text-[var(--foreground)]">
+                            <Label>
                                 Status
-                                <select
-                                    className="rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 outline-none"
+                                <Select
                                     onChange={(event) =>
                                         setStatus(event.target.value as "draft" | "published")
                                     }
@@ -123,13 +125,12 @@ export function MePostsPage() {
                                 >
                                     <option value="draft">draft</option>
                                     <option value="published">published</option>
-                                </select>
-                            </label>
+                                </Select>
+                            </Label>
 
-                            <label className="grid gap-2 text-sm text-[var(--foreground)]">
+                            <Label>
                                 Policy mode
-                                <select
-                                    className="rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 outline-none"
+                                <Select
                                     onChange={(event) =>
                                         setPolicyMode(
                                             event.target.value as "public" | "inherited" | "custom"
@@ -140,15 +141,13 @@ export function MePostsPage() {
                                     <option value="inherited">inherited</option>
                                     <option value="public">public</option>
                                     <option value="custom">custom</option>
-                                </select>
-                            </label>
+                                </Select>
+                            </Label>
                         </div>
 
                         {policyMode === "custom" ? (
                             <div className="grid gap-3">
-                                <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-                                    custom access policy
-                                </div>
+                                <Eyebrow className="tracking-[0.3em]">custom access policy</Eyebrow>
                                 <AccessPolicyEditor
                                     builder={policyBuilder}
                                     disabled={createPostMutation.isPending}
@@ -167,13 +166,13 @@ export function MePostsPage() {
                             </p>
                         ) : null}
 
-                        <button
-                            className="w-fit rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-medium text-[var(--accent-foreground)] disabled:opacity-60"
+                        <Button
+                            className="w-fit rounded-full"
                             disabled={createPostMutation.isPending}
                             type="submit"
                         >
                             {createPostMutation.isPending ? "Saving..." : "Create post"}
-                        </button>
+                        </Button>
                     </form>
 
                     <div className="grid gap-4">
@@ -183,59 +182,58 @@ export function MePostsPage() {
 
                         {postsQuery.data?.length ? (
                             postsQuery.data.map((post) => (
-                                <article
-                                    className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5"
-                                    key={post.id}
-                                >
-                                    <div className="flex flex-wrap items-center gap-3">
-                                        <h3 className="text-xl text-[var(--foreground)]">
-                                            {post.title}
-                                        </h3>
-                                        <span className="rounded-full bg-[var(--surface-strong)] px-3 py-1 text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
-                                            {post.status}
-                                        </span>
-                                        <span className="rounded-full bg-[var(--surface-strong)] px-3 py-1 text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
-                                            {post.policyMode}
-                                        </span>
-                                    </div>
-                                    <p className="mt-3 line-clamp-3 text-sm leading-6 text-[var(--muted)]">
-                                        {post.content}
-                                    </p>
-                                    <div className="mt-4 flex flex-wrap gap-2">
-                                        <button
-                                            className="rounded-full border border-[var(--line)] px-3 py-2 text-sm text-[var(--foreground)] disabled:opacity-60"
-                                            disabled={updatePostMutation.isPending}
-                                            onClick={() =>
-                                                void updatePostMutation.mutateAsync({
-                                                    postId: post.id,
-                                                    input: {
-                                                        status:
-                                                            post.status === "published"
-                                                                ? "draft"
-                                                                : "published",
-                                                    },
-                                                })
-                                            }
-                                            type="button"
-                                        >
-                                            {post.status === "published"
-                                                ? "Move to draft"
-                                                : "Publish"}
-                                        </button>
-                                        <button
-                                            className="rounded-full border border-rose-200 px-3 py-2 text-sm text-rose-600 disabled:opacity-60"
-                                            disabled={deletePostMutation.isPending}
-                                            onClick={() => {
-                                                if (window.confirm("Delete this post?")) {
-                                                    void deletePostMutation.mutateAsync(post.id)
+                                <Card key={post.id}>
+                                    <CardHeader>
+                                        <div className="flex flex-wrap items-center gap-3">
+                                            <CardTitle>{post.title}</CardTitle>
+                                            <Badge>{post.status}</Badge>
+                                            <Badge>{post.policyMode}</Badge>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="line-clamp-3 text-sm leading-6 text-[var(--muted)]">
+                                            {post.content}
+                                        </p>
+                                        <div className="mt-4 flex flex-wrap gap-2">
+                                            <Button
+                                                className="rounded-full"
+                                                disabled={updatePostMutation.isPending}
+                                                onClick={() =>
+                                                    void updatePostMutation.mutateAsync({
+                                                        postId: post.id,
+                                                        input: {
+                                                            status:
+                                                                post.status === "published"
+                                                                    ? "draft"
+                                                                    : "published",
+                                                        },
+                                                    })
                                                 }
-                                            }}
-                                            type="button"
-                                        >
-                                            Delete
-                                        </button>
-                                    </div>
-                                </article>
+                                                size="sm"
+                                                type="button"
+                                                variant="outline"
+                                            >
+                                                {post.status === "published"
+                                                    ? "Move to draft"
+                                                    : "Publish"}
+                                            </Button>
+                                            <Button
+                                                className="rounded-full"
+                                                disabled={deletePostMutation.isPending}
+                                                onClick={() => {
+                                                    if (window.confirm("Delete this post?")) {
+                                                        void deletePostMutation.mutateAsync(post.id)
+                                                    }
+                                                }}
+                                                size="sm"
+                                                type="button"
+                                                variant="destructive"
+                                            >
+                                                Delete
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             ))
                         ) : !postsQuery.isLoading ? (
                             <p className="text-[var(--muted)]">Постов пока нет.</p>
@@ -243,6 +241,6 @@ export function MePostsPage() {
                     </div>
                 </div>
             )}
-        </section>
+        </PageSection>
     )
 }

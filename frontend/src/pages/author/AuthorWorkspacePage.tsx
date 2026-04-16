@@ -1,5 +1,8 @@
 import { Link } from "react-router-dom"
 
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
 import { isApiNotFoundError } from "@/lib/api/errors"
 import { useMyPostsQuery } from "@/queries/posts"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
@@ -17,31 +20,28 @@ export function AuthorWorkspacePage() {
 
     return (
         <section className="grid gap-6">
-            <div className="rounded-[28px] border border-[var(--line)] bg-[var(--surface-strong)] p-6 md:p-8">
-                <div className="font-mono text-xs uppercase tracking-[0.35em] text-[var(--muted)]">
-                    author workspace
-                </div>
-                <h1 className="mt-3 font-[var(--serif)] text-4xl leading-tight text-[var(--foreground)] md:text-5xl">
-                    Create, publish, and manage gated content.
-                </h1>
+            <PageSection>
+                <Eyebrow>author workspace</Eyebrow>
+                <PageTitle>Create, publish, and manage gated content.</PageTitle>
                 {!token ? (
                     <p className="mt-4 max-w-2xl text-[var(--muted)]">
                         Connect and sign with a wallet to open the author workspace.
                     </p>
                 ) : needsAuthorProfile ? (
-                    <div className="mt-6 grid gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">
-                        <div className="text-xl text-[var(--foreground)]">Become an author</div>
-                        <p className="text-sm leading-6 text-[var(--muted)]">
-                            Your wallet is already a reader account. Create an author profile to
-                            publish posts, projects, and subscription rules.
-                        </p>
-                        <Link
-                            className="w-fit rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-medium text-[var(--accent-foreground)]"
-                            to="/me/author"
-                        >
-                            Create author profile
-                        </Link>
-                    </div>
+                    <Card className="mt-6">
+                        <CardHeader>
+                            <CardTitle>Become an author</CardTitle>
+                            <CardDescription>
+                                Your wallet is already a reader account. Create an author profile to
+                                publish posts, projects, and subscription rules.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Button asChild className="rounded-full">
+                                <Link to="/me/author">Create author profile</Link>
+                            </Button>
+                        </CardContent>
+                    </Card>
                 ) : authorQuery.data ? (
                     <div className="mt-6 grid gap-4 md:grid-cols-4">
                         <Metric label="Author" value={`@${authorQuery.data.slug}`} />
@@ -55,7 +55,7 @@ export function AuthorWorkspacePage() {
                 ) : (
                     <p className="mt-4 text-[var(--muted)]">Loading author workspace...</p>
                 )}
-            </div>
+            </PageSection>
 
             {authorQuery.data ? (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -87,10 +87,12 @@ export function AuthorWorkspacePage() {
 
 function Metric({ label, value }: { label: string; value: string }) {
     return (
-        <article className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">
-            <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">{label}</div>
-            <div className="mt-3 truncate text-2xl text-[var(--foreground)]">{value}</div>
-        </article>
+        <Card>
+            <CardHeader>
+                <Eyebrow className="tracking-[0.3em]">{label}</Eyebrow>
+                <CardTitle className="truncate text-2xl">{value}</CardTitle>
+            </CardHeader>
+        </Card>
     )
 }
 
@@ -104,12 +106,13 @@ function ActionCard({
     to: string
 }) {
     return (
-        <Link
-            className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5 transition-colors hover:bg-[var(--accent-soft)]"
-            to={to}
-        >
-            <div className="text-xl text-[var(--foreground)]">{label}</div>
-            <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{description}</p>
+        <Link to={to}>
+            <Card className="h-full transition-colors hover:bg-[var(--accent-soft)]">
+                <CardHeader>
+                    <CardTitle>{label}</CardTitle>
+                    <CardDescription>{description}</CardDescription>
+                </CardHeader>
+            </Card>
         </Link>
     )
 }

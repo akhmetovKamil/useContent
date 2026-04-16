@@ -1,5 +1,13 @@
 import { useState } from "react"
 
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Eyebrow, PageSection } from "@/components/ui/page"
+import { Select } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 import {
     useCreateMyProjectMutation,
     useDeleteMyProjectMutation,
@@ -31,10 +39,8 @@ export function MeProjectsPage() {
     const [formError, setFormError] = useState<string | null>(null)
 
     return (
-        <section className="rounded-[28px] border border-[var(--line)] bg-[var(--surface-strong)] p-6 md:p-8">
-            <div className="font-mono text-xs uppercase tracking-[0.35em] text-[var(--muted)]">
-                Project manager
-            </div>
+        <PageSection>
+            <Eyebrow>Project manager</Eyebrow>
             <h2 className="mt-3 font-[var(--serif)] text-3xl text-[var(--foreground)]">
                 Structured project spaces with gated access
             </h2>
@@ -49,7 +55,7 @@ export function MeProjectsPage() {
             ) : (
                 <div className="mt-6 grid gap-6">
                     <form
-                        className="grid gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5"
+                        className="grid gap-4 rounded-lg border border-[var(--line)] bg-[var(--surface)] p-5"
                         onSubmit={(event) => {
                             event.preventDefault()
                             setFormError(null)
@@ -84,38 +90,34 @@ export function MeProjectsPage() {
                         }}
                     >
                         <div>
-                            <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-                                create project
-                            </div>
+                            <Eyebrow className="tracking-[0.3em]">create project</Eyebrow>
                             <p className="mt-2 text-sm text-[var(--muted)]">
                                 Базовый контейнер проекта. Custom access policy теперь тоже
                                 собирается через визуальный builder.
                             </p>
                         </div>
 
-                        <label className="grid gap-2 text-sm text-[var(--foreground)]">
+                        <Label>
                             Title
-                            <input
-                                className="rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 outline-none"
+                            <Input
                                 onChange={(event) => setTitle(event.target.value)}
                                 value={title}
                             />
-                        </label>
+                        </Label>
 
-                        <label className="grid gap-2 text-sm text-[var(--foreground)]">
+                        <Label>
                             Description
-                            <textarea
+                            <Textarea
                                 className="min-h-32 rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 outline-none"
                                 onChange={(event) => setDescription(event.target.value)}
                                 value={description}
                             />
-                        </label>
+                        </Label>
 
                         <div className="grid gap-4 md:grid-cols-2">
-                            <label className="grid gap-2 text-sm text-[var(--foreground)]">
+                            <Label>
                                 Status
-                                <select
-                                    className="rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 outline-none"
+                                <Select
                                     onChange={(event) =>
                                         setStatus(event.target.value as "draft" | "published")
                                     }
@@ -123,13 +125,12 @@ export function MeProjectsPage() {
                                 >
                                     <option value="draft">draft</option>
                                     <option value="published">published</option>
-                                </select>
-                            </label>
+                                </Select>
+                            </Label>
 
-                            <label className="grid gap-2 text-sm text-[var(--foreground)]">
+                            <Label>
                                 Policy mode
-                                <select
-                                    className="rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 outline-none"
+                                <Select
                                     onChange={(event) =>
                                         setPolicyMode(
                                             event.target.value as "public" | "inherited" | "custom"
@@ -140,15 +141,13 @@ export function MeProjectsPage() {
                                     <option value="inherited">inherited</option>
                                     <option value="public">public</option>
                                     <option value="custom">custom</option>
-                                </select>
-                            </label>
+                                </Select>
+                            </Label>
                         </div>
 
                         {policyMode === "custom" ? (
                             <div className="grid gap-3">
-                                <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-                                    custom access policy
-                                </div>
+                                <Eyebrow className="tracking-[0.3em]">custom access policy</Eyebrow>
                                 <AccessPolicyEditor
                                     builder={policyBuilder}
                                     disabled={createProjectMutation.isPending}
@@ -167,13 +166,13 @@ export function MeProjectsPage() {
                             </p>
                         ) : null}
 
-                        <button
-                            className="w-fit rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-medium text-[var(--accent-foreground)] disabled:opacity-60"
+                        <Button
+                            className="w-fit rounded-full"
                             disabled={createProjectMutation.isPending}
                             type="submit"
                         >
                             {createProjectMutation.isPending ? "Saving..." : "Create project"}
-                        </button>
+                        </Button>
                     </form>
 
                     <div className="grid gap-4">
@@ -183,62 +182,61 @@ export function MeProjectsPage() {
 
                         {projectsQuery.data?.length ? (
                             projectsQuery.data.map((project) => (
-                                <article
-                                    className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5"
-                                    key={project.id}
-                                >
-                                    <div className="flex flex-wrap items-center gap-3">
-                                        <h3 className="text-xl text-[var(--foreground)]">
-                                            {project.title}
-                                        </h3>
-                                        <span className="rounded-full bg-[var(--surface-strong)] px-3 py-1 text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
-                                            {project.status}
-                                        </span>
-                                        <span className="rounded-full bg-[var(--surface-strong)] px-3 py-1 text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
-                                            {project.policyMode}
-                                        </span>
-                                    </div>
-                                    <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
-                                        {project.description ||
-                                            "Project description is still empty"}
-                                    </p>
-                                    <div className="mt-4 flex flex-wrap gap-2">
-                                        <button
-                                            className="rounded-full border border-[var(--line)] px-3 py-2 text-sm text-[var(--foreground)] disabled:opacity-60"
-                                            disabled={updateProjectMutation.isPending}
-                                            onClick={() =>
-                                                void updateProjectMutation.mutateAsync({
-                                                    projectId: project.id,
-                                                    input: {
-                                                        status:
-                                                            project.status === "published"
-                                                                ? "draft"
-                                                                : "published",
-                                                    },
-                                                })
-                                            }
-                                            type="button"
-                                        >
-                                            {project.status === "published"
-                                                ? "Move to draft"
-                                                : "Publish"}
-                                        </button>
-                                        <button
-                                            className="rounded-full border border-rose-200 px-3 py-2 text-sm text-rose-600 disabled:opacity-60"
-                                            disabled={deleteProjectMutation.isPending}
-                                            onClick={() => {
-                                                if (window.confirm("Delete this project?")) {
-                                                    void deleteProjectMutation.mutateAsync(
-                                                        project.id
-                                                    )
+                                <Card key={project.id}>
+                                    <CardHeader>
+                                        <div className="flex flex-wrap items-center gap-3">
+                                            <CardTitle>{project.title}</CardTitle>
+                                            <Badge>{project.status}</Badge>
+                                            <Badge>{project.policyMode}</Badge>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm leading-6 text-[var(--muted)]">
+                                            {project.description ||
+                                                "Project description is still empty"}
+                                        </p>
+                                        <div className="mt-4 flex flex-wrap gap-2">
+                                            <Button
+                                                className="rounded-full"
+                                                disabled={updateProjectMutation.isPending}
+                                                onClick={() =>
+                                                    void updateProjectMutation.mutateAsync({
+                                                        projectId: project.id,
+                                                        input: {
+                                                            status:
+                                                                project.status === "published"
+                                                                    ? "draft"
+                                                                    : "published",
+                                                        },
+                                                    })
                                                 }
-                                            }}
-                                            type="button"
-                                        >
-                                            Delete
-                                        </button>
-                                    </div>
-                                </article>
+                                                size="sm"
+                                                type="button"
+                                                variant="outline"
+                                            >
+                                                {project.status === "published"
+                                                    ? "Move to draft"
+                                                    : "Publish"}
+                                            </Button>
+                                            <Button
+                                                className="rounded-full"
+                                                disabled={deleteProjectMutation.isPending}
+                                                onClick={() => {
+                                                    if (window.confirm("Delete this project?")) {
+                                                        void deleteProjectMutation.mutateAsync(
+                                                            project.id
+                                                        )
+                                                    }
+                                                }}
+                                                size="sm"
+                                                type="button"
+                                                variant="destructive"
+                                            >
+                                                Delete
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             ))
                         ) : !projectsQuery.isLoading ? (
                             <p className="text-[var(--muted)]">Проектов пока нет.</p>
@@ -246,6 +244,6 @@ export function MeProjectsPage() {
                     </div>
                 </div>
             )}
-        </section>
+        </PageSection>
     )
 }

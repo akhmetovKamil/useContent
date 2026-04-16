@@ -1,5 +1,8 @@
 import { Link } from "react-router-dom"
 
+import { Button } from "@/components/ui/button"
+import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
 import { useMyPostsQuery } from "@/queries/posts"
 import { useMeQuery, useMyAuthorProfileQuery } from "@/queries/profile"
 import { useMyProjectsQuery } from "@/queries/projects"
@@ -16,14 +19,12 @@ export function HomePage() {
 
     return (
         <div className="grid gap-6">
-            <section className="grid gap-6 rounded-[28px] border border-[var(--line)] bg-[var(--surface-strong)] p-6 md:grid-cols-[1.2fr_0.8fr] md:p-8">
+            <PageSection className="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
                 <div>
-                    <div className="font-mono text-xs uppercase tracking-[0.35em] text-[var(--muted)]">
-                        workspace
-                    </div>
-                    <h1 className="mt-4 max-w-3xl font-[var(--serif)] text-4xl leading-none text-[var(--foreground)] md:text-6xl">
+                    <Eyebrow>workspace</Eyebrow>
+                    <PageTitle className="max-w-3xl md:text-6xl">
                         Content, access rules, and subscriptions in one place.
-                    </h1>
+                    </PageTitle>
                     <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--muted)] md:text-lg">
                         Create an author profile, configure a subscription plan, publish posts and
                         project spaces, then test gated reading from public author pages.
@@ -44,7 +45,7 @@ export function HomePage() {
                         />
                     ) : null}
                 </div>
-            </section>
+            </PageSection>
 
             <section className="grid gap-4 md:grid-cols-4">
                 <MetricCard label="Wallet session" value={token ? "Signed in" : "Not signed in"} />
@@ -58,21 +59,21 @@ export function HomePage() {
 
 function ActionLink({ label, onClick, to }: { label: string; onClick?: () => void; to: string }) {
     return (
-        <Link
-            className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--accent-soft)]"
-            onClick={onClick}
-            to={to}
-        >
-            {label}
-        </Link>
+        <Button asChild className="justify-start rounded-full" variant="outline">
+            <Link onClick={onClick} to={to}>
+                {label}
+            </Link>
+        </Button>
     )
 }
 
 function MetricCard({ label, value }: { label: string; value: string }) {
     return (
-        <article className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">
-            <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">{label}</div>
-            <div className="mt-3 text-2xl text-[var(--foreground)]">{value}</div>
-        </article>
+        <Card>
+            <CardHeader>
+                <Eyebrow className="tracking-[0.3em]">{label}</Eyebrow>
+                <CardTitle className="text-2xl">{value}</CardTitle>
+            </CardHeader>
+        </Card>
     )
 }

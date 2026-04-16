@@ -1,5 +1,9 @@
 import { v4 as uuidv4 } from "uuid"
 
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select } from "@/components/ui/select"
 import type { AccessComposer, AccessPolicyBuilderState, AccessRuleForm } from "./policy"
 
 interface AccessPolicyEditorProps {
@@ -25,10 +29,9 @@ export function AccessPolicyEditor({ builder, disabled, onChange }: AccessPolicy
     return (
         <div className="grid gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">
             <div className="grid gap-4 md:grid-cols-[220px_1fr]">
-                <label className="grid gap-2 text-sm text-[var(--foreground)]">
+                <Label>
                     Composer
-                    <select
-                        className="rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 outline-none"
+                    <Select
                         disabled={disabled}
                         onChange={(event) => {
                             const composer = event.target.value as AccessComposer
@@ -47,8 +50,8 @@ export function AccessPolicyEditor({ builder, disabled, onChange }: AccessPolicy
                                 {option.label}
                             </option>
                         ))}
-                    </select>
-                </label>
+                    </Select>
+                </Label>
 
                 <div className="rounded-2xl border border-[var(--line)] px-4 py-3 text-sm text-[var(--muted)]">
                     `Single` uses one rule. `AND` requires every rule to pass. `OR` allows access if
@@ -99,8 +102,8 @@ function RuleCard({ builder, disabled, index, onChange, rule }: RuleCardProps) {
                 <div className="text-xs uppercase tracking-[0.25em] text-[var(--muted)]">
                     Rule {index + 1}
                 </div>
-                <select
-                    className="rounded-full border border-[var(--line)] bg-transparent px-3 py-2 text-sm outline-none"
+                <Select
+                    className="h-10 w-fit rounded-full px-3 py-2"
                     disabled={disabled}
                     onChange={(event) =>
                         updateRule({
@@ -115,11 +118,11 @@ function RuleCard({ builder, disabled, index, onChange, rule }: RuleCardProps) {
                             {option.label}
                         </option>
                     ))}
-                </select>
+                </Select>
 
                 {canRemove ? (
-                    <button
-                        className="rounded-full border border-[var(--line)] px-3 py-2 text-sm text-[var(--foreground)]"
+                    <Button
+                        className="rounded-full"
                         disabled={disabled}
                         onClick={() =>
                             onChange({
@@ -129,15 +132,17 @@ function RuleCard({ builder, disabled, index, onChange, rule }: RuleCardProps) {
                                 ),
                             })
                         }
+                        size="sm"
                         type="button"
+                        variant="outline"
                     >
                         Remove
-                    </button>
+                    </Button>
                 ) : null}
 
                 {canAdd && index === builder.rules.length - 1 ? (
-                    <button
-                        className="rounded-full bg-[var(--accent)] px-3 py-2 text-sm font-medium text-[var(--accent-foreground)]"
+                    <Button
+                        className="rounded-full"
                         disabled={disabled}
                         onClick={() =>
                             onChange({
@@ -145,24 +150,24 @@ function RuleCard({ builder, disabled, index, onChange, rule }: RuleCardProps) {
                                 rules: [...builder.rules, createRuleFromTemplate(rule)],
                             })
                         }
+                        size="sm"
                         type="button"
                     >
                         Add rule
-                    </button>
+                    </Button>
                 ) : null}
             </div>
 
             {rule.type === "subscription" ? (
-                <label className="grid gap-2 text-sm text-[var(--foreground)]">
+                <Label>
                     Plan code
-                    <input
-                        className="rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 outline-none"
+                    <Input
                         disabled={disabled}
                         onChange={(event) => updateRule({ ...rule, planCode: event.target.value })}
                         placeholder="main"
                         value={rule.planCode}
                     />
-                </label>
+                </Label>
             ) : null}
 
             {rule.type === "token_balance" ? (
@@ -208,10 +213,9 @@ function RuleCard({ builder, disabled, index, onChange, rule }: RuleCardProps) {
                         onChange={(value) => updateRule({ ...rule, contractAddress: value })}
                         value={rule.contractAddress}
                     />
-                    <label className="grid gap-2 text-sm text-[var(--foreground)]">
+                    <Label>
                         Standard
-                        <select
-                            className="rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 outline-none"
+                        <Select
                             disabled={disabled}
                             onChange={(event) =>
                                 updateRule({
@@ -223,8 +227,8 @@ function RuleCard({ builder, disabled, index, onChange, rule }: RuleCardProps) {
                         >
                             <option value="erc721">erc721</option>
                             <option value="erc1155">erc1155</option>
-                        </select>
-                    </label>
+                        </Select>
+                    </Label>
                     <LabeledInput
                         disabled={disabled}
                         label="Token ID"
@@ -258,15 +262,14 @@ interface LabeledInputProps {
 
 function LabeledInput({ disabled, label, onChange, value }: LabeledInputProps) {
     return (
-        <label className="grid gap-2 text-sm text-[var(--foreground)]">
+        <Label>
             {label}
-            <input
-                className="rounded-2xl border border-[var(--line)] bg-transparent px-4 py-3 outline-none"
+            <Input
                 disabled={disabled}
                 onChange={(event) => onChange(event.target.value)}
                 value={value}
             />
-        </label>
+        </Label>
     )
 }
 
