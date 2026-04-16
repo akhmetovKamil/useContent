@@ -1,4 +1,8 @@
-import type { CreateAuthorProfileInput, UpdateAuthorProfileInput } from "@contracts/types/content"
+import type {
+    CreateAuthorProfileInput,
+    UpdateAuthorProfileInput,
+    UpdateMyProfileInput,
+} from "@contracts/types/content"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { profileApi } from "@/api/ProfileApi"
@@ -37,6 +41,17 @@ export function useCreateMyAuthorProfileMutation() {
             void queryClient.invalidateQueries({ queryKey: queryKeys.myAuthor })
             void queryClient.invalidateQueries({ queryKey: queryKeys.me })
             void queryClient.invalidateQueries({ queryKey: ["authors"] })
+        },
+    })
+}
+
+export function useUpdateMeMutation() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (input: UpdateMyProfileInput) => profileApi.updateMe(input),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: queryKeys.me })
         },
     })
 }

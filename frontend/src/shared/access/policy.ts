@@ -203,8 +203,10 @@ function summarizeRule(rule: AccessRuleForm) {
 }
 
 function parseNodeToRule(
-    node:
-        | Extract<AccessPolicy["root"], { type: "public" | "subscription" | "token_balance" | "nft_ownership" }>
+    node: Extract<
+        AccessPolicy["root"],
+        { type: "public" | "subscription" | "token_balance" | "nft_ownership" }
+    >
 ): AccessRuleForm {
     switch (node.type) {
         case "public":

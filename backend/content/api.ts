@@ -14,6 +14,8 @@ import type {
   UpdateAuthorProfileRequest,
   UpsertSubscriptionPlanRequest,
   UpdateMyProfileRequest,
+  UpdatePostRequest,
+  UpdateProjectRequest,
   UserProfileResponse,
 } from "./types";
 
@@ -125,6 +127,26 @@ export const listMyPosts = api(
   }
 );
 
+export const updateMyPost = api(
+  { method: "PATCH", path: "/me/posts/:postId", expose: true, auth: true },
+  async ({
+    postId,
+    ...req
+  }: UpdatePostRequest & { postId: string }): Promise<PostResponse> => {
+    const auth = getAuthData()!;
+    const post = await service.updateMyPost(auth.walletAddress, postId, req);
+    return service.toPostResponse(post);
+  }
+);
+
+export const deleteMyPost = api(
+  { method: "DELETE", path: "/me/posts/:postId", expose: true, auth: true },
+  async ({ postId }: { postId: string }): Promise<void> => {
+    const auth = getAuthData()!;
+    await service.deleteMyPost(auth.walletAddress, postId);
+  }
+);
+
 export const listAuthorPosts = api(
   { method: "GET", path: "/authors/:slug/posts", expose: true },
   async ({ slug }: { slug: string }): Promise<{ posts: PostResponse[] }> => {
@@ -167,6 +189,30 @@ export const listMyProjects = api(
     const auth = getAuthData()!;
     const projects = await service.listMyProjects(auth.walletAddress);
     return { projects: projects.map(service.toProjectResponse) };
+  }
+);
+
+export const updateMyProject = api(
+  { method: "PATCH", path: "/me/projects/:projectId", expose: true, auth: true },
+  async ({
+    projectId,
+    ...req
+  }: UpdateProjectRequest & { projectId: string }): Promise<ProjectResponse> => {
+    const auth = getAuthData()!;
+    const project = await service.updateMyProject(
+      auth.walletAddress,
+      projectId,
+      req
+    );
+    return service.toProjectResponse(project);
+  }
+);
+
+export const deleteMyProject = api(
+  { method: "DELETE", path: "/me/projects/:projectId", expose: true, auth: true },
+  async ({ projectId }: { projectId: string }): Promise<void> => {
+    const auth = getAuthData()!;
+    await service.deleteMyProject(auth.walletAddress, projectId);
   }
 );
 

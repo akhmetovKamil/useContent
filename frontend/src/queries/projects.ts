@@ -1,4 +1,4 @@
-import type { CreateProjectInput } from "@contracts/types/content"
+import type { CreateProjectInput, UpdateProjectInput } from "@contracts/types/content"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { authorsApi } from "@/api/AuthorsApi"
@@ -34,6 +34,31 @@ export function useCreateMyProjectMutation() {
 
     return useMutation({
         mutationFn: (input: CreateProjectInput) => projectsApi.createMyProject(input),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: queryKeys.myProjects })
+            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+        },
+    })
+}
+
+export function useUpdateMyProjectMutation() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: ({ projectId, input }: { projectId: string; input: UpdateProjectInput }) =>
+            projectsApi.updateMyProject(projectId, input),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: queryKeys.myProjects })
+            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+        },
+    })
+}
+
+export function useDeleteMyProjectMutation() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (projectId: string) => projectsApi.deleteMyProject(projectId),
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: queryKeys.myProjects })
             void queryClient.invalidateQueries({ queryKey: ["authors"] })

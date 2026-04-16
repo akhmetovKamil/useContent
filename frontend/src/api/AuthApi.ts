@@ -1,5 +1,4 @@
 import { http } from "@/lib/api/http"
-
 import type { GetNonceResponse, VerifySignatureInput, VerifySignatureResponse } from "@/types/auth"
 
 class AuthApi {

@@ -10,4 +10,3 @@ export interface VerifySignatureInput {
 export interface VerifySignatureResponse {
     token: string
 }
-

@@ -1,31 +1,74 @@
+import { Link } from "react-router-dom"
+
+import { useMyPostsQuery } from "@/queries/posts"
+import { useMeQuery, useMyAuthorProfileQuery } from "@/queries/profile"
+import { useMyProjectsQuery } from "@/queries/projects"
+import { useAuthStore } from "@/shared/session/auth-store"
+
 export function HomePage() {
+    const token = useAuthStore((state) => state.token)
+    const meQuery = useMeQuery(Boolean(token))
+    const authorQuery = useMyAuthorProfileQuery(Boolean(token))
+    const postsQuery = useMyPostsQuery(Boolean(token))
+    const projectsQuery = useMyProjectsQuery(Boolean(token))
+
     return (
-        <div className="grid gap-6 md:grid-cols-[1.6fr_1fr]">
-            <section className="rounded-[28px] border border-[var(--line)] bg-[var(--surface-strong)] p-6 md:p-8">
-                <div className="font-mono text-xs uppercase tracking-[0.35em] text-[var(--muted)]">
-                    Frontend shell
+        <div className="grid gap-6">
+            <section className="grid gap-6 rounded-[28px] border border-[var(--line)] bg-[var(--surface-strong)] p-6 md:grid-cols-[1.2fr_0.8fr] md:p-8">
+                <div>
+                    <div className="font-mono text-xs uppercase tracking-[0.35em] text-[var(--muted)]">
+                        workspace
+                    </div>
+                    <h1 className="mt-4 max-w-3xl font-[var(--serif)] text-4xl leading-none text-[var(--foreground)] md:text-6xl">
+                        Content, access rules, and subscriptions in one place.
+                    </h1>
+                    <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--muted)] md:text-lg">
+                        Create an author profile, configure a subscription plan, publish posts and
+                        project spaces, then test gated reading from public author pages.
+                    </p>
                 </div>
-                <h1 className="mt-4 max-w-3xl font-[var(--serif)] text-4xl leading-none text-[var(--foreground)] md:text-6xl">
-                    Clean Vite SPA for wallet auth, author pages, posts, and projects.
-                </h1>
-                <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--muted)] md:text-lg">
-                    We are keeping the frontend simple on purpose: React SPA, modern Web3 client
-                    stack, and a clear separation from the Encore backend.
-                </p>
+
+                <div className="grid gap-3 self-end">
+                    <ActionLink label="Open profile" to="/me" />
+                    <ActionLink label="Create author profile" to="/me/author" />
+                    <ActionLink label="Manage posts" to="/me/posts" />
+                    <ActionLink label="Manage projects" to="/me/projects" />
+                    <ActionLink label="Configure subscription" to="/me/subscription-plan" />
+                    {authorQuery.data ? (
+                        <ActionLink
+                            label="View public page"
+                            to={`/authors/${authorQuery.data.slug}`}
+                        />
+                    ) : null}
+                </div>
             </section>
 
-            <section className="rounded-[28px] border border-[var(--line)] bg-[var(--accent-soft)] p-6">
-                <div className="font-mono text-xs uppercase tracking-[0.35em] text-[var(--muted)]">
-                    Stack
-                </div>
-                <ul className="mt-4 space-y-3 text-sm leading-6 text-[var(--foreground)]">
-                    <li>Vite + React + TypeScript</li>
-                    <li>React Router + TanStack Query</li>
-                    <li>wagmi + viem for EVM wallet flows</li>
-                    <li>Tailwind v4 as the styling base</li>
-                    <li>shadcn/ui and Magic UI next</li>
-                </ul>
+            <section className="grid gap-4 md:grid-cols-4">
+                <MetricCard label="Wallet session" value={token ? "Signed in" : "Not signed in"} />
+                <MetricCard label="Profile" value={meQuery.data?.displayName ?? "No profile"} />
+                <MetricCard label="Posts" value={String(postsQuery.data?.length ?? 0)} />
+                <MetricCard label="Projects" value={String(projectsQuery.data?.length ?? 0)} />
             </section>
         </div>
+    )
+}
+
+function ActionLink({ label, to }: { label: string; to: string }) {
+    return (
+        <Link
+            className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--accent-soft)]"
+            to={to}
+        >
+            {label}
+        </Link>
+    )
+}
+
+function MetricCard({ label, value }: { label: string; value: string }) {
+    return (
+        <article className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">
+            <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">{label}</div>
+            <div className="mt-3 text-2xl text-[var(--foreground)]">{value}</div>
+        </article>
     )
 }

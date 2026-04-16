@@ -11,6 +11,8 @@ import type {
   SubscriptionPlanDto,
   UpdateAuthorProfileInput,
   UpdateMyProfileInput,
+  UpdatePostInput,
+  UpdateProjectInput,
   UpsertSubscriptionPlanInput,
   UserProfileDto,
 } from "../../contracts/types/content";
@@ -128,4 +130,6 @@ export type CreateAuthorProfileRequest = CreateAuthorProfileInput;
 export type UpdateAuthorProfileRequest = UpdateAuthorProfileInput;
 export type UpsertSubscriptionPlanRequest = UpsertSubscriptionPlanInput;
 export type CreatePostRequest = CreatePostInput;
+export type UpdatePostRequest = UpdatePostInput;
 export type CreateProjectRequest = CreateProjectInput;
+export type UpdateProjectRequest = UpdateProjectInput;

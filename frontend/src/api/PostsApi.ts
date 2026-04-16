@@ -1,4 +1,4 @@
-import type { CreatePostInput, PostDto } from "@contracts/types/content"
+import type { CreatePostInput, PostDto, UpdatePostInput } from "@contracts/types/content"
 
 import { http } from "@/lib/api/http"
 
@@ -11,6 +11,15 @@ class PostsApi {
     async listMyPosts() {
         const response = await http.get<{ posts: PostDto[] }>("/me/posts")
         return response.data.posts
+    }
+
+    async updateMyPost(postId: string, input: UpdatePostInput) {
+        const response = await http.patch<PostDto>(`/me/posts/${postId}`, input)
+        return response.data
+    }
+
+    async deleteMyPost(postId: string) {
+        await http.delete(`/me/posts/${postId}`)
     }
 
     async getAuthorPost(slug: string, postId: string) {

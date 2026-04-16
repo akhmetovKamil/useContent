@@ -1,6 +1,11 @@
 import { useState } from "react"
 
-import { useCreateMyPostMutation, useMyPostsQuery } from "@/queries/posts"
+import {
+    useCreateMyPostMutation,
+    useDeleteMyPostMutation,
+    useMyPostsQuery,
+    useUpdateMyPostMutation,
+} from "@/queries/posts"
 import { AccessPolicyEditor } from "@/shared/access/AccessPolicyEditor"
 import {
     buildContentPolicyInput,
@@ -14,6 +19,8 @@ export function MePostsPage() {
     const token = useAuthStore((state) => state.token)
     const postsQuery = useMyPostsQuery(Boolean(token))
     const createPostMutation = useCreateMyPostMutation()
+    const updatePostMutation = useUpdateMyPostMutation()
+    const deletePostMutation = useDeleteMyPostMutation()
     const [title, setTitle] = useState("")
     const [content, setContent] = useState("")
     const [status, setStatus] = useState<"draft" | "published">("draft")
@@ -194,6 +201,40 @@ export function MePostsPage() {
                                     <p className="mt-3 line-clamp-3 text-sm leading-6 text-[var(--muted)]">
                                         {post.content}
                                     </p>
+                                    <div className="mt-4 flex flex-wrap gap-2">
+                                        <button
+                                            className="rounded-full border border-[var(--line)] px-3 py-2 text-sm text-[var(--foreground)] disabled:opacity-60"
+                                            disabled={updatePostMutation.isPending}
+                                            onClick={() =>
+                                                void updatePostMutation.mutateAsync({
+                                                    postId: post.id,
+                                                    input: {
+                                                        status:
+                                                            post.status === "published"
+                                                                ? "draft"
+                                                                : "published",
+                                                    },
+                                                })
+                                            }
+                                            type="button"
+                                        >
+                                            {post.status === "published"
+                                                ? "Move to draft"
+                                                : "Publish"}
+                                        </button>
+                                        <button
+                                            className="rounded-full border border-rose-200 px-3 py-2 text-sm text-rose-600 disabled:opacity-60"
+                                            disabled={deletePostMutation.isPending}
+                                            onClick={() => {
+                                                if (window.confirm("Delete this post?")) {
+                                                    void deletePostMutation.mutateAsync(post.id)
+                                                }
+                                            }}
+                                            type="button"
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
                                 </article>
                             ))
                         ) : !postsQuery.isLoading ? (

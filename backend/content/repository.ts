@@ -133,6 +133,36 @@ export async function findPublishedPostByIdAndAuthorId(
   return posts.findOne({ _id: id, authorId, status: "published" });
 }
 
+export async function findPostByIdAndAuthorId(
+  id: ObjectId,
+  authorId: ObjectId
+): Promise<PostDoc | null> {
+  const posts = await getPostsCollection();
+  return posts.findOne({ _id: id, authorId });
+}
+
+export async function updatePost(
+  id: ObjectId,
+  authorId: ObjectId,
+  update: Partial<Omit<PostDoc, "_id" | "authorId" | "createdAt">>
+): Promise<PostDoc | null> {
+  const posts = await getPostsCollection();
+  return posts.findOneAndUpdate(
+    { _id: id, authorId },
+    { $set: update },
+    { returnDocument: "after" }
+  );
+}
+
+export async function deletePost(
+  id: ObjectId,
+  authorId: ObjectId
+): Promise<boolean> {
+  const posts = await getPostsCollection();
+  const result = await posts.deleteOne({ _id: id, authorId });
+  return result.deletedCount === 1;
+}
+
 export async function getProjectsCollection(): Promise<Collection<ProjectDoc>> {
   await ensureIndexes();
   return getCollection<ProjectDoc>("projects");
@@ -167,6 +197,36 @@ export async function findPublishedProjectByIdAndAuthorId(
 ): Promise<ProjectDoc | null> {
   const projects = await getProjectsCollection();
   return projects.findOne({ _id: id, authorId, status: "published" });
+}
+
+export async function findProjectByIdAndAuthorId(
+  id: ObjectId,
+  authorId: ObjectId
+): Promise<ProjectDoc | null> {
+  const projects = await getProjectsCollection();
+  return projects.findOne({ _id: id, authorId });
+}
+
+export async function updateProject(
+  id: ObjectId,
+  authorId: ObjectId,
+  update: Partial<Omit<ProjectDoc, "_id" | "authorId" | "rootNodeId" | "createdAt">>
+): Promise<ProjectDoc | null> {
+  const projects = await getProjectsCollection();
+  return projects.findOneAndUpdate(
+    { _id: id, authorId },
+    { $set: update },
+    { returnDocument: "after" }
+  );
+}
+
+export async function deleteProject(
+  id: ObjectId,
+  authorId: ObjectId
+): Promise<boolean> {
+  const projects = await getProjectsCollection();
+  const result = await projects.deleteOne({ _id: id, authorId });
+  return result.deletedCount === 1;
 }
 
 export async function getProjectNodesCollection(): Promise<

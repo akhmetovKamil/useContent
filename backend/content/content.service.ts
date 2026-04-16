@@ -27,6 +27,8 @@ import type {
   UpdateAuthorProfileRequest,
   UpsertSubscriptionPlanRequest,
   UpdateMyProfileRequest,
+  UpdatePostRequest,
+  UpdateProjectRequest,
   UserDoc,
   UserProfileResponse,
 } from "./types";
@@ -260,6 +262,65 @@ export async function listMyPosts(
   return repo.listPostsByAuthorId(author._id);
 }
 
+export async function updateMyPost(
+  walletAddress: string,
+  postId: string,
+  input: UpdatePostRequest
+): Promise<PostDoc> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const objectId = parseObjectId(postId, "postId");
+  const existing = await repo.findPostByIdAndAuthorId(objectId, author._id);
+  if (!existing) {
+    throw APIError.notFound("post not found");
+  }
+
+  const nextStatus = input.status ?? existing.status;
+  const nextPolicyMode = input.policyMode ?? existing.policyMode;
+  const nextPolicy =
+    input.policyMode === undefined &&
+    input.policy === undefined &&
+    input.policyInput === undefined
+      ? existing.policy
+      : await normalizePostPolicy(author, input, nextPolicyMode);
+
+  resolveEntityPolicy(nextPolicyMode, author.defaultPolicy, nextPolicy);
+
+  const updated = await repo.updatePost(objectId, author._id, {
+    title:
+      input.title === undefined ? existing.title : normalizePostTitle(input.title),
+    content:
+      input.content === undefined
+        ? existing.content
+        : normalizePostContent(input.content),
+    status: nextStatus,
+    policyMode: nextPolicyMode,
+    policy: nextPolicy,
+    attachmentIds:
+      input.attachmentIds === undefined
+        ? existing.attachmentIds
+        : normalizeAttachmentIds(input.attachmentIds),
+    publishedAt: resolvePublishedAt(existing.publishedAt, existing.status, nextStatus),
+    updatedAt: new Date(),
+  });
+
+  if (!updated) {
+    throw APIError.notFound("post not found");
+  }
+
+  return updated;
+}
+
+export async function deleteMyPost(
+  walletAddress: string,
+  postId: string
+): Promise<void> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const deleted = await repo.deletePost(parseObjectId(postId, "postId"), author._id);
+  if (!deleted) {
+    throw APIError.notFound("post not found");
+  }
+}
+
 export async function listAuthorPostsBySlug(
   slug: string
 ): Promise<PostDoc[]> {
@@ -357,6 +418,66 @@ export async function listMyProjects(
 ): Promise<ProjectDoc[]> {
   const author = await getMyAuthorProfile(walletAddress);
   return repo.listProjectsByAuthorId(author._id);
+}
+
+export async function updateMyProject(
+  walletAddress: string,
+  projectId: string,
+  input: UpdateProjectRequest
+): Promise<ProjectDoc> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const objectId = parseObjectId(projectId, "projectId");
+  const existing = await repo.findProjectByIdAndAuthorId(objectId, author._id);
+  if (!existing) {
+    throw APIError.notFound("project not found");
+  }
+
+  const nextStatus = input.status ?? existing.status;
+  const nextPolicyMode = input.policyMode ?? existing.policyMode;
+  const nextPolicy =
+    input.policyMode === undefined &&
+    input.policy === undefined &&
+    input.policyInput === undefined
+      ? existing.policy
+      : await normalizeProjectPolicy(author, input, nextPolicyMode);
+
+  resolveEntityPolicy(nextPolicyMode, author.defaultPolicy, nextPolicy);
+
+  const updated = await repo.updateProject(objectId, author._id, {
+    title:
+      input.title === undefined
+        ? existing.title
+        : normalizeProjectTitle(input.title),
+    description:
+      input.description === undefined
+        ? existing.description
+        : normalizeProjectDescription(input.description),
+    status: nextStatus,
+    policyMode: nextPolicyMode,
+    policy: nextPolicy,
+    publishedAt: resolvePublishedAt(existing.publishedAt, existing.status, nextStatus),
+    updatedAt: new Date(),
+  });
+
+  if (!updated) {
+    throw APIError.notFound("project not found");
+  }
+
+  return updated;
+}
+
+export async function deleteMyProject(
+  walletAddress: string,
+  projectId: string
+): Promise<void> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const deleted = await repo.deleteProject(
+    parseObjectId(projectId, "projectId"),
+    author._id
+  );
+  if (!deleted) {
+    throw APIError.notFound("project not found");
+  }
 }
 
 export async function listAuthorProjectsBySlug(
@@ -654,10 +775,8 @@ function normalizePostContent(content: string): string {
 
 async function normalizePostPolicy(
   author: AuthorProfileDoc,
-  input: CreatePostRequest,
-  policyMode: CreatePostRequest["policyMode"] extends undefined
-    ? never
-    : NonNullable<CreatePostRequest["policyMode"]>
+  input: CreatePostRequest | UpdatePostRequest,
+  policyMode: NonNullable<CreatePostRequest["policyMode"] | UpdatePostRequest["policyMode"]>
 ) {
   if (policyMode !== "custom") {
     return null;
@@ -699,10 +818,10 @@ function normalizeProjectDescription(description: string): string {
 
 async function normalizeProjectPolicy(
   author: AuthorProfileDoc,
-  input: CreateProjectRequest,
-  policyMode: CreateProjectRequest["policyMode"] extends undefined
-    ? never
-    : NonNullable<CreateProjectRequest["policyMode"]>
+  input: CreateProjectRequest | UpdateProjectRequest,
+  policyMode: NonNullable<
+    CreateProjectRequest["policyMode"] | UpdateProjectRequest["policyMode"]
+  >
 ) {
   if (policyMode !== "custom") {
     return null;
@@ -757,6 +876,22 @@ async function normalizeRequestedCustomPolicy(
   }
 
   return policy;
+}
+
+function resolvePublishedAt(
+  currentPublishedAt: Date | null,
+  currentStatus: "draft" | "published",
+  nextStatus: "draft" | "published"
+): Date | null {
+  if (nextStatus === "draft") {
+    return null;
+  }
+
+  if (currentStatus === "published" && currentPublishedAt) {
+    return currentPublishedAt;
+  }
+
+  return new Date();
 }
 
 function normalizeAttachmentIds(attachmentIds: string[]): ObjectId[] {

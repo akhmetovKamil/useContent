@@ -176,8 +176,27 @@ export interface CreatePostInput {
     attachmentIds?: string[]
 }
 
+export interface UpdatePostInput {
+    title?: string
+    content?: string
+    status?: "draft" | "published"
+    policyMode?: PolicyMode
+    policy?: AccessPolicy | null
+    policyInput?: AccessPolicyInput
+    attachmentIds?: string[]
+}
+
 export interface CreateProjectInput {
     title: string
+    description?: string
+    status?: "draft" | "published"
+    policyMode?: PolicyMode
+    policy?: AccessPolicy | null
+    policyInput?: AccessPolicyInput
+}
+
+export interface UpdateProjectInput {
+    title?: string
     description?: string
     status?: "draft" | "published"
     policyMode?: PolicyMode

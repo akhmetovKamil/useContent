@@ -1,4 +1,4 @@
-import type { CreatePostInput } from "@contracts/types/content"
+import type { CreatePostInput, UpdatePostInput } from "@contracts/types/content"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { authorsApi } from "@/api/AuthorsApi"
@@ -34,6 +34,31 @@ export function useCreateMyPostMutation() {
 
     return useMutation({
         mutationFn: (input: CreatePostInput) => postsApi.createMyPost(input),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: queryKeys.myPosts })
+            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+        },
+    })
+}
+
+export function useUpdateMyPostMutation() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: ({ postId, input }: { postId: string; input: UpdatePostInput }) =>
+            postsApi.updateMyPost(postId, input),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: queryKeys.myPosts })
+            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+        },
+    })
+}
+
+export function useDeleteMyPostMutation() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (postId: string) => postsApi.deleteMyPost(postId),
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: queryKeys.myPosts })
             void queryClient.invalidateQueries({ queryKey: ["authors"] })

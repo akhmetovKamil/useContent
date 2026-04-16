@@ -1,6 +1,11 @@
 import { useState } from "react"
 
-import { useCreateMyProjectMutation, useMyProjectsQuery } from "@/queries/projects"
+import {
+    useCreateMyProjectMutation,
+    useDeleteMyProjectMutation,
+    useMyProjectsQuery,
+    useUpdateMyProjectMutation,
+} from "@/queries/projects"
 import { AccessPolicyEditor } from "@/shared/access/AccessPolicyEditor"
 import {
     buildContentPolicyInput,
@@ -14,6 +19,8 @@ export function MeProjectsPage() {
     const token = useAuthStore((state) => state.token)
     const projectsQuery = useMyProjectsQuery(Boolean(token))
     const createProjectMutation = useCreateMyProjectMutation()
+    const updateProjectMutation = useUpdateMyProjectMutation()
+    const deleteProjectMutation = useDeleteMyProjectMutation()
     const [title, setTitle] = useState("")
     const [description, setDescription] = useState("")
     const [status, setStatus] = useState<"draft" | "published">("draft")
@@ -195,6 +202,42 @@ export function MeProjectsPage() {
                                         {project.description ||
                                             "Project description is still empty"}
                                     </p>
+                                    <div className="mt-4 flex flex-wrap gap-2">
+                                        <button
+                                            className="rounded-full border border-[var(--line)] px-3 py-2 text-sm text-[var(--foreground)] disabled:opacity-60"
+                                            disabled={updateProjectMutation.isPending}
+                                            onClick={() =>
+                                                void updateProjectMutation.mutateAsync({
+                                                    projectId: project.id,
+                                                    input: {
+                                                        status:
+                                                            project.status === "published"
+                                                                ? "draft"
+                                                                : "published",
+                                                    },
+                                                })
+                                            }
+                                            type="button"
+                                        >
+                                            {project.status === "published"
+                                                ? "Move to draft"
+                                                : "Publish"}
+                                        </button>
+                                        <button
+                                            className="rounded-full border border-rose-200 px-3 py-2 text-sm text-rose-600 disabled:opacity-60"
+                                            disabled={deleteProjectMutation.isPending}
+                                            onClick={() => {
+                                                if (window.confirm("Delete this project?")) {
+                                                    void deleteProjectMutation.mutateAsync(
+                                                        project.id
+                                                    )
+                                                }
+                                            }}
+                                            type="button"
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
                                 </article>
                             ))
                         ) : !projectsQuery.isLoading ? (
