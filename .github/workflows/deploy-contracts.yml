@@ -41,13 +41,13 @@ jobs:
         env:
           DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
           PLATFORM_TREASURY: ${{ secrets.PLATFORM_TREASURY }}
-          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
-          BASE_SEPOLIA_RPC_URL: ${{ secrets.BASE_SEPOLIA_RPC_URL }}
-          OPTIMISM_SEPOLIA_RPC_URL: ${{ secrets.OPTIMISM_SEPOLIA_RPC_URL }}
-          ARBITRUM_SEPOLIA_RPC_URL: ${{ secrets.ARBITRUM_SEPOLIA_RPC_URL }}
-          BASE_RPC_URL: ${{ secrets.BASE_RPC_URL }}
-          OPTIMISM_RPC_URL: ${{ secrets.OPTIMISM_RPC_URL }}
-          ARBITRUM_RPC_URL: ${{ secrets.ARBITRUM_RPC_URL }}
+          RPC_URL_11155111: ${{ secrets.RPC_URL_11155111 }}
+          RPC_URL_84532: ${{ secrets.RPC_URL_84532 }}
+          RPC_URL_11155420: ${{ secrets.RPC_URL_11155420 }}
+          RPC_URL_421614: ${{ secrets.RPC_URL_421614 }}
+          RPC_URL_8453: ${{ secrets.RPC_URL_8453 }}
+          RPC_URL_10: ${{ secrets.RPC_URL_10 }}
+          RPC_URL_42161: ${{ secrets.RPC_URL_42161 }}
         run: npx hardhat run scripts/deploy-subscription-manager.ts --network ${{ inputs.network }}
 
       - uses: actions/upload-artifact@v4
