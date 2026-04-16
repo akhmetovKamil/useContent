@@ -90,6 +90,11 @@ export async function findAuthorProfilesByIds(
   return authorProfiles.find({ _id: { $in: ids } }).toArray();
 }
 
+export async function listAuthorProfiles(): Promise<AuthorProfileDoc[]> {
+  const authorProfiles = await getAuthorProfilesCollection();
+  return authorProfiles.find({}).sort({ createdAt: -1 }).toArray();
+}
+
 export async function createAuthorProfile(
   doc: Omit<AuthorProfileDoc, "_id">,
 ): Promise<AuthorProfileDoc> {
@@ -223,6 +228,13 @@ export async function listPublishedPostsByAuthorId(
     .find({ authorId, status: "published" })
     .sort({ publishedAt: -1, createdAt: -1 })
     .toArray();
+}
+
+export async function countPublishedPostsByAuthorId(
+  authorId: ObjectId,
+): Promise<number> {
+  const posts = await getPostsCollection();
+  return posts.countDocuments({ authorId, status: "published" });
 }
 
 export async function listPublishedPostsByAuthorIds(

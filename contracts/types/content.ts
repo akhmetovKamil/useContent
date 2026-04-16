@@ -82,6 +82,11 @@ export interface AuthorProfileDto {
   updatedAt: string;
 }
 
+export interface AuthorCatalogItemDto extends AuthorProfileDto {
+  postsCount: number;
+  subscriptionPlansCount: number;
+}
+
 export interface AccessPolicyPresetDto {
   id: string;
   authorId: string;
@@ -91,6 +96,11 @@ export interface AccessPolicyPresetDto {
   isDefault: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AuthorAccessPolicyDto extends AccessPolicyPresetDto {
+  accessLabel: string | null;
+  hasAccess: boolean;
 }
 
 export interface SubscriptionEntitlementDto {
@@ -130,6 +140,8 @@ export interface AuthorSubscriberDto {
 export interface FeedPostDto extends PostDto {
   authorSlug: string;
   authorDisplayName: string;
+  accessLabel: string | null;
+  hasAccess: boolean;
 }
 
 export type SubscriptionPaymentAsset = "erc20" | "native";

@@ -5,6 +5,8 @@ import { validateToken } from "../auth/auth.service";
 import * as service from "./content.service";
 import type {
   AccessPolicyPresetResponse,
+  AuthorAccessPolicyResponse,
+  AuthorCatalogItemResponse,
   AuthorProfileResponse,
   AuthorSubscriberResponse,
   ConfirmSubscriptionPaymentRequest,
@@ -58,6 +60,14 @@ export const createMyAuthorProfile = api(
     const auth = getAuthData()!;
     const author = await service.createAuthorProfile(auth.walletAddress, req);
     return service.toAuthorProfileResponse(author);
+  },
+);
+
+export const listAuthors = api(
+  { method: "GET", path: "/authors", expose: true },
+  async (): Promise<{ authors: AuthorCatalogItemResponse[] }> => {
+    const authors = await service.listAuthors();
+    return { authors };
   },
 );
 
@@ -145,6 +155,28 @@ export const deleteMyAccessPolicyPreset = api(
   async ({ policyId }: { policyId: string }): Promise<void> => {
     const auth = getAuthData()!;
     await service.deleteMyAccessPolicyPreset(auth.walletAddress, policyId);
+  },
+);
+
+interface ListAuthorAccessPoliciesRequest {
+  slug: string;
+  authorization?: Header<"Authorization">;
+}
+
+export const listAuthorAccessPolicies = api(
+  { method: "GET", path: "/authors/:slug/access-policies", expose: true },
+  async ({
+    slug,
+    authorization,
+  }: ListAuthorAccessPoliciesRequest): Promise<{
+    policies: AuthorAccessPolicyResponse[];
+  }> => {
+    const viewerWallet = await getOptionalViewerWallet(authorization);
+    const policies = await service.listAuthorAccessPoliciesBySlug(
+      slug,
+      viewerWallet,
+    );
+    return { policies };
   },
 );
 
@@ -405,11 +437,20 @@ export const deleteMyPost = api(
   },
 );
 
+interface ListAuthorPostsRequest {
+  slug: string;
+  authorization?: Header<"Authorization">;
+}
+
 export const listAuthorPosts = api(
   { method: "GET", path: "/authors/:slug/posts", expose: true },
-  async ({ slug }: { slug: string }): Promise<{ posts: PostResponse[] }> => {
-    const posts = await service.listAuthorPostsBySlug(slug);
-    return { posts: posts.map(service.toPostResponse) };
+  async ({
+    slug,
+    authorization,
+  }: ListAuthorPostsRequest): Promise<{ posts: FeedPostResponse[] }> => {
+    const viewerWallet = await getOptionalViewerWallet(authorization);
+    const posts = await service.listAuthorPostsBySlug(slug, viewerWallet);
+    return { posts };
   },
 );
 

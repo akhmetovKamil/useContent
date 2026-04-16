@@ -96,6 +96,8 @@ export function useConfirmSubscriptionPaymentMutation() {
         }) => subscriptionPlansApi.confirmSubscriptionPayment(intentId, input),
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: queryKeys.myEntitlements })
+            void queryClient.invalidateQueries({ queryKey: queryKeys.myReaderSubscriptions })
+            void queryClient.invalidateQueries({ queryKey: queryKeys.myFeedPosts })
             void queryClient.invalidateQueries({ queryKey: ["authors"] })
         },
     })

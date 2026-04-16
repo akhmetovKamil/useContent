@@ -1,184 +1,249 @@
-import { Link, useParams } from "react-router-dom"
+import { CheckCircle2, LockKeyhole, ShieldCheck } from "lucide-react"
+import { useParams } from "react-router-dom"
 import { formatUnits } from "viem"
 
+import { PostFeed } from "@/components/posts/PostFeed"
 import { SubscribeButton } from "@/components/subscriptions/SubscribeButton"
 import { Badge } from "@/components/ui/badge"
-import { useAuthorProfileQuery } from "@/queries/authors"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useAuthorAccessPoliciesQuery, useAuthorProfileQuery } from "@/queries/authors"
 import { useAuthorPostsQuery } from "@/queries/posts"
-import { useAuthorProjectsQuery } from "@/queries/projects"
+import { useMyReaderSubscriptionsQuery } from "@/queries/profile"
 import { useAuthorSubscriptionPlansQuery } from "@/queries/subscription-plans"
+import { useAuthStore } from "@/stores/auth-store"
 import { getTokenPresets } from "@/utils/config/tokens"
 
 export function AuthorPage() {
     const { slug } = useParams()
     const authorSlug = slug ?? ""
+    const token = useAuthStore((state) => state.token)
     const authorQuery = useAuthorProfileQuery(authorSlug)
     const postsQuery = useAuthorPostsQuery(authorSlug)
-    const projectsQuery = useAuthorProjectsQuery(authorSlug)
     const plansQuery = useAuthorSubscriptionPlansQuery(authorSlug)
+    const policiesQuery = useAuthorAccessPoliciesQuery(authorSlug)
+    const subscriptionsQuery = useMyReaderSubscriptionsQuery(Boolean(token))
+    const activeSubscriptionByPlanId = new Map(
+        (subscriptionsQuery.data ?? [])
+            .filter(
+                (subscription) =>
+                    subscription.authorSlug === authorSlug &&
+                    subscription.status === "active" &&
+                    new Date(subscription.validUntil).getTime() > Date.now()
+            )
+            .map((subscription) => [subscription.planId, subscription])
+    )
 
     return (
-        <section className="rounded-[28px] border border-[var(--line)] bg-[var(--surface-strong)] p-6 md:p-8">
-            <div className="font-mono text-xs uppercase tracking-[0.35em] text-[var(--muted)]">
-                Author page
-            </div>
-            <h2 className="mt-3 font-[var(--serif)] text-3xl text-[var(--foreground)]">@{slug}</h2>
-
+        <section className="grid gap-6">
             {authorQuery.isLoading ? (
-                <p className="mt-3 max-w-2xl text-[var(--muted)]">Loading public profile...</p>
+                <Card className="rounded-[28px]">
+                    <CardContent className="pt-6 text-[var(--muted)]">
+                        Loading public profile...
+                    </CardContent>
+                </Card>
             ) : authorQuery.isError ? (
-                <p className="mt-3 max-w-2xl text-rose-600">
-                    Author profile was not found: {authorQuery.error.message}
-                </p>
+                <Card className="rounded-[28px]">
+                    <CardContent className="pt-6 text-rose-600">
+                        Author profile was not found: {authorQuery.error.message}
+                    </CardContent>
+                </Card>
             ) : authorQuery.data ? (
                 <>
-                    <p className="mt-3 max-w-2xl text-[var(--muted)]">
-                        {authorQuery.data.bio ||
-                            "The author has not added a profile description yet."}
-                    </p>
-                    {authorQuery.data.tags.length ? (
-                        <div className="mt-4 flex flex-wrap gap-2">
-                            {authorQuery.data.tags.map((tag) => (
-                                <Badge className="rounded-full" key={tag}>
-                                    {tag}
-                                </Badge>
-                            ))}
-                        </div>
-                    ) : null}
-
-                    <div className="mt-6 grid gap-4 md:grid-cols-3">
-                        <article className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">
-                            <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-                                author
+                    <Card className="overflow-hidden rounded-[32px]">
+                        <CardHeader className="bg-[var(--accent-soft)]">
+                            <div className="font-mono text-xs uppercase tracking-[0.35em] text-[var(--muted)]">
+                                author profile
                             </div>
-                            <div className="mt-3 text-xl text-[var(--foreground)]">
+                            <CardTitle className="mt-2 font-[var(--serif)] text-4xl">
                                 {authorQuery.data.displayName}
-                            </div>
-                            <div className="mt-2 text-sm text-[var(--muted)]">
-                                slug: @{authorQuery.data.slug}
-                            </div>
-                        </article>
+                            </CardTitle>
+                            <CardDescription className="font-mono">@{authorSlug}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-6">
+                            <p className="max-w-3xl text-[var(--muted)]">
+                                {authorQuery.data.bio ||
+                                    "The author has not added a profile description yet."}
+                            </p>
+                            {authorQuery.data.tags.length ? (
+                                <div className="mt-5 flex flex-wrap gap-2">
+                                    {authorQuery.data.tags.map((tag) => (
+                                        <Badge className="rounded-full" key={tag}>
+                                            {tag}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            ) : null}
+                        </CardContent>
+                    </Card>
 
-                        <article className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">
-                            <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-                                content
+                    <Card className="rounded-[28px]">
+                        <CardHeader>
+                            <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
+                                <ShieldCheck className="size-4" />
+                                access tiers
                             </div>
-                            <div className="mt-3 text-sm text-[var(--muted)]">
-                                Posts: {postsQuery.data?.length ?? 0}
-                            </div>
-                            <div className="mt-2 text-sm text-[var(--muted)]">
-                                Projects: {projectsQuery.data?.length ?? 0}
-                            </div>
-                        </article>
+                            <CardTitle>Choose what you want to unlock</CardTitle>
+                            <CardDescription>
+                                Each tier is paid separately and may unlock different posts.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {plansQuery.isLoading ? (
+                                <p className="text-sm text-[var(--muted)]">Loading tiers...</p>
+                            ) : plansQuery.data?.length ? (
+                                <div className="grid gap-4 lg:grid-cols-2">
+                                    {plansQuery.data.map((plan) => {
+                                        const subscription = activeSubscriptionByPlanId.get(plan.id)
 
-                        <article className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">
-                            <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-                                subscription
-                            </div>
-                            <div className="mt-3 text-sm text-[var(--foreground)]">
-                                {plansQuery.data?.length
-                                    ? `${plansQuery.data.length} active plan(s)`
-                                    : "No active plan yet"}
-                            </div>
-                        </article>
-                    </div>
-
-                    {plansQuery.data?.length ? (
-                        <div className="mt-6 grid gap-3 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">
-                            <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-                                subscribe
-                            </div>
-                            {plansQuery.data.map((plan) => (
-                                <article
-                                    className="grid gap-3 rounded-[20px] border border-[var(--line)] bg-[var(--surface-strong)] p-4"
-                                    key={plan.id}
-                                >
-                                    <div>
-                                        <div className="text-lg text-[var(--foreground)]">
-                                            {plan.title}
-                                        </div>
-                                        <div className="mt-1 text-sm text-[var(--muted)]">
-                                            {formatPlanPrice(
-                                                plan.chainId,
-                                                plan.tokenAddress,
-                                                plan.price,
-                                                plan.paymentAsset ?? "erc20"
-                                            )}{" "}
-                                            every {plan.billingPeriodDays} days
-                                        </div>
-                                        <div className="mt-2 break-all font-mono text-xs text-[var(--muted)]">
-                                            {plan.planKey}
-                                        </div>
-                                    </div>
-                                    <SubscribeButton authorSlug={authorSlug} plan={plan} />
-                                </article>
-                            ))}
-                        </div>
-                    ) : null}
-
-                    <div className="mt-8 grid gap-6 lg:grid-cols-2">
-                        <div className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">
-                            <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-                                published posts
-                            </div>
-                            <div className="mt-4 grid gap-3">
-                                {postsQuery.data?.length ? (
-                                    postsQuery.data.map((post) => (
-                                        <article
-                                            className="rounded-[20px] border border-[var(--line)] bg-[var(--surface-strong)] p-4"
-                                            key={post.id}
-                                        >
-                                            <Link
-                                                className="text-lg text-[var(--foreground)] underline-offset-4 hover:underline"
-                                                to={`/authors/${authorSlug}/posts/${post.id}`}
+                                        return (
+                                            <article
+                                                className="grid gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5"
+                                                key={plan.id}
                                             >
-                                                {post.title}
-                                            </Link>
-                                            <div className="mt-2 text-sm text-[var(--muted)]">
-                                                {post.content.slice(0, 180)}
-                                            </div>
-                                        </article>
-                                    ))
-                                ) : (
-                                    <p className="text-sm text-[var(--muted)]">No posts yet.</p>
-                                )}
-                            </div>
-                        </div>
+                                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                                    <div>
+                                                        <h3 className="text-xl font-medium text-[var(--foreground)]">
+                                                            {plan.title}
+                                                        </h3>
+                                                        <p className="mt-1 text-sm text-[var(--muted)]">
+                                                            {formatPlanPrice(
+                                                                plan.chainId,
+                                                                plan.tokenAddress,
+                                                                plan.price,
+                                                                plan.paymentAsset ?? "erc20"
+                                                            )}{" "}
+                                                            every {plan.billingPeriodDays} days
+                                                        </p>
+                                                    </div>
+                                                    <Badge
+                                                        className="rounded-full"
+                                                        variant={
+                                                            subscription ? "success" : "warning"
+                                                        }
+                                                    >
+                                                        {subscription ? "active" : "not active"}
+                                                    </Badge>
+                                                </div>
+                                                {subscription ? (
+                                                    <p className="text-sm text-[var(--muted)]">
+                                                        Active until{" "}
+                                                        {formatDate(subscription.validUntil)}
+                                                    </p>
+                                                ) : null}
+                                                <SubscribeButton
+                                                    authorSlug={authorSlug}
+                                                    plan={plan}
+                                                />
+                                            </article>
+                                        )
+                                    })}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-[var(--muted)]">
+                                    This author has no active subscription tiers yet.
+                                </p>
+                            )}
+                        </CardContent>
+                    </Card>
 
-                        <div className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">
-                            <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-                                published projects
-                            </div>
-                            <div className="mt-4 grid gap-3">
-                                {projectsQuery.data?.length ? (
-                                    projectsQuery.data.map((project) => (
+                    <Card className="rounded-[28px]">
+                        <CardHeader>
+                            <CardTitle>Access conditions</CardTitle>
+                            <CardDescription>
+                                These rules decide which posts become visible for your wallet.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {policiesQuery.isLoading ? (
+                                <p className="text-sm text-[var(--muted)]">Loading conditions...</p>
+                            ) : policiesQuery.data?.length ? (
+                                <div className="grid gap-3">
+                                    {policiesQuery.data.map((policy) => (
                                         <article
-                                            className="rounded-[20px] border border-[var(--line)] bg-[var(--surface-strong)] p-4"
-                                            key={project.id}
+                                            className="flex flex-col gap-3 rounded-[22px] border border-[var(--line)] bg-[var(--surface)] p-4 sm:flex-row sm:items-center sm:justify-between"
+                                            key={policy.id}
                                         >
-                                            <Link
-                                                className="text-lg text-[var(--foreground)] underline-offset-4 hover:underline"
-                                                to={`/authors/${authorSlug}/projects/${project.id}`}
-                                            >
-                                                {project.title}
-                                            </Link>
-                                            <div className="mt-2 text-sm text-[var(--muted)]">
-                                                {project.description || "No description yet"}
+                                            <div>
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className="text-base font-medium text-[var(--foreground)]">
+                                                        {policy.name}
+                                                    </span>
+                                                    <Badge className="rounded-full">
+                                                        {policy.accessLabel ??
+                                                            policy.policy.root.type}
+                                                    </Badge>
+                                                    {policy.isDefault ? (
+                                                        <Badge
+                                                            className="rounded-full"
+                                                            variant="success"
+                                                        >
+                                                            default
+                                                        </Badge>
+                                                    ) : null}
+                                                </div>
+                                                <p className="mt-2 text-sm text-[var(--muted)]">
+                                                    {policy.description ||
+                                                        "No extra description for this condition."}
+                                                </p>
                                             </div>
+                                            <Badge
+                                                className="w-fit rounded-full"
+                                                variant={policy.hasAccess ? "success" : "warning"}
+                                            >
+                                                {policy.hasAccess ? (
+                                                    <CheckCircle2 className="mr-1 size-3.5" />
+                                                ) : (
+                                                    <LockKeyhole className="mr-1 size-3.5" />
+                                                )}
+                                                {policy.hasAccess ? "available" : "locked"}
+                                            </Badge>
                                         </article>
-                                    ))
-                                ) : (
-                                    <p className="text-sm text-[var(--muted)]">
-                                        No published projects yet.
-                                    </p>
-                                )}
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-[var(--muted)]">
+                                    No reusable access conditions have been published yet.
+                                </p>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card className="rounded-[28px]">
+                        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <CardTitle>Posts by {authorQuery.data.displayName}</CardTitle>
+                                <CardDescription>
+                                    Locked posts stay visible as cards, but their content is hidden
+                                    until the required tier is active.
+                                </CardDescription>
                             </div>
-                        </div>
-                    </div>
+                            <Button className="rounded-full" disabled variant="outline">
+                                Projects coming soon
+                            </Button>
+                        </CardHeader>
+                        <CardContent>
+                            {postsQuery.isLoading ? (
+                                <p className="text-sm text-[var(--muted)]">Loading posts...</p>
+                            ) : postsQuery.isError ? (
+                                <p className="text-sm text-rose-600">{postsQuery.error.message}</p>
+                            ) : (
+                                <PostFeed emptyLabel="No posts yet." posts={postsQuery.data} />
+                            )}
+                        </CardContent>
+                    </Card>
                 </>
             ) : null}
         </section>
     )
+}
+
+function formatDate(value: string) {
+    return new Intl.DateTimeFormat("en", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+    }).format(new Date(value))
 }
 
 function formatPlanPrice(

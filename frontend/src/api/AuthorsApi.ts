@@ -1,6 +1,8 @@
 import type {
+    AuthorAccessPolicyDto,
+    AuthorCatalogItemDto,
     AuthorProfileDto,
-    PostDto,
+    FeedPostDto,
     ProjectDto,
     SubscriptionPlanDto,
 } from "@contracts/types/content"
@@ -8,9 +10,21 @@ import type {
 import { http } from "@/utils/api/http"
 
 class AuthorsApi {
+    async listAuthors() {
+        const response = await http.get<{ authors: AuthorCatalogItemDto[] }>("/authors")
+        return response.data.authors
+    }
+
     async getAuthorProfile(slug: string) {
         const response = await http.get<AuthorProfileDto>(`/authors/${slug}`)
         return response.data
+    }
+
+    async listAuthorAccessPolicies(slug: string) {
+        const response = await http.get<{ policies: AuthorAccessPolicyDto[] }>(
+            `/authors/${slug}/access-policies`
+        )
+        return response.data.policies
     }
 
     async getAuthorSubscriptionPlan(slug: string) {
@@ -26,7 +40,7 @@ class AuthorsApi {
     }
 
     async listAuthorPosts(slug: string) {
-        const response = await http.get<{ posts: PostDto[] }>(`/authors/${slug}/posts`)
+        const response = await http.get<{ posts: FeedPostDto[] }>(`/authors/${slug}/posts`)
         return response.data.posts
     }
 

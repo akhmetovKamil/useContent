@@ -1,4 +1,5 @@
 import type { FeedPostDto, PostDto } from "@contracts/types/content"
+import { LockKeyhole } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import { Badge } from "@/components/ui/badge"
@@ -65,6 +66,7 @@ function PostCard({
 }) {
     const author = "authorSlug" in post ? post : null
     const postLink = author ? `/authors/${author.authorSlug}/posts/${post.id}` : undefined
+    const hasAccess = !("hasAccess" in post) || post.hasAccess
 
     return (
         <Card className="rounded-[28px] transition-colors hover:bg-[var(--accent-soft)]">
@@ -93,6 +95,14 @@ function PostCard({
                         </CardTitle>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                             <Badge className="rounded-full">{post.status}</Badge>
+                            {"accessLabel" in post && post.accessLabel ? (
+                                <Badge
+                                    className="rounded-full"
+                                    variant={post.hasAccess ? "success" : "warning"}
+                                >
+                                    {post.accessLabel}
+                                </Badge>
+                            ) : null}
                             <span className="text-xs text-[var(--muted)]">
                                 {formatDate(post.publishedAt ?? post.createdAt)}
                             </span>
@@ -132,9 +142,22 @@ function PostCard({
                 </div>
             </CardHeader>
             <CardContent>
-                <p className={cn("whitespace-pre-wrap text-sm leading-6 text-[var(--muted)]")}>
-                    {post.content}
-                </p>
+                {hasAccess ? (
+                    <p className={cn("whitespace-pre-wrap text-sm leading-6 text-[var(--muted)]")}>
+                        {post.content}
+                    </p>
+                ) : (
+                    <div className="flex flex-col gap-2 rounded-[22px] border border-dashed border-[var(--line)] bg-[var(--surface)] p-4 text-sm text-[var(--muted)] sm:flex-row sm:items-center">
+                        <LockKeyhole className="size-4 shrink-0 text-[var(--foreground)]" />
+                        <span>
+                            This post belongs to{" "}
+                            <span className="font-medium text-[var(--foreground)]">
+                                {"accessLabel" in post ? post.accessLabel : "a locked tier"}
+                            </span>
+                            . Subscribe or satisfy the access conditions to read it.
+                        </span>
+                    </div>
+                )}
             </CardContent>
         </Card>
     )

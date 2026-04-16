@@ -16,6 +16,8 @@ import * as repo from "./repository";
 import type {
   AccessPolicyPresetDoc,
   AccessPolicyPresetResponse,
+  AuthorAccessPolicyResponse,
+  AuthorCatalogItemResponse,
   AuthorProfileDoc,
   AuthorProfileResponse,
   AuthorSubscriberResponse,
@@ -120,6 +122,24 @@ export async function getAuthorProfileBySlug(
     throw APIError.notFound("author profile not found");
   }
   return author;
+}
+
+export async function listAuthors(): Promise<AuthorCatalogItemResponse[]> {
+  const authors = await repo.listAuthorProfiles();
+  return Promise.all(
+    authors.map(async (author) => {
+      const [postsCount, plans] = await Promise.all([
+        repo.countPublishedPostsByAuthorId(author._id),
+        repo.listActiveSubscriptionPlansByAuthorId(author._id),
+      ]);
+
+      return {
+        ...toAuthorProfileResponse(author),
+        postsCount,
+        subscriptionPlansCount: plans.length,
+      };
+    }),
+  );
 }
 
 export async function getMyAuthorProfile(
@@ -340,6 +360,34 @@ export async function deleteMyAccessPolicyPreset(
   }
 }
 
+export async function listAuthorAccessPoliciesBySlug(
+  slug: string,
+  viewerWallet?: string,
+): Promise<AuthorAccessPolicyResponse[]> {
+  const author = await getAuthorProfileBySlug(slug);
+  const [policies, plans, subscriptions] = await Promise.all([
+    repo.listAccessPolicyPresetsByAuthorId(author._id),
+    repo.listSubscriptionPlansByAuthorId(author._id),
+    viewerWallet
+      ? buildSubscriptionGrants(author._id, normalizeWallet(viewerWallet))
+      : [],
+  ]);
+
+  return policies.map((policy) => {
+    const evaluation = evaluateAccessPolicy(policy.policy, {
+      subscriptions,
+      tokenBalances: [],
+      nftOwnerships: [],
+    });
+
+    return {
+      ...toAccessPolicyPresetResponse(policy),
+      accessLabel: describeAccessPolicy(policy.policy.root, plans),
+      hasAccess: evaluation.allowed,
+    };
+  });
+}
+
 export async function listMyEntitlements(
   walletAddress: string,
 ): Promise<SubscriptionEntitlementDoc[]> {
@@ -394,7 +442,8 @@ export async function listMyReaderSubscriptions(
 export async function listMyFeedPosts(
   walletAddress: string,
 ): Promise<FeedPostResponse[]> {
-  const entitlements = await listMyEntitlements(walletAddress);
+  const normalizedWallet = normalizeWallet(walletAddress);
+  const entitlements = await listMyEntitlements(normalizedWallet);
   const activeAuthorIds = uniqueObjectIds(
     entitlements
       .filter(
@@ -416,16 +465,18 @@ export async function listMyFeedPosts(
     authors.map((author) => [author._id.toHexString(), author]),
   );
 
-  return posts
-    .map((post) => {
+  const feedPosts = await Promise.all(
+    posts.map(async (post) => {
       const author = authorById.get(post.authorId.toHexString());
       if (!author) {
         return null;
       }
 
-      return toFeedPostResponse(post, author);
-    })
-    .filter((post): post is FeedPostResponse => Boolean(post));
+      return buildFeedPostResponse(post, author, normalizedWallet);
+    }),
+  );
+
+  return feedPosts.filter((post): post is FeedPostResponse => Boolean(post));
 }
 
 export async function listMyAuthorSubscribers(
@@ -902,9 +953,21 @@ export async function deleteMyPost(
   }
 }
 
-export async function listAuthorPostsBySlug(slug: string): Promise<PostDoc[]> {
+export async function listAuthorPostsBySlug(
+  slug: string,
+  viewerWallet?: string,
+): Promise<FeedPostResponse[]> {
   const author = await getAuthorProfileBySlug(slug);
-  return repo.listPublishedPostsByAuthorId(author._id);
+  const posts = await repo.listPublishedPostsByAuthorId(author._id);
+  return Promise.all(
+    posts.map((post) =>
+      buildFeedPostResponse(
+        post,
+        author,
+        viewerWallet ? normalizeWallet(viewerWallet) : undefined,
+      ),
+    ),
+  );
 }
 
 export async function getAuthorPostBySlugAndId(
@@ -936,13 +999,7 @@ export async function getAuthorPostBySlugAndId(
     nftOwnerships: [],
   });
 
-  if (
-    !evaluation.allowed &&
-    !(
-      viewerWallet &&
-      (await hasActiveAuthorSubscription(author._id, viewerWallet))
-    )
-  ) {
+  if (!evaluation.allowed) {
     throw APIError.permissionDenied("access to this post is restricted");
   }
 
@@ -1137,13 +1194,7 @@ export async function getAuthorProjectBySlugAndId(
     nftOwnerships: [],
   });
 
-  if (
-    !evaluation.allowed &&
-    !(
-      viewerWallet &&
-      (await hasActiveAuthorSubscription(author._id, viewerWallet))
-    )
-  ) {
+  if (!evaluation.allowed) {
     throw APIError.permissionDenied("access to this project is restricted");
   }
 
@@ -1377,12 +1428,86 @@ export function toPostResponse(post: PostDoc): PostResponse {
 export function toFeedPostResponse(
   post: PostDoc,
   author: AuthorProfileDoc,
+  access?: { accessLabel: string | null; hasAccess: boolean },
 ): FeedPostResponse {
   return {
     ...toPostResponse(post),
     authorSlug: author.slug,
     authorDisplayName: author.displayName,
+    accessLabel: access?.accessLabel ?? null,
+    hasAccess: access?.hasAccess ?? true,
   };
+}
+
+async function buildFeedPostResponse(
+  post: PostDoc,
+  author: AuthorProfileDoc,
+  viewerWallet?: string,
+): Promise<FeedPostResponse> {
+  const resolvedPolicy = resolveEntityPolicy(
+    post.policyMode,
+    author.defaultPolicy,
+    post.policy,
+  );
+  const [plans, subscriptions] = await Promise.all([
+    repo.listSubscriptionPlansByAuthorId(author._id),
+    viewerWallet ? buildSubscriptionGrants(author._id, viewerWallet) : [],
+  ]);
+  const evaluation = evaluateAccessPolicy(resolvedPolicy, {
+    subscriptions,
+    tokenBalances: [],
+    nftOwnerships: [],
+  });
+  const hasAccess = evaluation.allowed;
+
+  return toFeedPostResponse(
+    {
+      ...post,
+      content: hasAccess ? post.content : "",
+    },
+    author,
+    {
+      accessLabel: describeAccessPolicy(resolvedPolicy.root, plans),
+      hasAccess,
+    },
+  );
+}
+
+function describeAccessPolicy(
+  node: AccessPolicyNode,
+  plans: SubscriptionPlanDoc[],
+): string | null {
+  const planById = new Map(
+    plans.map((plan) => [plan._id.toHexString(), plan.title || plan.code]),
+  );
+
+  return describeAccessPolicyNode(node, planById);
+}
+
+function describeAccessPolicyNode(
+  node: AccessPolicyNode,
+  planById: Map<string, string>,
+): string {
+  switch (node.type) {
+    case "public":
+      return "Public";
+    case "subscription":
+      return planById.get(node.planId) ?? "Subscription";
+    case "token_balance":
+      return "Token balance";
+    case "nft_ownership":
+      return "NFT ownership";
+    case "and":
+      return `AND: ${node.children
+        .map((child) => describeAccessPolicyNode(child, planById))
+        .join(" + ")}`;
+    case "or":
+      return `OR: ${node.children
+        .map((child) => describeAccessPolicyNode(child, planById))
+        .join(" / ")}`;
+    default:
+      return "Custom access";
+  }
 }
 
 export function toProjectResponse(project: ProjectDoc): ProjectResponse {
@@ -1830,23 +1955,6 @@ function policyUsesSubscriptionPlan(
   }
 
   return false;
-}
-
-async function hasActiveAuthorSubscription(
-  authorId: ObjectId,
-  viewerWallet: string,
-): Promise<boolean> {
-  const entitlements =
-    await repo.listSubscriptionEntitlementsByWalletAndAuthorId(
-      normalizeWallet(viewerWallet),
-      authorId,
-    );
-
-  return entitlements.some(
-    (entitlement) =>
-      entitlement.status === "active" &&
-      entitlement.validUntil.getTime() > Date.now(),
-  );
 }
 
 function shortenWallet(walletAddress: string): string {
