@@ -34,6 +34,8 @@ import { defaultSubscriptionChain, supportedChainOptions } from "@/utils/config/
 import { getTokenPresets, type TokenPreset } from "@/utils/config/tokens"
 import { erc20Abi } from "@/utils/web3/erc20"
 
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+
 const defaultToken = getTokenPresets(defaultSubscriptionChain.id).find(
     (preset) => preset.kind === "erc20"
 )
@@ -78,6 +80,8 @@ export function MeSubscriptionPlanPage() {
     const managerDeploymentQuery = useSubscriptionManagerDeploymentQuery(selectedChainId)
     const tokenPresets = getTokenPresets(selectedChainId)
     const selectedToken = tokenPresets.find((preset) => getTokenId(preset) === selectedTokenId)
+    const paymentAsset = selectedToken?.kind === "native" ? "native" : "erc20"
+    const planTokenAddress = paymentAsset === "native" ? ZERO_ADDRESS : tokenAddress
     const tokenDecimals =
         selectedToken?.kind === "custom"
             ? Number(customTokenDecimals)
@@ -149,12 +153,16 @@ export function MeSubscriptionPlanPage() {
         }
 
         const plan = plansQuery.data.find((item) => item.code === "main") ?? plansQuery.data[0]
-        const tokenPreset = getTokenPresetByAddress(plan.chainId, plan.tokenAddress)
+        const tokenPreset = getTokenPresetByAddress(
+            plan.chainId,
+            plan.tokenAddress,
+            plan.paymentAsset ?? "erc20"
+        )
         const decimals = tokenPreset?.decimals ?? 18
         setCode(plan.code)
         setTitle(plan.title)
         setChainId(String(plan.chainId))
-        setTokenAddress(plan.tokenAddress)
+        setTokenAddress(plan.paymentAsset === "native" ? ZERO_ADDRESS : plan.tokenAddress)
         setSelectedTokenId(tokenPreset ? getTokenId(tokenPreset) : "custom")
         setCustomTokenDecimals(String(decimals))
         setAmount(formatUnits(BigInt(plan.price), decimals))
@@ -194,8 +202,9 @@ export function MeSubscriptionPlanPage() {
                                     void upsertPlanMutation.mutateAsync({
                                         code,
                                         title,
+                                        paymentAsset,
                                         chainId: selectedChainId,
-                                        tokenAddress,
+                                        tokenAddress: planTokenAddress,
                                         price: amountInBaseUnits,
                                         billingPeriodDays: Number(billingPeriodDays),
                                         contractAddress: managerAddress,
@@ -287,7 +296,11 @@ export function MeSubscriptionPlanPage() {
                                                 key={getTokenId(preset)}
                                                 onClick={() => {
                                                     setSelectedTokenId(getTokenId(preset))
-                                                    setTokenAddress(preset.address ?? "")
+                                                    setTokenAddress(
+                                                        preset.kind === "native"
+                                                            ? ZERO_ADDRESS
+                                                            : (preset.address ?? "")
+                                                    )
                                                     setCustomTokenDecimals(String(preset.decimals))
                                                     setCustomTokenName("")
                                                     setCustomTokenSymbol("")
@@ -415,7 +428,7 @@ export function MeSubscriptionPlanPage() {
                                     disabled={
                                         upsertPlanMutation.isPending ||
                                         !managerAddress ||
-                                        !tokenAddress ||
+                                        !planTokenAddress ||
                                         !amountInBaseUnits
                                     }
                                     type="submit"
@@ -431,7 +444,7 @@ export function MeSubscriptionPlanPage() {
                                     disabled={
                                         upsertPlanMutation.isPending ||
                                         !managerAddress ||
-                                        !tokenAddress ||
+                                        !planTokenAddress ||
                                         !amountInBaseUnits
                                     }
                                     existingPlanKey={selectedPlan?.planKey}
@@ -441,8 +454,9 @@ export function MeSubscriptionPlanPage() {
                                         void upsertPlanMutation.mutateAsync({
                                             code,
                                             title,
+                                            paymentAsset,
                                             chainId: selectedChainId,
-                                            tokenAddress,
+                                            tokenAddress: planTokenAddress,
                                             price: amountInBaseUnits,
                                             billingPeriodDays: Number(billingPeriodDays),
                                             contractAddress: managerAddress,
@@ -452,7 +466,8 @@ export function MeSubscriptionPlanPage() {
                                         })
                                     }}
                                     price={amountInBaseUnits}
-                                    tokenAddress={tokenAddress}
+                                    paymentAsset={paymentAsset}
+                                    tokenAddress={planTokenAddress}
                                 />
                             </form>
 
@@ -468,10 +483,15 @@ export function MeSubscriptionPlanPage() {
                                                 setCode(plan.code)
                                                 setTitle(plan.title)
                                                 setChainId(String(plan.chainId))
-                                                setTokenAddress(plan.tokenAddress)
+                                                setTokenAddress(
+                                                    plan.paymentAsset === "native"
+                                                        ? ZERO_ADDRESS
+                                                        : plan.tokenAddress
+                                                )
                                                 const tokenPreset = getTokenPresetByAddress(
                                                     plan.chainId,
-                                                    plan.tokenAddress
+                                                    plan.tokenAddress,
+                                                    plan.paymentAsset ?? "erc20"
                                                 )
                                                 const decimals = tokenPreset?.decimals ?? 18
                                                 setSelectedTokenId(
@@ -493,7 +513,8 @@ export function MeSubscriptionPlanPage() {
                                                 {formatPlanAmount(
                                                     plan.chainId,
                                                     plan.tokenAddress,
-                                                    plan.price
+                                                    plan.price,
+                                                    plan.paymentAsset ?? "erc20"
                                                 )}{" "}
                                                 every {plan.billingPeriodDays} days
                                             </div>
@@ -680,7 +701,15 @@ function getTokenId(token: TokenPreset) {
     return token.address?.toLowerCase() ?? token.kind
 }
 
-function getTokenPresetByAddress(chainId: number, address: string) {
+function getTokenPresetByAddress(
+    chainId: number,
+    address: string,
+    paymentAsset: "erc20" | "native" = "erc20"
+) {
+    if (paymentAsset === "native") {
+        return getTokenPresets(chainId).find((preset) => preset.kind === "native")
+    }
+
     return getTokenPresets(chainId).find(
         (preset) => preset.address?.toLowerCase() === address.toLowerCase()
     )
@@ -698,8 +727,13 @@ function toBaseUnits(amount: string, decimals: number) {
     }
 }
 
-function formatPlanAmount(chainId: number, tokenAddress: string, price: string) {
-    const token = getTokenPresetByAddress(chainId, tokenAddress)
+function formatPlanAmount(
+    chainId: number,
+    tokenAddress: string,
+    price: string,
+    paymentAsset: "erc20" | "native" = "erc20"
+) {
+    const token = getTokenPresetByAddress(chainId, tokenAddress, paymentAsset)
     const decimals = token?.decimals ?? 18
     const symbol = token?.symbol ?? "tokens"
 

@@ -94,6 +94,7 @@ export interface SubscriptionPlan {
   authorId: string;
   code: string;
   title: string;
+  paymentAsset: "erc20" | "native";
   chainId: number;
   tokenAddress: string;
   price: string;
@@ -125,6 +126,7 @@ export interface SubscriptionPaymentIntent {
   planId: string;
   planCode: string;
   planKey: string;
+  paymentAsset: "erc20" | "native";
   chainId: number;
   tokenAddress: string;
   contractAddress: string;

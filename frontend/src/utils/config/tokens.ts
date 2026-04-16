@@ -21,8 +21,7 @@ export interface TokenPreset {
 const nativeToken: TokenPreset = {
     address: null,
     decimals: 18,
-    disabled: true,
-    helper: "Native payments are planned, but the current contract supports ERC-20 only.",
+    helper: "Native chain token. Users pay directly without ERC-20 approve.",
     kind: "native",
     name: "Native ETH",
     symbol: "ETH",

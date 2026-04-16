@@ -39,27 +39,31 @@ export function SubscribeButton({ authorSlug, plan }: SubscribeButtonProps) {
         try {
             const intent = await createIntentMutation.mutateAsync({ planCode: plan.code })
             const managerAddress = toAddress(plan.contractAddress)
-            const tokenAddress = toAddress(plan.tokenAddress)
+            const paymentAsset = plan.paymentAsset ?? "erc20"
             const price = BigInt(plan.price)
 
-            setStatus("Checking token allowance...")
-            const allowance = await publicClient.readContract({
-                address: tokenAddress,
-                abi: erc20Abi,
-                functionName: "allowance",
-                args: [address, managerAddress],
-            })
+            if (paymentAsset === "erc20") {
+                const tokenAddress = toAddress(plan.tokenAddress)
 
-            if (allowance < price) {
-                setStatus("Waiting for token approve...")
-                const approveHash = await writeContractAsync({
+                setStatus("Checking token allowance...")
+                const allowance = await publicClient.readContract({
                     address: tokenAddress,
                     abi: erc20Abi,
-                    functionName: "approve",
-                    chainId: plan.chainId,
-                    args: [managerAddress, price],
+                    functionName: "allowance",
+                    args: [address, managerAddress],
                 })
-                await publicClient.waitForTransactionReceipt({ hash: approveHash })
+
+                if (allowance < price) {
+                    setStatus("Waiting for token approve...")
+                    const approveHash = await writeContractAsync({
+                        address: tokenAddress,
+                        abi: erc20Abi,
+                        functionName: "approve",
+                        chainId: plan.chainId,
+                        args: [managerAddress, price],
+                    })
+                    await publicClient.waitForTransactionReceipt({ hash: approveHash })
+                }
             }
 
             setStatus("Paying subscription...")
@@ -69,6 +73,7 @@ export function SubscribeButton({ authorSlug, plan }: SubscribeButtonProps) {
                 functionName: "subscribe",
                 chainId: plan.chainId,
                 args: [plan.planKey as `0x${string}`],
+                value: paymentAsset === "native" ? price : undefined,
             })
 
             setStatus("Confirming subscription...")

@@ -1,10 +1,12 @@
 import { Link, useParams } from "react-router-dom"
+import { formatUnits } from "viem"
 
 import { SubscribeButton } from "@/components/subscriptions/SubscribeButton"
 import { useAuthorProfileQuery } from "@/queries/authors"
 import { useAuthorPostsQuery } from "@/queries/posts"
 import { useAuthorProjectsQuery } from "@/queries/projects"
 import { useAuthorSubscriptionPlansQuery } from "@/queries/subscription-plans"
+import { getTokenPresets } from "@/utils/config/tokens"
 
 export function AuthorPage() {
     const { slug } = useParams()
@@ -85,7 +87,13 @@ export function AuthorPage() {
                                             {plan.title}
                                         </div>
                                         <div className="mt-1 text-sm text-[var(--muted)]">
-                                            {plan.price} every {plan.billingPeriodDays} days
+                                            {formatPlanPrice(
+                                                plan.chainId,
+                                                plan.tokenAddress,
+                                                plan.price,
+                                                plan.paymentAsset ?? "erc20"
+                                            )}{" "}
+                                            every {plan.billingPeriodDays} days
                                         </div>
                                         <div className="mt-2 break-all font-mono text-xs text-[var(--muted)]">
                                             {plan.planKey}
@@ -160,4 +168,25 @@ export function AuthorPage() {
             ) : null}
         </section>
     )
+}
+
+function formatPlanPrice(
+    chainId: number,
+    tokenAddress: string,
+    price: string,
+    paymentAsset: "erc20" | "native"
+) {
+    const token = getTokenPresets(chainId).find((preset) =>
+        paymentAsset === "native"
+            ? preset.kind === "native"
+            : preset.address?.toLowerCase() === tokenAddress.toLowerCase()
+    )
+    const decimals = token?.decimals ?? 18
+    const symbol = token?.symbol ?? "tokens"
+
+    try {
+        return `${formatUnits(BigInt(price), decimals)} ${symbol}`
+    } catch {
+        return `${price} ${symbol}`
+    }
 }

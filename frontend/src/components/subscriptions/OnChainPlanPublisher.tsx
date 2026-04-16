@@ -23,6 +23,7 @@ interface OnChainPlanPublisherProps {
     onPublished: (
         input: Pick<UpsertSubscriptionPlanInput, "planKey" | "registrationTxHash">
     ) => void
+    paymentAsset: "erc20" | "native"
     price: string
     tokenAddress: string
 }
@@ -36,6 +37,7 @@ export function OnChainPlanPublisher({
     disabled,
     existingPlanKey,
     onPublished,
+    paymentAsset,
     price,
     tokenAddress,
 }: OnChainPlanPublisherProps) {
@@ -47,6 +49,7 @@ export function OnChainPlanPublisher({
     const [error, setError] = useState<string | null>(null)
     const authorId = authorQuery.data?.id
     const planKey = authorId ? buildPlanKey({ authorId, chainId, code }) : null
+    const paymentAssetCode = paymentAsset === "native" ? 1 : 0
     const canPublish = Boolean(
         address && publicClient && authorId && contractAddress && tokenAddress
     )
@@ -68,6 +71,7 @@ export function OnChainPlanPublisher({
                 args: existingPlanKey
                     ? [
                           planKey,
+                          paymentAssetCode,
                           toAddress(tokenAddress),
                           BigInt(price),
                           billingDaysToSeconds(billingPeriodDays),
@@ -76,6 +80,7 @@ export function OnChainPlanPublisher({
                       ]
                     : [
                           planKey,
+                          paymentAssetCode,
                           toAddress(tokenAddress),
                           BigInt(price),
                           billingDaysToSeconds(billingPeriodDays),

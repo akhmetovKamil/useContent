@@ -11,11 +11,17 @@ contract SubscriptionManager is Ownable {
     uint16 public constant BPS_BASE = 10_000;
     uint16 public constant MAX_PLATFORM_FEE_BPS = 3_000;
 
+    enum PaymentAsset {
+        ERC20,
+        NATIVE
+    }
+
     address public platformTreasury;
     uint16 public platformFeeBps = 2_000;
 
     struct Plan {
         address author;
+        PaymentAsset paymentAsset;
         address token;
         uint256 price;
         uint64 periodSeconds;
@@ -29,6 +35,7 @@ contract SubscriptionManager is Ownable {
     event PlanRegistered(
         bytes32 indexed planKey,
         address indexed author,
+        PaymentAsset paymentAsset,
         address indexed token,
         uint256 price,
         uint64 periodSeconds,
@@ -38,6 +45,7 @@ contract SubscriptionManager is Ownable {
     event PlanUpdated(
         bytes32 indexed planKey,
         address indexed author,
+        PaymentAsset paymentAsset,
         address indexed token,
         uint256 price,
         uint64 periodSeconds,
@@ -49,6 +57,7 @@ contract SubscriptionManager is Ownable {
         bytes32 indexed planKey,
         address indexed subscriber,
         address indexed author,
+        PaymentAsset paymentAsset,
         address token,
         uint256 amount,
         uint256 platformFee,
@@ -62,11 +71,15 @@ contract SubscriptionManager is Ownable {
     error InvalidPlanKey();
     error InvalidPrice();
     error InvalidPeriod();
+    error InvalidPaymentAsset();
+    error InvalidNativeValue();
+    error UnexpectedNativeValue();
     error PlanAlreadyExists();
     error PlanNotFound();
     error UnauthorizedPlanAuthor();
     error PlanInactive();
     error FeeTooHigh();
+    error NativeTransferFailed();
 
     constructor(address initialOwner, address initialPlatformTreasury) Ownable(initialOwner) {
         if (initialOwner == address(0) || initialPlatformTreasury == address(0)) {
@@ -78,12 +91,13 @@ contract SubscriptionManager is Ownable {
 
     function registerPlan(
         bytes32 planKey,
+        PaymentAsset paymentAsset,
         address token,
         uint256 price,
         uint64 periodSeconds,
         bytes32 externalId
     ) external {
-        _validatePlanInput(planKey, token, price, periodSeconds);
+        _validatePlanInput(planKey, paymentAsset, token, price, periodSeconds);
 
         if (plans[planKey].author != address(0)) {
             revert PlanAlreadyExists();
@@ -91,6 +105,7 @@ contract SubscriptionManager is Ownable {
 
         plans[planKey] = Plan({
             author: msg.sender,
+            paymentAsset: paymentAsset,
             token: token,
             price: price,
             periodSeconds: periodSeconds,
@@ -98,18 +113,19 @@ contract SubscriptionManager is Ownable {
             externalId: externalId
         });
 
-        emit PlanRegistered(planKey, msg.sender, token, price, periodSeconds, externalId);
+        emit PlanRegistered(planKey, msg.sender, paymentAsset, token, price, periodSeconds, externalId);
     }
 
     function updatePlan(
         bytes32 planKey,
+        PaymentAsset paymentAsset,
         address token,
         uint256 price,
         uint64 periodSeconds,
         bool active,
         bytes32 externalId
     ) external {
-        _validatePlanInput(planKey, token, price, periodSeconds);
+        _validatePlanInput(planKey, paymentAsset, token, price, periodSeconds);
 
         Plan storage plan = plans[planKey];
         if (plan.author == address(0)) {
@@ -119,16 +135,17 @@ contract SubscriptionManager is Ownable {
             revert UnauthorizedPlanAuthor();
         }
 
+        plan.paymentAsset = paymentAsset;
         plan.token = token;
         plan.price = price;
         plan.periodSeconds = periodSeconds;
         plan.active = active;
         plan.externalId = externalId;
 
-        emit PlanUpdated(planKey, msg.sender, token, price, periodSeconds, active, externalId);
+        emit PlanUpdated(planKey, msg.sender, paymentAsset, token, price, periodSeconds, active, externalId);
     }
 
-    function subscribe(bytes32 planKey) external returns (uint256 nextPaidUntil) {
+    function subscribe(bytes32 planKey) external payable returns (uint256 nextPaidUntil) {
         Plan memory plan = plans[planKey];
         if (plan.author == address(0)) {
             revert PlanNotFound();
@@ -139,12 +156,25 @@ contract SubscriptionManager is Ownable {
 
         uint256 fee = (plan.price * platformFeeBps) / BPS_BASE;
         uint256 authorAmount = plan.price - fee;
-        IERC20 token = IERC20(plan.token);
 
-        if (fee > 0) {
-            token.safeTransferFrom(msg.sender, platformTreasury, fee);
+        if (plan.paymentAsset == PaymentAsset.NATIVE) {
+            if (msg.value != plan.price) {
+                revert InvalidNativeValue();
+            }
+            if (fee > 0) {
+                _transferNative(platformTreasury, fee);
+            }
+            _transferNative(plan.author, authorAmount);
+        } else {
+            if (msg.value != 0) {
+                revert UnexpectedNativeValue();
+            }
+            IERC20 token = IERC20(plan.token);
+            if (fee > 0) {
+                token.safeTransferFrom(msg.sender, platformTreasury, fee);
+            }
+            token.safeTransferFrom(msg.sender, plan.author, authorAmount);
         }
-        token.safeTransferFrom(msg.sender, plan.author, authorAmount);
 
         uint256 currentPaidUntil = paidUntil[msg.sender][planKey];
         uint256 startsAt = currentPaidUntil > block.timestamp ? currentPaidUntil : block.timestamp;
@@ -155,6 +185,7 @@ contract SubscriptionManager is Ownable {
             planKey,
             msg.sender,
             plan.author,
+            plan.paymentAsset,
             plan.token,
             plan.price,
             fee,
@@ -182,6 +213,7 @@ contract SubscriptionManager is Ownable {
 
     function _validatePlanInput(
         bytes32 planKey,
+        PaymentAsset paymentAsset,
         address token,
         uint256 price,
         uint64 periodSeconds
@@ -189,14 +221,24 @@ contract SubscriptionManager is Ownable {
         if (planKey == bytes32(0)) {
             revert InvalidPlanKey();
         }
-        if (token == address(0)) {
+        if (paymentAsset == PaymentAsset.ERC20 && token == address(0)) {
             revert InvalidAddress();
+        }
+        if (paymentAsset == PaymentAsset.NATIVE && token != address(0)) {
+            revert InvalidPaymentAsset();
         }
         if (price == 0) {
             revert InvalidPrice();
         }
         if (periodSeconds == 0) {
             revert InvalidPeriod();
+        }
+    }
+
+    function _transferNative(address recipient, uint256 amount) private {
+        (bool success,) = recipient.call{value: amount}("");
+        if (!success) {
+            revert NativeTransferFailed();
         }
     }
 }

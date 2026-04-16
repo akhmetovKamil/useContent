@@ -3,12 +3,17 @@ import { Contract, Interface, JsonRpcProvider, isAddress } from "ethers";
 import { subscriptionManagerAbi } from "../../contracts/abi/SubscriptionManager";
 
 const managerInterface = new Interface(subscriptionManagerAbi);
+const PAYMENT_ASSET_CODE = {
+  erc20: 0,
+  native: 1,
+} as const;
 
 interface VerifyPlanRegistrationInput {
   authorWallet: string;
   chainId: number;
   contractAddress: string;
   planKey: string;
+  paymentAsset: "erc20" | "native";
   tokenAddress: string;
   price: string;
   billingPeriodDays: number;
@@ -21,6 +26,7 @@ interface VerifySubscriptionPaymentInput {
   chainId: number;
   contractAddress: string;
   planKey: string;
+  paymentAsset: "erc20" | "native";
   tokenAddress: string;
   price: string;
   txHash: string;
@@ -66,6 +72,11 @@ export async function verifyPlanRegistration(
   if (normalizeAddress(plan.author) !== normalizeAddress(input.authorWallet)) {
     throw APIError.failedPrecondition(
       "on-chain plan author does not match wallet",
+    );
+  }
+  if (Number(plan.paymentAsset) !== PAYMENT_ASSET_CODE[input.paymentAsset]) {
+    throw APIError.failedPrecondition(
+      "on-chain plan payment asset does not match input",
     );
   }
   if (normalizeAddress(plan.token) !== normalizeAddress(input.tokenAddress)) {
@@ -121,6 +132,13 @@ export async function verifySubscriptionPayment(
   ) {
     throw APIError.failedPrecondition(
       "subscription event subscriber does not match wallet",
+    );
+  }
+  if (
+    Number(event.args.paymentAsset) !== PAYMENT_ASSET_CODE[input.paymentAsset]
+  ) {
+    throw APIError.failedPrecondition(
+      "subscription event payment asset does not match plan",
     );
   }
   if (

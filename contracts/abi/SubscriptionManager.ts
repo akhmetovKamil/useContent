@@ -5,6 +5,7 @@ export const subscriptionManagerAbi = [
     inputs: [
       { name: "planKey", type: "bytes32", indexed: true },
       { name: "author", type: "address", indexed: true },
+      { name: "paymentAsset", type: "uint8", indexed: false },
       { name: "token", type: "address", indexed: true },
       { name: "price", type: "uint256", indexed: false },
       { name: "periodSeconds", type: "uint64", indexed: false },
@@ -17,6 +18,7 @@ export const subscriptionManagerAbi = [
     inputs: [
       { name: "planKey", type: "bytes32", indexed: true },
       { name: "author", type: "address", indexed: true },
+      { name: "paymentAsset", type: "uint8", indexed: false },
       { name: "token", type: "address", indexed: true },
       { name: "price", type: "uint256", indexed: false },
       { name: "periodSeconds", type: "uint64", indexed: false },
@@ -31,6 +33,7 @@ export const subscriptionManagerAbi = [
       { name: "planKey", type: "bytes32", indexed: true },
       { name: "subscriber", type: "address", indexed: true },
       { name: "author", type: "address", indexed: true },
+      { name: "paymentAsset", type: "uint8", indexed: false },
       { name: "token", type: "address", indexed: false },
       { name: "amount", type: "uint256", indexed: false },
       { name: "platformFee", type: "uint256", indexed: false },
@@ -44,6 +47,7 @@ export const subscriptionManagerAbi = [
     inputs: [{ name: "planKey", type: "bytes32" }],
     outputs: [
       { name: "author", type: "address" },
+      { name: "paymentAsset", type: "uint8" },
       { name: "token", type: "address" },
       { name: "price", type: "uint256" },
       { name: "periodSeconds", type: "uint64" },
@@ -67,6 +71,7 @@ export const subscriptionManagerAbi = [
     stateMutability: "nonpayable",
     inputs: [
       { name: "planKey", type: "bytes32" },
+      { name: "paymentAsset", type: "uint8" },
       { name: "token", type: "address" },
       { name: "price", type: "uint256" },
       { name: "periodSeconds", type: "uint64" },
@@ -80,6 +85,7 @@ export const subscriptionManagerAbi = [
     stateMutability: "nonpayable",
     inputs: [
       { name: "planKey", type: "bytes32" },
+      { name: "paymentAsset", type: "uint8" },
       { name: "token", type: "address" },
       { name: "price", type: "uint256" },
       { name: "periodSeconds", type: "uint64" },
@@ -91,7 +97,7 @@ export const subscriptionManagerAbi = [
   {
     type: "function",
     name: "subscribe",
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     inputs: [{ name: "planKey", type: "bytes32" }],
     outputs: [{ name: "nextPaidUntil", type: "uint256" }],
   },

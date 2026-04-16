@@ -47,6 +47,8 @@ import type {
   UserProfileResponse,
 } from "./types";
 
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
 export async function getOrCreateUserByWallet(
   walletAddress: string,
 ): Promise<UserDoc> {
@@ -384,8 +386,12 @@ export async function upsertMySubscriptionPlan(
   const now = new Date();
   const code = normalizePlanCode(input.code ?? "main");
   const title = normalizePlanTitle(input.title);
+  const paymentAsset = normalizePaymentAsset(input.paymentAsset ?? "erc20");
   const chainId = normalizeChainId(input.chainId);
-  const tokenAddress = normalizeWallet(input.tokenAddress);
+  const tokenAddress = normalizePlanTokenAddress(
+    paymentAsset,
+    input.tokenAddress,
+  );
   const price = normalizePositiveInteger(input.price, "price");
   const billingPeriodDays = normalizeBillingPeriodDays(input.billingPeriodDays);
   const contractAddress = normalizeWallet(input.contractAddress);
@@ -404,6 +410,7 @@ export async function upsertMySubscriptionPlan(
       chainId,
       contractAddress,
       planKey,
+      paymentAsset,
       tokenAddress,
       price,
       billingPeriodDays,
@@ -419,6 +426,7 @@ export async function upsertMySubscriptionPlan(
   if (existing) {
     const updated = await repo.updateSubscriptionPlan(existing._id, {
       title,
+      paymentAsset,
       chainId,
       tokenAddress,
       price,
@@ -440,6 +448,7 @@ export async function upsertMySubscriptionPlan(
     authorId: author._id,
     code,
     title,
+    paymentAsset,
     chainId,
     tokenAddress,
     price,
@@ -515,6 +524,7 @@ export async function createSubscriptionPaymentIntent(
     planKey:
       plan.planKey ??
       buildPlanKey(plan.authorId.toHexString(), plan.code, plan.chainId),
+    paymentAsset: plan.paymentAsset ?? "erc20",
     chainId: plan.chainId,
     tokenAddress: plan.tokenAddress,
     contractAddress: plan.contractAddress,
@@ -575,6 +585,7 @@ export async function confirmSubscriptionPayment(
     chainId: intent.chainId,
     contractAddress: intent.contractAddress,
     planKey: intent.planKey,
+    paymentAsset: intent.paymentAsset ?? "erc20",
     tokenAddress: intent.tokenAddress,
     price: intent.price,
     txHash,
@@ -1105,6 +1116,7 @@ export function toSubscriptionPaymentIntentResponse(
     planId: intent.planId.toHexString(),
     planCode: intent.planCode,
     planKey: intent.planKey,
+    paymentAsset: intent.paymentAsset ?? "erc20",
     chainId: intent.chainId,
     tokenAddress: intent.tokenAddress,
     contractAddress: intent.contractAddress,
@@ -1128,6 +1140,7 @@ export function toSubscriptionPlanResponse(
     authorId: plan.authorId.toHexString(),
     code: plan.code,
     title: plan.title,
+    paymentAsset: plan.paymentAsset ?? "erc20",
     chainId: plan.chainId,
     tokenAddress: plan.tokenAddress,
     price: plan.price,
@@ -1183,6 +1196,30 @@ function normalizeWallet(walletAddress: string): string {
     throw APIError.invalidArgument("wallet address is required");
   }
   return value;
+}
+
+function normalizePaymentAsset(value: string): "erc20" | "native" {
+  if (value === "erc20" || value === "native") {
+    return value;
+  }
+
+  throw APIError.invalidArgument("paymentAsset must be erc20 or native");
+}
+
+function normalizePlanTokenAddress(
+  paymentAsset: "erc20" | "native",
+  tokenAddress: string,
+): string {
+  if (paymentAsset === "native") {
+    return ZERO_ADDRESS;
+  }
+
+  const normalized = normalizeWallet(tokenAddress);
+  if (normalized === ZERO_ADDRESS) {
+    throw APIError.invalidArgument("ERC-20 token address is required");
+  }
+
+  return normalized;
 }
 
 function normalizeUsername(username: string | null): string | null {

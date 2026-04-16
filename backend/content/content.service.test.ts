@@ -94,6 +94,7 @@ describe("buildAccessPolicyFromInput", () => {
       authorId: author._id,
       code: "main",
       title: "Main",
+      paymentAsset: "native",
       chainId: 11155111,
       tokenAddress: "0x0000000000000000000000000000000000000000",
       price: "1000000",

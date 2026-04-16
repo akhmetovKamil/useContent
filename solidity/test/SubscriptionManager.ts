@@ -16,6 +16,8 @@ describe("SubscriptionManager", async () => {
     const planKey = ethers.id("author:main");
     const price = ethers.parseUnits("100", 18);
     const period = 30n * 24n * 60n * 60n;
+    const erc20Payment = 0;
+    const nativePayment = 1;
 
     await token.mint(subscriber.address, ethers.parseUnits("1000", 18));
 
@@ -30,19 +32,29 @@ describe("SubscriptionManager", async () => {
       planKey,
       price,
       period,
+      erc20Payment,
+      nativePayment,
     };
   }
 
   it("lets an author register a plan", async () => {
-    const { author, token, manager, planKey, price, period } =
+    const { author, token, manager, planKey, price, period, erc20Payment } =
       await deployFixture();
 
     await manager
       .connect(author)
-      .registerPlan(planKey, token.target, price, period, ethers.ZeroHash);
+      .registerPlan(
+        planKey,
+        erc20Payment,
+        token.target,
+        price,
+        period,
+        ethers.ZeroHash,
+      );
 
     const plan = await manager.plans(planKey);
     assert.equal(plan.author, author.address);
+    assert.equal(plan.paymentAsset, BigInt(erc20Payment));
     assert.equal(plan.token, token.target);
     assert.equal(plan.price, price);
     assert.equal(plan.periodSeconds, period);
@@ -50,17 +62,33 @@ describe("SubscriptionManager", async () => {
   });
 
   it("prevents non-authors from updating a plan", async () => {
-    const { author, stranger, token, manager, planKey, price, period } =
-      await deployFixture();
+    const {
+      author,
+      stranger,
+      token,
+      manager,
+      planKey,
+      price,
+      period,
+      erc20Payment,
+    } = await deployFixture();
     await manager
       .connect(author)
-      .registerPlan(planKey, token.target, price, period, ethers.ZeroHash);
+      .registerPlan(
+        planKey,
+        erc20Payment,
+        token.target,
+        price,
+        period,
+        ethers.ZeroHash,
+      );
 
     await assert.rejects(
       manager
         .connect(stranger)
         .updatePlan(
           planKey,
+          erc20Payment,
           token.target,
           price,
           period,
@@ -81,10 +109,18 @@ describe("SubscriptionManager", async () => {
       planKey,
       price,
       period,
+      erc20Payment,
     } = await deployFixture();
     await manager
       .connect(author)
-      .registerPlan(planKey, token.target, price, period, ethers.ZeroHash);
+      .registerPlan(
+        planKey,
+        erc20Payment,
+        token.target,
+        price,
+        period,
+        ethers.ZeroHash,
+      );
     await token.connect(subscriber).approve(manager.target, price);
 
     await manager.connect(subscriber).subscribe(planKey);
@@ -100,11 +136,26 @@ describe("SubscriptionManager", async () => {
   });
 
   it("extends active subscriptions from the current paidUntil", async () => {
-    const { author, subscriber, token, manager, planKey, price, period } =
-      await deployFixture();
+    const {
+      author,
+      subscriber,
+      token,
+      manager,
+      planKey,
+      price,
+      period,
+      erc20Payment,
+    } = await deployFixture();
     await manager
       .connect(author)
-      .registerPlan(planKey, token.target, price, period, ethers.ZeroHash);
+      .registerPlan(
+        planKey,
+        erc20Payment,
+        token.target,
+        price,
+        period,
+        ethers.ZeroHash,
+      );
     await token.connect(subscriber).approve(manager.target, price * 2n);
 
     await manager.connect(subscriber).subscribe(planKey);
@@ -119,19 +170,119 @@ describe("SubscriptionManager", async () => {
   });
 
   it("rejects inactive plan payments", async () => {
-    const { author, subscriber, token, manager, planKey, price, period } =
-      await deployFixture();
+    const {
+      author,
+      subscriber,
+      token,
+      manager,
+      planKey,
+      price,
+      period,
+      erc20Payment,
+    } = await deployFixture();
     await manager
       .connect(author)
-      .registerPlan(planKey, token.target, price, period, ethers.ZeroHash);
+      .registerPlan(
+        planKey,
+        erc20Payment,
+        token.target,
+        price,
+        period,
+        ethers.ZeroHash,
+      );
     await manager
       .connect(author)
-      .updatePlan(planKey, token.target, price, period, false, ethers.ZeroHash);
+      .updatePlan(
+        planKey,
+        erc20Payment,
+        token.target,
+        price,
+        period,
+        false,
+        ethers.ZeroHash,
+      );
     await token.connect(subscriber).approve(manager.target, price);
 
     await assert.rejects(
       manager.connect(subscriber).subscribe(planKey),
       /PlanInactive/,
+    );
+  });
+
+  it("splits native subscription payment between treasury and author", async () => {
+    const {
+      author,
+      subscriber,
+      treasury,
+      manager,
+      planKey,
+      price,
+      period,
+      nativePayment,
+    } = await deployFixture();
+    await manager
+      .connect(author)
+      .registerPlan(
+        planKey,
+        nativePayment,
+        ethers.ZeroAddress,
+        price,
+        period,
+        ethers.ZeroHash,
+      );
+    const treasuryBefore = await ethers.provider.getBalance(treasury.address);
+    const authorBefore = await ethers.provider.getBalance(author.address);
+
+    await manager.connect(subscriber).subscribe(planKey, { value: price });
+
+    assert.equal(
+      (await ethers.provider.getBalance(treasury.address)) - treasuryBefore,
+      ethers.parseUnits("20", 18),
+    );
+    assert.equal(
+      (await ethers.provider.getBalance(author.address)) - authorBefore,
+      ethers.parseUnits("80", 18),
+    );
+  });
+
+  it("rejects native payments with a wrong value", async () => {
+    const { author, subscriber, manager, planKey, price, period, nativePayment } =
+      await deployFixture();
+    await manager
+      .connect(author)
+      .registerPlan(
+        planKey,
+        nativePayment,
+        ethers.ZeroAddress,
+        price,
+        period,
+        ethers.ZeroHash,
+      );
+
+    await assert.rejects(
+      manager.connect(subscriber).subscribe(planKey, { value: price - 1n }),
+      /InvalidNativeValue/,
+    );
+  });
+
+  it("rejects native value for ERC-20 payments", async () => {
+    const { author, subscriber, token, manager, planKey, price, period, erc20Payment } =
+      await deployFixture();
+    await manager
+      .connect(author)
+      .registerPlan(
+        planKey,
+        erc20Payment,
+        token.target,
+        price,
+        period,
+        ethers.ZeroHash,
+      );
+    await token.connect(subscriber).approve(manager.target, price);
+
+    await assert.rejects(
+      manager.connect(subscriber).subscribe(planKey, { value: 1n }),
+      /UnexpectedNativeValue/,
     );
   });
 

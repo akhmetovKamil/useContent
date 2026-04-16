@@ -104,6 +104,8 @@ export interface SubscriptionEntitlementDto {
   updatedAt: string;
 }
 
+export type SubscriptionPaymentAsset = "erc20" | "native";
+
 export interface SubscriptionPaymentIntentDto {
   id: string;
   authorId: string;
@@ -111,6 +113,7 @@ export interface SubscriptionPaymentIntentDto {
   planId: string;
   planCode: string;
   planKey: string;
+  paymentAsset: SubscriptionPaymentAsset;
   chainId: number;
   tokenAddress: string;
   contractAddress: string;
@@ -130,6 +133,7 @@ export interface SubscriptionPlanDto {
   authorId: string;
   code: string;
   title: string;
+  paymentAsset: SubscriptionPaymentAsset;
   chainId: number;
   tokenAddress: string;
   price: string;
@@ -228,6 +232,7 @@ export interface UpdateAuthorProfileInput {
 export interface UpsertSubscriptionPlanInput {
   code?: string;
   title: string;
+  paymentAsset?: SubscriptionPaymentAsset;
   chainId: number;
   tokenAddress: string;
   price: string;
