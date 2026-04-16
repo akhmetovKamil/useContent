@@ -1,10 +1,60 @@
 {
-    "version": 1,
-    "skills": {
-        "shadcn": {
-            "source": "shadcn/ui",
-            "sourceType": "github",
-            "computedHash": "873c67922d80775a9fdf596db7964b579f0408c30ec6e3d11989f6055bbec89f"
-        }
+  "version": 1,
+  "skills": {
+    "encore-api": {
+      "source": "encoredev/skills",
+      "sourceType": "github",
+      "computedHash": "ee75d07636707641d282d6987d8d0493e9ce19e66ec3e0aeb35f7b47042cd44f"
+    },
+    "encore-auth": {
+      "source": "encoredev/skills",
+      "sourceType": "github",
+      "computedHash": "3b0fce11c5ebd674d1524f95fc5be76e587fd2329f83fc2d7c31837abb869aa4"
+    },
+    "encore-code-review": {
+      "source": "encoredev/skills",
+      "sourceType": "github",
+      "computedHash": "b34eac415624303c613162d2ce19c15c7cecf35907ee6384a1025db5391b4a2b"
+    },
+    "encore-database": {
+      "source": "encoredev/skills",
+      "sourceType": "github",
+      "computedHash": "60ebd206628cf313d0e10ae206093ed81768c5b42cfe57bb752463750f145eb0"
+    },
+    "encore-frontend": {
+      "source": "encoredev/skills",
+      "sourceType": "github",
+      "computedHash": "2440caecfb44ee5bfe685547dcce92af5666f5773951e19ea369edf1ca6b41b6"
+    },
+    "encore-infrastructure": {
+      "source": "encoredev/skills",
+      "sourceType": "github",
+      "computedHash": "ac2e301359f423b5d4fa111025cbd9362abd8d41c6602feb1318164623abb13c"
+    },
+    "encore-migrate": {
+      "source": "encoredev/skills",
+      "sourceType": "github",
+      "computedHash": "5e52268c410fc611c349d5401ebd8c68201856baa501c9674b0b2ce125421cbd"
+    },
+    "encore-service": {
+      "source": "encoredev/skills",
+      "sourceType": "github",
+      "computedHash": "f321dba7f9c7ead61c25f492d2ef3491ff93b977e5ebec6d47b5bf9b5bb7e868"
+    },
+    "encore-testing": {
+      "source": "encoredev/skills",
+      "sourceType": "github",
+      "computedHash": "fcccc2f6c732b16a710f8b01a5bf7c91ef84fe39770a247f509c0326dbc304e5"
+    },
+    "magic-ui": {
+      "source": "magicuidesign/magicui",
+      "sourceType": "github",
+      "computedHash": "751895d50c76490c6f92a68cdbe61100bd96b4963d1e91e37b5d82c8df0fc2d7"
+    },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "computedHash": "873c67922d80775a9fdf596db7964b579f0408c30ec6e3d11989f6055bbec89f"
     }
+  }
 }
