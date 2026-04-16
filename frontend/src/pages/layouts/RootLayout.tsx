@@ -1,12 +1,12 @@
 import { NavLink, Outlet } from "react-router-dom"
 
+import { WorkspaceModeToggle } from "@/components/layout/WorkspaceModeToggle"
 import { buttonVariants } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { WalletStatus } from "@/components/wallet/WalletStatus"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
-import { useAuthStore } from "@/shared/session/auth-store"
-import { useWorkspaceStore } from "@/shared/session/workspace-store"
-import { WorkspaceModeToggle } from "@/shared/session/WorkspaceModeToggle"
-import { WalletStatus } from "../../shared/wallet/WalletStatus"
+import { useAuthStore } from "@/stores/auth-store"
+import { useWorkspaceStore } from "@/stores/workspace-store"
+import { cn } from "@/utils/cn"
 
 const readerNavItems = [
     { to: "/", label: "Home", end: true },

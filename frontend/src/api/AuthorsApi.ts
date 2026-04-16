@@ -5,7 +5,7 @@ import type {
     SubscriptionPlanDto,
 } from "@contracts/types/content"
 
-import { http } from "@/lib/api/http"
+import { http } from "@/utils/api/http"
 
 class AuthorsApi {
     async getAuthorProfile(slug: string) {

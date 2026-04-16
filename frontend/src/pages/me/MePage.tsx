@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Eyebrow, PageSection } from "@/components/ui/page"
 import { Textarea } from "@/components/ui/textarea"
 import { useMeQuery, useMyEntitlementsQuery, useUpdateMeMutation } from "@/queries/profile"
-import { useAuthStore } from "@/shared/session/auth-store"
+import { useAuthStore } from "@/stores/auth-store"
 
 export function MePage() {
     const token = useAuthStore((state) => state.token)

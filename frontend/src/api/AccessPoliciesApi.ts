@@ -4,7 +4,7 @@ import type {
     UpdateAccessPolicyPresetInput,
 } from "@contracts/types/content"
 
-import { http } from "@/lib/api/http"
+import { http } from "@/utils/api/http"
 
 class AccessPoliciesApi {
     async listMyAccessPolicies() {

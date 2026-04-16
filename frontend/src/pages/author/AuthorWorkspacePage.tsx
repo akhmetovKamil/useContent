@@ -1,14 +1,15 @@
 import { Link } from "react-router-dom"
 
+import { AuthorActions, AuthorMetrics } from "@/components/author-workspace/AuthorDashboardCards"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
-import { isApiNotFoundError } from "@/lib/api/errors"
 import { useMyPostsQuery } from "@/queries/posts"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useMyProjectsQuery } from "@/queries/projects"
 import { useMySubscriptionPlanQuery } from "@/queries/subscription-plans"
-import { useAuthStore } from "@/shared/session/auth-store"
+import { useAuthStore } from "@/stores/auth-store"
+import { isApiNotFoundError } from "@/utils/api/errors"
 
 export function AuthorWorkspacePage() {
     const token = useAuthStore((state) => state.token)
@@ -43,76 +44,48 @@ export function AuthorWorkspacePage() {
                         </CardContent>
                     </Card>
                 ) : authorQuery.data ? (
-                    <div className="mt-6 grid gap-4 md:grid-cols-4">
-                        <Metric label="Author" value={`@${authorQuery.data.slug}`} />
-                        <Metric label="Posts" value={String(postsQuery.data?.length ?? 0)} />
-                        <Metric label="Projects" value={String(projectsQuery.data?.length ?? 0)} />
-                        <Metric
-                            label="Plan"
-                            value={planQuery.data?.active ? "Active" : "Not configured"}
-                        />
-                    </div>
+                    <AuthorMetrics
+                        metrics={[
+                            { label: "Author", value: `@${authorQuery.data.slug}` },
+                            { label: "Posts", value: String(postsQuery.data?.length ?? 0) },
+                            { label: "Projects", value: String(projectsQuery.data?.length ?? 0) },
+                            {
+                                label: "Plan",
+                                value: planQuery.data?.active ? "Active" : "Not configured",
+                            },
+                        ]}
+                    />
                 ) : (
                     <p className="mt-4 text-[var(--muted)]">Loading author workspace...</p>
                 )}
             </PageSection>
 
             {authorQuery.data ? (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <ActionCard
-                        description="Edit public identity and default access policy."
-                        label="Author profile"
-                        to="/me/author"
-                    />
-                    <ActionCard
-                        description="Create posts, publish drafts, and delete old content."
-                        label="Posts"
-                        to="/me/posts"
-                    />
-                    <ActionCard
-                        description="Create project spaces and manage visibility."
-                        label="Projects"
-                        to="/me/projects"
-                    />
-                    <ActionCard
-                        description="Configure the main crypto subscription plan."
-                        label="Subscription"
-                        to="/me/subscription-plan"
-                    />
-                </div>
+                <AuthorActions
+                    actions={[
+                        {
+                            description: "Edit public identity and default access policy.",
+                            label: "Author profile",
+                            to: "/me/author",
+                        },
+                        {
+                            description: "Create posts, publish drafts, and delete old content.",
+                            label: "Posts",
+                            to: "/me/posts",
+                        },
+                        {
+                            description: "Create project spaces and manage visibility.",
+                            label: "Projects",
+                            to: "/me/projects",
+                        },
+                        {
+                            description: "Configure the main crypto subscription plan.",
+                            label: "Subscription",
+                            to: "/me/subscription-plan",
+                        },
+                    ]}
+                />
             ) : null}
         </section>
-    )
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-    return (
-        <Card>
-            <CardHeader>
-                <Eyebrow className="tracking-[0.3em]">{label}</Eyebrow>
-                <CardTitle className="truncate text-2xl">{value}</CardTitle>
-            </CardHeader>
-        </Card>
-    )
-}
-
-function ActionCard({
-    description,
-    label,
-    to,
-}: {
-    description: string
-    label: string
-    to: string
-}) {
-    return (
-        <Link to={to}>
-            <Card className="h-full transition-colors hover:bg-[var(--accent-soft)]">
-                <CardHeader>
-                    <CardTitle>{label}</CardTitle>
-                    <CardDescription>{description}</CardDescription>
-                </CardHeader>
-            </Card>
-        </Link>
     )
 }

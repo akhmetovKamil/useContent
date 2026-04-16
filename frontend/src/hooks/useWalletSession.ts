@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query"
 import { useAccount, useDisconnect, useSignMessage } from "wagmi"
 
 import { authApi } from "@/api/AuthApi"
-import { useAuthStore } from "@/shared/session/auth-store"
+import { useAuthStore } from "@/stores/auth-store"
 
 export function useWalletSession() {
     const { address, isConnected } = useAccount()

@@ -1,6 +1,6 @@
 import type { CreateProjectInput, ProjectDto, UpdateProjectInput } from "@contracts/types/content"
 
-import { http } from "@/lib/api/http"
+import { http } from "@/utils/api/http"
 
 class ProjectsApi {
     async createMyProject(input: CreateProjectInput) {

@@ -1,22 +1,22 @@
 import { useEffect, useState } from "react"
 
+import { AccessPolicyEditor } from "@/components/access/AccessPolicyEditor"
 import { Select } from "@/components/ui/select"
-import { isApiNotFoundError } from "@/lib/api/errors"
 import { useMyAccessPoliciesQuery } from "@/queries/access-policies"
 import {
     useCreateMyAuthorProfileMutation,
     useMyAuthorProfileQuery,
     useUpdateMyAuthorProfileMutation,
 } from "@/queries/profile"
-import { AccessPolicyEditor } from "@/shared/access/AccessPolicyEditor"
+import { useAuthStore } from "@/stores/auth-store"
 import {
     buildPolicyInputFromBuilder,
     createDefaultPolicyBuilderState,
     parsePolicyToBuilder,
     summarizePolicyInput,
     type AccessPolicyBuilderState,
-} from "@/shared/access/policy"
-import { useAuthStore } from "@/shared/session/auth-store"
+} from "@/utils/access-policy"
+import { isApiNotFoundError } from "@/utils/api/errors"
 
 export function MeAuthorPage() {
     const token = useAuthStore((state) => state.token)

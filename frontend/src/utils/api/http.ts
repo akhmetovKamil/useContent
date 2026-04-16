@@ -1,7 +1,7 @@
 import axios from "axios"
 
-import { env } from "@/shared/config/env"
-import { useAuthStore } from "@/shared/session/auth-store"
+import { useAuthStore } from "@/stores/auth-store"
+import { env } from "@/utils/config/env"
 
 export const http = axios.create({
     baseURL: env.apiBaseUrl,

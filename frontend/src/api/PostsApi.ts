@@ -1,6 +1,6 @@
 import type { CreatePostInput, PostDto, UpdatePostInput } from "@contracts/types/content"
 
-import { http } from "@/lib/api/http"
+import { http } from "@/utils/api/http"
 
 class PostsApi {
     async createMyPost(input: CreatePostInput) {

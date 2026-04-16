@@ -1,6 +1,6 @@
 import type { SubscriptionPlanDto, UpsertSubscriptionPlanInput } from "@contracts/types/content"
 
-import { http } from "@/lib/api/http"
+import { http } from "@/utils/api/http"
 
 class SubscriptionPlansApi {
     async listMySubscriptionPlans() {

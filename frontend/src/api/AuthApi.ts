@@ -1,5 +1,5 @@
-import { http } from "@/lib/api/http"
 import type { GetNonceResponse, VerifySignatureInput, VerifySignatureResponse } from "@/types/auth"
+import { http } from "@/utils/api/http"
 
 class AuthApi {
     async getNonce(address: string) {

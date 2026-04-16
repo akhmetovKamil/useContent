@@ -2,8 +2,8 @@ import { useConnect } from "wagmi"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { useWalletSession } from "@/features/auth/useWalletSession"
-import { useAuthStore } from "@/shared/session/auth-store"
+import { useWalletSession } from "@/hooks/useWalletSession"
+import { useAuthStore } from "@/stores/auth-store"
 
 export function WalletStatus() {
     const { connect, connectors, isPending: connectPending } = useConnect()

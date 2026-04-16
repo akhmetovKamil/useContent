@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 
+import { AccessPolicyEditor } from "@/components/access/AccessPolicyEditor"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,14 +18,13 @@ import {
     useMySubscriptionPlansQuery,
     useUpsertMySubscriptionPlanMutation,
 } from "@/queries/subscription-plans"
-import { AccessPolicyEditor } from "@/shared/access/AccessPolicyEditor"
+import { useAuthStore } from "@/stores/auth-store"
 import {
     buildPolicyInputFromBuilder,
     createDefaultPolicyBuilderState,
     summarizePolicyInput,
     type AccessPolicyBuilderState,
-} from "@/shared/access/policy"
-import { useAuthStore } from "@/shared/session/auth-store"
+} from "@/utils/access-policy"
 
 export function MeSubscriptionPlanPage() {
     const token = useAuthStore((state) => state.token)

@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom"
 
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
-import { useWorkspaceStore } from "@/shared/session/workspace-store"
+import { useWorkspaceStore } from "@/stores/workspace-store"
 
 export function WorkspaceModeToggle() {
     const navigate = useNavigate()

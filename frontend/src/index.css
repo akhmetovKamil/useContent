@@ -1,15 +1,57 @@
 @import "tailwindcss";
 
+@theme inline {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted-background);
+    --color-muted-foreground: var(--muted);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+    --font-sans: var(--sans);
+    --font-serif: var(--serif);
+    --font-mono: var(--mono);
+}
+
 :root {
+    --radius: 0.875rem;
     --background: #fbf3e8;
     --foreground: #1e1a17;
-    --surface: rgba(255, 252, 246, 0.8);
-    --surface-strong: #fffaf3;
-    --line: rgba(58, 45, 31, 0.14);
+    --card: rgba(255, 252, 246, 0.8);
+    --card-foreground: #1e1a17;
+    --popover: #fffaf3;
+    --popover-foreground: #1e1a17;
+    --primary: #d8643b;
+    --primary-foreground: #fff6ec;
+    --secondary: rgba(216, 100, 59, 0.13);
+    --secondary-foreground: #1e1a17;
     --muted: #6b5d4c;
+    --muted-background: #f0e3d4;
     --accent: #d8643b;
     --accent-foreground: #fff6ec;
     --accent-soft: rgba(216, 100, 59, 0.13);
+    --destructive: #e5484d;
+    --border: rgba(58, 45, 31, 0.14);
+    --input: rgba(58, 45, 31, 0.18);
+    --ring: rgba(216, 100, 59, 0.48);
+    --surface: var(--card);
+    --surface-strong: var(--popover);
+    --line: var(--border);
     --shadow: 0 24px 80px rgba(64, 34, 16, 0.12);
     --sans: "Avenir Next", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
     --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
@@ -29,13 +71,26 @@
 :root.dark {
     --background: #07111f;
     --foreground: #edf7ff;
-    --surface: rgba(9, 24, 44, 0.82);
-    --surface-strong: #0d1c33;
-    --line: rgba(142, 197, 255, 0.18);
+    --card: rgba(9, 24, 44, 0.82);
+    --card-foreground: #edf7ff;
+    --popover: #0d1c33;
+    --popover-foreground: #edf7ff;
+    --primary: #58b7ff;
+    --primary-foreground: #03101d;
+    --secondary: rgba(88, 183, 255, 0.16);
+    --secondary-foreground: #edf7ff;
     --muted: #9bb8d5;
+    --muted-background: #132945;
     --accent: #58b7ff;
     --accent-foreground: #03101d;
     --accent-soft: rgba(88, 183, 255, 0.16);
+    --destructive: #ff6b7a;
+    --border: rgba(142, 197, 255, 0.18);
+    --input: rgba(142, 197, 255, 0.22);
+    --ring: rgba(88, 183, 255, 0.52);
+    --surface: var(--card);
+    --surface-strong: var(--popover);
+    --line: var(--border);
     --shadow: 0 28px 100px rgba(0, 8, 24, 0.5);
     background:
         radial-gradient(circle at 20% 12%, rgba(88, 183, 255, 0.28), transparent 28%),
