@@ -4,11 +4,14 @@ import { validateToken } from "../auth/auth.service";
 import * as service from "./content.service";
 import type {
   AuthorProfileResponse,
+  ConfirmSubscriptionPaymentRequest,
   CreateAuthorProfileRequest,
   CreatePostRequest,
   CreateProjectRequest,
+  CreateSubscriptionPaymentIntentRequest,
   PostResponse,
   ProjectResponse,
+  SubscriptionPaymentIntentResponse,
   SubscriptionPlanResponse,
   SubscriptionEntitlementResponse,
   UpdateAuthorProfileRequest,
@@ -75,6 +78,22 @@ export const listMyEntitlements = api(
   }
 );
 
+export const listMySubscriptionPaymentIntents = api(
+  {
+    method: "GET",
+    path: "/me/subscription-payment-intents",
+    expose: true,
+    auth: true,
+  },
+  async (): Promise<{ intents: SubscriptionPaymentIntentResponse[] }> => {
+    const auth = getAuthData()!;
+    const intents = await service.listMySubscriptionPaymentIntents(auth.walletAddress);
+    return {
+      intents: intents.map(service.toSubscriptionPaymentIntentResponse),
+    };
+  }
+);
+
 export const getMySubscriptionPlan = api(
   { method: "GET", path: "/me/subscription-plan", expose: true, auth: true },
   async (): Promise<SubscriptionPlanResponse> => {
@@ -106,6 +125,52 @@ export const getAuthorSubscriptionPlan = api(
   async ({ slug }: { slug: string }): Promise<SubscriptionPlanResponse> => {
     const plan = await service.getAuthorSubscriptionPlanBySlug(slug);
     return service.toSubscriptionPlanResponse(plan);
+  }
+);
+
+export const createSubscriptionPaymentIntent = api(
+  {
+    method: "POST",
+    path: "/authors/:slug/subscription-payment-intents",
+    expose: true,
+    auth: true,
+  },
+  async ({
+    slug,
+    ...req
+  }: CreateSubscriptionPaymentIntentRequest & {
+    slug: string;
+  }): Promise<SubscriptionPaymentIntentResponse> => {
+    const auth = getAuthData()!;
+    const intent = await service.createSubscriptionPaymentIntent(
+      auth.walletAddress,
+      slug,
+      req
+    );
+    return service.toSubscriptionPaymentIntentResponse(intent);
+  }
+);
+
+export const confirmSubscriptionPayment = api(
+  {
+    method: "POST",
+    path: "/me/subscription-payment-intents/:intentId/confirm",
+    expose: true,
+    auth: true,
+  },
+  async ({
+    intentId,
+    ...req
+  }: ConfirmSubscriptionPaymentRequest & {
+    intentId: string;
+  }): Promise<SubscriptionPaymentIntentResponse> => {
+    const auth = getAuthData()!;
+    const intent = await service.confirmSubscriptionPayment(
+      auth.walletAddress,
+      intentId,
+      req
+    );
+    return service.toSubscriptionPaymentIntentResponse(intent);
   }
 );
 

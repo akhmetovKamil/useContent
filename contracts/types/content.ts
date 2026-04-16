@@ -92,6 +92,25 @@ export interface SubscriptionEntitlementDto {
     updatedAt: string
 }
 
+export interface SubscriptionPaymentIntentDto {
+    id: string
+    authorId: string
+    subscriberWallet: string
+    planId: string
+    planCode: string
+    chainId: number
+    tokenAddress: string
+    contractAddress: string
+    price: string
+    billingPeriodDays: number
+    status: "pending" | "submitted" | "confirmed" | "expired" | "cancelled"
+    txHash: string | null
+    entitlementId: string | null
+    expiresAt: string
+    createdAt: string
+    updatedAt: string
+}
+
 export interface SubscriptionPlanDto {
     id: string
     authorId: string
@@ -179,6 +198,14 @@ export interface UpsertSubscriptionPlanInput {
     billingPeriodDays: number
     contractAddress: string
     active?: boolean
+}
+
+export interface CreateSubscriptionPaymentIntentInput {
+    planCode?: string
+}
+
+export interface ConfirmSubscriptionPaymentInput {
+    txHash: string
 }
 
 export interface CreatePostInput {

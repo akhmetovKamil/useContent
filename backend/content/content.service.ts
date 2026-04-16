@@ -14,9 +14,11 @@ import * as repo from "./repository";
 import type {
   AuthorProfileDoc,
   AuthorProfileResponse,
+  ConfirmSubscriptionPaymentRequest,
   CreateAuthorProfileRequest,
   CreatePostRequest,
   CreateProjectRequest,
+  CreateSubscriptionPaymentIntentRequest,
   PostDoc,
   PostResponse,
   ProjectDoc,
@@ -25,6 +27,8 @@ import type {
   SubscriptionPlanResponse,
   SubscriptionEntitlementDoc,
   SubscriptionEntitlementResponse,
+  SubscriptionPaymentIntentDoc,
+  SubscriptionPaymentIntentResponse,
   UpdateAuthorProfileRequest,
   UpsertSubscriptionPlanRequest,
   UpdateMyProfileRequest,
@@ -225,6 +229,108 @@ export async function upsertMySubscriptionPlan(
   });
 
   return created;
+}
+
+export async function createSubscriptionPaymentIntent(
+  walletAddress: string,
+  slug: string,
+  input: CreateSubscriptionPaymentIntentRequest
+): Promise<SubscriptionPaymentIntentDoc> {
+  const subscriberWallet = normalizeWallet(walletAddress);
+  const author = await getAuthorProfileBySlug(slug);
+  const planCode = normalizePlanCode(input.planCode ?? "main");
+  const plan = await repo.findSubscriptionPlanByAuthorIdAndCode(
+    author._id,
+    planCode
+  );
+  if (!plan || !plan.active) {
+    throw APIError.notFound("subscription plan not found");
+  }
+
+  const now = new Date();
+  return repo.createSubscriptionPaymentIntent({
+    authorId: author._id,
+    subscriberWallet,
+    planId: plan._id,
+    planCode: plan.code,
+    chainId: plan.chainId,
+    tokenAddress: plan.tokenAddress,
+    contractAddress: plan.contractAddress,
+    price: plan.price,
+    billingPeriodDays: plan.billingPeriodDays,
+    status: "pending",
+    txHash: null,
+    entitlementId: null,
+    expiresAt: addMinutes(now, 30),
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
+export async function confirmSubscriptionPayment(
+  walletAddress: string,
+  intentId: string,
+  input: ConfirmSubscriptionPaymentRequest
+): Promise<SubscriptionPaymentIntentDoc> {
+  const subscriberWallet = normalizeWallet(walletAddress);
+  const txHash = normalizeTxHash(input.txHash);
+  const intent = await repo.findSubscriptionPaymentIntentByIdAndWallet(
+    parseObjectId(intentId, "intentId"),
+    subscriberWallet
+  );
+  if (!intent) {
+    throw APIError.notFound("subscription payment intent not found");
+  }
+  if (intent.status === "cancelled") {
+    throw APIError.failedPrecondition("subscription payment intent is cancelled");
+  }
+  if (intent.status === "expired" || intent.expiresAt.getTime() < Date.now()) {
+    const expired = await repo.updateSubscriptionPaymentIntent(intent._id, {
+      status: "expired",
+      updatedAt: new Date(),
+    });
+    if (!expired) {
+      throw APIError.notFound("subscription payment intent not found");
+    }
+    return expired;
+  }
+  if (intent.status === "confirmed") {
+    return intent;
+  }
+
+  const existingTx = await repo.findSubscriptionPaymentIntentByTxHash(txHash);
+  if (existingTx && !existingTx._id.equals(intent._id)) {
+    throw APIError.alreadyExists("transaction hash is already attached to payment");
+  }
+
+  const now = new Date();
+  const validUntil = addDays(now, intent.billingPeriodDays);
+  const entitlement = await repo.upsertActiveSubscriptionEntitlement({
+    authorId: intent.authorId,
+    subscriberWallet,
+    planId: intent.planId,
+    validUntil,
+    now,
+  });
+
+  const updated = await repo.updateSubscriptionPaymentIntent(intent._id, {
+    status: "confirmed",
+    txHash,
+    entitlementId: entitlement._id,
+    updatedAt: now,
+  });
+
+  if (!updated) {
+    throw APIError.notFound("subscription payment intent not found");
+  }
+
+  return updated;
+}
+
+export async function listMySubscriptionPaymentIntents(
+  walletAddress: string
+): Promise<SubscriptionPaymentIntentDoc[]> {
+  return repo.listSubscriptionPaymentIntentsByWallet(normalizeWallet(walletAddress));
 }
 
 export async function createMyPost(
@@ -624,6 +730,29 @@ export function toSubscriptionEntitlementResponse(
     source: entitlement.source,
     createdAt: entitlement.createdAt.toISOString(),
     updatedAt: entitlement.updatedAt.toISOString(),
+  };
+}
+
+export function toSubscriptionPaymentIntentResponse(
+  intent: SubscriptionPaymentIntentDoc
+): SubscriptionPaymentIntentResponse {
+  return {
+    id: intent._id.toHexString(),
+    authorId: intent.authorId.toHexString(),
+    subscriberWallet: intent.subscriberWallet,
+    planId: intent.planId.toHexString(),
+    planCode: intent.planCode,
+    chainId: intent.chainId,
+    tokenAddress: intent.tokenAddress,
+    contractAddress: intent.contractAddress,
+    price: intent.price,
+    billingPeriodDays: intent.billingPeriodDays,
+    status: intent.status,
+    txHash: intent.txHash,
+    entitlementId: intent.entitlementId?.toHexString() ?? null,
+    expiresAt: intent.expiresAt.toISOString(),
+    createdAt: intent.createdAt.toISOString(),
+    updatedAt: intent.updatedAt.toISOString(),
   };
 }
 
@@ -1085,4 +1214,20 @@ function normalizeOptionalIdString(value: string | undefined) {
   }
 
   return trimmed;
+}
+
+function normalizeTxHash(txHash: string): string {
+  const value = txHash.trim().toLowerCase();
+  if (!/^0x[a-f0-9]{64}$/.test(value)) {
+    throw APIError.invalidArgument("txHash must be a 32-byte hex transaction hash");
+  }
+  return value;
+}
+
+function addMinutes(date: Date, minutes: number): Date {
+  return new Date(date.getTime() + minutes * 60 * 1000);
+}
+
+function addDays(date: Date, days: number): Date {
+  return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
 }

@@ -101,3 +101,22 @@ export interface SubscriptionEntitlement {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface SubscriptionPaymentIntent {
+  id: string;
+  authorId: string;
+  subscriberWallet: string;
+  planId: string;
+  planCode: string;
+  chainId: number;
+  tokenAddress: string;
+  contractAddress: string;
+  price: string;
+  billingPeriodDays: number;
+  status: "pending" | "submitted" | "confirmed" | "expired" | "cancelled";
+  txHash: string | null;
+  entitlementId: string | null;
+  expiresAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}

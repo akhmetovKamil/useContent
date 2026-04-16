@@ -7,6 +7,7 @@ import type {
   ProjectDoc,
   ProjectNodeDoc,
   SubscriptionEntitlementDoc,
+  SubscriptionPaymentIntentDoc,
   SubscriptionPlanDoc,
   UserDoc,
 } from "./types";
@@ -402,6 +403,98 @@ export async function listSubscriptionEntitlementsByWalletAndAuthorId(
     .toArray();
 }
 
+export async function createSubscriptionEntitlement(
+  doc: Omit<SubscriptionEntitlementDoc, "_id">
+): Promise<SubscriptionEntitlementDoc> {
+  const entitlements = await getSubscriptionEntitlementsCollection();
+  const result = await entitlements.insertOne(doc as SubscriptionEntitlementDoc);
+  return { _id: result.insertedId, ...doc };
+}
+
+export async function upsertActiveSubscriptionEntitlement(input: {
+  authorId: ObjectId;
+  subscriberWallet: string;
+  planId: ObjectId;
+  validUntil: Date;
+  now: Date;
+}): Promise<SubscriptionEntitlementDoc> {
+  const entitlements = await getSubscriptionEntitlementsCollection();
+  return entitlements.findOneAndUpdate(
+    {
+      authorId: input.authorId,
+      subscriberWallet: input.subscriberWallet,
+      planId: input.planId,
+    },
+    {
+      $set: {
+        status: "active",
+        validUntil: input.validUntil,
+        source: "onchain",
+        updatedAt: input.now,
+      },
+      $setOnInsert: {
+        createdAt: input.now,
+      },
+    },
+    { upsert: true, returnDocument: "after" }
+  ) as Promise<SubscriptionEntitlementDoc>;
+}
+
+export async function getSubscriptionPaymentIntentsCollection(): Promise<
+  Collection<SubscriptionPaymentIntentDoc>
+> {
+  await ensureIndexes();
+  return getCollection<SubscriptionPaymentIntentDoc>("subscription_payment_intents");
+}
+
+export async function createSubscriptionPaymentIntent(
+  doc: Omit<SubscriptionPaymentIntentDoc, "_id">
+): Promise<SubscriptionPaymentIntentDoc> {
+  const intents = await getSubscriptionPaymentIntentsCollection();
+  const result = await intents.insertOne(doc as SubscriptionPaymentIntentDoc);
+  return { _id: result.insertedId, ...doc };
+}
+
+export async function findSubscriptionPaymentIntentByIdAndWallet(
+  id: ObjectId,
+  subscriberWallet: string
+): Promise<SubscriptionPaymentIntentDoc | null> {
+  const intents = await getSubscriptionPaymentIntentsCollection();
+  return intents.findOne({ _id: id, subscriberWallet });
+}
+
+export async function findSubscriptionPaymentIntentByTxHash(
+  txHash: string
+): Promise<SubscriptionPaymentIntentDoc | null> {
+  const intents = await getSubscriptionPaymentIntentsCollection();
+  return intents.findOne({ txHash });
+}
+
+export async function updateSubscriptionPaymentIntent(
+  id: ObjectId,
+  update: Partial<
+    Omit<SubscriptionPaymentIntentDoc, "_id" | "createdAt">
+  >
+): Promise<SubscriptionPaymentIntentDoc | null> {
+  const intents = await getSubscriptionPaymentIntentsCollection();
+  return intents.findOneAndUpdate(
+    { _id: id },
+    { $set: update },
+    { returnDocument: "after" }
+  );
+}
+
+export async function listSubscriptionPaymentIntentsByWallet(
+  subscriberWallet: string
+): Promise<SubscriptionPaymentIntentDoc[]> {
+  const intents = await getSubscriptionPaymentIntentsCollection();
+  return intents
+    .find({ subscriberWallet })
+    .sort({ createdAt: -1 })
+    .limit(50)
+    .toArray();
+}
+
 async function ensureIndexes(): Promise<void> {
   if (indexesReady) {
     return;
@@ -415,6 +508,7 @@ async function ensureIndexes(): Promise<void> {
     projectNodes,
     subscriptionPlans,
     subscriptionEntitlements,
+    subscriptionPaymentIntents,
   ] = await Promise.all([
     getCollection<UserDoc>("users"),
     getCollection<AuthorProfileDoc>("author_profiles"),
@@ -423,6 +517,7 @@ async function ensureIndexes(): Promise<void> {
     getCollection<ProjectNodeDoc>("project_nodes"),
     getCollection<SubscriptionPlanDoc>("subscription_plans"),
     getCollection<SubscriptionEntitlementDoc>("subscription_entitlements"),
+    getCollection<SubscriptionPaymentIntentDoc>("subscription_payment_intents"),
   ]);
 
   await Promise.all([
@@ -442,7 +537,17 @@ async function ensureIndexes(): Promise<void> {
       { partialFilterExpression: { active: true } }
     ),
     subscriptionEntitlements.createIndex({ authorId: 1, subscriberWallet: 1 }),
+    subscriptionEntitlements.createIndex(
+      { authorId: 1, subscriberWallet: 1, planId: 1 },
+      { unique: true }
+    ),
     subscriptionEntitlements.createIndex({ planId: 1, validUntil: -1 }),
+    subscriptionPaymentIntents.createIndex({ subscriberWallet: 1, createdAt: -1 }),
+    subscriptionPaymentIntents.createIndex({ authorId: 1, status: 1 }),
+    subscriptionPaymentIntents.createIndex(
+      { txHash: 1 },
+      { unique: true, sparse: true }
+    ),
   ]);
 
   indexesReady = true;

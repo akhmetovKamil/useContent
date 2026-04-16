@@ -2,14 +2,17 @@ import type { ObjectId } from "mongodb";
 import type { AccessPolicy, PolicyMode } from "../domain/access";
 import type {
   AuthorProfileDto,
+  ConfirmSubscriptionPaymentInput,
   CreateAuthorProfileInput,
   CreatePostInput,
   CreateProjectInput,
   CreateProjectFolderInput,
+  CreateSubscriptionPaymentIntentInput,
   PostDto,
   ProjectDto,
   ProjectNodeDto,
   SubscriptionEntitlementDto,
+  SubscriptionPaymentIntentDto,
   SubscriptionPlanDto,
   UpdateAuthorProfileInput,
   UpdateMyProfileInput,
@@ -122,9 +125,29 @@ export interface SubscriptionEntitlementDoc {
   updatedAt: Date;
 }
 
+export interface SubscriptionPaymentIntentDoc {
+  _id: ObjectId;
+  authorId: ObjectId;
+  subscriberWallet: string;
+  planId: ObjectId;
+  planCode: string;
+  chainId: number;
+  tokenAddress: string;
+  contractAddress: string;
+  price: string;
+  billingPeriodDays: number;
+  status: "pending" | "submitted" | "confirmed" | "expired" | "cancelled";
+  txHash: string | null;
+  entitlementId: ObjectId | null;
+  expiresAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export type UserProfileResponse = UserProfileDto;
 export type AuthorProfileResponse = AuthorProfileDto;
 export type SubscriptionEntitlementResponse = SubscriptionEntitlementDto;
+export type SubscriptionPaymentIntentResponse = SubscriptionPaymentIntentDto;
 export type SubscriptionPlanResponse = SubscriptionPlanDto;
 export type PostResponse = PostDto;
 export type ProjectResponse = ProjectDto;
@@ -139,3 +162,6 @@ export type CreateProjectRequest = CreateProjectInput;
 export type UpdateProjectRequest = UpdateProjectInput;
 export type CreateProjectFolderRequest = CreateProjectFolderInput;
 export type UpdateProjectNodeRequest = UpdateProjectNodeInput;
+export type CreateSubscriptionPaymentIntentRequest =
+  CreateSubscriptionPaymentIntentInput;
+export type ConfirmSubscriptionPaymentRequest = ConfirmSubscriptionPaymentInput;
