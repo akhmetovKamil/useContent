@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { NavLink, Outlet } from "react-router-dom"
 
 import { WorkspaceModeToggle } from "@/components/layout/WorkspaceModeToggle"
@@ -26,10 +27,19 @@ const authorNavItems = [
 export function RootLayout() {
     const token = useAuthStore((state) => state.token)
     const mode = useWorkspaceStore((state) => state.mode)
+    const palette = useWorkspaceStore((state) => state.palette)
     const visibleMode = token ? mode : "reader"
     const navItems =
         !token ? publicNavItems : visibleMode === "author" ? authorNavItems : readerNavItems
     const subtitle = visibleMode === "author" ? "Author Workspace" : "User Workspace"
+
+    useEffect(() => {
+        document.documentElement.dataset.palette = palette
+    }, [palette])
+
+    useEffect(() => {
+        document.documentElement.classList.toggle("dark", visibleMode === "author")
+    }, [visibleMode])
 
     return (
         <div className="min-h-screen px-4 py-4 transition-colors duration-500 md:px-6 md:py-6">

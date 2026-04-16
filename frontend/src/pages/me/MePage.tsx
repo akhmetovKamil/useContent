@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 
+import { AppearancePicker } from "@/components/settings/AppearancePicker"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -47,6 +48,8 @@ export function MePage() {
                 </p>
             ) : meQuery.data ? (
                 <div className="mt-6 grid gap-6">
+                    <AppearancePicker />
+
                     <div className="grid gap-4 md:grid-cols-3">
                         <Card>
                             <CardHeader>

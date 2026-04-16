@@ -1,6 +1,7 @@
 import { Link, Navigate, useNavigate } from "react-router-dom"
 
 import { AuthorProfileForm } from "@/components/author-onboarding/AuthorProfileForm"
+import { AppearancePicker } from "@/components/settings/AppearancePicker"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -49,6 +50,10 @@ export function MeAuthorPage() {
                 </Card>
             ) : authorQuery.data ? (
                 <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
+                    <div className="xl:col-span-2">
+                        <AppearancePicker />
+                    </div>
+
                     <Card className="rounded-[28px]">
                         <CardHeader>
                             <CardTitle>@{authorQuery.data.slug}</CardTitle>
