@@ -142,6 +142,8 @@ export async function updateMyAuthorProfile(
       : normalizeDisplayName(update.displayName);
   const nextBio =
     update.bio === undefined ? author.bio : normalizeBio(update.bio);
+  const nextTags =
+    update.tags === undefined ? (author.tags ?? []) : normalizeAuthorTags(update.tags);
   const nextDefaultPolicy =
     update.defaultPolicyId !== undefined
       ? await resolveDefaultPolicyFromPreset(author, update.defaultPolicyId)
@@ -157,6 +159,7 @@ export async function updateMyAuthorProfile(
   const updated = await repo.updateAuthorProfile(author._id, {
     displayName: nextDisplayName,
     bio: nextBio,
+    tags: nextTags,
     defaultPolicy: nextDefaultPolicy,
     defaultPolicyId:
       update.defaultPolicyId === undefined
@@ -769,7 +772,10 @@ export async function getAuthorPostBySlugAndId(
     nftOwnerships: [],
   });
 
-  if (!evaluation.allowed) {
+  if (
+    !evaluation.allowed &&
+    !(viewerWallet && (await hasActiveAuthorSubscription(author._id, viewerWallet)))
+  ) {
     throw APIError.permissionDenied("access to this post is restricted");
   }
 
@@ -964,7 +970,10 @@ export async function getAuthorProjectBySlugAndId(
     nftOwnerships: [],
   });
 
-  if (!evaluation.allowed) {
+  if (
+    !evaluation.allowed &&
+    !(viewerWallet && (await hasActiveAuthorSubscription(author._id, viewerWallet)))
+  ) {
     throw APIError.permissionDenied("access to this project is restricted");
   }
 
@@ -984,6 +993,7 @@ export async function createAuthorProfile(
   const slug = normalizeSlug(input.slug);
   const displayName = normalizeDisplayName(input.displayName);
   const bio = normalizeBio(input.bio ?? "");
+  const tags = normalizeAuthorTags(input.tags ?? []);
   const defaultPolicy = await normalizeRequestedAuthorDefaultPolicy(
     null,
     input.defaultPolicy,
@@ -996,6 +1006,7 @@ export async function createAuthorProfile(
     slug,
     displayName,
     bio,
+    tags,
     avatarFileId: user.avatarFileId,
     defaultPolicy,
     defaultPolicyId: null,
@@ -1050,6 +1061,7 @@ export function toAuthorProfileResponse(
     slug: author.slug,
     displayName: author.displayName,
     bio: author.bio,
+    tags: author.tags ?? [],
     avatarFileId: author.avatarFileId?.toHexString() ?? null,
     defaultPolicy: author.defaultPolicy,
     defaultPolicyId: author.defaultPolicyId?.toHexString() ?? null,
@@ -1258,6 +1270,31 @@ function normalizeBio(bio: string): string {
     throw APIError.invalidArgument("bio is too long");
   }
   return value;
+}
+
+function normalizeAuthorTags(tags: string[]): string[] {
+  if (!Array.isArray(tags)) {
+    throw APIError.invalidArgument("tags must be an array");
+  }
+
+  const normalized = tags
+    .map((tag) => tag.trim().toLowerCase())
+    .filter(Boolean)
+    .filter((tag, index, list) => list.indexOf(tag) === index);
+
+  if (normalized.length > 12) {
+    throw APIError.invalidArgument("author can have up to 12 tags");
+  }
+
+  for (const tag of normalized) {
+    if (!/^[a-z0-9- ]{2,32}$/.test(tag)) {
+      throw APIError.invalidArgument(
+        "tags must be 2-32 chars: a-z, 0-9, space, -",
+      );
+    }
+  }
+
+  return normalized;
 }
 
 function normalizeSlug(slug: string): string {
@@ -1551,6 +1588,23 @@ async function buildSubscriptionGrants(
       entitlement.status === "active" &&
       entitlement.validUntil.getTime() > Date.now(),
   }));
+}
+
+async function hasActiveAuthorSubscription(
+  authorId: ObjectId,
+  viewerWallet: string,
+): Promise<boolean> {
+  const entitlements =
+    await repo.listSubscriptionEntitlementsByWalletAndAuthorId(
+      normalizeWallet(viewerWallet),
+      authorId,
+    );
+
+  return entitlements.some(
+    (entitlement) =>
+      entitlement.status === "active" &&
+      entitlement.validUntil.getTime() > Date.now(),
+  );
 }
 
 function shortenWallet(walletAddress: string): string {

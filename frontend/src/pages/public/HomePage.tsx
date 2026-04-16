@@ -18,6 +18,7 @@ export function HomePage() {
         <div className="grid gap-6">
             <HomeHero
                 authorSlug={authorQuery.data?.slug}
+                isSignedIn={Boolean(token)}
                 onOpenAuthorWorkspace={() => setMode("author")}
             />
             <WorkspaceMetrics

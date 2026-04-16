@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom"
 import { formatUnits } from "viem"
 
 import { SubscribeButton } from "@/components/subscriptions/SubscribeButton"
+import { Badge } from "@/components/ui/badge"
 import { useAuthorProfileQuery } from "@/queries/authors"
 import { useAuthorPostsQuery } from "@/queries/posts"
 import { useAuthorProjectsQuery } from "@/queries/projects"
@@ -34,6 +35,15 @@ export function AuthorPage() {
                     <p className="mt-3 max-w-2xl text-[var(--muted)]">
                         {authorQuery.data.bio || "Автор пока не добавил описание профиля."}
                     </p>
+                    {authorQuery.data.tags.length ? (
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            {authorQuery.data.tags.map((tag) => (
+                                <Badge className="rounded-full" key={tag}>
+                                    {tag}
+                                </Badge>
+                            ))}
+                        </div>
+                    ) : null}
 
                     <div className="mt-6 grid gap-4 md:grid-cols-3">
                         <article className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">

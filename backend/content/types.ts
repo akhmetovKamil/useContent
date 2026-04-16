@@ -54,6 +54,7 @@ export interface AuthorProfileDoc {
   slug: string;
   displayName: string;
   bio: string;
+  tags: string[];
   avatarFileId: ObjectId | null;
   defaultPolicy: AccessPolicy;
   defaultPolicyId: ObjectId | null;

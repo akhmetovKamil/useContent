@@ -5,10 +5,11 @@ import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
 
 interface HomeHeroProps {
     authorSlug?: string
+    isSignedIn: boolean
     onOpenAuthorWorkspace: () => void
 }
 
-export function HomeHero({ authorSlug, onOpenAuthorWorkspace }: HomeHeroProps) {
+export function HomeHero({ authorSlug, isSignedIn, onOpenAuthorWorkspace }: HomeHeroProps) {
     return (
         <PageSection className="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
             <div>
@@ -23,15 +24,23 @@ export function HomeHero({ authorSlug, onOpenAuthorWorkspace }: HomeHeroProps) {
             </div>
 
             <div className="grid gap-3 self-end">
-                <ActionLink label="Open profile" to="/me" />
-                <ActionLink
-                    label={authorSlug ? "Open author workspace" : "Become an author"}
-                    onClick={onOpenAuthorWorkspace}
-                    to="/author"
-                />
-                {authorSlug ? (
-                    <ActionLink label="View public page" to={`/authors/${authorSlug}`} />
-                ) : null}
+                {isSignedIn ? (
+                    <>
+                        <ActionLink label="Open profile" to="/me" />
+                        <ActionLink
+                            label={authorSlug ? "Open author workspace" : "Become an author"}
+                            onClick={onOpenAuthorWorkspace}
+                            to={authorSlug ? "/author" : "/author/onboarding"}
+                        />
+                        {authorSlug ? (
+                            <ActionLink label="View public page" to={`/authors/${authorSlug}`} />
+                        ) : null}
+                    </>
+                ) : (
+                    <div className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5 text-sm leading-6 text-[var(--muted)]">
+                        Connect a wallet and sign the nonce to unlock user pages and author mode.
+                    </div>
+                )}
             </div>
         </PageSection>
     )

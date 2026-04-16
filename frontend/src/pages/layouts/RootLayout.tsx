@@ -3,8 +3,11 @@ import { NavLink, Outlet } from "react-router-dom"
 import { WorkspaceModeToggle } from "@/components/layout/WorkspaceModeToggle"
 import { buttonVariants } from "@/components/ui/button"
 import { WalletStatus } from "@/components/wallet/WalletStatus"
+import { useAuthStore } from "@/stores/auth-store"
 import { useWorkspaceStore } from "@/stores/workspace-store"
 import { cn } from "@/utils/cn"
+
+const publicNavItems = [{ to: "/", label: "Home", end: true }]
 
 const readerNavItems = [
     { to: "/", label: "Home", end: true },
@@ -13,16 +16,20 @@ const readerNavItems = [
 
 const authorNavItems = [
     { to: "/author", label: "Workspace", end: true },
-    { to: "/me/author", label: "Profile" },
+    { to: "/author/about", label: "About" },
+    { to: "/me/author", label: "Settings" },
     { to: "/me/posts", label: "Posts" },
     { to: "/me/projects", label: "Projects" },
     { to: "/me/subscription-plan", label: "Access" },
 ]
 
 export function RootLayout() {
+    const token = useAuthStore((state) => state.token)
     const mode = useWorkspaceStore((state) => state.mode)
-    const navItems = mode === "author" ? authorNavItems : readerNavItems
-    const subtitle = mode === "author" ? "Author Workspace" : "User Workspace"
+    const visibleMode = token ? mode : "reader"
+    const navItems =
+        !token ? publicNavItems : visibleMode === "author" ? authorNavItems : readerNavItems
+    const subtitle = visibleMode === "author" ? "Author Workspace" : "User Workspace"
 
     return (
         <div className="min-h-screen px-4 py-4 transition-colors duration-500 md:px-6 md:py-6">

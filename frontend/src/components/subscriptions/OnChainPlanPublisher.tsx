@@ -60,7 +60,7 @@ export function OnChainPlanPublisher({
         }
 
         setError(null)
-        setStatus(existingPlanKey ? "Updating on-chain plan..." : "Publishing on-chain plan...")
+        setStatus(existingPlanKey ? "Updating plan on-chain..." : "Publishing plan on-chain...")
 
         try {
             const txHash = await writeContractAsync({
@@ -91,7 +91,7 @@ export function OnChainPlanPublisher({
             setStatus("Waiting for transaction confirmation...")
             await publicClient.waitForTransactionReceipt({ hash: txHash })
             onPublished({ planKey, registrationTxHash: txHash })
-            setStatus("On-chain plan is ready. Saving in backend...")
+            setStatus("Transaction confirmed. Saving plan in backend...")
         } catch (caught) {
             setError(caught instanceof Error ? caught.message : "Failed to publish on-chain plan")
             setStatus(null)
@@ -107,7 +107,7 @@ export function OnChainPlanPublisher({
                 type="button"
                 variant="outline"
             >
-                {existingPlanKey ? "Update on-chain plan" : "Publish on-chain plan"}
+                {existingPlanKey ? "Update plan" : "Publish plan"}
             </Button>
             <p className="text-xs text-[var(--muted)]">
                 Plan key:{" "}

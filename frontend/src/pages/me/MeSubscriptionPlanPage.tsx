@@ -195,25 +195,7 @@ export function MeSubscriptionPlanPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <form
-                                className="grid gap-4"
-                                onSubmit={(event) => {
-                                    event.preventDefault()
-                                    void upsertPlanMutation.mutateAsync({
-                                        code,
-                                        title,
-                                        paymentAsset,
-                                        chainId: selectedChainId,
-                                        tokenAddress: planTokenAddress,
-                                        price: amountInBaseUnits,
-                                        billingPeriodDays: Number(billingPeriodDays),
-                                        contractAddress: managerAddress,
-                                        planKey: planKey || undefined,
-                                        registrationTxHash: registrationTxHash || null,
-                                        active: true,
-                                    })
-                                }}
-                            >
+                            <div className="grid gap-4">
                                 <div className="grid gap-4 md:grid-cols-2">
                                     <Label>
                                         Title
@@ -423,18 +405,6 @@ export function MeSubscriptionPlanPage() {
                                         deployment address will be loaded from backend registry.
                                     </p>
                                 ) : null}
-                                <Button
-                                    className="w-fit rounded-full"
-                                    disabled={
-                                        upsertPlanMutation.isPending ||
-                                        !managerAddress ||
-                                        !planTokenAddress ||
-                                        !amountInBaseUnits
-                                    }
-                                    type="submit"
-                                >
-                                    {upsertPlanMutation.isPending ? "Saving..." : "Save plan"}
-                                </Button>
                                 <OnChainPlanPublisher
                                     active
                                     billingPeriodDays={Number(billingPeriodDays)}
@@ -469,7 +439,7 @@ export function MeSubscriptionPlanPage() {
                                     paymentAsset={paymentAsset}
                                     tokenAddress={planTokenAddress}
                                 />
-                            </form>
+                            </div>
 
                             <div className="mt-6 grid gap-3">
                                 {plansQuery.data?.map((plan) => (

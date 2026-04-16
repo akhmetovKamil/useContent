@@ -3,6 +3,7 @@ import { useAccount, useDisconnect, useSignMessage } from "wagmi"
 
 import { authApi } from "@/api/AuthApi"
 import { useAuthStore } from "@/stores/auth-store"
+import { useWorkspaceStore } from "@/stores/workspace-store"
 
 export function useWalletSession() {
     const { address, isConnected } = useAccount()
@@ -10,6 +11,7 @@ export function useWalletSession() {
     const { disconnect } = useDisconnect()
     const setSession = useAuthStore((state) => state.setSession)
     const clearSession = useAuthStore((state) => state.clearSession)
+    const setMode = useWorkspaceStore((state) => state.setMode)
 
     const signInMutation = useMutation({
         mutationFn: async () => {
@@ -26,6 +28,7 @@ export function useWalletSession() {
             })
 
             setSession({ token, walletAddress: normalizedAddress })
+            setMode("reader")
 
             return { token, walletAddress: normalizedAddress }
         },
@@ -33,6 +36,7 @@ export function useWalletSession() {
 
     function signOut() {
         clearSession()
+        setMode("reader")
         disconnect()
     }
 

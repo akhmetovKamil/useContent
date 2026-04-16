@@ -155,6 +155,7 @@ function createAuthorProfileDoc(): AuthorProfileDoc {
     slug: "kamil",
     displayName: "Kamil",
     bio: "",
+    tags: [],
     avatarFileId: null,
     defaultPolicy: {
       version: 1,

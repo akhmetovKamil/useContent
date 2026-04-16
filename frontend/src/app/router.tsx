@@ -1,5 +1,8 @@
 import { createBrowserRouter } from "react-router-dom"
 
+import { RequireAuthor, RequireSession } from "@/components/routing/AuthGuards"
+import { AuthorAboutPage } from "../pages/author/AuthorAboutPage"
+import { AuthorOnboardingPage } from "../pages/author/AuthorOnboardingPage"
 import { AuthorWorkspacePage } from "../pages/author/AuthorWorkspacePage"
 import { RootLayout } from "../pages/layouts/RootLayout"
 import { MeAuthorPage } from "../pages/me/MeAuthorPage"
@@ -18,12 +21,24 @@ export const router = createBrowserRouter([
         element: <RootLayout />,
         children: [
             { index: true, element: <HomePage /> },
-            { path: "author", element: <AuthorWorkspacePage /> },
-            { path: "me", element: <MePage /> },
-            { path: "me/author", element: <MeAuthorPage /> },
-            { path: "me/posts", element: <MePostsPage /> },
-            { path: "me/projects", element: <MeProjectsPage /> },
-            { path: "me/subscription-plan", element: <MeSubscriptionPlanPage /> },
+            {
+                element: <RequireSession />,
+                children: [
+                    { path: "me", element: <MePage /> },
+                    { path: "author/about", element: <AuthorAboutPage /> },
+                    { path: "author/onboarding", element: <AuthorOnboardingPage /> },
+                ],
+            },
+            {
+                element: <RequireAuthor />,
+                children: [
+                    { path: "author", element: <AuthorWorkspacePage /> },
+                    { path: "me/author", element: <MeAuthorPage /> },
+                    { path: "me/posts", element: <MePostsPage /> },
+                    { path: "me/projects", element: <MeProjectsPage /> },
+                    { path: "me/subscription-plan", element: <MeSubscriptionPlanPage /> },
+                ],
+            },
             { path: "authors/:slug", element: <AuthorPage /> },
             { path: "authors/:slug/posts/:postId", element: <PostPage /> },
             { path: "authors/:slug/projects/:projectId", element: <ProjectPage /> },

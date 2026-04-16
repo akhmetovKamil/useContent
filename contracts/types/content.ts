@@ -73,6 +73,7 @@ export interface AuthorProfileDto {
   slug: string;
   displayName: string;
   bio: string;
+  tags: string[];
   avatarFileId: string | null;
   defaultPolicy: AccessPolicy;
   defaultPolicyId: string | null;
@@ -217,6 +218,7 @@ export interface CreateAuthorProfileInput {
   slug: string;
   displayName: string;
   bio?: string;
+  tags?: string[];
   defaultPolicy?: AccessPolicy;
   defaultPolicyInput?: AccessPolicyInput;
 }
@@ -224,6 +226,7 @@ export interface CreateAuthorProfileInput {
 export interface UpdateAuthorProfileInput {
   displayName?: string;
   bio?: string;
+  tags?: string[];
   defaultPolicy?: AccessPolicy;
   defaultPolicyInput?: AccessPolicyInput;
   defaultPolicyId?: string | null;
