@@ -154,6 +154,10 @@ export interface ContractDeploymentDto {
   updatedAt: string;
 }
 
+export interface ContractDeploymentLookupDto {
+  deployment: ContractDeploymentDto | null;
+}
+
 export interface PostDto {
   id: string;
   authorId: string;

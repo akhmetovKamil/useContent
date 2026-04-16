@@ -5,6 +5,7 @@ import type {
   AuthorProfileDto,
   ConfirmSubscriptionPaymentInput,
   ContractDeploymentDto,
+  ContractDeploymentLookupDto,
   CreateAccessPolicyPresetInput,
   CreateAuthorProfileInput,
   CreatePostInput,
@@ -184,6 +185,7 @@ export type AuthorProfileResponse = AuthorProfileDto;
 export type AccessPolicyPresetResponse = AccessPolicyPresetDto;
 export type SubscriptionEntitlementResponse = SubscriptionEntitlementDto;
 export type ContractDeploymentResponse = ContractDeploymentDto;
+export type ContractDeploymentLookupResponse = ContractDeploymentLookupDto;
 export type SubscriptionPaymentIntentResponse = SubscriptionPaymentIntentDto;
 export type SubscriptionPlanResponse = SubscriptionPlanDto;
 export type PostResponse = PostDto;

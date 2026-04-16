@@ -7,6 +7,7 @@ import type {
   AccessPolicyPresetResponse,
   AuthorProfileResponse,
   ConfirmSubscriptionPaymentRequest,
+  ContractDeploymentLookupResponse,
   ContractDeploymentResponse,
   CreateAccessPolicyPresetRequest,
   CreateAuthorProfileRequest,
@@ -138,11 +139,15 @@ export const getSubscriptionManagerDeployment = api(
     chainId,
   }: {
     chainId: string;
-  }): Promise<ContractDeploymentResponse | null> => {
+  }): Promise<ContractDeploymentLookupResponse> => {
     const deployment = await service.getSubscriptionManagerDeployment(
       Number(chainId),
     );
-    return deployment ? service.toContractDeploymentResponse(deployment) : null;
+    return {
+      deployment: deployment
+        ? service.toContractDeploymentResponse(deployment)
+        : null,
+    };
   }
 );
 

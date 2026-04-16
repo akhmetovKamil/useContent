@@ -1,6 +1,6 @@
 import type {
     ConfirmSubscriptionPaymentInput,
-    ContractDeploymentDto,
+    ContractDeploymentLookupDto,
     CreateSubscriptionPaymentIntentInput,
     SubscriptionPaymentIntentDto,
     SubscriptionPlanDto,
@@ -11,10 +11,10 @@ import { http } from "@/utils/api/http"
 
 class SubscriptionPlansApi {
     async getSubscriptionManagerDeployment(chainId: number) {
-        const response = await http.get<ContractDeploymentDto | null>(
+        const response = await http.get<ContractDeploymentLookupDto>(
             `/contract-deployments/subscription-manager/${chainId}`
         )
-        return response.data
+        return response.data.deployment
     }
 
     async listMySubscriptionPlans() {
