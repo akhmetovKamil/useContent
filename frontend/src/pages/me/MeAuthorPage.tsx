@@ -1,4 +1,4 @@
-import { Link, Navigate } from "react-router-dom"
+import { Link, Navigate, useNavigate } from "react-router-dom"
 
 import { AuthorProfileForm } from "@/components/author-onboarding/AuthorProfileForm"
 import { Badge } from "@/components/ui/badge"
@@ -6,16 +6,21 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
 import {
+    useDeleteMyAuthorProfileMutation,
     useMyAuthorProfileQuery,
     useUpdateMyAuthorProfileMutation,
 } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
+import { useWorkspaceStore } from "@/stores/workspace-store"
 import { isApiNotFoundError } from "@/utils/api/errors"
 
 export function MeAuthorPage() {
+    const navigate = useNavigate()
     const token = useAuthStore((state) => state.token)
+    const setMode = useWorkspaceStore((state) => state.setMode)
     const authorQuery = useMyAuthorProfileQuery(Boolean(token))
     const updateAuthorMutation = useUpdateMyAuthorProfileMutation()
+    const deleteAuthorMutation = useDeleteMyAuthorProfileMutation()
 
     if (!token) {
         return <Navigate replace to="/" />
@@ -83,6 +88,36 @@ export function MeAuthorPage() {
                             })
                         }}
                     />
+
+                    <div className="xl:col-start-2">
+                        <button
+                            className="text-sm font-medium text-rose-600 underline underline-offset-4 transition hover:text-rose-700 disabled:opacity-60"
+                            disabled={deleteAuthorMutation.isPending}
+                            onClick={() => {
+                                const confirmed = window.confirm(
+                                    "Delete your author account? Your user wallet account will stay active, but author profile, posts, projects, access policies, subscription plans, payment intents, and entitlements will be removed from the database."
+                                )
+                                if (!confirmed) {
+                                    return
+                                }
+
+                                void deleteAuthorMutation.mutateAsync().then(() => {
+                                    setMode("reader")
+                                    navigate("/")
+                                })
+                            }}
+                            type="button"
+                        >
+                            {deleteAuthorMutation.isPending
+                                ? "Deleting author account..."
+                                : "Delete author account"}
+                        </button>
+                        {deleteAuthorMutation.isError ? (
+                            <p className="mt-2 text-sm text-rose-600">
+                                {deleteAuthorMutation.error.message}
+                            </p>
+                        ) : null}
+                    </div>
                 </div>
             ) : (
                 <Card>

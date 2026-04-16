@@ -76,6 +76,14 @@ export const updateMyAuthorProfile = api(
   }
 );
 
+export const deleteMyAuthorProfile = api(
+  { method: "DELETE", path: "/me/author", expose: true, auth: true },
+  async (): Promise<void> => {
+    const auth = getAuthData()!;
+    await service.deleteMyAuthorProfile(auth.walletAddress);
+  }
+);
+
 export const listMyAccessPolicyPresets = api(
   { method: "GET", path: "/me/access-policies", expose: true, auth: true },
   async (): Promise<{ policies: AccessPolicyPresetResponse[] }> => {

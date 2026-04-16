@@ -103,6 +103,15 @@ export async function updateAuthorProfile(
   );
 }
 
+export async function deleteAuthorProfileByIdAndUserId(
+  id: ObjectId,
+  userId: string,
+): Promise<boolean> {
+  const authorProfiles = await getAuthorProfilesCollection();
+  const result = await authorProfiles.deleteOne({ _id: id, userId });
+  return result.deletedCount === 1;
+}
+
 export async function getAccessPolicyPresetsCollection(): Promise<
   Collection<AccessPolicyPresetDoc>
 > {
@@ -174,6 +183,13 @@ export async function deleteAccessPolicyPreset(
   return result.deletedCount === 1;
 }
 
+export async function deleteAccessPolicyPresetsByAuthorId(
+  authorId: ObjectId,
+): Promise<void> {
+  const presets = await getAccessPolicyPresetsCollection();
+  await presets.deleteMany({ authorId });
+}
+
 export async function getPostsCollection(): Promise<Collection<PostDoc>> {
   await ensureIndexes();
   return getCollection<PostDoc>("posts");
@@ -238,6 +254,11 @@ export async function deletePost(
   const posts = await getPostsCollection();
   const result = await posts.deleteOne({ _id: id, authorId });
   return result.deletedCount === 1;
+}
+
+export async function deletePostsByAuthorId(authorId: ObjectId): Promise<void> {
+  const posts = await getPostsCollection();
+  await posts.deleteMany({ authorId });
 }
 
 export async function countPostsByAccessPolicyId(
@@ -314,6 +335,13 @@ export async function deleteProject(
   const projects = await getProjectsCollection();
   const result = await projects.deleteOne({ _id: id, authorId });
   return result.deletedCount === 1;
+}
+
+export async function deleteProjectsByAuthorId(
+  authorId: ObjectId,
+): Promise<void> {
+  const projects = await getProjectsCollection();
+  await projects.deleteMany({ authorId });
 }
 
 export async function countProjectsByAccessPolicyId(
@@ -428,6 +456,13 @@ export async function deleteProjectNodesByProjectId(
   await projectNodes.deleteMany({ projectId });
 }
 
+export async function deleteProjectNodesByAuthorId(
+  authorId: ObjectId,
+): Promise<void> {
+  const projectNodes = await getProjectNodesCollection();
+  await projectNodes.deleteMany({ authorId });
+}
+
 export async function getSubscriptionPlansCollection(): Promise<
   Collection<SubscriptionPlanDoc>
 > {
@@ -498,6 +533,13 @@ export async function deleteSubscriptionPlanByIdAndAuthorId(
   return result.deletedCount === 1;
 }
 
+export async function deleteSubscriptionPlansByAuthorId(
+  authorId: ObjectId,
+): Promise<void> {
+  const plans = await getSubscriptionPlansCollection();
+  await plans.deleteMany({ authorId });
+}
+
 export async function getSubscriptionEntitlementsCollection(): Promise<
   Collection<SubscriptionEntitlementDoc>
 > {
@@ -546,6 +588,13 @@ export async function createSubscriptionEntitlement(
     doc as SubscriptionEntitlementDoc,
   );
   return { _id: result.insertedId, ...doc };
+}
+
+export async function deleteSubscriptionEntitlementsByAuthorId(
+  authorId: ObjectId,
+): Promise<void> {
+  const entitlements = await getSubscriptionEntitlementsCollection();
+  await entitlements.deleteMany({ authorId });
 }
 
 export async function upsertActiveSubscriptionEntitlement(input: {
@@ -607,6 +656,13 @@ export async function findSubscriptionPaymentIntentByTxHash(
 ): Promise<SubscriptionPaymentIntentDoc | null> {
   const intents = await getSubscriptionPaymentIntentsCollection();
   return intents.findOne({ txHash });
+}
+
+export async function deleteSubscriptionPaymentIntentsByAuthorId(
+  authorId: ObjectId,
+): Promise<void> {
+  const intents = await getSubscriptionPaymentIntentsCollection();
+  await intents.deleteMany({ authorId });
 }
 
 export async function getContractDeploymentsCollection(): Promise<

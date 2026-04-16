@@ -177,6 +177,30 @@ export async function updateMyAuthorProfile(
   return updated;
 }
 
+export async function deleteMyAuthorProfile(walletAddress: string): Promise<void> {
+  const user = await getOrCreateUserByWallet(walletAddress);
+  const author = await repo.findAuthorProfileByUserId(user._id.toHexString());
+  if (!author) {
+    throw APIError.notFound("author profile not found");
+  }
+
+  await repo.deleteSubscriptionPaymentIntentsByAuthorId(author._id);
+  await repo.deleteSubscriptionEntitlementsByAuthorId(author._id);
+  await repo.deleteSubscriptionPlansByAuthorId(author._id);
+  await repo.deleteProjectNodesByAuthorId(author._id);
+  await repo.deleteProjectsByAuthorId(author._id);
+  await repo.deletePostsByAuthorId(author._id);
+  await repo.deleteAccessPolicyPresetsByAuthorId(author._id);
+
+  const deleted = await repo.deleteAuthorProfileByIdAndUserId(
+    author._id,
+    user._id.toHexString(),
+  );
+  if (!deleted) {
+    throw APIError.notFound("author profile not found");
+  }
+}
+
 export async function listMyAccessPolicyPresets(
   walletAddress: string,
 ): Promise<AccessPolicyPresetDoc[]> {

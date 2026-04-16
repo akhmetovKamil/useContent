@@ -67,3 +67,16 @@ export function useUpdateMyAuthorProfileMutation() {
         },
     })
 }
+
+export function useDeleteMyAuthorProfileMutation() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: () => profileApi.deleteMyAuthorProfile(),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: queryKeys.myAuthor })
+            void queryClient.invalidateQueries({ queryKey: queryKeys.me })
+            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+        },
+    })
+}

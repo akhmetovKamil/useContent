@@ -35,6 +35,10 @@ class ProfileApi {
         return response.data
     }
 
+    async deleteMyAuthorProfile() {
+        await http.delete("/me/author")
+    }
+
     async getMyEntitlements() {
         const response = await http.get<{ entitlements: SubscriptionEntitlementDto[] }>(
             "/me/entitlements"
