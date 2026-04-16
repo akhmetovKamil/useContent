@@ -2,6 +2,14 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import hre from "hardhat";
 
+interface DeploymentRegistryInput {
+  chainId: number;
+  address: string;
+  platformTreasury: string;
+  deployedBy: string;
+  deploymentTxHash: string | null;
+}
+
 async function main() {
   const { ethers } = await hre.network.connect();
   const [deployer] = await ethers.getSigners();
@@ -39,27 +47,41 @@ async function main() {
     )}\n`,
   );
 
-  await syncDeploymentRegistry({
+  const deployment = {
     chainId: Number(chainId),
     address,
     platformTreasury,
     deployedBy: deployer.address,
     deploymentTxHash,
-  });
+  };
 
   console.log(`SubscriptionManager deployed to ${address} on chain ${chainId}`);
+  console.log(`Deployment metadata saved to ${deploymentPath}`);
+  await trySyncDeploymentRegistry(deployment);
 }
 
-async function syncDeploymentRegistry(input: {
-  chainId: number;
-  address: string;
-  platformTreasury: string;
-  deployedBy: string;
-  deploymentTxHash: string | null;
-}) {
+async function trySyncDeploymentRegistry(input: DeploymentRegistryInput) {
+  try {
+    await syncDeploymentRegistry(input);
+  } catch (error) {
+    console.warn(
+      error instanceof Error
+        ? error.message
+        : "Failed to sync deployment registry",
+    );
+    console.warn(
+      "Deployment succeeded, but registry sync failed. Fix DEPLOYMENT_REGISTRY_TOKEN and run the sync script for this address.",
+    );
+  }
+}
+
+async function syncDeploymentRegistry(input: DeploymentRegistryInput) {
   const apiBaseUrl = process.env.API_BASE_URL;
   const token = process.env.DEPLOYMENT_REGISTRY_TOKEN;
   if (!apiBaseUrl || !token || apiBaseUrl === "NONE" || token === "NONE") {
+    console.warn(
+      "Deployment registry sync skipped because API_BASE_URL or DEPLOYMENT_REGISTRY_TOKEN is not configured.",
+    );
     return;
   }
 
