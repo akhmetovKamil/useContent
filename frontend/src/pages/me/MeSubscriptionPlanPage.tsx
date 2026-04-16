@@ -26,6 +26,7 @@ import {
     summarizePolicyInput,
     type AccessPolicyBuilderState,
 } from "@/utils/access-policy"
+import { defaultSubscriptionChain, supportedChainOptions } from "@/utils/config/chains"
 
 export function MeSubscriptionPlanPage() {
     const token = useAuthStore((state) => state.token)
@@ -38,7 +39,7 @@ export function MeSubscriptionPlanPage() {
 
     const [code, setCode] = useState("main")
     const [title, setTitle] = useState("Main subscription")
-    const [chainId, setChainId] = useState("11155111")
+    const [chainId, setChainId] = useState(String(defaultSubscriptionChain.id))
     const [tokenAddress, setTokenAddress] = useState("0x0000000000000000000000000000000000000000")
     const [price, setPrice] = useState("1000000")
     const [billingPeriodDays, setBillingPeriodDays] = useState("30")
@@ -131,10 +132,18 @@ export function MeSubscriptionPlanPage() {
                                     </Label>
                                     <Label>
                                         Chain ID
-                                        <Input
+                                        <select
+                                            className="h-10 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 text-sm text-[var(--foreground)] outline-none"
                                             onChange={(event) => setChainId(event.target.value)}
                                             value={chainId}
-                                        />
+                                        >
+                                            {supportedChainOptions.map((chain) => (
+                                                <option key={chain.id} value={chain.id}>
+                                                    {chain.name} ({chain.id}
+                                                    {chain.testnet ? ", testnet" : ""})
+                                                </option>
+                                            ))}
+                                        </select>
                                     </Label>
                                     <Label>
                                         Billing days

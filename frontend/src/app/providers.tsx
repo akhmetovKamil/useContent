@@ -1,16 +1,32 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { createConfig, http, WagmiProvider } from "wagmi"
-import { mainnet, sepolia } from "wagmi/chains"
+import {
+    arbitrum,
+    arbitrumSepolia,
+    base,
+    baseSepolia,
+    optimism,
+    optimismSepolia,
+    sepolia,
+} from "wagmi/chains"
 import { injected } from "wagmi/connectors"
+
+import { supportedChains } from "@/utils/config/chains"
+import { getFrontendRpcUrl } from "@/utils/config/env"
 
 const queryClient = new QueryClient()
 
 const wagmiConfig = createConfig({
-    chains: [mainnet, sepolia],
+    chains: supportedChains,
     connectors: [injected()],
     transports: {
-        [mainnet.id]: http(),
-        [sepolia.id]: http(),
+        [sepolia.id]: http(getFrontendRpcUrl(sepolia.id)),
+        [baseSepolia.id]: http(getFrontendRpcUrl(baseSepolia.id)),
+        [optimismSepolia.id]: http(getFrontendRpcUrl(optimismSepolia.id)),
+        [arbitrumSepolia.id]: http(getFrontendRpcUrl(arbitrumSepolia.id)),
+        [base.id]: http(getFrontendRpcUrl(base.id)),
+        [optimism.id]: http(getFrontendRpcUrl(optimism.id)),
+        [arbitrum.id]: http(getFrontendRpcUrl(arbitrum.id)),
     },
 })
 
