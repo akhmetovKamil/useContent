@@ -41,6 +41,8 @@ jobs:
         env:
           DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
           PLATFORM_TREASURY: ${{ secrets.PLATFORM_TREASURY }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          DEPLOYMENT_REGISTRY_TOKEN: ${{ secrets.DEPLOYMENT_REGISTRY_TOKEN }}
           RPC_URL_11155111: ${{ secrets.RPC_URL_11155111 }}
           RPC_URL_84532: ${{ secrets.RPC_URL_84532 }}
           RPC_URL_11155420: ${{ secrets.RPC_URL_11155420 }}

@@ -4,6 +4,7 @@ import type {
   AccessPolicyPresetDto,
   AuthorProfileDto,
   ConfirmSubscriptionPaymentInput,
+  ContractDeploymentDto,
   CreateAccessPolicyPresetInput,
   CreateAuthorProfileInput,
   CreatePostInput,
@@ -22,6 +23,7 @@ import type {
   UpdatePostInput,
   UpdateProjectInput,
   UpdateProjectNodeInput,
+  UpsertContractDeploymentInput,
   UpsertSubscriptionPlanInput,
   UserProfileDto,
 } from "../../contracts/types/content";
@@ -165,10 +167,23 @@ export interface SubscriptionPaymentIntentDoc {
   updatedAt: Date;
 }
 
+export interface ContractDeploymentDoc {
+  _id: ObjectId;
+  chainId: number;
+  contractName: "SubscriptionManager";
+  address: string;
+  platformTreasury: string;
+  deployedBy: string;
+  deploymentTxHash: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export type UserProfileResponse = UserProfileDto;
 export type AuthorProfileResponse = AuthorProfileDto;
 export type AccessPolicyPresetResponse = AccessPolicyPresetDto;
 export type SubscriptionEntitlementResponse = SubscriptionEntitlementDto;
+export type ContractDeploymentResponse = ContractDeploymentDto;
 export type SubscriptionPaymentIntentResponse = SubscriptionPaymentIntentDto;
 export type SubscriptionPlanResponse = SubscriptionPlanDto;
 export type PostResponse = PostDto;
@@ -189,3 +204,4 @@ export type UpdateProjectNodeRequest = UpdateProjectNodeInput;
 export type CreateSubscriptionPaymentIntentRequest =
   CreateSubscriptionPaymentIntentInput;
 export type ConfirmSubscriptionPaymentRequest = ConfirmSubscriptionPaymentInput;
+export type UpsertContractDeploymentRequest = UpsertContractDeploymentInput;

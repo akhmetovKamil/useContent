@@ -142,6 +142,18 @@ export interface SubscriptionPlanDto {
   updatedAt: string;
 }
 
+export interface ContractDeploymentDto {
+  id: string;
+  chainId: number;
+  contractName: "SubscriptionManager";
+  address: string;
+  platformTreasury: string;
+  deployedBy: string;
+  deploymentTxHash: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PostDto {
   id: string;
   authorId: string;
@@ -244,6 +256,15 @@ export interface CreateSubscriptionPaymentIntentInput {
 
 export interface ConfirmSubscriptionPaymentInput {
   txHash: string;
+}
+
+export interface UpsertContractDeploymentInput {
+  chainId: number;
+  contractName: "SubscriptionManager";
+  address: string;
+  platformTreasury: string;
+  deployedBy: string;
+  deploymentTxHash?: string | null;
 }
 
 export interface CreatePostInput {

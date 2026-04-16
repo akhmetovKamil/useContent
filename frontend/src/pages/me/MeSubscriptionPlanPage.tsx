@@ -18,6 +18,7 @@ import {
 import {
     useDeleteMySubscriptionPlanMutation,
     useMySubscriptionPlansQuery,
+    useSubscriptionManagerDeploymentQuery,
     useUpsertMySubscriptionPlanMutation,
 } from "@/queries/subscription-plans"
 import { useAuthStore } from "@/stores/auth-store"
@@ -55,6 +56,8 @@ export function MeSubscriptionPlanPage() {
         createDefaultPolicyBuilderState()
     )
     const [policyError, setPolicyError] = useState<string | null>(null)
+    const selectedChainId = Number(chainId)
+    const managerDeploymentQuery = useSubscriptionManagerDeploymentQuery(selectedChainId)
 
     useEffect(() => {
         if (!plansQuery.data?.length) {
@@ -74,7 +77,10 @@ export function MeSubscriptionPlanPage() {
 
     const selectedPlan = plansQuery.data?.find((plan) => plan.code === code)
     const managerAddress =
-        getSubscriptionManagerAddress(Number(chainId)) ?? selectedPlan?.contractAddress ?? ""
+        managerDeploymentQuery.data?.address ??
+        getSubscriptionManagerAddress(selectedChainId) ??
+        selectedPlan?.contractAddress ??
+        ""
 
     return (
         <PageSection>
@@ -172,7 +178,10 @@ export function MeSubscriptionPlanPage() {
                                     <div>
                                         Manager:{" "}
                                         <span className="break-all font-mono">
-                                            {managerAddress || "not configured for selected network"}
+                                            {managerDeploymentQuery.isLoading
+                                                ? "loading..."
+                                                : managerAddress ||
+                                                  "not configured for selected network"}
                                         </span>
                                     </div>
                                     <div>

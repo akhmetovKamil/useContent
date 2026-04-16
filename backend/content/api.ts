@@ -6,6 +6,7 @@ import type {
   AccessPolicyPresetResponse,
   AuthorProfileResponse,
   ConfirmSubscriptionPaymentRequest,
+  ContractDeploymentResponse,
   CreateAccessPolicyPresetRequest,
   CreateAuthorProfileRequest,
   CreatePostRequest,
@@ -18,6 +19,7 @@ import type {
   SubscriptionEntitlementResponse,
   UpdateAuthorProfileRequest,
   UpdateAccessPolicyPresetRequest,
+  UpsertContractDeploymentRequest,
   UpsertSubscriptionPlanRequest,
   UpdateMyProfileRequest,
   UpdatePostRequest,
@@ -120,6 +122,42 @@ export const listMyEntitlements = api(
     return {
       entitlements: entitlements.map(service.toSubscriptionEntitlementResponse),
     };
+  }
+);
+
+export const getSubscriptionManagerDeployment = api(
+  {
+    method: "GET",
+    path: "/contract-deployments/subscription-manager/:chainId",
+    expose: true,
+  },
+  async ({
+    chainId,
+  }: {
+    chainId: string;
+  }): Promise<ContractDeploymentResponse | null> => {
+    const deployment = await service.getSubscriptionManagerDeployment(
+      Number(chainId),
+    );
+    return deployment ? service.toContractDeploymentResponse(deployment) : null;
+  }
+);
+
+export const upsertContractDeployment = api(
+  {
+    method: "PUT",
+    path: "/admin/contract-deployments",
+    expose: true,
+  },
+  async ({
+    deploymentRegistryToken,
+    ...req
+  }: UpsertContractDeploymentRequest & {
+    deploymentRegistryToken: Header<"X-Deployment-Registry-Token">;
+  }): Promise<ContractDeploymentResponse> => {
+    assertDeploymentRegistryToken(deploymentRegistryToken);
+    const deployment = await service.upsertContractDeployment(req);
+    return service.toContractDeploymentResponse(deployment);
   }
 );
 
@@ -350,6 +388,15 @@ export const deleteMyProject = api(
     await service.deleteMyProject(auth.walletAddress, projectId);
   }
 );
+
+function assertDeploymentRegistryToken(
+  deploymentRegistryToken: string | undefined,
+): void {
+  const expected = process.env.DEPLOYMENT_REGISTRY_TOKEN;
+  if (!expected || deploymentRegistryToken !== expected) {
+    throw APIError.permissionDenied("invalid deployment registry token");
+  }
+}
 
 export const listAuthorProjects = api(
   { method: "GET", path: "/authors/:slug/projects", expose: true },

@@ -19,6 +19,8 @@ import type {
   AuthorProfileDoc,
   AuthorProfileResponse,
   ConfirmSubscriptionPaymentRequest,
+  ContractDeploymentDoc,
+  ContractDeploymentResponse,
   CreateAccessPolicyPresetRequest,
   CreateAuthorProfileRequest,
   CreatePostRequest,
@@ -36,6 +38,7 @@ import type {
   SubscriptionPaymentIntentResponse,
   UpdateAuthorProfileRequest,
   UpdateAccessPolicyPresetRequest,
+  UpsertContractDeploymentRequest,
   UpsertSubscriptionPlanRequest,
   UpdateMyProfileRequest,
   UpdatePostRequest,
@@ -306,6 +309,35 @@ export async function listMyEntitlements(
 ): Promise<SubscriptionEntitlementDoc[]> {
   const normalizedWallet = normalizeWallet(walletAddress);
   return repo.listSubscriptionEntitlementsByWallet(normalizedWallet);
+}
+
+export async function getSubscriptionManagerDeployment(
+  chainId: number,
+): Promise<ContractDeploymentDoc | null> {
+  return repo.findContractDeployment(
+    normalizeChainId(chainId),
+    "SubscriptionManager",
+  );
+}
+
+export async function upsertContractDeployment(
+  input: UpsertContractDeploymentRequest,
+): Promise<ContractDeploymentDoc> {
+  const now = new Date();
+  return repo.upsertContractDeployment(
+    {
+      chainId: normalizeChainId(input.chainId),
+      contractName: input.contractName,
+      address: normalizeWallet(input.address),
+      platformTreasury: normalizeWallet(input.platformTreasury),
+      deployedBy: normalizeWallet(input.deployedBy),
+      deploymentTxHash:
+        input.deploymentTxHash === undefined || input.deploymentTxHash === null
+          ? null
+          : normalizeTxHash(input.deploymentTxHash),
+    },
+    now,
+  );
 }
 
 export async function getMySubscriptionPlan(
@@ -1044,6 +1076,22 @@ export function toSubscriptionEntitlementResponse(
     source: entitlement.source,
     createdAt: entitlement.createdAt.toISOString(),
     updatedAt: entitlement.updatedAt.toISOString(),
+  };
+}
+
+export function toContractDeploymentResponse(
+  deployment: ContractDeploymentDoc,
+): ContractDeploymentResponse {
+  return {
+    id: deployment._id.toHexString(),
+    chainId: deployment.chainId,
+    contractName: deployment.contractName,
+    address: deployment.address,
+    platformTreasury: deployment.platformTreasury,
+    deployedBy: deployment.deployedBy,
+    deploymentTxHash: deployment.deploymentTxHash,
+    createdAt: deployment.createdAt.toISOString(),
+    updatedAt: deployment.updatedAt.toISOString(),
   };
 }
 

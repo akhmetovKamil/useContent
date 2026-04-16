@@ -8,6 +8,7 @@ import type {
   ProjectDoc,
   ProjectNodeDoc,
   SubscriptionEntitlementDoc,
+  ContractDeploymentDoc,
   SubscriptionPaymentIntentDoc,
   SubscriptionPlanDoc,
   UserDoc,
@@ -608,6 +609,46 @@ export async function findSubscriptionPaymentIntentByTxHash(
   return intents.findOne({ txHash });
 }
 
+export async function getContractDeploymentsCollection(): Promise<
+  Collection<ContractDeploymentDoc>
+> {
+  await ensureIndexes();
+  return getCollection<ContractDeploymentDoc>("contract_deployments");
+}
+
+export async function findContractDeployment(
+  chainId: number,
+  contractName: "SubscriptionManager",
+): Promise<ContractDeploymentDoc | null> {
+  const deployments = await getContractDeploymentsCollection();
+  return deployments.findOne({ chainId, contractName });
+}
+
+export async function upsertContractDeployment(
+  doc: Omit<ContractDeploymentDoc, "_id" | "createdAt" | "updatedAt">,
+  now: Date,
+): Promise<ContractDeploymentDoc> {
+  const deployments = await getContractDeploymentsCollection();
+  return deployments.findOneAndUpdate(
+    { chainId: doc.chainId, contractName: doc.contractName },
+    {
+      $set: {
+        address: doc.address,
+        platformTreasury: doc.platformTreasury,
+        deployedBy: doc.deployedBy,
+        deploymentTxHash: doc.deploymentTxHash,
+        updatedAt: now,
+      },
+      $setOnInsert: {
+        chainId: doc.chainId,
+        contractName: doc.contractName,
+        createdAt: now,
+      },
+    },
+    { upsert: true, returnDocument: "after" },
+  ) as Promise<ContractDeploymentDoc>;
+}
+
 export async function updateSubscriptionPaymentIntent(
   id: ObjectId,
   update: Partial<Omit<SubscriptionPaymentIntentDoc, "_id" | "createdAt">>,
@@ -646,6 +687,7 @@ async function ensureIndexes(): Promise<void> {
     subscriptionPlans,
     subscriptionEntitlements,
     subscriptionPaymentIntents,
+    contractDeployments,
   ] = await Promise.all([
     getCollection<UserDoc>("users"),
     getCollection<AuthorProfileDoc>("author_profiles"),
@@ -656,6 +698,7 @@ async function ensureIndexes(): Promise<void> {
     getCollection<SubscriptionPlanDoc>("subscription_plans"),
     getCollection<SubscriptionEntitlementDoc>("subscription_entitlements"),
     getCollection<SubscriptionPaymentIntentDoc>("subscription_payment_intents"),
+    getCollection<ContractDeploymentDoc>("contract_deployments"),
   ]);
 
   await Promise.all([
@@ -696,6 +739,10 @@ async function ensureIndexes(): Promise<void> {
     subscriptionPaymentIntents.createIndex(
       { txHash: 1 },
       { unique: true, sparse: true },
+    ),
+    contractDeployments.createIndex(
+      { chainId: 1, contractName: 1 },
+      { unique: true },
     ),
   ]);
 

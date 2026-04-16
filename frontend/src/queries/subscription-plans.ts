@@ -25,6 +25,14 @@ export function useMySubscriptionPlansQuery(enabled = true) {
     })
 }
 
+export function useSubscriptionManagerDeploymentQuery(chainId: number) {
+    return useQuery({
+        queryKey: queryKeys.subscriptionManagerDeployment(chainId),
+        queryFn: () => subscriptionPlansApi.getSubscriptionManagerDeployment(chainId),
+        enabled: Number.isInteger(chainId) && chainId > 0,
+    })
+}
+
 export function useAuthorSubscriptionPlanQuery(slug: string) {
     return useQuery({
         queryKey: queryKeys.authorSubscriptionPlan(slug),
