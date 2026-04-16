@@ -11,10 +11,11 @@ export function AuthorOnboardingPage() {
     const createAuthorMutation = useCreateMyAuthorProfileMutation()
 
     return (
-        <section className="grid min-h-[calc(100vh-15rem)] gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <section className="grid h-[calc(100vh-13.5rem)] min-h-[620px] gap-6 xl:grid-cols-[1.05fr_0.95fr]">
             <AuthorValuePanel />
-            <div className="flex items-center">
+            <div className="min-h-0">
                 <AuthorProfileForm
+                    className="min-h-0"
                     error={createAuthorMutation.error?.message ?? null}
                     isPending={createAuthorMutation.isPending}
                     mode="create"

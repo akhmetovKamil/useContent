@@ -43,10 +43,15 @@ function AccordionTrigger({ className, children, ...props }: React.ComponentProp
 
 function AccordionContent({ className, ...props }: React.ComponentProps<"div">) {
     return (
-        <div
-            className={cn("pt-3 text-sm leading-6 text-[var(--muted)]", className)}
-            {...props}
-        />
+        <div className="accordion-content">
+            <div
+                className={cn(
+                    "accordion-content-inner text-sm leading-6 text-[var(--muted)]",
+                    className
+                )}
+                {...props}
+            />
+        </div>
     )
 }
 

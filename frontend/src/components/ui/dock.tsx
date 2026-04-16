@@ -6,7 +6,7 @@ function Dock({ className, ...props }: React.ComponentProps<"div">) {
     return (
         <div
             className={cn(
-                "mx-auto flex w-fit max-w-full items-center gap-2 overflow-visible rounded-[28px] border border-[var(--line)] bg-[var(--surface)] px-3 py-3 shadow-[var(--shadow)] backdrop-blur-xl",
+                "dock mx-auto flex w-fit max-w-full items-center gap-2 overflow-visible rounded-[28px] border border-[var(--line)] bg-[var(--surface)] px-3 py-2 shadow-[var(--shadow)] backdrop-blur-xl transition-all duration-300 hover:px-4 hover:py-3",
                 className
             )}
             {...props}
@@ -29,7 +29,7 @@ function DockItem({
         <div
             aria-label={label}
             className={cn(
-                "group relative grid size-12 shrink-0 cursor-pointer place-items-center rounded-2xl text-[var(--foreground)] transition duration-200 hover:-translate-y-1 hover:scale-110",
+                "dock-item group relative grid size-10 shrink-0 cursor-pointer place-items-center rounded-2xl text-[var(--foreground)] transition-all duration-300 ease-out",
                 active
                     ? "bg-[var(--accent-soft)] text-[var(--foreground)]"
                     : "hover:bg-[var(--accent-soft)]",
@@ -51,7 +51,7 @@ function DockItem({
 function DockSeparator({ className, ...props }: React.ComponentProps<"div">) {
     return (
         <div
-            className={cn("mx-1 h-10 w-px shrink-0 bg-[var(--line)]", className)}
+            className={cn("dock-separator mx-1 h-10 w-px shrink-0 bg-[var(--line)]", className)}
             {...props}
         />
     )

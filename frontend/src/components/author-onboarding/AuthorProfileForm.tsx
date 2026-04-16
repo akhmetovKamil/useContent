@@ -8,10 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/utils/cn"
 import { authorTags } from "./author-content"
 
 interface AuthorProfileFormProps {
     author?: AuthorProfileDto | null
+    className?: string
     error?: string | null
     isPending?: boolean
     mode: "create" | "update"
@@ -20,6 +22,7 @@ interface AuthorProfileFormProps {
 
 export function AuthorProfileForm({
     author,
+    className,
     error,
     isPending,
     mode,
@@ -69,8 +72,16 @@ export function AuthorProfileForm({
     }
 
     return (
-        <Card className="rounded-[36px] shadow-[var(--shadow)]">
-            <CardHeader>
+        <Card
+            className={cn(
+                "h-full overflow-hidden rounded-[36px] shadow-[var(--shadow)]",
+                mode === "create"
+                    ? "border-[var(--accent)] bg-[linear-gradient(145deg,var(--accent-soft),var(--surface)_48%,var(--popover))]"
+                    : "",
+                className
+            )}
+        >
+            <CardHeader className="pb-3">
                 <CardTitle>
                     {mode === "create" ? "Create author profile" : "Author settings"}
                 </CardTitle>
@@ -80,7 +91,7 @@ export function AuthorProfileForm({
                         : "Keep your public author identity clear, searchable, and ready for subscribers."}
                 </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="h-[calc(100%-6.5rem)] overflow-y-auto">
                 <form className="grid gap-5" onSubmit={submit}>
                     <Label>
                         Display name

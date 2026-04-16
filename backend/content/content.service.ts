@@ -1015,6 +1015,11 @@ export async function createAuthorProfile(
   }
 
   const slug = normalizeSlug(input.slug);
+  const existingSlug = await repo.findAuthorProfileBySlug(slug);
+  if (existingSlug) {
+    throw APIError.alreadyExists("author slug already exists");
+  }
+
   const displayName = normalizeDisplayName(input.displayName);
   const bio = normalizeBio(input.bio ?? "");
   const tags = normalizeAuthorTags(input.tags ?? []);
