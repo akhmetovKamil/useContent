@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom"
 
+import { Globe } from "@/components/ui/globe"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
@@ -19,6 +20,7 @@ export function HomePage() {
 
     return (
         <div className="grid gap-6">
+            <Globe />
             <PageSection className="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
                 <div>
                     <Eyebrow>workspace</Eyebrow>
