@@ -1,17 +1,6 @@
 import { http } from "@/lib/api/http"
 
-export interface GetNonceResponse {
-    message: string
-}
-
-export interface VerifySignatureInput {
-    address: string
-    signature: string
-}
-
-export interface VerifySignatureResponse {
-    token: string
-}
+import type { GetNonceResponse, VerifySignatureInput, VerifySignatureResponse } from "@/types/auth"
 
 class AuthApi {
     async getNonce(address: string) {
