@@ -3,8 +3,6 @@ import { NavLink, Outlet } from "react-router-dom"
 import { WorkspaceModeToggle } from "@/components/layout/WorkspaceModeToggle"
 import { buttonVariants } from "@/components/ui/button"
 import { WalletStatus } from "@/components/wallet/WalletStatus"
-import { useMyAuthorProfileQuery } from "@/queries/profile"
-import { useAuthStore } from "@/stores/auth-store"
 import { useWorkspaceStore } from "@/stores/workspace-store"
 import { cn } from "@/utils/cn"
 
@@ -23,15 +21,8 @@ const authorNavItems = [
 
 export function RootLayout() {
     const mode = useWorkspaceStore((state) => state.mode)
-    const token = useAuthStore((state) => state.token)
-    const authorQuery = useMyAuthorProfileQuery(Boolean(token))
     const navItems = mode === "author" ? authorNavItems : readerNavItems
-    const subtitle =
-        mode === "author"
-            ? authorQuery.data
-                ? `Author workspace for @${authorQuery.data.slug}`
-                : "Author workspace and onboarding"
-            : "Reader workspace for subscriptions and gated content"
+    const subtitle = mode === "author" ? "Author Workspace" : "User Workspace"
 
     return (
         <div className="min-h-screen px-4 py-4 transition-colors duration-500 md:px-6 md:py-6">
