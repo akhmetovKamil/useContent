@@ -49,6 +49,8 @@ export function RootLayout() {
     const token = useAuthStore((state) => state.token)
     const mode = useWorkspaceStore((state) => state.mode)
     const palette = useWorkspaceStore((state) => state.palette)
+    const hasAuthorProfileHint = useWorkspaceStore((state) => state.hasAuthorProfileHint)
+    const setHasAuthorProfileHint = useWorkspaceStore((state) => state.setHasAuthorProfileHint)
     const authorQuery = useMyAuthorProfileQuery(Boolean(token))
     const hasAuthorProfile = Boolean(authorQuery.data)
     const authorMissing = isApiNotFoundError(authorQuery.error)
@@ -64,9 +66,11 @@ export function RootLayout() {
         token &&
         !isAuthorOnboarding &&
         !authorMissing &&
-        (hasAuthorProfile || (mode === "author" && authorQuery.isLoading))
+        (hasAuthorProfile || hasAuthorProfileHint || (mode === "author" && authorQuery.isLoading))
     )
-    const showWorkspaceToggle = Boolean(token && hasAuthorProfile && !isAuthorOnboarding)
+    const showWorkspaceToggle = Boolean(
+        token && !authorMissing && (hasAuthorProfile || hasAuthorProfileHint) && !isAuthorOnboarding
+    )
 
     useEffect(() => {
         document.documentElement.dataset.palette = palette
@@ -75,6 +79,17 @@ export function RootLayout() {
     useEffect(() => {
         document.documentElement.classList.toggle("dark", visibleMode === "author")
     }, [visibleMode])
+
+    useEffect(() => {
+        if (hasAuthorProfile) {
+            setHasAuthorProfileHint(true)
+            return
+        }
+
+        if (authorMissing) {
+            setHasAuthorProfileHint(false)
+        }
+    }, [authorMissing, hasAuthorProfile, setHasAuthorProfileHint])
 
     return (
         <div className="min-h-screen px-4 py-4 transition-colors duration-500 md:px-6 md:py-6">

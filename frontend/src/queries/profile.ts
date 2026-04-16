@@ -6,6 +6,7 @@ import type {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { profileApi } from "@/api/ProfileApi"
+import { useWorkspaceStore } from "@/stores/workspace-store"
 import { queryKeys } from "./queryKeys"
 
 export function useMeQuery(enabled = true) {
@@ -38,6 +39,7 @@ export function useCreateMyAuthorProfileMutation() {
     return useMutation({
         mutationFn: (input: CreateAuthorProfileInput) => profileApi.createMyAuthorProfile(input),
         onSuccess: (author) => {
+            useWorkspaceStore.getState().setHasAuthorProfileHint(true)
             queryClient.setQueryData(queryKeys.myAuthor, author)
             void queryClient.invalidateQueries({ queryKey: queryKeys.myAuthor })
             void queryClient.invalidateQueries({ queryKey: queryKeys.me })
@@ -75,6 +77,7 @@ export function useDeleteMyAuthorProfileMutation() {
     return useMutation({
         mutationFn: () => profileApi.deleteMyAuthorProfile(),
         onSuccess: () => {
+            useWorkspaceStore.getState().setHasAuthorProfileHint(false)
             void queryClient.invalidateQueries({ queryKey: queryKeys.myAuthor })
             void queryClient.invalidateQueries({ queryKey: queryKeys.me })
             void queryClient.invalidateQueries({ queryKey: ["authors"] })
