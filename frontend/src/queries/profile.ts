@@ -33,6 +33,22 @@ export function useMyEntitlementsQuery(enabled = true) {
     })
 }
 
+export function useMyReaderSubscriptionsQuery(enabled = true) {
+    return useQuery({
+        queryKey: queryKeys.myReaderSubscriptions,
+        queryFn: () => profileApi.getMyReaderSubscriptions(),
+        enabled,
+    })
+}
+
+export function useMyFeedPostsQuery(enabled = true) {
+    return useQuery({
+        queryKey: queryKeys.myFeedPosts,
+        queryFn: () => profileApi.getMyFeedPosts(),
+        enabled,
+    })
+}
+
 export function useMyAuthorSubscribersQuery(enabled = true) {
     return useQuery({
         queryKey: queryKeys.myAuthorSubscribers,

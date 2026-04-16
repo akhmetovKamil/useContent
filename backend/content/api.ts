@@ -15,8 +15,10 @@ import type {
   CreatePostRequest,
   CreateProjectRequest,
   CreateSubscriptionPaymentIntentRequest,
+  FeedPostResponse,
   PostResponse,
   ProjectResponse,
+  ReaderSubscriptionResponse,
   SubscriptionPaymentIntentResponse,
   SubscriptionPlanResponse,
   SubscriptionEntitlementResponse,
@@ -154,6 +156,26 @@ export const listMyEntitlements = api(
     return {
       entitlements: entitlements.map(service.toSubscriptionEntitlementResponse),
     };
+  },
+);
+
+export const listMyReaderSubscriptions = api(
+  { method: "GET", path: "/me/subscriptions", expose: true, auth: true },
+  async (): Promise<{ subscriptions: ReaderSubscriptionResponse[] }> => {
+    const auth = getAuthData()!;
+    const subscriptions = await service.listMyReaderSubscriptions(
+      auth.walletAddress,
+    );
+    return { subscriptions };
+  },
+);
+
+export const listMyFeedPosts = api(
+  { method: "GET", path: "/me/feed", expose: true, auth: true },
+  async (): Promise<{ posts: FeedPostResponse[] }> => {
+    const auth = getAuthData()!;
+    const posts = await service.listMyFeedPosts(auth.walletAddress);
+    return { posts };
   },
 );
 

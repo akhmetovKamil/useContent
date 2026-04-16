@@ -2,6 +2,8 @@ import type {
     AuthorProfileDto,
     AuthorSubscriberDto,
     CreateAuthorProfileInput,
+    FeedPostDto,
+    ReaderSubscriptionDto,
     SubscriptionEntitlementDto,
     UpdateAuthorProfileInput,
     UpdateMyProfileInput,
@@ -54,6 +56,18 @@ class ProfileApi {
             "/me/entitlements"
         )
         return response.data.entitlements
+    }
+
+    async getMyReaderSubscriptions() {
+        const response = await http.get<{ subscriptions: ReaderSubscriptionDto[] }>(
+            "/me/subscriptions"
+        )
+        return response.data.subscriptions
+    }
+
+    async getMyFeedPosts() {
+        const response = await http.get<{ posts: FeedPostDto[] }>("/me/feed")
+        return response.data.posts
     }
 
     async getMyAuthorSubscribers() {

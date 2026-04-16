@@ -83,6 +83,13 @@ export async function findAuthorProfileBySlug(
   return authorProfiles.findOne({ slug });
 }
 
+export async function findAuthorProfilesByIds(
+  ids: ObjectId[],
+): Promise<AuthorProfileDoc[]> {
+  const authorProfiles = await getAuthorProfilesCollection();
+  return authorProfiles.find({ _id: { $in: ids } }).toArray();
+}
+
 export async function createAuthorProfile(
   doc: Omit<AuthorProfileDoc, "_id">,
 ): Promise<AuthorProfileDoc> {
@@ -214,6 +221,16 @@ export async function listPublishedPostsByAuthorId(
   const posts = await getPostsCollection();
   return posts
     .find({ authorId, status: "published" })
+    .sort({ publishedAt: -1, createdAt: -1 })
+    .toArray();
+}
+
+export async function listPublishedPostsByAuthorIds(
+  authorIds: ObjectId[],
+): Promise<PostDoc[]> {
+  const posts = await getPostsCollection();
+  return posts
+    .find({ authorId: { $in: authorIds }, status: "published" })
     .sort({ publishedAt: -1, createdAt: -1 })
     .toArray();
 }

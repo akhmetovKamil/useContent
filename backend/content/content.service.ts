@@ -27,10 +27,12 @@ import type {
   CreatePostRequest,
   CreateProjectRequest,
   CreateSubscriptionPaymentIntentRequest,
+  FeedPostResponse,
   PostDoc,
   PostResponse,
   ProjectDoc,
   ProjectResponse,
+  ReaderSubscriptionResponse,
   SubscriptionPlanDoc,
   SubscriptionPlanResponse,
   SubscriptionEntitlementDoc,
@@ -343,6 +345,87 @@ export async function listMyEntitlements(
 ): Promise<SubscriptionEntitlementDoc[]> {
   const normalizedWallet = normalizeWallet(walletAddress);
   return repo.listSubscriptionEntitlementsByWallet(normalizedWallet);
+}
+
+export async function listMyReaderSubscriptions(
+  walletAddress: string,
+): Promise<ReaderSubscriptionResponse[]> {
+  const entitlements = await listMyEntitlements(walletAddress);
+  const authorIds = uniqueObjectIds(
+    entitlements.map((entitlement) => entitlement.authorId),
+  );
+  const planIds = uniqueObjectIds(
+    entitlements.map((entitlement) => entitlement.planId),
+  );
+  const [authors, plans] = await Promise.all([
+    repo.findAuthorProfilesByIds(authorIds),
+    Promise.all(planIds.map((planId) => repo.findSubscriptionPlanById(planId))),
+  ]);
+  const authorById = new Map(
+    authors.map((author) => [author._id.toHexString(), author]),
+  );
+  const planById = new Map(
+    plans
+      .filter((plan): plan is SubscriptionPlanDoc => Boolean(plan))
+      .map((plan) => [plan._id.toHexString(), plan]),
+  );
+
+  return entitlements
+    .map((entitlement) => {
+      const author = authorById.get(entitlement.authorId.toHexString());
+      if (!author) {
+        return null;
+      }
+      const plan = planById.get(entitlement.planId.toHexString()) ?? null;
+
+      return {
+        ...toSubscriptionEntitlementResponse(entitlement),
+        authorSlug: author.slug,
+        authorDisplayName: author.displayName,
+        planCode: plan?.code ?? null,
+        planTitle: plan?.title ?? null,
+      };
+    })
+    .filter((subscription): subscription is ReaderSubscriptionResponse =>
+      Boolean(subscription),
+    );
+}
+
+export async function listMyFeedPosts(
+  walletAddress: string,
+): Promise<FeedPostResponse[]> {
+  const entitlements = await listMyEntitlements(walletAddress);
+  const activeAuthorIds = uniqueObjectIds(
+    entitlements
+      .filter(
+        (entitlement) =>
+          entitlement.status === "active" &&
+          entitlement.validUntil.getTime() > Date.now(),
+      )
+      .map((entitlement) => entitlement.authorId),
+  );
+  if (!activeAuthorIds.length) {
+    return [];
+  }
+
+  const [authors, posts] = await Promise.all([
+    repo.findAuthorProfilesByIds(activeAuthorIds),
+    repo.listPublishedPostsByAuthorIds(activeAuthorIds),
+  ]);
+  const authorById = new Map(
+    authors.map((author) => [author._id.toHexString(), author]),
+  );
+
+  return posts
+    .map((post) => {
+      const author = authorById.get(post.authorId.toHexString());
+      if (!author) {
+        return null;
+      }
+
+      return toFeedPostResponse(post, author);
+    })
+    .filter((post): post is FeedPostResponse => Boolean(post));
 }
 
 export async function listMyAuthorSubscribers(
@@ -1291,6 +1374,17 @@ export function toPostResponse(post: PostDoc): PostResponse {
   };
 }
 
+export function toFeedPostResponse(
+  post: PostDoc,
+  author: AuthorProfileDoc,
+): FeedPostResponse {
+  return {
+    ...toPostResponse(post),
+    authorSlug: author.slug,
+    authorDisplayName: author.displayName,
+  };
+}
+
 export function toProjectResponse(project: ProjectDoc): ProjectResponse {
   return {
     id: project._id.toHexString(),
@@ -1684,6 +1778,22 @@ function parseObjectId(value: string, field: string): ObjectId {
   }
 
   return new ObjectId(value);
+}
+
+function uniqueObjectIds(ids: ObjectId[]): ObjectId[] {
+  const seen = new Set<string>();
+  const result: ObjectId[] = [];
+  for (const id of ids) {
+    const key = id.toHexString();
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    result.push(id);
+  }
+
+  return result;
 }
 
 async function buildSubscriptionGrants(

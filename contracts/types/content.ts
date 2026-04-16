@@ -105,6 +105,13 @@ export interface SubscriptionEntitlementDto {
   updatedAt: string;
 }
 
+export interface ReaderSubscriptionDto extends SubscriptionEntitlementDto {
+  authorSlug: string;
+  authorDisplayName: string;
+  planCode: string | null;
+  planTitle: string | null;
+}
+
 export interface AuthorSubscriberDto {
   id: string;
   subscriberWallet: string;
@@ -118,6 +125,11 @@ export interface AuthorSubscriberDto {
   validUntil: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface FeedPostDto extends PostDto {
+  authorSlug: string;
+  authorDisplayName: string;
 }
 
 export type SubscriptionPaymentAsset = "erc20" | "native";
