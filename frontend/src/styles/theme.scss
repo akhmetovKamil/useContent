@@ -1,0 +1,113 @@
+$reader-background:
+    radial-gradient(circle at top left, rgba(239, 185, 128, 0.45), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(178, 103, 56, 0.18), transparent 28%),
+    linear-gradient(180deg, #fffaf3 0%, #f7efe3 100%);
+
+$author-background:
+    radial-gradient(circle at 20% 12%, rgba(88, 183, 255, 0.28), transparent 28%),
+    radial-gradient(circle at 82% 18%, rgba(43, 90, 222, 0.22), transparent 30%),
+    radial-gradient(circle at 70% 88%, rgba(11, 210, 194, 0.12), transparent 28%),
+    linear-gradient(180deg, #081426 0%, #06101d 48%, #020711 100%);
+
+@mixin app-token-aliases {
+    --surface: var(--card);
+    --surface-strong: var(--popover);
+    --line: var(--border);
+}
+
+:root {
+    --radius: 0.875rem;
+    --sans: "Avenir Next", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+    --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+    @include app-token-aliases;
+
+    --background: #fbf3e8;
+    --foreground: #1e1a17;
+    --card: rgba(255, 252, 246, 0.8);
+    --card-foreground: #1e1a17;
+    --popover: #fffaf3;
+    --popover-foreground: #1e1a17;
+    --primary: #d8643b;
+    --primary-foreground: #fff6ec;
+    --secondary: rgba(216, 100, 59, 0.13);
+    --secondary-foreground: #1e1a17;
+    --muted: #6b5d4c;
+    --muted-background: #f0e3d4;
+    --accent: #d8643b;
+    --accent-foreground: #fff6ec;
+    --accent-soft: rgba(216, 100, 59, 0.13);
+    --destructive: #e5484d;
+    --border: rgba(58, 45, 31, 0.14);
+    --input: rgba(58, 45, 31, 0.18);
+    --ring: rgba(216, 100, 59, 0.48);
+    --shadow: 0 24px 80px rgba(64, 34, 16, 0.12);
+
+    color: var(--foreground);
+    background: $reader-background;
+    font-family: var(--sans);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+:root.dark {
+    --background: #07111f;
+    --foreground: #edf7ff;
+    --card: rgba(9, 24, 44, 0.82);
+    --card-foreground: #edf7ff;
+    --popover: #0d1c33;
+    --popover-foreground: #edf7ff;
+    --primary: #58b7ff;
+    --primary-foreground: #03101d;
+    --secondary: rgba(88, 183, 255, 0.16);
+    --secondary-foreground: #edf7ff;
+    --muted: #9bb8d5;
+    --muted-background: #132945;
+    --accent: #58b7ff;
+    --accent-foreground: #03101d;
+    --accent-soft: rgba(88, 183, 255, 0.16);
+    --destructive: #ff6b7a;
+    --border: rgba(142, 197, 255, 0.18);
+    --input: rgba(142, 197, 255, 0.22);
+    --ring: rgba(88, 183, 255, 0.52);
+    --shadow: 0 28px 100px rgba(0, 8, 24, 0.5);
+    background: $author-background;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--foreground);
+    background: transparent;
+}
+
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
