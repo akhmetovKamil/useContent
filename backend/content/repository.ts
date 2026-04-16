@@ -568,6 +568,16 @@ export async function listSubscriptionEntitlementsByWalletAndAuthorId(
     .toArray();
 }
 
+export async function listSubscriptionEntitlementsByAuthorId(
+  authorId: ObjectId,
+): Promise<SubscriptionEntitlementDoc[]> {
+  const entitlements = await getSubscriptionEntitlementsCollection();
+  return entitlements
+    .find({ authorId })
+    .sort({ validUntil: -1, createdAt: -1 })
+    .toArray();
+}
+
 export async function countActiveSubscriptionEntitlementsByPlanId(
   planId: ObjectId,
   now: Date,

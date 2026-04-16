@@ -1,13 +1,13 @@
-import axios from "axios"
-
 import type {
     AuthorProfileDto,
+    AuthorSubscriberDto,
     CreateAuthorProfileInput,
     SubscriptionEntitlementDto,
     UpdateAuthorProfileInput,
     UpdateMyProfileInput,
     UserProfileDto,
 } from "@contracts/types/content"
+import axios from "axios"
 
 import { http } from "@/utils/api/http"
 
@@ -54,6 +54,13 @@ class ProfileApi {
             "/me/entitlements"
         )
         return response.data.entitlements
+    }
+
+    async getMyAuthorSubscribers() {
+        const response = await http.get<{ subscribers: AuthorSubscriberDto[] }>(
+            "/me/author/subscribers"
+        )
+        return response.data.subscribers
     }
 }
 

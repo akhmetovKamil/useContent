@@ -4,44 +4,32 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { Eyebrow } from "@/components/ui/page"
 
 interface Metric {
-    label: string
-    value: string
-}
-
-interface Action {
     description: string
     label: string
-    to: string
+    to?: string
+    value: string
 }
 
 export function AuthorMetrics({ metrics }: { metrics: Metric[] }) {
     return (
         <div className="mt-6 grid gap-4 md:grid-cols-4">
             {metrics.map((metric) => (
-                <Card key={metric.label}>
-                    <CardHeader>
-                        <Eyebrow className="tracking-[0.3em]">{metric.label}</Eyebrow>
-                        <CardTitle className="truncate text-2xl">{metric.value}</CardTitle>
-                    </CardHeader>
-                </Card>
+                <MetricCard key={metric.label} metric={metric} />
             ))}
         </div>
     )
 }
 
-export function AuthorActions({ actions }: { actions: Action[] }) {
-    return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {actions.map((action) => (
-                <Link key={action.to} to={action.to}>
-                    <Card className="h-full transition-colors hover:bg-[var(--accent-soft)]">
-                        <CardHeader>
-                            <CardTitle>{action.label}</CardTitle>
-                            <CardDescription>{action.description}</CardDescription>
-                        </CardHeader>
-                    </Card>
-                </Link>
-            ))}
-        </div>
+function MetricCard({ metric }: { metric: Metric }) {
+    const card = (
+        <Card className={metric.to ? "transition-colors hover:bg-[var(--accent-soft)]" : ""}>
+            <CardHeader>
+                <Eyebrow className="tracking-[0.3em]">{metric.label}</Eyebrow>
+                <CardTitle className="truncate text-2xl">{metric.value}</CardTitle>
+                <CardDescription>{metric.description}</CardDescription>
+            </CardHeader>
+        </Card>
     )
+
+    return metric.to ? <Link to={metric.to}>{card}</Link> : card
 }

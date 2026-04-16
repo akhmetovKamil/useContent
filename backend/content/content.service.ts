@@ -18,6 +18,7 @@ import type {
   AccessPolicyPresetResponse,
   AuthorProfileDoc,
   AuthorProfileResponse,
+  AuthorSubscriberResponse,
   ConfirmSubscriptionPaymentRequest,
   ContractDeploymentDoc,
   ContractDeploymentResponse,
@@ -143,7 +144,9 @@ export async function updateMyAuthorProfile(
   const nextBio =
     update.bio === undefined ? author.bio : normalizeBio(update.bio);
   const nextTags =
-    update.tags === undefined ? (author.tags ?? []) : normalizeAuthorTags(update.tags);
+    update.tags === undefined
+      ? (author.tags ?? [])
+      : normalizeAuthorTags(update.tags);
   const nextDefaultPolicy =
     update.defaultPolicyId !== undefined
       ? await resolveDefaultPolicyFromPreset(author, update.defaultPolicyId)
@@ -177,7 +180,9 @@ export async function updateMyAuthorProfile(
   return updated;
 }
 
-export async function deleteMyAuthorProfile(walletAddress: string): Promise<void> {
+export async function deleteMyAuthorProfile(
+  walletAddress: string,
+): Promise<void> {
   const user = await getOrCreateUserByWallet(walletAddress);
   const author = await repo.findAuthorProfileByUserId(user._id.toHexString());
   if (!author) {
@@ -338,6 +343,55 @@ export async function listMyEntitlements(
 ): Promise<SubscriptionEntitlementDoc[]> {
   const normalizedWallet = normalizeWallet(walletAddress);
   return repo.listSubscriptionEntitlementsByWallet(normalizedWallet);
+}
+
+export async function listMyAuthorSubscribers(
+  walletAddress: string,
+): Promise<AuthorSubscriberResponse[]> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const [entitlements, plans, policies] = await Promise.all([
+    repo.listSubscriptionEntitlementsByAuthorId(author._id),
+    repo.listSubscriptionPlansByAuthorId(author._id),
+    repo.listAccessPolicyPresetsByAuthorId(author._id),
+  ]);
+  const planById = new Map(plans.map((plan) => [plan._id.toHexString(), plan]));
+
+  return Promise.all(
+    entitlements.map(async (entitlement) => {
+      const plan = planById.get(entitlement.planId.toHexString()) ?? null;
+      const user = await repo.findUserByPrimaryWallet(
+        entitlement.subscriberWallet,
+      );
+      const planId = entitlement.planId.toHexString();
+      const planCode = plan?.code ?? null;
+      const accessPolicyNames = plan
+        ? policies
+            .filter((policy) =>
+              policyUsesSubscriptionPlan(policy.policy.root, planId),
+            )
+            .map((policy) => policy.name)
+        : [];
+
+      return {
+        id: entitlement._id.toHexString(),
+        subscriberWallet: entitlement.subscriberWallet,
+        subscriberDisplayName: user?.displayName ?? null,
+        subscriberUsername: user?.username ?? null,
+        planId,
+        planCode,
+        planTitle: plan?.title ?? null,
+        accessPolicyNames,
+        status:
+          entitlement.status === "active" &&
+          entitlement.validUntil.getTime() > Date.now()
+            ? "active"
+            : "expired",
+        validUntil: entitlement.validUntil.toISOString(),
+        createdAt: entitlement.createdAt.toISOString(),
+        updatedAt: entitlement.updatedAt.toISOString(),
+      };
+    }),
+  );
 }
 
 export async function getSubscriptionManagerDeployment(
@@ -510,7 +564,10 @@ export async function deleteMySubscriptionPlan(
   }
 
   const activeEntitlements =
-    await repo.countActiveSubscriptionEntitlementsByPlanId(objectId, new Date());
+    await repo.countActiveSubscriptionEntitlementsByPlanId(
+      objectId,
+      new Date(),
+    );
   if (activeEntitlements > 0) {
     throw APIError.failedPrecondition(
       "subscription plan has active subscribers",
@@ -798,7 +855,10 @@ export async function getAuthorPostBySlugAndId(
 
   if (
     !evaluation.allowed &&
-    !(viewerWallet && (await hasActiveAuthorSubscription(author._id, viewerWallet)))
+    !(
+      viewerWallet &&
+      (await hasActiveAuthorSubscription(author._id, viewerWallet))
+    )
   ) {
     throw APIError.permissionDenied("access to this post is restricted");
   }
@@ -996,7 +1056,10 @@ export async function getAuthorProjectBySlugAndId(
 
   if (
     !evaluation.allowed &&
-    !(viewerWallet && (await hasActiveAuthorSubscription(author._id, viewerWallet)))
+    !(
+      viewerWallet &&
+      (await hasActiveAuthorSubscription(author._id, viewerWallet))
+    )
   ) {
     throw APIError.permissionDenied("access to this project is restricted");
   }
@@ -1640,6 +1703,23 @@ async function buildSubscriptionGrants(
       entitlement.status === "active" &&
       entitlement.validUntil.getTime() > Date.now(),
   }));
+}
+
+function policyUsesSubscriptionPlan(
+  node: AccessPolicyNode,
+  planId: string,
+): boolean {
+  if (node.type === "subscription") {
+    return node.planId === planId;
+  }
+
+  if (node.type === "and" || node.type === "or") {
+    return node.children.some((child) =>
+      policyUsesSubscriptionPlan(child, planId),
+    );
+  }
+
+  return false;
 }
 
 async function hasActiveAuthorSubscription(

@@ -39,6 +39,6 @@ export const authorFaq = [
 export const authorHighlights = [
     "Wallet-native identity",
     "Reusable access policies",
-    "Posts, projects, and gated files",
+    "Posts, projects, and private files",
     "ERC-20 and native token subscriptions",
 ]

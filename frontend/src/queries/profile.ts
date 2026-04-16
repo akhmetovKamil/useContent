@@ -33,6 +33,14 @@ export function useMyEntitlementsQuery(enabled = true) {
     })
 }
 
+export function useMyAuthorSubscribersQuery(enabled = true) {
+    return useQuery({
+        queryKey: queryKeys.myAuthorSubscribers,
+        queryFn: () => profileApi.getMyAuthorSubscribers(),
+        enabled,
+    })
+}
+
 export function useCreateMyAuthorProfileMutation() {
     const queryClient = useQueryClient()
 

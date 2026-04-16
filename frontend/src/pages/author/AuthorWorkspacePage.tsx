@@ -1,13 +1,12 @@
 import { Link } from "react-router-dom"
 
-import { AuthorActions, AuthorMetrics } from "@/components/author-workspace/AuthorDashboardCards"
+import { AuthorMetrics } from "@/components/author-workspace/AuthorDashboardCards"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
+import { PageSection, PageTitle } from "@/components/ui/page"
 import { useMyPostsQuery } from "@/queries/posts"
-import { useMyAuthorProfileQuery } from "@/queries/profile"
+import { useMyAuthorProfileQuery, useMyAuthorSubscribersQuery } from "@/queries/profile"
 import { useMyProjectsQuery } from "@/queries/projects"
-import { useMySubscriptionPlansQuery } from "@/queries/subscription-plans"
 import { useAuthStore } from "@/stores/auth-store"
 import { isApiNotFoundError } from "@/utils/api/errors"
 
@@ -16,14 +15,16 @@ export function AuthorWorkspacePage() {
     const authorQuery = useMyAuthorProfileQuery(Boolean(token))
     const postsQuery = useMyPostsQuery(Boolean(token))
     const projectsQuery = useMyProjectsQuery(Boolean(token))
-    const plansQuery = useMySubscriptionPlansQuery(Boolean(token))
+    const subscribersQuery = useMyAuthorSubscribersQuery(Boolean(token))
+    const subscriberCount = new Set(
+        (subscribersQuery.data ?? []).map((subscriber) => subscriber.subscriberWallet)
+    ).size
     const needsAuthorProfile = token && isApiNotFoundError(authorQuery.error)
 
     return (
         <section className="grid gap-6">
             <PageSection>
-                <Eyebrow>author workspace</Eyebrow>
-                <PageTitle>Create, publish, and manage gated content.</PageTitle>
+                <PageTitle>Create, publish, and manage paid content.</PageTitle>
                 {!token ? (
                     <p className="mt-4 max-w-2xl text-[var(--muted)]">
                         Connect and sign with a wallet to open the author workspace.
@@ -46,14 +47,30 @@ export function AuthorWorkspacePage() {
                 ) : authorQuery.data ? (
                     <AuthorMetrics
                         metrics={[
-                            { label: "Author", value: `@${authorQuery.data.slug}` },
-                            { label: "Posts", value: String(postsQuery.data?.length ?? 0) },
-                            { label: "Projects", value: String(projectsQuery.data?.length ?? 0) },
                             {
-                                label: "Plan",
-                                value: plansQuery.data?.some((plan) => plan.active)
-                                    ? "Active"
-                                    : "Not configured",
+                                description: "Edit public identity and default access policy.",
+                                label: "Author",
+                                to: "/me/author",
+                                value: `@${authorQuery.data.slug}`,
+                            },
+                            {
+                                description:
+                                    "Create posts, publish drafts, and delete old content.",
+                                label: "Posts",
+                                to: "/me/posts",
+                                value: String(postsQuery.data?.length ?? 0),
+                            },
+                            {
+                                description: "Create project spaces and manage visibility.",
+                                label: "Projects",
+                                to: "/me/projects",
+                                value: String(projectsQuery.data?.length ?? 0),
+                            },
+                            {
+                                description: "Review subscribers and their access policies.",
+                                label: "Subscribers",
+                                to: "/me/subscribers",
+                                value: String(subscriberCount),
                             },
                         ]}
                     />
@@ -61,33 +78,6 @@ export function AuthorWorkspacePage() {
                     <p className="mt-4 text-[var(--muted)]">Loading author workspace...</p>
                 )}
             </PageSection>
-
-            {authorQuery.data ? (
-                <AuthorActions
-                    actions={[
-                        {
-                            description: "Edit public identity and default access policy.",
-                            label: "Author profile",
-                            to: "/me/author",
-                        },
-                        {
-                            description: "Create posts, publish drafts, and delete old content.",
-                            label: "Posts",
-                            to: "/me/posts",
-                        },
-                        {
-                            description: "Create project spaces and manage visibility.",
-                            label: "Projects",
-                            to: "/me/projects",
-                        },
-                        {
-                            description: "Configure the main crypto subscription plan.",
-                            label: "Subscription",
-                            to: "/me/subscription-plan",
-                        },
-                    ]}
-                />
-            ) : null}
         </section>
     )
 }

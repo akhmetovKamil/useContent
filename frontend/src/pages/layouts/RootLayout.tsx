@@ -4,9 +4,11 @@ import {
     Home,
     Info,
     LayoutDashboard,
+    ReceiptText,
     Settings,
     ShieldCheck,
     UserRound,
+    UsersRound,
     type LucideIcon,
 } from "lucide-react"
 import { useEffect } from "react"
@@ -32,13 +34,16 @@ const publicNavItems: NavItemConfig[] = [{ to: "/", label: "Home", icon: Home, e
 
 const readerNavItems: NavItemConfig[] = [
     { to: "/", label: "Home", icon: Home, end: true, separatorAfter: true },
-    { to: "/me", label: "Me", icon: UserRound },
+    { to: "/me/profile", label: "Profile", icon: UserRound },
+    { to: "/me/subscriptions", label: "Subscriptions", icon: ReceiptText },
+    { to: "/me/settings", label: "Settings", icon: Settings },
 ]
 
 const authorNavItems: NavItemConfig[] = [
     { to: "/author", label: "Workspace", icon: LayoutDashboard, end: true },
     { to: "/author/about", label: "About", icon: Info, separatorAfter: true },
     { to: "/me/author", label: "Settings", icon: Settings },
+    { to: "/me/subscribers", label: "Subscribers", icon: UsersRound },
     { to: "/me/posts", label: "Posts", icon: FileText },
     { to: "/me/projects", label: "Projects", icon: FolderKanban },
     { to: "/me/subscription-plan", label: "Access", icon: ShieldCheck },
@@ -53,21 +58,19 @@ export function RootLayout() {
     const setHasAuthorProfileHint = useWorkspaceStore((state) => state.setHasAuthorProfileHint)
     const authorQuery = useMyAuthorProfileQuery(Boolean(token))
     const hasAuthorProfile = Boolean(authorQuery.data)
+    const readerProfilePath = authorQuery.data ? `/authors/${authorQuery.data.slug}` : "/me/profile"
     const authorMissing = isApiNotFoundError(authorQuery.error)
-    const visibleMode = token ? mode : "reader"
+    const visibleMode = token && (hasAuthorProfile || hasAuthorProfileHint) ? mode : "reader"
     const navItems = !token
         ? publicNavItems
         : visibleMode === "author"
           ? authorNavItems
-          : readerNavItems
+          : readerNavItems.map((item) =>
+                item.label === "Profile" ? { ...item, to: readerProfilePath } : item
+            )
     const subtitle = visibleMode === "author" ? "Author Workspace" : "User Workspace"
     const isAuthorOnboarding = location.pathname === "/author/onboarding"
-    const showDock = Boolean(
-        token &&
-        !isAuthorOnboarding &&
-        !authorMissing &&
-        (hasAuthorProfile || hasAuthorProfileHint || (mode === "author" && authorQuery.isLoading))
-    )
+    const showDock = Boolean(token && !isAuthorOnboarding)
     const showWorkspaceToggle = Boolean(
         token && !authorMissing && (hasAuthorProfile || hasAuthorProfileHint) && !isAuthorOnboarding
     )

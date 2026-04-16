@@ -2,6 +2,7 @@ import type { ObjectId } from "mongodb";
 import type { AccessPolicy, PolicyMode } from "../domain/access";
 import type {
   AccessPolicyPresetDto,
+  AuthorSubscriberDto,
   AuthorProfileDto,
   ConfirmSubscriptionPaymentInput,
   ContractDeploymentDto,
@@ -185,6 +186,7 @@ export interface ContractDeploymentDoc {
 
 export type UserProfileResponse = UserProfileDto;
 export type AuthorProfileResponse = AuthorProfileDto;
+export type AuthorSubscriberResponse = AuthorSubscriberDto;
 export type AccessPolicyPresetResponse = AccessPolicyPresetDto;
 export type SubscriptionEntitlementResponse = SubscriptionEntitlementDto;
 export type ContractDeploymentResponse = ContractDeploymentDto;

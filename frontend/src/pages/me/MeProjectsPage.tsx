@@ -46,7 +46,7 @@ export function MeProjectsPage() {
                     input: { status },
                 })
             }
-            title="Structured project spaces with gated access"
+            title="Structured project spaces with private access"
             token={token}
         />
     )

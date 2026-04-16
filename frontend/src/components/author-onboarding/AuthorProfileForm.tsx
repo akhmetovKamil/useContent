@@ -1,6 +1,5 @@
-import { type FormEvent, useEffect, useMemo, useState } from "react"
-
 import type { AuthorProfileDto, CreateAuthorProfileInput } from "@contracts/types/content"
+import { useEffect, useMemo, useState, type FormEvent } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -115,45 +114,49 @@ export function AuthorProfileForm({
                         : "Keep your public author identity clear, searchable, and ready for subscribers."}
                 </CardDescription>
             </CardHeader>
-            <CardContent className="h-[calc(100%-6.5rem)] overflow-y-auto">
+            <CardContent
+                className={mode === "create" ? "h-[calc(100%-6.5rem)] overflow-y-auto" : ""}
+            >
                 <form className="grid gap-5" onSubmit={submit}>
-                    <Label>
-                        Display name
-                        <Input
-                            aria-invalid={Boolean(fieldErrors.displayName)}
-                            className={fieldErrors.displayName ? "border-rose-500" : undefined}
-                            onChange={(event) => setDisplayName(event.target.value)}
-                            placeholder="Kamil Akhmetov"
-                            value={displayName}
-                        />
-                        {fieldErrors.displayName ? (
-                            <span className="mt-1 block text-xs text-rose-600">
-                                {fieldErrors.displayName}
-                            </span>
-                        ) : null}
-                    </Label>
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <Label>
+                            Display name
+                            <Input
+                                aria-invalid={Boolean(fieldErrors.displayName)}
+                                className={fieldErrors.displayName ? "border-rose-500" : undefined}
+                                onChange={(event) => setDisplayName(event.target.value)}
+                                placeholder="Kamil Akhmetov"
+                                value={displayName}
+                            />
+                            {fieldErrors.displayName ? (
+                                <span className="mt-1 block text-xs text-rose-600">
+                                    {fieldErrors.displayName}
+                                </span>
+                            ) : null}
+                        </Label>
 
-                    <Label>
-                        Username
-                        <Input
-                            aria-invalid={Boolean(fieldErrors.slug || apiSlugError)}
-                            className={
-                                fieldErrors.slug || apiSlugError ? "border-rose-500" : undefined
-                            }
-                            disabled={mode === "update"}
-                            onChange={(event) => setSlug(event.target.value)}
-                            placeholder="kamil"
-                            value={slug}
-                        />
-                        <span className="mt-1 block text-xs text-[var(--muted)]">
-                            Public URL: /authors/{slug || "username"}
-                        </span>
-                        {fieldErrors.slug || apiSlugError ? (
-                            <span className="mt-1 block text-xs text-rose-600">
-                                {fieldErrors.slug ?? apiSlugError}
+                        <Label>
+                            Username
+                            <Input
+                                aria-invalid={Boolean(fieldErrors.slug || apiSlugError)}
+                                className={
+                                    fieldErrors.slug || apiSlugError ? "border-rose-500" : undefined
+                                }
+                                disabled={mode === "update"}
+                                onChange={(event) => setSlug(event.target.value)}
+                                placeholder="kamil"
+                                value={slug}
+                            />
+                            <span className="mt-1 block text-xs text-[var(--muted)]">
+                                Public URL: /authors/{slug || "username"}
                             </span>
-                        ) : null}
-                    </Label>
+                            {fieldErrors.slug || apiSlugError ? (
+                                <span className="mt-1 block text-xs text-rose-600">
+                                    {fieldErrors.slug ?? apiSlugError}
+                                </span>
+                            ) : null}
+                        </Label>
+                    </div>
 
                     <Label>
                         Description

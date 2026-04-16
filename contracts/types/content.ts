@@ -105,6 +105,21 @@ export interface SubscriptionEntitlementDto {
   updatedAt: string;
 }
 
+export interface AuthorSubscriberDto {
+  id: string;
+  subscriberWallet: string;
+  subscriberDisplayName: string | null;
+  subscriberUsername: string | null;
+  planId: string;
+  planCode: string | null;
+  planTitle: string | null;
+  accessPolicyNames: string[];
+  status: "active" | "expired";
+  validUntil: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type SubscriptionPaymentAsset = "erc20" | "native";
 
 export interface SubscriptionPaymentIntentDto {

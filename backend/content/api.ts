@@ -6,6 +6,7 @@ import * as service from "./content.service";
 import type {
   AccessPolicyPresetResponse,
   AuthorProfileResponse,
+  AuthorSubscriberResponse,
   ConfirmSubscriptionPaymentRequest,
   ContractDeploymentLookupResponse,
   ContractDeploymentResponse,
@@ -37,7 +38,7 @@ export const getMe = api(
     const auth = getAuthData()!;
     const user = await service.getOrCreateUserByWallet(auth.walletAddress);
     return service.toUserProfileResponse(user);
-  }
+  },
 );
 
 export const updateMe = api(
@@ -46,7 +47,7 @@ export const updateMe = api(
     const auth = getAuthData()!;
     const user = await service.updateMyProfile(auth.walletAddress, req);
     return service.toUserProfileResponse(user);
-  }
+  },
 );
 
 export const createMyAuthorProfile = api(
@@ -55,7 +56,7 @@ export const createMyAuthorProfile = api(
     const auth = getAuthData()!;
     const author = await service.createAuthorProfile(auth.walletAddress, req);
     return service.toAuthorProfileResponse(author);
-  }
+  },
 );
 
 export const getMyAuthorProfile = api(
@@ -64,7 +65,7 @@ export const getMyAuthorProfile = api(
     const auth = getAuthData()!;
     const author = await service.getMyAuthorProfile(auth.walletAddress);
     return service.toAuthorProfileResponse(author);
-  }
+  },
 );
 
 export const updateMyAuthorProfile = api(
@@ -73,7 +74,7 @@ export const updateMyAuthorProfile = api(
     const auth = getAuthData()!;
     const author = await service.updateMyAuthorProfile(auth.walletAddress, req);
     return service.toAuthorProfileResponse(author);
-  }
+  },
 );
 
 export const deleteMyAuthorProfile = api(
@@ -81,49 +82,68 @@ export const deleteMyAuthorProfile = api(
   async (): Promise<void> => {
     const auth = getAuthData()!;
     await service.deleteMyAuthorProfile(auth.walletAddress);
-  }
+  },
 );
 
 export const listMyAccessPolicyPresets = api(
   { method: "GET", path: "/me/access-policies", expose: true, auth: true },
   async (): Promise<{ policies: AccessPolicyPresetResponse[] }> => {
     const auth = getAuthData()!;
-    const policies = await service.listMyAccessPolicyPresets(auth.walletAddress);
+    const policies = await service.listMyAccessPolicyPresets(
+      auth.walletAddress,
+    );
     return { policies: policies.map(service.toAccessPolicyPresetResponse) };
-  }
+  },
 );
 
 export const createMyAccessPolicyPreset = api(
   { method: "POST", path: "/me/access-policies", expose: true, auth: true },
-  async (req: CreateAccessPolicyPresetRequest): Promise<AccessPolicyPresetResponse> => {
+  async (
+    req: CreateAccessPolicyPresetRequest,
+  ): Promise<AccessPolicyPresetResponse> => {
     const auth = getAuthData()!;
-    const policy = await service.createMyAccessPolicyPreset(auth.walletAddress, req);
+    const policy = await service.createMyAccessPolicyPreset(
+      auth.walletAddress,
+      req,
+    );
     return service.toAccessPolicyPresetResponse(policy);
-  }
+  },
 );
 
 export const updateMyAccessPolicyPreset = api(
-  { method: "PATCH", path: "/me/access-policies/:policyId", expose: true, auth: true },
+  {
+    method: "PATCH",
+    path: "/me/access-policies/:policyId",
+    expose: true,
+    auth: true,
+  },
   async ({
     policyId,
     ...req
-  }: UpdateAccessPolicyPresetRequest & { policyId: string }): Promise<AccessPolicyPresetResponse> => {
+  }: UpdateAccessPolicyPresetRequest & {
+    policyId: string;
+  }): Promise<AccessPolicyPresetResponse> => {
     const auth = getAuthData()!;
     const policy = await service.updateMyAccessPolicyPreset(
       auth.walletAddress,
       policyId,
-      req
+      req,
     );
     return service.toAccessPolicyPresetResponse(policy);
-  }
+  },
 );
 
 export const deleteMyAccessPolicyPreset = api(
-  { method: "DELETE", path: "/me/access-policies/:policyId", expose: true, auth: true },
+  {
+    method: "DELETE",
+    path: "/me/access-policies/:policyId",
+    expose: true,
+    auth: true,
+  },
   async ({ policyId }: { policyId: string }): Promise<void> => {
     const auth = getAuthData()!;
     await service.deleteMyAccessPolicyPreset(auth.walletAddress, policyId);
-  }
+  },
 );
 
 export const listMyEntitlements = api(
@@ -134,7 +154,18 @@ export const listMyEntitlements = api(
     return {
       entitlements: entitlements.map(service.toSubscriptionEntitlementResponse),
     };
-  }
+  },
+);
+
+export const listMyAuthorSubscribers = api(
+  { method: "GET", path: "/me/author/subscribers", expose: true, auth: true },
+  async (): Promise<{ subscribers: AuthorSubscriberResponse[] }> => {
+    const auth = getAuthData()!;
+    const subscribers = await service.listMyAuthorSubscribers(
+      auth.walletAddress,
+    );
+    return { subscribers };
+  },
 );
 
 export const getSubscriptionManagerDeployment = api(
@@ -156,7 +187,7 @@ export const getSubscriptionManagerDeployment = api(
         ? service.toContractDeploymentResponse(deployment)
         : null,
     };
-  }
+  },
 );
 
 export const upsertContractDeployment = api(
@@ -174,7 +205,7 @@ export const upsertContractDeployment = api(
     assertDeploymentRegistryToken(deploymentRegistryToken);
     const deployment = await service.upsertContractDeployment(req);
     return service.toContractDeploymentResponse(deployment);
-  }
+  },
 );
 
 export const listMySubscriptionPaymentIntents = api(
@@ -186,11 +217,13 @@ export const listMySubscriptionPaymentIntents = api(
   },
   async (): Promise<{ intents: SubscriptionPaymentIntentResponse[] }> => {
     const auth = getAuthData()!;
-    const intents = await service.listMySubscriptionPaymentIntents(auth.walletAddress);
+    const intents = await service.listMySubscriptionPaymentIntents(
+      auth.walletAddress,
+    );
     return {
       intents: intents.map(service.toSubscriptionPaymentIntentResponse),
     };
-  }
+  },
 );
 
 export const getMySubscriptionPlan = api(
@@ -199,7 +232,7 @@ export const getMySubscriptionPlan = api(
     const auth = getAuthData()!;
     const plan = await service.getMySubscriptionPlan(auth.walletAddress);
     return service.toSubscriptionPlanResponse(plan);
-  }
+  },
 );
 
 export const listMySubscriptionPlans = api(
@@ -208,24 +241,34 @@ export const listMySubscriptionPlans = api(
     const auth = getAuthData()!;
     const plans = await service.listMySubscriptionPlans(auth.walletAddress);
     return { plans: plans.map(service.toSubscriptionPlanResponse) };
-  }
+  },
 );
 
 export const upsertMySubscriptionPlan = api(
   { method: "PUT", path: "/me/subscription-plan", expose: true, auth: true },
-  async (req: UpsertSubscriptionPlanRequest): Promise<SubscriptionPlanResponse> => {
+  async (
+    req: UpsertSubscriptionPlanRequest,
+  ): Promise<SubscriptionPlanResponse> => {
     const auth = getAuthData()!;
-    const plan = await service.upsertMySubscriptionPlan(auth.walletAddress, req);
+    const plan = await service.upsertMySubscriptionPlan(
+      auth.walletAddress,
+      req,
+    );
     return service.toSubscriptionPlanResponse(plan);
-  }
+  },
 );
 
 export const deleteMySubscriptionPlan = api(
-  { method: "DELETE", path: "/me/subscription-plans/:planId", expose: true, auth: true },
+  {
+    method: "DELETE",
+    path: "/me/subscription-plans/:planId",
+    expose: true,
+    auth: true,
+  },
   async ({ planId }: { planId: string }): Promise<void> => {
     const auth = getAuthData()!;
     await service.deleteMySubscriptionPlan(auth.walletAddress, planId);
-  }
+  },
 );
 
 export const getAuthorProfile = api(
@@ -233,7 +276,7 @@ export const getAuthorProfile = api(
   async ({ slug }: { slug: string }): Promise<AuthorProfileResponse> => {
     const author = await service.getAuthorProfileBySlug(slug);
     return service.toAuthorProfileResponse(author);
-  }
+  },
 );
 
 export const getAuthorSubscriptionPlan = api(
@@ -241,15 +284,19 @@ export const getAuthorSubscriptionPlan = api(
   async ({ slug }: { slug: string }): Promise<SubscriptionPlanResponse> => {
     const plan = await service.getAuthorSubscriptionPlanBySlug(slug);
     return service.toSubscriptionPlanResponse(plan);
-  }
+  },
 );
 
 export const listAuthorSubscriptionPlans = api(
   { method: "GET", path: "/authors/:slug/subscription-plans", expose: true },
-  async ({ slug }: { slug: string }): Promise<{ plans: SubscriptionPlanResponse[] }> => {
+  async ({
+    slug,
+  }: {
+    slug: string;
+  }): Promise<{ plans: SubscriptionPlanResponse[] }> => {
     const plans = await service.listAuthorSubscriptionPlansBySlug(slug);
     return { plans: plans.map(service.toSubscriptionPlanResponse) };
-  }
+  },
 );
 
 export const createSubscriptionPaymentIntent = api(
@@ -269,10 +316,10 @@ export const createSubscriptionPaymentIntent = api(
     const intent = await service.createSubscriptionPaymentIntent(
       auth.walletAddress,
       slug,
-      req
+      req,
     );
     return service.toSubscriptionPaymentIntentResponse(intent);
-  }
+  },
 );
 
 export const confirmSubscriptionPayment = api(
@@ -292,10 +339,10 @@ export const confirmSubscriptionPayment = api(
     const intent = await service.confirmSubscriptionPayment(
       auth.walletAddress,
       intentId,
-      req
+      req,
     );
     return service.toSubscriptionPaymentIntentResponse(intent);
-  }
+  },
 );
 
 export const createMyPost = api(
@@ -304,7 +351,7 @@ export const createMyPost = api(
     const auth = getAuthData()!;
     const post = await service.createMyPost(auth.walletAddress, req);
     return service.toPostResponse(post);
-  }
+  },
 );
 
 export const listMyPosts = api(
@@ -313,7 +360,7 @@ export const listMyPosts = api(
     const auth = getAuthData()!;
     const posts = await service.listMyPosts(auth.walletAddress);
     return { posts: posts.map(service.toPostResponse) };
-  }
+  },
 );
 
 export const updateMyPost = api(
@@ -325,7 +372,7 @@ export const updateMyPost = api(
     const auth = getAuthData()!;
     const post = await service.updateMyPost(auth.walletAddress, postId, req);
     return service.toPostResponse(post);
-  }
+  },
 );
 
 export const deleteMyPost = api(
@@ -333,7 +380,7 @@ export const deleteMyPost = api(
   async ({ postId }: { postId: string }): Promise<void> => {
     const auth = getAuthData()!;
     await service.deleteMyPost(auth.walletAddress, postId);
-  }
+  },
 );
 
 export const listAuthorPosts = api(
@@ -341,7 +388,7 @@ export const listAuthorPosts = api(
   async ({ slug }: { slug: string }): Promise<{ posts: PostResponse[] }> => {
     const posts = await service.listAuthorPostsBySlug(slug);
     return { posts: posts.map(service.toPostResponse) };
-  }
+  },
 );
 
 interface GetAuthorPostRequest {
@@ -352,15 +399,19 @@ interface GetAuthorPostRequest {
 
 export const getAuthorPost = api(
   { method: "GET", path: "/authors/:slug/posts/:postId", expose: true },
-  async ({ slug, postId, authorization }: GetAuthorPostRequest): Promise<PostResponse> => {
+  async ({
+    slug,
+    postId,
+    authorization,
+  }: GetAuthorPostRequest): Promise<PostResponse> => {
     const viewerWallet = await getOptionalViewerWallet(authorization);
     const post = await service.getAuthorPostBySlugAndId(
       slug,
       postId,
-      viewerWallet
+      viewerWallet,
     );
     return service.toPostResponse(post);
-  }
+  },
 );
 
 export const createMyProject = api(
@@ -369,7 +420,7 @@ export const createMyProject = api(
     const auth = getAuthData()!;
     const project = await service.createMyProject(auth.walletAddress, req);
     return service.toProjectResponse(project);
-  }
+  },
 );
 
 export const listMyProjects = api(
@@ -378,31 +429,43 @@ export const listMyProjects = api(
     const auth = getAuthData()!;
     const projects = await service.listMyProjects(auth.walletAddress);
     return { projects: projects.map(service.toProjectResponse) };
-  }
+  },
 );
 
 export const updateMyProject = api(
-  { method: "PATCH", path: "/me/projects/:projectId", expose: true, auth: true },
+  {
+    method: "PATCH",
+    path: "/me/projects/:projectId",
+    expose: true,
+    auth: true,
+  },
   async ({
     projectId,
     ...req
-  }: UpdateProjectRequest & { projectId: string }): Promise<ProjectResponse> => {
+  }: UpdateProjectRequest & {
+    projectId: string;
+  }): Promise<ProjectResponse> => {
     const auth = getAuthData()!;
     const project = await service.updateMyProject(
       auth.walletAddress,
       projectId,
-      req
+      req,
     );
     return service.toProjectResponse(project);
-  }
+  },
 );
 
 export const deleteMyProject = api(
-  { method: "DELETE", path: "/me/projects/:projectId", expose: true, auth: true },
+  {
+    method: "DELETE",
+    path: "/me/projects/:projectId",
+    expose: true,
+    auth: true,
+  },
   async ({ projectId }: { projectId: string }): Promise<void> => {
     const auth = getAuthData()!;
     await service.deleteMyProject(auth.walletAddress, projectId);
-  }
+  },
 );
 
 function assertDeploymentRegistryToken(
@@ -424,10 +487,14 @@ function getDeploymentRegistryToken(): string {
 
 export const listAuthorProjects = api(
   { method: "GET", path: "/authors/:slug/projects", expose: true },
-  async ({ slug }: { slug: string }): Promise<{ projects: ProjectResponse[] }> => {
+  async ({
+    slug,
+  }: {
+    slug: string;
+  }): Promise<{ projects: ProjectResponse[] }> => {
     const projects = await service.listAuthorProjectsBySlug(slug);
     return { projects: projects.map(service.toProjectResponse) };
-  }
+  },
 );
 
 interface GetAuthorProjectRequest {
@@ -438,19 +505,23 @@ interface GetAuthorProjectRequest {
 
 export const getAuthorProject = api(
   { method: "GET", path: "/authors/:slug/projects/:projectId", expose: true },
-  async ({ slug, projectId, authorization }: GetAuthorProjectRequest): Promise<ProjectResponse> => {
+  async ({
+    slug,
+    projectId,
+    authorization,
+  }: GetAuthorProjectRequest): Promise<ProjectResponse> => {
     const viewerWallet = await getOptionalViewerWallet(authorization);
     const project = await service.getAuthorProjectBySlugAndId(
       slug,
       projectId,
-      viewerWallet
+      viewerWallet,
     );
     return service.toProjectResponse(project);
-  }
+  },
 );
 
 async function getOptionalViewerWallet(
-  authorization?: string
+  authorization?: string,
 ): Promise<string | undefined> {
   const token = authorization?.replace(/^Bearer\s+/i, "").trim();
   if (!token) {
