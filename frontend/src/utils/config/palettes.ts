@@ -9,10 +9,10 @@ export interface WorkspacePaletteOption {
 
 export const workspacePalettes: WorkspacePaletteOption[] = [
     {
-        description: "Soft reader space and light blue-green author studio.",
+        description: "Bright sunny reader cards and light blue-green author studio.",
         id: "pastel-calm",
-        name: "Pastel Calm",
-        swatches: ["#fff7ea", "#ef9f76", "#e9fbf5", "#2f9fd8"],
+        name: "Solar Pop",
+        swatches: ["#fff3bf", "#ff7a1a", "#e9fbf5", "#2f9fd8"],
     },
     {
         description: "Clean product whites with energetic creator colors.",

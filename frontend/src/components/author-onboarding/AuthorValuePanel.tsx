@@ -8,9 +8,9 @@ import { authorFaq } from "./author-content"
 
 export function AuthorValuePanel() {
     return (
-        <div className="relative h-full overflow-hidden rounded-[36px] border border-[var(--line)] bg-[linear-gradient(145deg,rgba(88,183,255,0.18),rgba(9,24,44,0.72))] p-5 text-[var(--foreground)] shadow-[var(--shadow)] md:p-7">
-            <div className="absolute -left-24 top-16 size-72 rounded-full bg-cyan-300/20 blur-3xl" />
-            <div className="absolute -right-20 bottom-10 size-80 rounded-full bg-blue-600/20 blur-3xl" />
+        <div className="relative h-full overflow-hidden rounded-[36px] border border-[var(--line)] bg-[linear-gradient(145deg,var(--surface),var(--popover))] p-5 text-[var(--foreground)] shadow-[var(--shadow)] md:p-7">
+            <div className="absolute -left-24 top-16 size-72 rounded-full bg-[var(--accent-soft)] blur-3xl" />
+            <div className="absolute -right-20 bottom-10 size-80 rounded-full bg-[var(--muted-background)] opacity-70 blur-3xl" />
 
             <div className="relative h-full overflow-y-auto pr-1">
                 <div className="font-mono text-xs uppercase tracking-[0.35em] text-[var(--muted)]">

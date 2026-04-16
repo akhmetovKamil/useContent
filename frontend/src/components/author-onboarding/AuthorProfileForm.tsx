@@ -1,8 +1,7 @@
-import { type FormEvent, useEffect, useState } from "react"
+import { type FormEvent, useEffect, useMemo, useState } from "react"
 
 import type { AuthorProfileDto, CreateAuthorProfileInput } from "@contracts/types/content"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -33,6 +32,12 @@ export function AuthorProfileForm({
     const [bio, setBio] = useState(author?.bio ?? "")
     const [tags, setTags] = useState<string[]>(author?.tags ?? [])
     const [customTag, setCustomTag] = useState("")
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+    const apiSlugError = error?.toLowerCase().includes("slug") ? error : null
+    const tagOptions = useMemo(
+        () => [...authorTags, ...tags.filter((tag) => !authorTags.includes(tag))],
+        [tags]
+    )
 
     useEffect(() => {
         if (!author) {
@@ -47,10 +52,29 @@ export function AuthorProfileForm({
 
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault()
+        const nextErrors: Record<string, string> = {}
+        const normalizedSlug = slug.trim().toLowerCase()
+        const normalizedDisplayName = displayName.trim()
+
+        if (!normalizedDisplayName) {
+            nextErrors.displayName = "Display name is required."
+        }
+        if (mode === "create" && !/^[a-z0-9-]{3,50}$/.test(normalizedSlug)) {
+            nextErrors.slug = "Use 3-50 chars: a-z, 0-9, and hyphen."
+        }
+        if (bio.trim().length > 500) {
+            nextErrors.bio = "Description must be 500 characters or less."
+        }
+
+        setFieldErrors(nextErrors)
+        if (Object.keys(nextErrors).length) {
+            return
+        }
+
         onSubmit({
-            slug,
-            displayName,
-            bio,
+            slug: normalizedSlug,
+            displayName: normalizedDisplayName,
+            bio: bio.trim(),
             tags,
         })
     }
@@ -96,15 +120,26 @@ export function AuthorProfileForm({
                     <Label>
                         Display name
                         <Input
+                            aria-invalid={Boolean(fieldErrors.displayName)}
+                            className={fieldErrors.displayName ? "border-rose-500" : undefined}
                             onChange={(event) => setDisplayName(event.target.value)}
                             placeholder="Kamil Akhmetov"
                             value={displayName}
                         />
+                        {fieldErrors.displayName ? (
+                            <span className="mt-1 block text-xs text-rose-600">
+                                {fieldErrors.displayName}
+                            </span>
+                        ) : null}
                     </Label>
 
                     <Label>
                         Username
                         <Input
+                            aria-invalid={Boolean(fieldErrors.slug || apiSlugError)}
+                            className={
+                                fieldErrors.slug || apiSlugError ? "border-rose-500" : undefined
+                            }
                             disabled={mode === "update"}
                             onChange={(event) => setSlug(event.target.value)}
                             placeholder="kamil"
@@ -113,16 +148,27 @@ export function AuthorProfileForm({
                         <span className="mt-1 block text-xs text-[var(--muted)]">
                             Public URL: /authors/{slug || "username"}
                         </span>
+                        {fieldErrors.slug || apiSlugError ? (
+                            <span className="mt-1 block text-xs text-rose-600">
+                                {fieldErrors.slug ?? apiSlugError}
+                            </span>
+                        ) : null}
                     </Label>
 
                     <Label>
                         Description
                         <Textarea
-                            className="min-h-32"
+                            aria-invalid={Boolean(fieldErrors.bio)}
+                            className={cn("min-h-32", fieldErrors.bio ? "border-rose-500" : "")}
                             onChange={(event) => setBio(event.target.value)}
                             placeholder="What do you create, teach, publish, or build?"
                             value={bio}
                         />
+                        {fieldErrors.bio ? (
+                            <span className="mt-1 block text-xs text-rose-600">
+                                {fieldErrors.bio}
+                            </span>
+                        ) : null}
                     </Label>
 
                     <div className="grid gap-3">
@@ -133,7 +179,7 @@ export function AuthorProfileForm({
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                            {authorTags.map((tag) => (
+                            {tagOptions.map((tag) => (
                                 <button
                                     className={`rounded-full border px-3 py-1.5 text-sm transition ${
                                         tags.includes(tag)
@@ -164,18 +210,11 @@ export function AuthorProfileForm({
                                 Add
                             </Button>
                         </div>
-                        {tags.length ? (
-                            <div className="flex flex-wrap gap-2">
-                                {tags.map((tag) => (
-                                    <Badge className="rounded-full" key={tag}>
-                                        {tag}
-                                    </Badge>
-                                ))}
-                            </div>
-                        ) : null}
                     </div>
 
-                    {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+                    {error && !apiSlugError ? (
+                        <p className="text-sm text-rose-600">{error}</p>
+                    ) : null}
 
                     <Button className="h-12 rounded-full" disabled={isPending} type="submit">
                         {isPending

@@ -1,3 +1,5 @@
+import axios from "axios"
+
 import type {
     AuthorProfileDto,
     CreateAuthorProfileInput,
@@ -26,13 +28,21 @@ class ProfileApi {
     }
 
     async createMyAuthorProfile(input: CreateAuthorProfileInput) {
-        const response = await http.post<AuthorProfileDto>("/authors", input)
-        return response.data
+        try {
+            const response = await http.post<AuthorProfileDto>("/authors", input)
+            return response.data
+        } catch (error) {
+            throw normalizeApiError(error)
+        }
     }
 
     async updateMyAuthorProfile(input: UpdateAuthorProfileInput) {
-        const response = await http.patch<AuthorProfileDto>("/me/author", input)
-        return response.data
+        try {
+            const response = await http.patch<AuthorProfileDto>("/me/author", input)
+            return response.data
+        } catch (error) {
+            throw normalizeApiError(error)
+        }
     }
 
     async deleteMyAuthorProfile() {
@@ -45,6 +55,15 @@ class ProfileApi {
         )
         return response.data.entitlements
     }
+}
+
+function normalizeApiError(error: unknown) {
+    if (axios.isAxiosError(error)) {
+        const data = error.response?.data as { code?: string; message?: string } | undefined
+        return new Error(data?.message ?? data?.code ?? error.message)
+    }
+
+    return error
 }
 
 export const profileApi = new ProfileApi()

@@ -11,9 +11,8 @@ export function AuthorOnboardingPage() {
     const createAuthorMutation = useCreateMyAuthorProfileMutation()
 
     return (
-        <section className="grid h-[calc(100vh-13.5rem)] min-h-[620px] gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-            <AuthorValuePanel />
-            <div className="min-h-0">
+        <section className="grid gap-6 xl:h-[calc(100vh-13.5rem)] xl:min-h-[620px] xl:grid-cols-[1.05fr_0.95fr]">
+            <div className="min-h-0 xl:order-2">
                 <AuthorProfileForm
                     className="min-h-0"
                     error={createAuthorMutation.error?.message ?? null}
@@ -26,6 +25,9 @@ export function AuthorOnboardingPage() {
                         })
                     }}
                 />
+            </div>
+            <div className="min-h-0 xl:order-1">
+                <AuthorValuePanel />
             </div>
         </section>
     )

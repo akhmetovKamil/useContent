@@ -7,7 +7,7 @@ import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
 import { useMyPostsQuery } from "@/queries/posts"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useMyProjectsQuery } from "@/queries/projects"
-import { useMySubscriptionPlanQuery } from "@/queries/subscription-plans"
+import { useMySubscriptionPlansQuery } from "@/queries/subscription-plans"
 import { useAuthStore } from "@/stores/auth-store"
 import { isApiNotFoundError } from "@/utils/api/errors"
 
@@ -16,7 +16,7 @@ export function AuthorWorkspacePage() {
     const authorQuery = useMyAuthorProfileQuery(Boolean(token))
     const postsQuery = useMyPostsQuery(Boolean(token))
     const projectsQuery = useMyProjectsQuery(Boolean(token))
-    const planQuery = useMySubscriptionPlanQuery(Boolean(token))
+    const plansQuery = useMySubscriptionPlansQuery(Boolean(token))
     const needsAuthorProfile = token && isApiNotFoundError(authorQuery.error)
 
     return (
@@ -51,7 +51,9 @@ export function AuthorWorkspacePage() {
                             { label: "Projects", value: String(projectsQuery.data?.length ?? 0) },
                             {
                                 label: "Plan",
-                                value: planQuery.data?.active ? "Active" : "Not configured",
+                                value: plansQuery.data?.some((plan) => plan.active)
+                                    ? "Active"
+                                    : "Not configured",
                             },
                         ]}
                     />

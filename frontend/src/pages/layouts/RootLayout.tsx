@@ -55,7 +55,8 @@ export function RootLayout() {
         !token ? publicNavItems : visibleMode === "author" ? authorNavItems : readerNavItems
     const subtitle = visibleMode === "author" ? "Author Workspace" : "User Workspace"
     const isAuthorOnboarding = location.pathname === "/author/onboarding"
-    const showWorkspaceChrome = Boolean(token && hasAuthorProfile && !isAuthorOnboarding)
+    const showDock = Boolean(token && hasAuthorProfile && !isAuthorOnboarding)
+    const showWorkspaceToggle = Boolean(token && hasAuthorProfile && !isAuthorOnboarding)
 
     useEffect(() => {
         document.documentElement.dataset.palette = palette
@@ -78,13 +79,13 @@ export function RootLayout() {
                         </div>
                     </div>
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                        {showWorkspaceChrome ? <WorkspaceModeToggle /> : null}
+                        {showWorkspaceToggle ? <WorkspaceModeToggle /> : null}
                         <WalletStatus />
                     </div>
                 </header>
 
-                {showWorkspaceChrome ? (
-                    <nav className="fixed bottom-5 left-1/2 z-40 -translate-x-1/2 px-4">
+                {showDock ? (
+                    <nav className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 px-4">
                         <Dock>
                             {navItems.map((item) => (
                                 <NavItem item={item} key={item.to} />
@@ -93,7 +94,7 @@ export function RootLayout() {
                     </nav>
                 ) : null}
 
-                <main className="flex-1 px-5 py-6 pb-28 md:px-8 md:py-8 md:pb-32">
+                <main className="flex-1 px-5 py-6 md:px-8 md:py-8">
                     <Outlet />
                 </main>
             </div>

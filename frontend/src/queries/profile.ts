@@ -37,7 +37,8 @@ export function useCreateMyAuthorProfileMutation() {
 
     return useMutation({
         mutationFn: (input: CreateAuthorProfileInput) => profileApi.createMyAuthorProfile(input),
-        onSuccess: () => {
+        onSuccess: (author) => {
+            queryClient.setQueryData(queryKeys.myAuthor, author)
             void queryClient.invalidateQueries({ queryKey: queryKeys.myAuthor })
             void queryClient.invalidateQueries({ queryKey: queryKeys.me })
             void queryClient.invalidateQueries({ queryKey: ["authors"] })

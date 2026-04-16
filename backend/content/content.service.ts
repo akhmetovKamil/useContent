@@ -1030,7 +1030,7 @@ export async function createAuthorProfile(
   );
   const now = new Date();
 
-  const author = await repo.createAuthorProfile({
+  const author = await createAuthorProfileOrThrowConflict({
     userId: user._id.toHexString(),
     slug,
     displayName,
@@ -1060,6 +1060,20 @@ export async function createAuthorProfile(
   });
 
   return updated ?? { ...author, defaultPolicyId: preset._id };
+}
+
+async function createAuthorProfileOrThrowConflict(
+  doc: Omit<AuthorProfileDoc, "_id">,
+): Promise<AuthorProfileDoc> {
+  try {
+    return await repo.createAuthorProfile(doc);
+  } catch (error) {
+    if (isMongoDuplicateKeyError(error)) {
+      throw APIError.alreadyExists("author slug already exists");
+    }
+
+    throw error;
+  }
 }
 
 export function toUserProfileResponse(user: UserDoc): UserProfileResponse {
@@ -1237,6 +1251,15 @@ function normalizeWallet(walletAddress: string): string {
     throw APIError.invalidArgument("wallet address is required");
   }
   return value;
+}
+
+function isMongoDuplicateKeyError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === 11000
+  );
 }
 
 function normalizePaymentAsset(value: string): "erc20" | "native" {
