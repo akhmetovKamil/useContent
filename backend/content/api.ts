@@ -166,6 +166,14 @@ export const upsertMySubscriptionPlan = api(
   }
 );
 
+export const deleteMySubscriptionPlan = api(
+  { method: "DELETE", path: "/me/subscription-plans/:planId", expose: true, auth: true },
+  async ({ planId }: { planId: string }): Promise<void> => {
+    const auth = getAuthData()!;
+    await service.deleteMySubscriptionPlan(auth.walletAddress, planId);
+  }
+);
+
 export const getAuthorProfile = api(
   { method: "GET", path: "/authors/:slug", expose: true },
   async ({ slug }: { slug: string }): Promise<AuthorProfileResponse> => {

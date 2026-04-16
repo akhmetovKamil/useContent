@@ -24,6 +24,10 @@ class SubscriptionPlansApi {
         return response.data
     }
 
+    async deleteMySubscriptionPlan(planId: string) {
+        await http.delete(`/me/subscription-plans/${planId}`)
+    }
+
     async createSubscriptionPaymentIntent(
         slug: string,
         input: CreateSubscriptionPaymentIntentInput

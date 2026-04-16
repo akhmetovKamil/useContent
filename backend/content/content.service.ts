@@ -430,6 +430,34 @@ export async function upsertMySubscriptionPlan(
   return created;
 }
 
+export async function deleteMySubscriptionPlan(
+  walletAddress: string,
+  planId: string,
+): Promise<void> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const objectId = parseObjectId(planId, "planId");
+  const plan = await repo.findSubscriptionPlanById(objectId);
+  if (!plan || !plan.authorId.equals(author._id)) {
+    throw APIError.notFound("subscription plan not found");
+  }
+
+  const activeEntitlements =
+    await repo.countActiveSubscriptionEntitlementsByPlanId(objectId, new Date());
+  if (activeEntitlements > 0) {
+    throw APIError.failedPrecondition(
+      "subscription plan has active subscribers",
+    );
+  }
+
+  const deleted = await repo.deleteSubscriptionPlanByIdAndAuthorId(
+    objectId,
+    author._id,
+  );
+  if (!deleted) {
+    throw APIError.notFound("subscription plan not found");
+  }
+}
+
 export async function createSubscriptionPaymentIntent(
   walletAddress: string,
   slug: string,

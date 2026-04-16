@@ -55,6 +55,19 @@ export function useUpsertMySubscriptionPlanMutation() {
     })
 }
 
+export function useDeleteMySubscriptionPlanMutation() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (planId: string) => subscriptionPlansApi.deleteMySubscriptionPlan(planId),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: queryKeys.mySubscriptionPlan })
+            void queryClient.invalidateQueries({ queryKey: queryKeys.mySubscriptionPlans })
+            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+        },
+    })
+}
+
 export function useCreateSubscriptionPaymentIntentMutation(slug: string) {
     return useMutation({
         mutationFn: (input: CreateSubscriptionPaymentIntentInput) =>

@@ -7,3 +7,9 @@ export function getFrontendRpcUrl(chainId: number): string | undefined {
 
     return value && value !== "NONE" ? value : undefined
 }
+
+export function getSubscriptionManagerAddress(chainId: number): string | undefined {
+    const value = import.meta.env[`VITE_SUBSCRIPTION_MANAGER_${chainId}`]
+
+    return value && value !== "NONE" ? value : undefined
+}

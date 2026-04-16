@@ -488,6 +488,15 @@ export async function updateSubscriptionPlan(
   );
 }
 
+export async function deleteSubscriptionPlanByIdAndAuthorId(
+  id: ObjectId,
+  authorId: ObjectId,
+): Promise<boolean> {
+  const plans = await getSubscriptionPlansCollection();
+  const result = await plans.deleteOne({ _id: id, authorId });
+  return result.deletedCount === 1;
+}
+
 export async function getSubscriptionEntitlementsCollection(): Promise<
   Collection<SubscriptionEntitlementDoc>
 > {
@@ -514,6 +523,18 @@ export async function listSubscriptionEntitlementsByWalletAndAuthorId(
     .find({ subscriberWallet, authorId })
     .sort({ validUntil: -1, createdAt: -1 })
     .toArray();
+}
+
+export async function countActiveSubscriptionEntitlementsByPlanId(
+  planId: ObjectId,
+  now: Date,
+): Promise<number> {
+  const entitlements = await getSubscriptionEntitlementsCollection();
+  return entitlements.countDocuments({
+    planId,
+    status: "active",
+    validUntil: { $gt: now },
+  });
 }
 
 export async function createSubscriptionEntitlement(

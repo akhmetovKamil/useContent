@@ -16,6 +16,7 @@ import {
     useUpdateMyAccessPolicyMutation,
 } from "@/queries/access-policies"
 import {
+    useDeleteMySubscriptionPlanMutation,
     useMySubscriptionPlansQuery,
     useUpsertMySubscriptionPlanMutation,
 } from "@/queries/subscription-plans"
@@ -27,12 +28,14 @@ import {
     type AccessPolicyBuilderState,
 } from "@/utils/access-policy"
 import { defaultSubscriptionChain, supportedChainOptions } from "@/utils/config/chains"
+import { getSubscriptionManagerAddress } from "@/utils/config/env"
 
 export function MeSubscriptionPlanPage() {
     const token = useAuthStore((state) => state.token)
     const plansQuery = useMySubscriptionPlansQuery(Boolean(token))
     const policiesQuery = useMyAccessPoliciesQuery(Boolean(token))
     const upsertPlanMutation = useUpsertMySubscriptionPlanMutation()
+    const deletePlanMutation = useDeleteMySubscriptionPlanMutation()
     const createPolicyMutation = useCreateMyAccessPolicyMutation()
     const updatePolicyMutation = useUpdateMyAccessPolicyMutation()
     const deletePolicyMutation = useDeleteMyAccessPolicyMutation()
@@ -41,14 +44,10 @@ export function MeSubscriptionPlanPage() {
     const [title, setTitle] = useState("Main subscription")
     const [chainId, setChainId] = useState(String(defaultSubscriptionChain.id))
     const [tokenAddress, setTokenAddress] = useState("0x0000000000000000000000000000000000000000")
-    const [price, setPrice] = useState("1000000")
+    const [amount, setAmount] = useState("1000000")
     const [billingPeriodDays, setBillingPeriodDays] = useState("30")
-    const [contractAddress, setContractAddress] = useState(
-        "0x0000000000000000000000000000000000000000"
-    )
     const [planKey, setPlanKey] = useState("")
     const [registrationTxHash, setRegistrationTxHash] = useState("")
-    const [active, setActive] = useState(true)
     const [policyName, setPolicyName] = useState("Subscribers only")
     const [policyDescription, setPolicyDescription] = useState("")
     const [policyIsDefault, setPolicyIsDefault] = useState(false)
@@ -67,15 +66,15 @@ export function MeSubscriptionPlanPage() {
         setTitle(plan.title)
         setChainId(String(plan.chainId))
         setTokenAddress(plan.tokenAddress)
-        setPrice(plan.price)
+        setAmount(plan.price)
         setBillingPeriodDays(String(plan.billingPeriodDays))
-        setContractAddress(plan.contractAddress)
         setPlanKey(plan.planKey)
         setRegistrationTxHash(plan.registrationTxHash ?? "")
-        setActive(plan.active)
     }, [plansQuery.data])
 
     const selectedPlan = plansQuery.data?.find((plan) => plan.code === code)
+    const managerAddress =
+        getSubscriptionManagerAddress(Number(chainId)) ?? selectedPlan?.contractAddress ?? ""
 
     return (
         <PageSection>
@@ -106,27 +105,26 @@ export function MeSubscriptionPlanPage() {
                                         title,
                                         chainId: Number(chainId),
                                         tokenAddress,
-                                        price,
+                                        price: amount,
                                         billingPeriodDays: Number(billingPeriodDays),
-                                        contractAddress,
+                                        contractAddress: managerAddress,
                                         planKey: planKey || undefined,
                                         registrationTxHash: registrationTxHash || null,
-                                        active,
+                                        active: true,
                                     })
                                 }}
                             >
                                 <div className="grid gap-4 md:grid-cols-2">
                                     <Label>
-                                        Code
-                                        <Input
-                                            onChange={(event) => setCode(event.target.value)}
-                                            value={code}
-                                        />
-                                    </Label>
-                                    <Label>
                                         Title
                                         <Input
-                                            onChange={(event) => setTitle(event.target.value)}
+                                            onChange={(event) => {
+                                                const value = event.target.value
+                                                setTitle(value)
+                                                if (!selectedPlan) {
+                                                    setCode(buildPlanCode(value))
+                                                }
+                                            }}
                                             value={title}
                                         />
                                     </Label>
@@ -164,67 +162,62 @@ export function MeSubscriptionPlanPage() {
                                     />
                                 </Label>
                                 <Label>
-                                    Manager contract address
+                                    Amount
                                     <Input
-                                        className="font-mono"
-                                        onChange={(event) => setContractAddress(event.target.value)}
-                                        value={contractAddress}
+                                        onChange={(event) => setAmount(event.target.value)}
+                                        value={amount}
                                     />
                                 </Label>
-                                <Label>
-                                    Price
-                                    <Input
-                                        onChange={(event) => setPrice(event.target.value)}
-                                        value={price}
-                                    />
-                                </Label>
-                                <Label>
-                                    Plan key
-                                    <Input
-                                        className="font-mono"
-                                        onChange={(event) => setPlanKey(event.target.value)}
-                                        placeholder="Generated after on-chain publish"
-                                        value={planKey}
-                                    />
-                                </Label>
-                                <Label>
-                                    Registration tx hash
-                                    <Input
-                                        className="font-mono"
-                                        onChange={(event) =>
-                                            setRegistrationTxHash(event.target.value)
-                                        }
-                                        placeholder="0x..."
-                                        value={registrationTxHash}
-                                    />
-                                </Label>
-                                <label className="flex items-center gap-3 text-sm">
-                                    <input
-                                        checked={active}
-                                        onChange={(event) => setActive(event.target.checked)}
-                                        type="checkbox"
-                                    />
-                                    Active
-                                </label>
+                                <div className="grid gap-1 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 text-xs text-[var(--muted)]">
+                                    <div>
+                                        Manager:{" "}
+                                        <span className="break-all font-mono">
+                                            {managerAddress || "not configured for selected network"}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        Internal code: <span className="font-mono">{code}</span>
+                                    </div>
+                                    {planKey ? (
+                                        <div>
+                                            Plan key:{" "}
+                                            <span className="break-all font-mono">{planKey}</span>
+                                        </div>
+                                    ) : null}
+                                    {registrationTxHash ? (
+                                        <div>
+                                            Registration tx:{" "}
+                                            <span className="break-all font-mono">
+                                                {registrationTxHash}
+                                            </span>
+                                        </div>
+                                    ) : null}
+                                </div>
                                 {upsertPlanMutation.isError ? (
                                     <p className="text-sm text-rose-600">
                                         {upsertPlanMutation.error.message}
                                     </p>
                                 ) : null}
+                                {!managerAddress ? (
+                                    <p className="text-sm text-amber-700">
+                                        Add VITE_SUBSCRIPTION_MANAGER_{chainId} after deploying the
+                                        manager contract.
+                                    </p>
+                                ) : null}
                                 <Button
                                     className="w-fit rounded-full"
-                                    disabled={upsertPlanMutation.isPending}
+                                    disabled={upsertPlanMutation.isPending || !managerAddress}
                                     type="submit"
                                 >
                                     {upsertPlanMutation.isPending ? "Saving..." : "Save plan"}
                                 </Button>
                                 <OnChainPlanPublisher
-                                    active={active}
+                                    active
                                     billingPeriodDays={Number(billingPeriodDays)}
                                     chainId={Number(chainId)}
                                     code={code}
-                                    contractAddress={contractAddress}
-                                    disabled={upsertPlanMutation.isPending}
+                                    contractAddress={managerAddress}
+                                    disabled={upsertPlanMutation.isPending || !managerAddress}
                                     existingPlanKey={selectedPlan?.planKey}
                                     onPublished={(published) => {
                                         setPlanKey(published.planKey ?? "")
@@ -234,54 +227,69 @@ export function MeSubscriptionPlanPage() {
                                             title,
                                             chainId: Number(chainId),
                                             tokenAddress,
-                                            price,
+                                            price: amount,
                                             billingPeriodDays: Number(billingPeriodDays),
-                                            contractAddress,
+                                            contractAddress: managerAddress,
                                             planKey: published.planKey,
                                             registrationTxHash: published.registrationTxHash,
-                                            active,
+                                            active: true,
                                         })
                                     }}
-                                    price={price}
+                                    price={amount}
                                     tokenAddress={tokenAddress}
                                 />
                             </form>
 
                             <div className="mt-6 grid gap-3">
                                 {plansQuery.data?.map((plan) => (
-                                    <button
-                                        className="rounded-lg border border-[var(--line)] p-4 text-left transition-colors hover:bg-[var(--accent-soft)]"
+                                    <div
+                                        className="rounded-lg border border-[var(--line)] p-4"
                                         key={plan.id}
-                                        onClick={() => {
-                                            setCode(plan.code)
-                                            setTitle(plan.title)
-                                            setChainId(String(plan.chainId))
-                                            setTokenAddress(plan.tokenAddress)
-                                            setPrice(plan.price)
-                                            setBillingPeriodDays(String(plan.billingPeriodDays))
-                                            setContractAddress(plan.contractAddress)
-                                            setPlanKey(plan.planKey)
-                                            setRegistrationTxHash(plan.registrationTxHash ?? "")
-                                            setActive(plan.active)
-                                        }}
-                                        type="button"
                                     >
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <span className="font-medium">{plan.title}</span>
-                                            <Badge>{plan.code}</Badge>
-                                            <Badge variant={plan.active ? "success" : "warning"}>
-                                                {plan.active ? "active" : "inactive"}
-                                            </Badge>
-                                        </div>
-                                        <div className="mt-2 text-sm text-[var(--muted)]">
-                                            {plan.price} every {plan.billingPeriodDays} days
-                                        </div>
-                                        <div className="mt-2 break-all font-mono text-xs text-[var(--muted)]">
-                                            {plan.planKey}
-                                        </div>
-                                    </button>
+                                        <button
+                                            className="w-full text-left"
+                                            onClick={() => {
+                                                setCode(plan.code)
+                                                setTitle(plan.title)
+                                                setChainId(String(plan.chainId))
+                                                setTokenAddress(plan.tokenAddress)
+                                                setAmount(plan.price)
+                                                setBillingPeriodDays(String(plan.billingPeriodDays))
+                                                setPlanKey(plan.planKey)
+                                                setRegistrationTxHash(
+                                                    plan.registrationTxHash ?? ""
+                                                )
+                                            }}
+                                            type="button"
+                                        >
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <span className="font-medium">{plan.title}</span>
+                                                <Badge>{plan.chainId}</Badge>
+                                            </div>
+                                            <div className="mt-2 text-sm text-[var(--muted)]">
+                                                {plan.price} every {plan.billingPeriodDays} days
+                                            </div>
+                                            <div className="mt-2 break-all font-mono text-xs text-[var(--muted)]">
+                                                {plan.planKey}
+                                            </div>
+                                        </button>
+                                        <Button
+                                            className="mt-3 rounded-full"
+                                            disabled={deletePlanMutation.isPending}
+                                            onClick={() => void deletePlanMutation.mutateAsync(plan.id)}
+                                            type="button"
+                                            variant="outline"
+                                        >
+                                            Delete plan
+                                        </Button>
+                                    </div>
                                 ))}
                             </div>
+                            {deletePlanMutation.isError ? (
+                                <p className="mt-3 text-sm text-rose-600">
+                                    {deletePlanMutation.error.message}
+                                </p>
+                            ) : null}
                         </CardContent>
                     </Card>
 
@@ -426,4 +434,14 @@ export function MeSubscriptionPlanPage() {
             )}
         </PageSection>
     )
+}
+
+function buildPlanCode(title: string) {
+    const value = title
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+
+    return value || "main"
 }
