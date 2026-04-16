@@ -8,7 +8,6 @@ import { useMyPostsQuery } from "@/queries/posts"
 import { useMyAuthorProfileQuery, useMyAuthorSubscribersQuery } from "@/queries/profile"
 import { useMyProjectsQuery } from "@/queries/projects"
 import { useAuthStore } from "@/stores/auth-store"
-import { isApiNotFoundError } from "@/utils/api/errors"
 
 export function AuthorWorkspacePage() {
     const token = useAuthStore((state) => state.token)
@@ -19,7 +18,7 @@ export function AuthorWorkspacePage() {
     const subscriberCount = new Set(
         (subscribersQuery.data ?? []).map((subscriber) => subscriber.subscriberWallet)
     ).size
-    const needsAuthorProfile = token && isApiNotFoundError(authorQuery.error)
+    const needsAuthorProfile = token && authorQuery.isSuccess && !authorQuery.data
 
     return (
         <section className="grid gap-6">
@@ -40,7 +39,7 @@ export function AuthorWorkspacePage() {
                         </CardHeader>
                         <CardContent>
                             <Button asChild className="rounded-full">
-                                <Link to="/me/author">Create author profile</Link>
+                                <Link to="/author/onboarding">Create author profile</Link>
                             </Button>
                         </CardContent>
                     </Card>

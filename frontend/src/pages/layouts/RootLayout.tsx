@@ -20,7 +20,6 @@ import { WalletStatus } from "@/components/wallet/WalletStatus"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 import { useWorkspaceStore } from "@/stores/workspace-store"
-import { isApiNotFoundError } from "@/utils/api/errors"
 
 interface NavItemConfig {
     end?: boolean
@@ -59,7 +58,6 @@ export function RootLayout() {
     const authorQuery = useMyAuthorProfileQuery(Boolean(token))
     const hasAuthorProfile = Boolean(authorQuery.data)
     const readerProfilePath = authorQuery.data ? `/authors/${authorQuery.data.slug}` : "/me/profile"
-    const authorMissing = isApiNotFoundError(authorQuery.error)
     const visibleMode = token && (hasAuthorProfile || hasAuthorProfileHint) ? mode : "reader"
     const navItems = !token
         ? publicNavItems
@@ -87,10 +85,10 @@ export function RootLayout() {
             return
         }
 
-        if (authorMissing) {
+        if (authorQuery.isSuccess && !authorQuery.data) {
             setHasAuthorProfileHint(false)
         }
-    }, [authorMissing, hasAuthorProfile, setHasAuthorProfileHint])
+    }, [authorQuery.data, authorQuery.isSuccess, hasAuthorProfile, setHasAuthorProfileHint])
 
     return (
         <div className="min-h-screen px-4 py-4 transition-colors duration-500 md:px-6 md:py-6">

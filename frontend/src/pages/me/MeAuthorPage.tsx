@@ -12,7 +12,6 @@ import {
 } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 import { useWorkspaceStore } from "@/stores/workspace-store"
-import { isApiNotFoundError } from "@/utils/api/errors"
 
 export function MeAuthorPage() {
     const navigate = useNavigate()
@@ -26,7 +25,7 @@ export function MeAuthorPage() {
         return <Navigate replace to="/" />
     }
 
-    if (isApiNotFoundError(authorQuery.error)) {
+    if (authorQuery.isSuccess && !authorQuery.data) {
         return <Navigate replace to="/author/onboarding" />
     }
 

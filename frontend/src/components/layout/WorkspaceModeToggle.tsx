@@ -5,7 +5,6 @@ import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 import { useWorkspaceStore } from "@/stores/workspace-store"
-import { isApiNotFoundError } from "@/utils/api/errors"
 
 export function WorkspaceModeToggle() {
     const navigate = useNavigate()
@@ -45,11 +44,7 @@ export function WorkspaceModeToggle() {
                     }
 
                     setMode("author")
-                    navigate(
-                        authorQuery.data && !isApiNotFoundError(authorQuery.error)
-                            ? "/author"
-                            : "/author/onboarding"
-                    )
+                    navigate(authorQuery.data ? "/author" : "/author/onboarding")
                 }}
                 uncheckedIcon={<UserRound className="size-5 text-white" />}
             />

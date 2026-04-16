@@ -2,7 +2,6 @@ import { Navigate, Outlet, useLocation } from "react-router-dom"
 
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
-import { isApiNotFoundError } from "@/utils/api/errors"
 
 export function RequireSession() {
     const token = useAuthStore((state) => state.token)
@@ -24,7 +23,7 @@ export function RequireAuthor() {
         return <Navigate replace state={{ from: location.pathname }} to="/" />
     }
 
-    if (isApiNotFoundError(authorQuery.error)) {
+    if (authorQuery.isSuccess && !authorQuery.data) {
         return <Navigate replace to="/author/onboarding" />
     }
 

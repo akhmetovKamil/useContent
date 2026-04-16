@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { profileApi } from "@/api/ProfileApi"
 import { useWorkspaceStore } from "@/stores/workspace-store"
+import { isApiNotFoundError } from "@/utils/api/errors"
 import { queryKeys } from "./queryKeys"
 
 export function useMeQuery(enabled = true) {
@@ -20,7 +21,17 @@ export function useMeQuery(enabled = true) {
 export function useMyAuthorProfileQuery(enabled = true) {
     return useQuery({
         queryKey: queryKeys.myAuthor,
-        queryFn: () => profileApi.getMyAuthorProfile(),
+        queryFn: async () => {
+            try {
+                return await profileApi.getMyAuthorProfile()
+            } catch (error) {
+                if (isApiNotFoundError(error)) {
+                    return null
+                }
+
+                throw error
+            }
+        },
         enabled,
     })
 }
