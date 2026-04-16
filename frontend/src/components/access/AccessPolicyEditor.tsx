@@ -3,7 +3,13 @@ import { v4 as uuidv4 } from "uuid"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select } from "@/components/ui/select"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import type {
     AccessComposer,
     AccessPolicyBuilderState,
@@ -43,8 +49,8 @@ export function AccessPolicyEditor({
                     Composer
                     <Select
                         disabled={disabled}
-                        onChange={(event) => {
-                            const composer = event.target.value as AccessComposer
+                        onValueChange={(value) => {
+                            const composer = value as AccessComposer
                             const nextRules =
                                 composer === "single" ? builder.rules.slice(0, 1) : builder.rules
 
@@ -55,11 +61,16 @@ export function AccessPolicyEditor({
                         }}
                         value={builder.composer}
                     >
-                        {composerOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
+                        <SelectTrigger>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {composerOptions.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
                     </Select>
                 </Label>
 
@@ -115,21 +126,25 @@ function RuleCard({ builder, disabled, index, onChange, rule, subscriptionPlans 
                     Rule {index + 1}
                 </div>
                 <Select
-                    className="h-10 w-fit rounded-full px-3 py-2"
                     disabled={disabled}
-                    onChange={(event) =>
+                    onValueChange={(value) =>
                         updateRule({
                             ...rule,
-                            type: event.target.value as AccessRuleForm["type"],
+                            type: value as AccessRuleForm["type"],
                         })
                     }
                     value={rule.type}
                 >
-                    {ruleTypeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                            {option.label}
-                        </option>
-                    ))}
+                    <SelectTrigger className="h-10 w-fit rounded-full px-3 py-2">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {ruleTypeOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
                 </Select>
 
                 {canRemove ? (
@@ -176,16 +191,19 @@ function RuleCard({ builder, disabled, index, onChange, rule, subscriptionPlans 
                     {subscriptionPlans.length ? (
                         <Select
                             disabled={disabled}
-                            onChange={(event) =>
-                                updateRule({ ...rule, planCode: event.target.value })
-                            }
+                            onValueChange={(value) => updateRule({ ...rule, planCode: value })}
                             value={rule.planCode}
                         >
-                            {subscriptionPlans.map((plan) => (
-                                <option key={plan.code} value={plan.code}>
-                                    {plan.title} ({plan.code})
-                                </option>
-                            ))}
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select plan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {subscriptionPlans.map((plan) => (
+                                    <SelectItem key={plan.code} value={plan.code}>
+                                        {plan.title} ({plan.code})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
                         </Select>
                     ) : (
                         <Input
@@ -247,16 +265,21 @@ function RuleCard({ builder, disabled, index, onChange, rule, subscriptionPlans 
                         Standard
                         <Select
                             disabled={disabled}
-                            onChange={(event) =>
+                            onValueChange={(value) =>
                                 updateRule({
                                     ...rule,
-                                    standard: event.target.value as AccessRuleForm["standard"],
+                                    standard: value as AccessRuleForm["standard"],
                                 })
                             }
                             value={rule.standard}
                         >
-                            <option value="erc721">erc721</option>
-                            <option value="erc1155">erc1155</option>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="erc721">erc721</SelectItem>
+                                <SelectItem value="erc1155">erc1155</SelectItem>
+                            </SelectContent>
                         </Select>
                     </Label>
                     <LabeledInput

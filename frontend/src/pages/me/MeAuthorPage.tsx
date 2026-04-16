@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react"
 
 import { AccessPolicyEditor } from "@/components/access/AccessPolicyEditor"
-import { Select } from "@/components/ui/select"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { useMyAccessPoliciesQuery } from "@/queries/access-policies"
 import {
     useCreateMyAuthorProfileMutation,
@@ -249,16 +255,23 @@ export function MeAuthorPage() {
                                 default access policy
                             </div>
                             <Select
-                                onChange={(event) => setDefaultPolicyId(event.target.value)}
-                                value={defaultPolicyId}
+                                onValueChange={(value) =>
+                                    setDefaultPolicyId(value === "public" ? "" : value)
+                                }
+                                value={defaultPolicyId || "public"}
                             >
-                                <option value="">Public fallback</option>
-                                {policiesQuery.data?.map((policy) => (
-                                    <option key={policy.id} value={policy.id}>
-                                        {policy.name}
-                                        {policy.isDefault ? " (current default)" : ""}
-                                    </option>
-                                ))}
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="public">Public fallback</SelectItem>
+                                    {policiesQuery.data?.map((policy) => (
+                                        <SelectItem key={policy.id} value={policy.id}>
+                                            {policy.name}
+                                            {policy.isDefault ? " (current default)" : ""}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
                             </Select>
                             <p className="text-sm text-[var(--muted)]">
                                 Сами условия теперь редактируются на странице Access.

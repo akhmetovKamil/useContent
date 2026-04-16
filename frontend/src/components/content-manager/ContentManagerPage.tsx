@@ -7,7 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Eyebrow, PageSection } from "@/components/ui/page"
-import { Select } from "@/components/ui/select"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 
 type ContentStatus = "draft" | "published"
@@ -136,27 +142,33 @@ export function ContentManagerPage({
                             <Label>
                                 Status
                                 <Select
-                                    onChange={(event) =>
-                                        setStatus(event.target.value as ContentStatus)
-                                    }
+                                    onValueChange={(value) => setStatus(value as ContentStatus)}
                                     value={status}
                                 >
-                                    <option value="draft">draft</option>
-                                    <option value="published">published</option>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="draft">draft</SelectItem>
+                                        <SelectItem value="published">published</SelectItem>
+                                    </SelectContent>
                                 </Select>
                             </Label>
 
                             <Label>
                                 Access mode
                                 <Select
-                                    onChange={(event) =>
-                                        setPolicyMode(event.target.value as PolicyMode)
-                                    }
+                                    onValueChange={(value) => setPolicyMode(value as PolicyMode)}
                                     value={policyMode}
                                 >
-                                    <option value="inherited">inherited</option>
-                                    <option value="public">public</option>
-                                    <option value="custom">custom</option>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="inherited">inherited</SelectItem>
+                                        <SelectItem value="public">public</SelectItem>
+                                        <SelectItem value="custom">custom</SelectItem>
+                                    </SelectContent>
                                 </Select>
                             </Label>
                         </div>
@@ -164,17 +176,18 @@ export function ContentManagerPage({
                         {policyMode === "custom" ? (
                             <Label>
                                 Saved access policy
-                                <Select
-                                    onChange={(event) => setAccessPolicyId(event.target.value)}
-                                    value={accessPolicyId}
-                                >
-                                    <option value="">Select policy</option>
-                                    {accessPolicies.map((policy) => (
-                                        <option key={policy.id} value={policy.id}>
-                                            {policy.name}
-                                            {policy.isDefault ? " (default)" : ""}
-                                        </option>
-                                    ))}
+                                <Select onValueChange={setAccessPolicyId} value={accessPolicyId}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select policy" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {accessPolicies.map((policy) => (
+                                            <SelectItem key={policy.id} value={policy.id}>
+                                                {policy.name}
+                                                {policy.isDefault ? " (default)" : ""}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
                                 </Select>
                             </Label>
                         ) : null}
