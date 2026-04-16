@@ -1,5 +1,9 @@
 import hardhatToolboxMochaEthersPlugin from "@nomicfoundation/hardhat-toolbox-mocha-ethers";
 import { configVariable, defineConfig } from "hardhat/config";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+loadDotEnv();
 
 const deployerAccounts = [configVariable("DEPLOYER_PRIVATE_KEY")];
 
@@ -77,3 +81,21 @@ export default defineConfig({
     },
   },
 });
+
+function loadDotEnv() {
+  const envPath = resolve(import.meta.dirname, ".env");
+  if (!existsSync(envPath)) {
+    return;
+  }
+
+  const lines = readFileSync(envPath, "utf8").split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#") || !trimmed.includes("=")) {
+      continue;
+    }
+
+    const [key, ...valueParts] = trimmed.split("=");
+    process.env[key] ??= valueParts.join("=").replace(/^["']|["']$/g, "");
+  }
+}

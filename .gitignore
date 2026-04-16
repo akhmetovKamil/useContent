@@ -6,6 +6,9 @@ CLAUDE.md
 **/CLAUDE.md
 **/.claude/
 **/DS_Store
+**/.env
+**/.env.local
+**/.env.*.local
 /docs/
 
 backend/.DS_Store

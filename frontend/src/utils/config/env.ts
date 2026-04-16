@@ -3,5 +3,7 @@ export const env = {
 }
 
 export function getFrontendRpcUrl(chainId: number): string | undefined {
-    return import.meta.env[`VITE_RPC_URL_${chainId}`]
+    const value = import.meta.env[`VITE_RPC_URL_${chainId}`]
+
+    return value && value !== "NONE" ? value : undefined
 }

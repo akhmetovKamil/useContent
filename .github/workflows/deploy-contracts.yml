@@ -1,0 +1,57 @@
+name: Deploy Contracts
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        description: Hardhat network
+        required: true
+        default: baseSepolia
+        type: choice
+        options:
+          - sepolia
+          - baseSepolia
+          - optimismSepolia
+          - arbitrumSepolia
+          - base
+          - optimism
+          - arbitrum
+
+jobs:
+  deploy-subscription-manager:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: solidity/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./solidity
+        run: npm ci
+
+      - name: Deploy SubscriptionManager
+        working-directory: ./solidity
+        env:
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          PLATFORM_TREASURY: ${{ secrets.PLATFORM_TREASURY }}
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          BASE_SEPOLIA_RPC_URL: ${{ secrets.BASE_SEPOLIA_RPC_URL }}
+          OPTIMISM_SEPOLIA_RPC_URL: ${{ secrets.OPTIMISM_SEPOLIA_RPC_URL }}
+          ARBITRUM_SEPOLIA_RPC_URL: ${{ secrets.ARBITRUM_SEPOLIA_RPC_URL }}
+          BASE_RPC_URL: ${{ secrets.BASE_RPC_URL }}
+          OPTIMISM_RPC_URL: ${{ secrets.OPTIMISM_RPC_URL }}
+          ARBITRUM_RPC_URL: ${{ secrets.ARBITRUM_RPC_URL }}
+        run: npx hardhat run scripts/deploy-subscription-manager.ts --network ${{ inputs.network }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: subscription-manager-deployment-${{ inputs.network }}
+          path: contracts/deployments/*.json
+          if-no-files-found: error
