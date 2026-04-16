@@ -1276,7 +1276,7 @@ async function createAuthorProfileOrThrowConflict(
 export function toUserProfileResponse(user: UserDoc): UserProfileResponse {
   return {
     id: user._id.toHexString(),
-    username: user.username,
+    username: user.username ?? null,
     displayName: user.displayName,
     bio: user.bio,
     avatarFileId: user.avatarFileId?.toHexString() ?? null,

@@ -44,7 +44,12 @@ export async function findUserById(id: ObjectId): Promise<UserDoc | null> {
 
 export async function createUser(doc: Omit<UserDoc, "_id">): Promise<UserDoc> {
   const users = await getUsersCollection();
-  const result = await users.insertOne(doc as UserDoc);
+  const insertDoc = { ...doc } as Partial<UserDoc>;
+  if (insertDoc.username === null) {
+    delete insertDoc.username;
+  }
+
+  const result = await users.insertOne(insertDoc as UserDoc);
   return { _id: result.insertedId, ...doc };
 }
 
@@ -55,9 +60,21 @@ export async function updateUser(
   >,
 ): Promise<UserDoc | null> {
   const users = await getUsersCollection();
+  const { username, ...restUpdate } = update;
+  const setUpdate = { ...restUpdate } as typeof update;
+  const unsetUpdate: Record<string, ""> = {};
+  if (username === null) {
+    unsetUpdate.username = "";
+  } else if (username !== undefined) {
+    setUpdate.username = username;
+  }
+
   return users.findOneAndUpdate(
     { _id: id },
-    { $set: update },
+    {
+      $set: setUpdate,
+      ...(Object.keys(unsetUpdate).length ? { $unset: unsetUpdate } : {}),
+    },
     { returnDocument: "after" },
   );
 }
@@ -803,11 +820,20 @@ async function ensureIndexes(): Promise<void> {
     getCollection<ContractDeploymentDoc>("contract_deployments"),
   ]);
 
-  await migrateSubscriptionPaymentIntentIndexes(subscriptionPaymentIntents);
+  await Promise.all([
+    migrateUserIndexes(users),
+    migrateSubscriptionPaymentIntentIndexes(subscriptionPaymentIntents),
+  ]);
 
   await Promise.all([
     users.createIndex({ primaryWallet: 1 }, { unique: true }),
-    users.createIndex({ username: 1 }, { unique: true, sparse: true }),
+    users.createIndex(
+      { username: 1 },
+      {
+        unique: true,
+        partialFilterExpression: { username: { $type: "string" } },
+      },
+    ),
     users.createIndex({ "wallets.address": 1 }, { unique: true }),
     authorProfiles.createIndex({ slug: 1 }, { unique: true }),
     authorProfiles.createIndex({ userId: 1 }, { unique: true }),
@@ -854,6 +880,18 @@ async function ensureIndexes(): Promise<void> {
   ]);
 
   indexesReady = true;
+}
+
+async function migrateUserIndexes(users: Collection<UserDoc>): Promise<void> {
+  await users.updateMany({ username: null }, { $unset: { username: "" } });
+
+  try {
+    await users.dropIndex("username_1");
+  } catch (error) {
+    if (!isMongoIndexNotFoundError(error)) {
+      throw error;
+    }
+  }
 }
 
 async function migrateSubscriptionPaymentIntentIndexes(
