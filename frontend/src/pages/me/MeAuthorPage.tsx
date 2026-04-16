@@ -2,9 +2,8 @@ import { Link, Navigate, useNavigate } from "react-router-dom"
 
 import { AuthorProfileForm } from "@/components/author-onboarding/AuthorProfileForm"
 import { AppearancePicker } from "@/components/settings/AppearancePicker"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
 import {
     useDeleteMyAuthorProfileMutation,
@@ -49,36 +48,8 @@ export function MeAuthorPage() {
                     </CardContent>
                 </Card>
             ) : authorQuery.data ? (
-                <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
-                    <div className="xl:col-span-2">
-                        <AppearancePicker />
-                    </div>
-
-                    <Card className="rounded-[28px]">
-                        <CardHeader>
-                            <CardTitle>@{authorQuery.data.slug}</CardTitle>
-                            <CardDescription>{authorQuery.data.displayName}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="grid gap-4">
-                            <p className="text-sm leading-6 text-[var(--muted)]">
-                                {authorQuery.data.bio || "No description yet."}
-                            </p>
-                            {authorQuery.data.tags.length ? (
-                                <div className="flex flex-wrap gap-2">
-                                    {authorQuery.data.tags.map((tag) => (
-                                        <Badge className="rounded-full" key={tag}>
-                                            {tag}
-                                        </Badge>
-                                    ))}
-                                </div>
-                            ) : null}
-                            <Button asChild className="w-fit rounded-full" variant="outline">
-                                <Link to={`/authors/${authorQuery.data.slug}`}>
-                                    View public profile
-                                </Link>
-                            </Button>
-                        </CardContent>
-                    </Card>
+                <div className="grid gap-6">
+                    <AppearancePicker />
 
                     <AuthorProfileForm
                         author={authorQuery.data}
@@ -94,7 +65,12 @@ export function MeAuthorPage() {
                         }}
                     />
 
-                    <div className="xl:col-start-2">
+                    <div className="flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">
+                        <Button asChild className="rounded-full" variant="outline">
+                            <Link to={`/authors/${authorQuery.data.slug}`}>
+                                View public profile
+                            </Link>
+                        </Button>
                         <button
                             className="text-sm font-medium text-rose-600 underline underline-offset-4 transition hover:text-rose-700 disabled:opacity-60"
                             disabled={deleteAuthorMutation.isPending}

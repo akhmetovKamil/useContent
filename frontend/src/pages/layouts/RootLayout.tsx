@@ -1,5 +1,3 @@
-import { useEffect } from "react"
-import { NavLink, Outlet, useLocation } from "react-router-dom"
 import {
     FileText,
     FolderKanban,
@@ -11,6 +9,8 @@ import {
     UserRound,
     type LucideIcon,
 } from "lucide-react"
+import { useEffect } from "react"
+import { NavLink, Outlet, useLocation } from "react-router-dom"
 
 import { WorkspaceModeToggle } from "@/components/layout/WorkspaceModeToggle"
 import { Dock, DockItem, DockSeparator } from "@/components/ui/dock"
@@ -18,6 +18,7 @@ import { WalletStatus } from "@/components/wallet/WalletStatus"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 import { useWorkspaceStore } from "@/stores/workspace-store"
+import { isApiNotFoundError } from "@/utils/api/errors"
 
 interface NavItemConfig {
     end?: boolean
@@ -50,12 +51,21 @@ export function RootLayout() {
     const palette = useWorkspaceStore((state) => state.palette)
     const authorQuery = useMyAuthorProfileQuery(Boolean(token))
     const hasAuthorProfile = Boolean(authorQuery.data)
+    const authorMissing = isApiNotFoundError(authorQuery.error)
     const visibleMode = token ? mode : "reader"
-    const navItems =
-        !token ? publicNavItems : visibleMode === "author" ? authorNavItems : readerNavItems
+    const navItems = !token
+        ? publicNavItems
+        : visibleMode === "author"
+          ? authorNavItems
+          : readerNavItems
     const subtitle = visibleMode === "author" ? "Author Workspace" : "User Workspace"
     const isAuthorOnboarding = location.pathname === "/author/onboarding"
-    const showDock = Boolean(token && hasAuthorProfile && !isAuthorOnboarding)
+    const showDock = Boolean(
+        token &&
+        !isAuthorOnboarding &&
+        !authorMissing &&
+        (hasAuthorProfile || (mode === "author" && authorQuery.isLoading))
+    )
     const showWorkspaceToggle = Boolean(token && hasAuthorProfile && !isAuthorOnboarding)
 
     useEffect(() => {
@@ -84,20 +94,19 @@ export function RootLayout() {
                     </div>
                 </header>
 
-                {showDock ? (
-                    <nav className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 px-4">
-                        <Dock>
-                            {navItems.map((item) => (
-                                <NavItem item={item} key={item.to} />
-                            ))}
-                        </Dock>
-                    </nav>
-                ) : null}
-
                 <main className="flex-1 px-5 py-6 md:px-8 md:py-8">
                     <Outlet />
                 </main>
             </div>
+            {showDock ? (
+                <nav className="fixed bottom-4 left-1/2 z-[100] w-[min(calc(100vw-1rem),720px)] -translate-x-1/2 px-2">
+                    <Dock>
+                        {navItems.map((item) => (
+                            <NavItem item={item} key={item.to} />
+                        ))}
+                    </Dock>
+                </nav>
+            ) : null}
         </div>
     )
 }

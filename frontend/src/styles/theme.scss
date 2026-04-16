@@ -5,31 +5,31 @@
 }
 
 @mixin reader-pastel-calm {
-    --background: #fff3bf;
-    --foreground: #251806;
-    --card: rgba(255, 214, 96, 0.34);
-    --card-foreground: #251806;
-    --popover: rgba(255, 247, 215, 0.9);
-    --popover-foreground: #251806;
-    --primary: #ff7a1a;
-    --primary-foreground: #fffaf0;
-    --secondary: rgba(255, 122, 26, 0.18);
-    --secondary-foreground: #251806;
-    --muted: #745229;
-    --muted-background: #ffe49a;
-    --accent: #ff7a1a;
-    --accent-foreground: #fffaf0;
-    --accent-soft: rgba(255, 122, 26, 0.18);
+    --background: #fff8e7;
+    --foreground: #172033;
+    --card: rgba(255, 255, 249, 0.86);
+    --card-foreground: #172033;
+    --popover: rgba(255, 253, 244, 0.94);
+    --popover-foreground: #172033;
+    --primary: #2563eb;
+    --primary-foreground: #ffffff;
+    --secondary: rgba(20, 184, 166, 0.16);
+    --secondary-foreground: #172033;
+    --muted: #667085;
+    --muted-background: #eef6ff;
+    --accent: #14b8a6;
+    --accent-foreground: #f8fffd;
+    --accent-soft: rgba(37, 99, 235, 0.12);
     --destructive: #dc3f52;
-    --border: rgba(126, 72, 8, 0.18);
-    --input: rgba(126, 72, 8, 0.22);
-    --ring: rgba(255, 122, 26, 0.46);
-    --shadow: 0 24px 86px rgba(120, 63, 0, 0.15);
+    --border: rgba(23, 32, 51, 0.12);
+    --input: rgba(23, 32, 51, 0.18);
+    --ring: rgba(37, 99, 235, 0.42);
+    --shadow: 0 24px 86px rgba(47, 79, 125, 0.14);
     background:
-        radial-gradient(circle at 10% 8%, rgba(255, 122, 26, 0.34), transparent 28%),
-        radial-gradient(circle at 82% 18%, rgba(255, 206, 69, 0.48), transparent 30%),
-        radial-gradient(circle at 68% 88%, rgba(80, 210, 168, 0.2), transparent 28%),
-        linear-gradient(180deg, #fff8d7 0%, #ffe7a3 100%);
+        radial-gradient(circle at 10% 8%, rgba(37, 99, 235, 0.2), transparent 28%),
+        radial-gradient(circle at 82% 18%, rgba(255, 199, 89, 0.32), transparent 30%),
+        radial-gradient(circle at 68% 88%, rgba(20, 184, 166, 0.22), transparent 28%),
+        linear-gradient(180deg, #fffdf4 0%, #eef6ff 100%);
 }
 
 @mixin author-pastel-calm {

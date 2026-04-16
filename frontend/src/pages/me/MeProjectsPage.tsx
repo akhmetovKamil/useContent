@@ -21,15 +21,15 @@ export function MeProjectsPage() {
             accessPolicies={policiesQuery.data}
             createError={createProjectMutation.error}
             createPending={createProjectMutation.isPending}
-            emptyLabel="Проектов пока нет."
-            intro="Для custom-доступа выбери сохраненную access policy. Новые условия создаются на странице Access."
+            emptyLabel="No projects yet."
+            intro="For custom access, choose a saved access policy. New conditions are created on the Access page."
             isError={projectsQuery.isError}
             isLoading={projectsQuery.isLoading}
             items={projectsQuery.data}
             kind="project"
             loadError={projectsQuery.error}
-            loadingLabel="Загружаем проекты..."
-            missingSessionLabel="После входа здесь появится дерево проектов и файловая часть контент-платформы."
+            loadingLabel="Loading projects..."
+            missingSessionLabel="After sign-in, project trees and the file side of the content platform will appear here."
             onCreate={({ accessPolicyId, body, policyMode, status, title }) =>
                 createProjectMutation.mutateAsync({
                     accessPolicyId,

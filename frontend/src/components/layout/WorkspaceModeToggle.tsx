@@ -28,8 +28,8 @@ export function WorkspaceModeToggle() {
             <AnimatedThemeToggler
                 aria-label={isAuthor ? "Switch to reader mode" : "Switch to author mode"}
                 checked={isAuthor}
-                checkedIcon={<PenTool className="size-5" />}
-                className="grid size-9 place-items-center rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] transition-transform hover:scale-105"
+                checkedIcon={<PenTool className="size-5 text-white" />}
+                className="grid size-9 place-items-center rounded-full bg-[var(--accent)] text-white transition-transform hover:scale-105"
                 disabled={disabled}
                 onCheckedChange={(checked) => {
                     if (!token) {
@@ -45,9 +45,11 @@ export function WorkspaceModeToggle() {
                     }
 
                     setMode("author")
-                    navigate(isApiNotFoundError(authorQuery.error) ? "/author/onboarding" : "/author")
+                    navigate(
+                        isApiNotFoundError(authorQuery.error) ? "/author/onboarding" : "/author"
+                    )
                 }}
-                uncheckedIcon={<UserRound className="size-5" />}
+                uncheckedIcon={<UserRound className="size-5 text-white" />}
             />
         </div>
     )

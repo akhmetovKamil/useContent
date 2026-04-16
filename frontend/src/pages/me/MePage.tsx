@@ -37,14 +37,14 @@ export function MePage() {
             </h2>
             {!token ? (
                 <p className="mt-3 max-w-2xl text-[var(--muted)]">
-                    Подключи кошелек и подпиши сообщение в правом верхнем блоке, чтобы увидеть
-                    личный кабинет и активные доступы.
+                    Connect a wallet and sign the message in the top-right block to see your
+                    personal dashboard and active access grants.
                 </p>
             ) : meQuery.isLoading ? (
-                <p className="mt-3 max-w-2xl text-[var(--muted)]">Загружаем профиль...</p>
+                <p className="mt-3 max-w-2xl text-[var(--muted)]">Loading profile...</p>
             ) : meQuery.isError ? (
                 <p className="mt-3 max-w-2xl text-rose-600">
-                    Не удалось загрузить профиль: {meQuery.error.message}
+                    Failed to load profile: {meQuery.error.message}
                 </p>
             ) : meQuery.data ? (
                 <div className="mt-6 grid gap-6">

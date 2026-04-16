@@ -25,15 +25,16 @@ export function AuthorPage() {
             <h2 className="mt-3 font-[var(--serif)] text-3xl text-[var(--foreground)]">@{slug}</h2>
 
             {authorQuery.isLoading ? (
-                <p className="mt-3 max-w-2xl text-[var(--muted)]">Загружаем публичный профиль...</p>
+                <p className="mt-3 max-w-2xl text-[var(--muted)]">Loading public profile...</p>
             ) : authorQuery.isError ? (
                 <p className="mt-3 max-w-2xl text-rose-600">
-                    Профиль автора не найден: {authorQuery.error.message}
+                    Author profile was not found: {authorQuery.error.message}
                 </p>
             ) : authorQuery.data ? (
                 <>
                     <p className="mt-3 max-w-2xl text-[var(--muted)]">
-                        {authorQuery.data.bio || "Автор пока не добавил описание профиля."}
+                        {authorQuery.data.bio ||
+                            "The author has not added a profile description yet."}
                     </p>
                     {authorQuery.data.tags.length ? (
                         <div className="mt-4 flex flex-wrap gap-2">
@@ -139,7 +140,7 @@ export function AuthorPage() {
                                         </article>
                                     ))
                                 ) : (
-                                    <p className="text-sm text-[var(--muted)]">Постов пока нет.</p>
+                                    <p className="text-sm text-[var(--muted)]">No posts yet.</p>
                                 )}
                             </div>
                         </div>
@@ -168,7 +169,7 @@ export function AuthorPage() {
                                     ))
                                 ) : (
                                     <p className="text-sm text-[var(--muted)]">
-                                        Опубликованных проектов пока нет.
+                                        No published projects yet.
                                     </p>
                                 )}
                             </div>

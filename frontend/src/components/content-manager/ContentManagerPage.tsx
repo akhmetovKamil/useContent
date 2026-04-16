@@ -92,9 +92,7 @@ export function ContentManagerPage({
             {!token ? (
                 <p className="mt-3 text-[var(--muted)]">{missingSessionLabel}</p>
             ) : isError ? (
-                <p className="mt-3 text-rose-600">
-                    Не удалось загрузить данные: {loadError?.message}
-                </p>
+                <p className="mt-3 text-rose-600">Failed to load data: {loadError?.message}</p>
             ) : (
                 <div className="mt-6 grid gap-6">
                     <form

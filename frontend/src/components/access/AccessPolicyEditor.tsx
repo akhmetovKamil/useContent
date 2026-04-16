@@ -1,3 +1,4 @@
+import { Info, Plus } from "lucide-react"
 import { v4 as uuidv4 } from "uuid"
 
 import { Button } from "@/components/ui/button"
@@ -10,11 +11,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import type {
     AccessComposer,
     AccessPolicyBuilderState,
     AccessRuleForm,
 } from "@/utils/access-policy"
+import { createDefaultRule } from "@/utils/access-policy"
 
 interface AccessPolicyEditorProps {
     builder: AccessPolicyBuilderState
@@ -24,13 +27,13 @@ interface AccessPolicyEditorProps {
 }
 
 const ruleTypeOptions: Array<{ label: string; value: AccessRuleForm["type"] }> = [
-    { label: "Public", value: "public" },
     { label: "Subscription", value: "subscription" },
     { label: "Token balance", value: "token_balance" },
     { label: "NFT ownership", value: "nft_ownership" },
 ]
 
 const composerOptions: Array<{ label: string; value: AccessComposer }> = [
+    { label: "Public", value: "public" },
     { label: "Single", value: "single" },
     { label: "AND", value: "and" },
     { label: "OR", value: "or" },
@@ -42,17 +45,44 @@ export function AccessPolicyEditor({
     onChange,
     subscriptionPlans = [],
 }: AccessPolicyEditorProps) {
+    const canAddRule =
+        builder.composer !== "public" && builder.composer !== "single" && builder.rules.length < 4
+
     return (
         <div className="grid gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5">
             <div className="grid gap-4 md:grid-cols-[220px_1fr]">
                 <Label>
-                    Composer
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span className="inline-flex w-fit items-center gap-1 text-left">
+                                    Conditions
+                                    <Info className="size-4 text-[var(--muted)]" />
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent
+                                className="max-w-xs leading-5"
+                                side="top"
+                                sideOffset={8}
+                            >
+                                Public opens content to everyone. Single uses one rule. AND requires
+                                every rule to pass. OR allows access if any rule passes.
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                     <Select
                         disabled={disabled}
                         onValueChange={(value) => {
                             const composer = value as AccessComposer
+                            const rules = builder.rules.length
+                                ? builder.rules
+                                : [createDefaultRule()]
                             const nextRules =
-                                composer === "single" ? builder.rules.slice(0, 1) : builder.rules
+                                composer === "single" || composer === "public"
+                                    ? rules.slice(0, 1)
+                                    : rules.length > 1
+                                      ? rules
+                                      : [...rules, createRuleFromTemplate(rules[0])]
 
                             onChange({
                                 composer,
@@ -74,25 +104,52 @@ export function AccessPolicyEditor({
                     </Select>
                 </Label>
 
-                <div className="rounded-2xl border border-[var(--line)] px-4 py-3 text-sm text-[var(--muted)]">
-                    `Single` uses one rule. `AND` requires every rule to pass. `OR` allows access if
-                    any rule passes.
+                <div className="flex items-end justify-start md:justify-end">
+                    {canAddRule ? (
+                        <Button
+                            className="rounded-full"
+                            disabled={disabled}
+                            onClick={() =>
+                                onChange({
+                                    ...builder,
+                                    rules: [
+                                        ...builder.rules,
+                                        createRuleFromTemplate(
+                                            builder.rules[builder.rules.length - 1] ??
+                                                createDefaultRule()
+                                        ),
+                                    ],
+                                })
+                            }
+                            size="sm"
+                            type="button"
+                        >
+                            <Plus className="size-4" />
+                            Add rule
+                        </Button>
+                    ) : null}
                 </div>
             </div>
 
-            <div className="grid gap-4">
-                {builder.rules.map((rule, index) => (
-                    <RuleCard
-                        builder={builder}
-                        disabled={disabled}
-                        index={index}
-                        key={rule.id}
-                        onChange={onChange}
-                        rule={rule}
-                        subscriptionPlans={subscriptionPlans}
-                    />
-                ))}
-            </div>
+            {builder.composer === "public" ? (
+                <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--muted)]">
+                    Public access does not require a wallet subscription, token balance, or NFT.
+                </div>
+            ) : (
+                <div className="grid gap-4">
+                    {builder.rules.map((rule, index) => (
+                        <RuleCard
+                            builder={builder}
+                            disabled={disabled}
+                            index={index}
+                            key={rule.id}
+                            onChange={onChange}
+                            rule={rule}
+                            subscriptionPlans={subscriptionPlans}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     )
 }
@@ -108,7 +165,6 @@ interface RuleCardProps {
 
 function RuleCard({ builder, disabled, index, onChange, rule, subscriptionPlans }: RuleCardProps) {
     const canRemove = builder.rules.length > 1
-    const canAdd = builder.composer !== "single" && builder.rules.length < 4
 
     function updateRule(nextRule: AccessRuleForm) {
         onChange({
@@ -164,23 +220,6 @@ function RuleCard({ builder, disabled, index, onChange, rule, subscriptionPlans 
                         variant="outline"
                     >
                         Remove
-                    </Button>
-                ) : null}
-
-                {canAdd && index === builder.rules.length - 1 ? (
-                    <Button
-                        className="rounded-full"
-                        disabled={disabled}
-                        onClick={() =>
-                            onChange({
-                                ...builder,
-                                rules: [...builder.rules, createRuleFromTemplate(rule)],
-                            })
-                        }
-                        size="sm"
-                        type="button"
-                    >
-                        Add rule
                     </Button>
                 ) : null}
             </div>
@@ -294,12 +333,6 @@ function RuleCard({ builder, disabled, index, onChange, rule, subscriptionPlans 
                         onChange={(value) => updateRule({ ...rule, minBalance: value })}
                         value={rule.minBalance}
                     />
-                </div>
-            ) : null}
-
-            {rule.type === "public" ? (
-                <div className="rounded-2xl border border-[var(--line)] px-4 py-3 text-sm text-[var(--muted)]">
-                    This rule gives open access without any blockchain checks.
                 </div>
             ) : null}
         </div>

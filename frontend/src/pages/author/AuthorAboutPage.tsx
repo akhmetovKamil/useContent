@@ -24,13 +24,13 @@ export function AuthorAboutPage() {
                 <CardHeader>
                     <CardTitle>Ready to publish?</CardTitle>
                     <CardDescription>
-                        Create an author profile first. After that, the workspace unlocks posts,
-                        projects, access policies, and subscription plan management.
+                        Start with a short public update, then attach access policies or projects
+                        when the content is ready.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Button asChild className="rounded-full">
-                        <Link to="/author/onboarding">Open author onboarding</Link>
+                        <Link to="/me/posts">Write first post</Link>
                     </Button>
                 </CardContent>
             </Card>

@@ -15,8 +15,8 @@ import type {
 } from "@contracts/types/content"
 import { v4 as uuidv4 } from "uuid"
 
-export type AccessRuleType = "public" | "subscription" | "token_balance" | "nft_ownership"
-export type AccessComposer = "single" | "and" | "or"
+export type AccessRuleType = "subscription" | "token_balance" | "nft_ownership"
+export type AccessComposer = "public" | "single" | "and" | "or"
 
 export interface AccessRuleForm {
     id: string
@@ -43,7 +43,7 @@ interface BuildContentPolicyInputOptions {
 
 export function createDefaultPolicyBuilderState(): AccessPolicyBuilderState {
     return {
-        composer: "single",
+        composer: "public",
         rules: [createDefaultRule()],
     }
 }
@@ -51,7 +51,7 @@ export function createDefaultPolicyBuilderState(): AccessPolicyBuilderState {
 export function createDefaultRule(): AccessRuleForm {
     return {
         id: uuidv4(),
-        type: "public",
+        type: "subscription",
         planCode: "main",
         chainId: "11155111",
         contractAddress: "0x0000000000000000000000000000000000000000",
@@ -78,6 +78,10 @@ export function buildContentPolicyInput({ policyMode, builder }: BuildContentPol
 }
 
 export function buildPolicyInputFromBuilder(builder: AccessPolicyBuilderState): AccessPolicyInput {
+    if (builder.composer === "public") {
+        return { root: { type: "public" } }
+    }
+
     const rules = builder.rules.filter(Boolean)
     if (rules.length === 0) {
         throw new Error("At least one access rule is required")
@@ -111,6 +115,10 @@ export function summarizePolicyInput(builder: AccessPolicyBuilderState) {
         return "No rules"
     }
 
+    if (builder.composer === "public") {
+        return "Public"
+    }
+
     if (builder.composer === "single") {
         return labels[0]
     }
@@ -128,6 +136,13 @@ export function parsePolicyToBuilder(policy: AccessPolicy): AccessPolicyBuilderS
         }
     }
 
+    if (root.type === "public") {
+        return {
+            composer: "public",
+            rules: [createDefaultRule()],
+        }
+    }
+
     return {
         composer: "single",
         rules: [parseAnyNodeToRule(root)],
@@ -136,8 +151,6 @@ export function parsePolicyToBuilder(policy: AccessPolicy): AccessPolicyBuilderS
 
 function buildNodeFromRule(rule: AccessRuleForm): AccessPolicyInputNode {
     switch (rule.type) {
-        case "public":
-            return { type: "public" }
         case "subscription":
             return buildSubscriptionNode(rule)
         case "token_balance":
@@ -189,8 +202,6 @@ function buildNftNode(rule: AccessRuleForm): AccessPolicyInputNftOwnershipNode {
 
 function summarizeRule(rule: AccessRuleForm) {
     switch (rule.type) {
-        case "public":
-            return "Public"
         case "subscription":
             return `Subscription(${rule.planCode || "main"})`
         case "token_balance":

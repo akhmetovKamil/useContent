@@ -1,10 +1,4 @@
-import {
-    createContext,
-    useContext,
-    useRef,
-    useState,
-    type CSSProperties,
-} from "react"
+import { createContext, useContext, useRef, useState, type CSSProperties } from "react"
 import type * as React from "react"
 
 import { cn } from "@/utils/cn"
@@ -18,8 +12,8 @@ function Dock({ className, ...props }: React.ComponentProps<"div">) {
         <DockContext.Provider value={{ mouseX }}>
             <div
                 className={cn(
-                    "dock mx-auto flex w-fit max-w-[calc(100vw-2rem)] items-center gap-2 overflow-visible rounded-[32px] border border-[var(--line)] bg-[var(--surface)] px-3 py-2 shadow-[var(--shadow)] backdrop-blur-xl transition-all duration-300",
-                    mouseX !== null ? "px-4" : "",
+                    "dock mx-auto flex w-fit max-w-[calc(100vw-1rem)] items-center gap-2 overflow-visible rounded-[32px] border border-[var(--line)] bg-[var(--surface)] px-3 py-2 shadow-[var(--shadow)] backdrop-blur-xl transition-all duration-300",
+                    mouseX !== null ? "px-5" : "",
                     className
                 )}
                 onMouseLeave={() => setMouseX(null)}
@@ -45,11 +39,10 @@ function DockItem({
     const ref = useRef<HTMLDivElement>(null)
     const { mouseX } = useContext(DockContext)
     const influence = getInfluence(ref.current, mouseX)
-    const translateY = -10 * influence
-    const sideSpace = 7 * influence
-    const highlightScale = 1 + 0.22 * influence
-    const iconScale = 1 + 0.18 * influence
-    const activeOrHovered = active || influence > 0.08
+    const isDirectHover = influence > 0.82
+    const translateY = -4 * influence
+    const sideSpace = 9 * influence
+    const activeOrHovered = active || isDirectHover
 
     return (
         <div
@@ -74,17 +67,11 @@ function DockItem({
             </span>
             <span
                 className={cn(
-                    "absolute inset-0 rounded-2xl transition-transform duration-150 ease-out",
+                    "absolute inset-0 rounded-2xl transition-colors duration-150 ease-out",
                     activeOrHovered ? "bg-[var(--accent-soft)]" : "bg-transparent"
                 )}
-                style={{ transform: `scale(${highlightScale})` }}
             />
-            <span
-                className="relative grid size-6 place-items-center transition-transform duration-150 ease-out"
-                style={{ transform: `scale(${iconScale})` }}
-            >
-                {icon}
-            </span>
+            <span className="relative grid size-6 place-items-center">{icon}</span>
         </div>
     )
 }
@@ -106,7 +93,7 @@ function getInfluence(element: HTMLDivElement | null, mouseX: number | null) {
     const rect = element.getBoundingClientRect()
     const center = rect.left + rect.width / 2
     const distance = Math.abs(mouseX - center)
-    const maxDistance = 128
+    const maxDistance = 104
 
     return Math.max(0, 1 - distance / maxDistance)
 }

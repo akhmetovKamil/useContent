@@ -21,15 +21,15 @@ export function MePostsPage() {
             accessPolicies={policiesQuery.data}
             createError={createPostMutation.error}
             createPending={createPostMutation.isPending}
-            emptyLabel="Постов пока нет."
-            intro="Для custom-доступа выбери сохраненную access policy. Новые условия создаются на странице Access."
+            emptyLabel="No posts yet."
+            intro="For custom access, choose a saved access policy. New conditions are created on the Access page."
             isError={postsQuery.isError}
             isLoading={postsQuery.isLoading}
             items={postsQuery.data}
             kind="post"
             loadError={postsQuery.error}
-            loadingLabel="Загружаем посты..."
-            missingSessionLabel="После входа здесь будут посты автора и следующие шаги для создания редактора."
+            loadingLabel="Loading posts..."
+            missingSessionLabel="After sign-in, author posts and the next editor steps will appear here."
             onCreate={({ accessPolicyId, body, policyMode, status, title }) =>
                 createPostMutation.mutateAsync({
                     accessPolicyId,

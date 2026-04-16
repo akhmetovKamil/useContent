@@ -12,10 +12,10 @@ export function PostPage() {
                 Post view
             </div>
             {postQuery.isLoading ? (
-                <p className="mt-3 text-[var(--muted)]">Загружаем пост...</p>
+                <p className="mt-3 text-[var(--muted)]">Loading post...</p>
             ) : postQuery.isError ? (
                 <p className="mt-3 text-rose-600">
-                    Не удалось открыть пост автора @{slug}: {postQuery.error.message}
+                    Failed to open @{slug}'s post: {postQuery.error.message}
                 </p>
             ) : postQuery.data ? (
                 <>

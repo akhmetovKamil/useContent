@@ -12,10 +12,10 @@ export function ProjectPage() {
                 Project view
             </div>
             {projectQuery.isLoading ? (
-                <p className="mt-3 text-[var(--muted)]">Загружаем проект...</p>
+                <p className="mt-3 text-[var(--muted)]">Loading project...</p>
             ) : projectQuery.isError ? (
                 <p className="mt-3 text-rose-600">
-                    Не удалось открыть проект автора @{slug}: {projectQuery.error.message}
+                    Failed to open @{slug}'s project: {projectQuery.error.message}
                 </p>
             ) : projectQuery.data ? (
                 <>

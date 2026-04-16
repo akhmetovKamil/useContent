@@ -183,7 +183,7 @@ export function MeSubscriptionPlanPage() {
             </h2>
             {!token ? (
                 <p className="mt-3 text-[var(--muted)]">
-                    После авторизации здесь будут планы подписки и сохраненные условия доступа.
+                    Subscription plans and saved access policies will appear here after sign-in.
                 </p>
             ) : (
                 <div className="mt-6 grid gap-6 xl:grid-cols-2">
@@ -191,7 +191,7 @@ export function MeSubscriptionPlanPage() {
                         <CardHeader>
                             <CardTitle>Subscription plans</CardTitle>
                             <CardDescription>
-                                Можно создать несколько планов и потом выбирать их в policy builder.
+                                Create multiple plans and reuse them in access policies.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -413,8 +413,9 @@ export function MeSubscriptionPlanPage() {
                                 ) : null}
                                 {!managerAddress ? (
                                     <p className="text-sm text-amber-700">
-                                        Deploy SubscriptionManager for this network first. The
-                                        deployment address will be loaded from backend registry.
+                                        SubscriptionManager is not registered for this network in
+                                        the backend registry yet. If deployment already succeeded,
+                                        sync the deployment address to this backend environment.
                                     </p>
                                 ) : null}
                                 <OnChainPlanPublisher
@@ -530,7 +531,7 @@ export function MeSubscriptionPlanPage() {
                         <CardHeader>
                             <CardTitle>Access policies</CardTitle>
                             <CardDescription>
-                                Эти условия потом выбираются у постов и проектов.
+                                These conditions can be selected for posts and projects later.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
