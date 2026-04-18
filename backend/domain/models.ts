@@ -50,7 +50,7 @@ export interface Post {
   authorId: string;
   title: string;
   content: string;
-  status: "draft" | "published";
+  status: "draft" | "published" | "archived";
   policyMode: PolicyMode;
   policy: AccessPolicy | null;
   accessPolicyId: string | null;
@@ -65,7 +65,7 @@ export interface Project {
   authorId: string;
   title: string;
   description: string;
-  status: "draft" | "published";
+  status: "draft" | "published" | "archived";
   policyMode: PolicyMode;
   policy: AccessPolicy | null;
   accessPolicyId: string | null;

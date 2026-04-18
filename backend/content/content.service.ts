@@ -34,10 +34,13 @@ import type {
   CreatePostRequest,
   CreateProjectFolderRequest,
   CreateProjectRequest,
+  CreatePostCommentRequest,
   CreateSubscriptionPaymentIntentRequest,
   FeedPostResponse,
   FeedProjectResponse,
   PostDoc,
+  PostCommentDoc,
+  PostCommentResponse,
   PostResponse,
   ProjectDoc,
   ProjectNodeDoc,
@@ -890,6 +893,13 @@ export async function listMyPosts(walletAddress: string): Promise<PostDoc[]> {
   return repo.listPostsByAuthorId(author._id);
 }
 
+export async function listMyArchivedPosts(
+  walletAddress: string,
+): Promise<PostDoc[]> {
+  const author = await getMyAuthorProfile(walletAddress);
+  return repo.listPostsByAuthorId(author._id, "archived");
+}
+
 export async function updateMyPost(
   walletAddress: string,
   postId: string,
@@ -955,13 +965,75 @@ export async function deleteMyPost(
   postId: string,
 ): Promise<void> {
   const author = await getMyAuthorProfile(walletAddress);
-  const deleted = await repo.deletePost(
-    parseObjectId(postId, "postId"),
-    author._id,
-  );
+  const objectId = parseObjectId(postId, "postId");
+  const deleted = await repo.deletePost(objectId, author._id);
   if (!deleted) {
     throw APIError.notFound("post not found");
   }
+  await repo.deletePostCommentsByPostId(objectId);
+}
+
+export async function listPostCommentsBySlug(
+  slug: string,
+  postId: string,
+  viewerWallet?: string,
+): Promise<PostCommentDoc[]> {
+  const { post } = await getReadablePostContext(slug, postId, viewerWallet);
+  return repo.listPostComments(post._id);
+}
+
+export async function createPostCommentBySlug(
+  slug: string,
+  postId: string,
+  walletAddress: string,
+  input: CreatePostCommentRequest,
+): Promise<PostCommentDoc> {
+  const viewerWallet = normalizeWallet(walletAddress);
+  const { post } = await getReadablePostContext(slug, postId, viewerWallet);
+  const user = await getOrCreateUserByWallet(viewerWallet);
+  const now = new Date();
+
+  return repo.createPostComment({
+    _id: new ObjectId(),
+    postId: post._id,
+    authorId: post.authorId,
+    walletAddress: viewerWallet,
+    displayName: user.displayName,
+    content: normalizePostCommentContent(input.content),
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
+export async function togglePostLikeBySlug(
+  slug: string,
+  postId: string,
+  walletAddress: string,
+): Promise<{ liked: boolean; likesCount: number }> {
+  const viewerWallet = normalizeWallet(walletAddress);
+  const { post } = await getReadablePostContext(slug, postId, viewerWallet);
+  const existing = await repo.findPostLike(post._id, viewerWallet);
+
+  if (existing) {
+    await repo.deletePostLike(post._id, viewerWallet);
+    return {
+      liked: false,
+      likesCount: await repo.countPostLikes(post._id),
+    };
+  }
+
+  await repo.createPostLike({
+    _id: new ObjectId(),
+    postId: post._id,
+    authorId: post.authorId,
+    walletAddress: viewerWallet,
+    createdAt: new Date(),
+  });
+
+  return {
+    liked: true,
+    likesCount: await repo.countPostLikes(post._id),
+  };
 }
 
 export async function listAuthorPostsBySlug(
@@ -1079,6 +1151,13 @@ export async function listMyProjects(
 ): Promise<ProjectDoc[]> {
   const author = await getMyAuthorProfile(walletAddress);
   return repo.listProjectsByAuthorId(author._id);
+}
+
+export async function listMyArchivedProjects(
+  walletAddress: string,
+): Promise<ProjectDoc[]> {
+  const author = await getMyAuthorProfile(walletAddress);
+  return repo.listProjectsByAuthorId(author._id, "archived");
 }
 
 export async function updateMyProject(
@@ -1662,7 +1741,10 @@ export function toSubscriptionPlanResponse(
   };
 }
 
-export function toPostResponse(post: PostDoc): PostResponse {
+export function toPostResponse(
+  post: PostDoc,
+  stats?: { likesCount?: number; commentsCount?: number; likedByMe?: boolean },
+): PostResponse {
   return {
     id: post._id.toHexString(),
     authorId: post.authorId.toHexString(),
@@ -1673,19 +1755,48 @@ export function toPostResponse(post: PostDoc): PostResponse {
     policy: post.policy,
     accessPolicyId: post.accessPolicyId?.toHexString() ?? null,
     attachmentIds: post.attachmentIds.map((id) => id.toHexString()),
+    likesCount: stats?.likesCount ?? 0,
+    commentsCount: stats?.commentsCount ?? 0,
+    likedByMe: stats?.likedByMe ?? false,
     publishedAt: post.publishedAt?.toISOString() ?? null,
     createdAt: post.createdAt.toISOString(),
     updatedAt: post.updatedAt.toISOString(),
   };
 }
 
+export function toPostCommentResponse(
+  comment: PostCommentDoc,
+): PostCommentResponse {
+  return {
+    id: comment._id.toHexString(),
+    postId: comment.postId.toHexString(),
+    authorId: comment.authorId.toHexString(),
+    walletAddress: comment.walletAddress,
+    displayName: comment.displayName,
+    content: comment.content,
+    createdAt: comment.createdAt.toISOString(),
+    updatedAt: comment.updatedAt.toISOString(),
+  };
+}
+
+export async function buildPostResponse(
+  post: PostDoc,
+  viewerWallet?: string,
+): Promise<PostResponse> {
+  return toPostResponse(post, await buildPostStats(post, viewerWallet));
+}
+
 export function toFeedPostResponse(
   post: PostDoc,
   author: AuthorProfileDoc,
-  access?: { accessLabel: string | null; hasAccess: boolean },
+  access?: {
+    accessLabel: string | null;
+    hasAccess: boolean;
+    stats?: { likesCount?: number; commentsCount?: number; likedByMe?: boolean };
+  },
 ): FeedPostResponse {
   return {
-    ...toPostResponse(post),
+    ...toPostResponse(post, access?.stats),
     authorSlug: author.slug,
     authorDisplayName: author.displayName,
     accessLabel: access?.accessLabel ?? null,
@@ -1714,6 +1825,8 @@ async function buildFeedPostResponse(
   });
   const hasAccess = evaluation.allowed;
 
+  const stats = await buildPostStats(post, viewerWallet);
+
   return toFeedPostResponse(
     {
       ...post,
@@ -1723,6 +1836,7 @@ async function buildFeedPostResponse(
     {
       accessLabel: describeAccessPolicy(resolvedPolicy.root, plans),
       hasAccess,
+      stats,
     },
   );
 }
@@ -2039,6 +2153,17 @@ function normalizePostContent(content: string): string {
   return value;
 }
 
+function normalizePostCommentContent(content: string): string {
+  const value = content.trim();
+  if (!value) {
+    throw APIError.invalidArgument("comment content is required");
+  }
+  if (value.length > 1000) {
+    throw APIError.invalidArgument("comment content is too long");
+  }
+  return value;
+}
+
 async function normalizeContentPolicy(
   author: AuthorProfileDoc,
   input:
@@ -2192,6 +2317,60 @@ async function buildProjectBreadcrumbs(
   return breadcrumbs;
 }
 
+async function getReadablePostContext(
+  slug: string,
+  postId: string,
+  viewerWallet?: string,
+): Promise<{ author: AuthorProfileDoc; post: PostDoc }> {
+  const author = await getAuthorProfileBySlug(slug);
+  const objectId = parseObjectId(postId, "postId");
+  const post = await repo.findPublishedPostByIdAndAuthorId(
+    objectId,
+    author._id,
+  );
+  if (!post) {
+    throw APIError.notFound("post not found");
+  }
+
+  const resolvedPolicy = resolveEntityPolicy(
+    post.policyMode,
+    author.defaultPolicy,
+    post.policy,
+  );
+  const normalizedWallet = viewerWallet ? normalizeWallet(viewerWallet) : undefined;
+  const evaluation = evaluateAccessPolicy(resolvedPolicy, {
+    subscriptions: normalizedWallet
+      ? await buildSubscriptionGrants(author._id, normalizedWallet)
+      : [],
+    tokenBalances: [],
+    nftOwnerships: [],
+  });
+
+  if (!evaluation.allowed) {
+    throw APIError.permissionDenied("access to this post is restricted");
+  }
+
+  return { author, post };
+}
+
+async function buildPostStats(
+  post: PostDoc,
+  viewerWallet?: string,
+): Promise<{ likesCount: number; commentsCount: number; likedByMe: boolean }> {
+  const normalizedWallet = viewerWallet ? normalizeWallet(viewerWallet) : undefined;
+  const [likesCount, commentsCount, like] = await Promise.all([
+    repo.countPostLikes(post._id),
+    repo.countPostComments(post._id),
+    normalizedWallet ? repo.findPostLike(post._id, normalizedWallet) : null,
+  ]);
+
+  return {
+    likesCount,
+    commentsCount,
+    likedByMe: Boolean(like),
+  };
+}
+
 async function assertPublishedProjectPath(
   project: ProjectDoc,
   folder: ProjectNodeDoc,
@@ -2306,11 +2485,14 @@ async function normalizeRequestedCustomPolicy(
 
 function resolvePublishedAt(
   currentPublishedAt: Date | null,
-  currentStatus: "draft" | "published",
-  nextStatus: "draft" | "published",
+  currentStatus: "draft" | "published" | "archived",
+  nextStatus: "draft" | "published" | "archived",
 ): Date | null {
   if (nextStatus === "draft") {
     return null;
+  }
+  if (nextStatus === "archived") {
+    return currentPublishedAt;
   }
 
   if (currentStatus === "published" && currentPublishedAt) {

@@ -1,6 +1,7 @@
 import type {
     CreateProjectFolderInput,
     CreateProjectInput,
+    ProjectDto,
     UpdateProjectInput,
     UpdateProjectNodeInput,
 } from "@contracts/types/content"
@@ -10,10 +11,10 @@ import { authorsApi } from "@/api/AuthorsApi"
 import { projectsApi } from "@/api/ProjectsApi"
 import { queryKeys } from "./queryKeys"
 
-export function useMyProjectsQuery(enabled = true) {
+export function useMyProjectsQuery(enabled = true, status?: ProjectDto["status"]) {
     return useQuery({
-        queryKey: queryKeys.myProjects,
-        queryFn: () => projectsApi.listMyProjects(),
+        queryKey: queryKeys.myProjects(status),
+        queryFn: () => projectsApi.listMyProjects(status),
         enabled,
     })
 }
@@ -65,7 +66,7 @@ export function useCreateMyProjectMutation() {
     return useMutation({
         mutationFn: (input: CreateProjectInput) => projectsApi.createMyProject(input),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myProjects })
+            void queryClient.invalidateQueries({ queryKey: ["me", "projects"] })
             void queryClient.invalidateQueries({ queryKey: ["authors"] })
         },
     })
@@ -146,7 +147,7 @@ export function useUpdateMyProjectMutation() {
         mutationFn: ({ projectId, input }: { projectId: string; input: UpdateProjectInput }) =>
             projectsApi.updateMyProject(projectId, input),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myProjects })
+            void queryClient.invalidateQueries({ queryKey: ["me", "projects"] })
             void queryClient.invalidateQueries({ queryKey: ["authors"] })
         },
     })
@@ -158,7 +159,7 @@ export function useDeleteMyProjectMutation() {
     return useMutation({
         mutationFn: (projectId: string) => projectsApi.deleteMyProject(projectId),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myProjects })
+            void queryClient.invalidateQueries({ queryKey: ["me", "projects"] })
             void queryClient.invalidateQueries({ queryKey: ["authors"] })
         },
     })

@@ -16,7 +16,9 @@ import { useAuthStore } from "@/stores/auth-store"
 export function MeProjectsPage() {
     const token = useAuthStore((state) => state.token)
     const [selectedProject, setSelectedProject] = useState<ProjectDto | null>(null)
+    const [showArchive, setShowArchive] = useState(false)
     const projectsQuery = useMyProjectsQuery(Boolean(token))
+    const archivedProjectsQuery = useMyProjectsQuery(Boolean(token) && showArchive, "archived")
     const policiesQuery = useMyAccessPoliciesQuery(Boolean(token))
     const createProjectMutation = useCreateMyProjectMutation()
     const updateProjectMutation = useUpdateMyProjectMutation()
@@ -64,6 +66,12 @@ export function MeProjectsPage() {
                 }
                 onDelete={(projectId) => deleteProjectMutation.mutateAsync(projectId)}
                 onOpen={(project) => setSelectedProject(project as ProjectDto)}
+                onArchive={(projectId) =>
+                    updateProjectMutation.mutateAsync({
+                        projectId,
+                        input: { status: "archived" },
+                    })
+                }
                 onToggleStatus={(projectId, status) =>
                     updateProjectMutation.mutateAsync({
                         projectId,
@@ -73,6 +81,41 @@ export function MeProjectsPage() {
                 title="Structured project spaces with private access"
                 token={token}
             />
+
+            <button
+                className="w-fit text-sm text-[var(--muted)] underline underline-offset-4"
+                onClick={() => setShowArchive((value) => !value)}
+                type="button"
+            >
+                {showArchive ? "Hide archive" : "Open archive"}
+            </button>
+
+            {showArchive ? (
+                <ContentManagerPage
+                    createPending={false}
+                    emptyLabel="Project archive is empty."
+                    hideCreate
+                    intro="Archived project spaces are hidden from public profiles until you publish them again."
+                    isError={archivedProjectsQuery.isError}
+                    isLoading={archivedProjectsQuery.isLoading}
+                    items={archivedProjectsQuery.data}
+                    kind="project"
+                    loadError={archivedProjectsQuery.error}
+                    loadingLabel="Loading archived projects..."
+                    missingSessionLabel="Sign in to manage archived projects."
+                    onCreate={() => Promise.resolve()}
+                    onDelete={(projectId) => deleteProjectMutation.mutateAsync(projectId)}
+                    onOpen={(project) => setSelectedProject(project as ProjectDto)}
+                    onToggleStatus={(projectId) =>
+                        updateProjectMutation.mutateAsync({
+                            projectId,
+                            input: { status: "published" },
+                        })
+                    }
+                    title="Archived project spaces"
+                    token={token}
+                />
+            ) : null}
 
             {selectedProject ? (
                 <Card>

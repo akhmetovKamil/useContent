@@ -13,16 +13,40 @@ import {
     useMyPostsQuery,
     useUpdateMyPostMutation,
 } from "@/queries/posts"
+import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 
 export function MePostsPage() {
     const token = useAuthStore((state) => state.token)
     const postsQuery = useMyPostsQuery(Boolean(token))
+    const authorQuery = useMyAuthorProfileQuery(Boolean(token))
     const policiesQuery = useMyAccessPoliciesQuery(Boolean(token))
     const createPostMutation = useCreateMyPostMutation()
     const updatePostMutation = useUpdateMyPostMutation()
     const deletePostMutation = useDeleteMyPostMutation()
     const [showEditor, setShowEditor] = useState(false)
+    const [showArchive, setShowArchive] = useState(false)
+    const archivedPostsQuery = useMyPostsQuery(Boolean(token) && showArchive, "archived")
+    const authorSlug = authorQuery.data?.slug ?? ""
+    const authorDisplayName = authorQuery.data?.displayName ?? "Author"
+    const posts = authorSlug
+        ? postsQuery.data?.map((post) => ({
+              ...post,
+              authorDisplayName,
+              authorSlug,
+              accessLabel: null,
+              hasAccess: true,
+          }))
+        : postsQuery.data
+    const archivedPosts = authorSlug
+        ? archivedPostsQuery.data?.map((post) => ({
+              ...post,
+              authorDisplayName,
+              authorSlug,
+              accessLabel: null,
+              hasAccess: true,
+          }))
+        : archivedPostsQuery.data
 
     return (
         <section className="grid gap-6">
@@ -66,6 +90,12 @@ export function MePostsPage() {
                         })
                     }
                     onDelete={(postId) => deletePostMutation.mutateAsync(postId)}
+                    onArchive={(postId) =>
+                        updatePostMutation.mutateAsync({
+                            postId,
+                            input: { status: "archived" },
+                        })
+                    }
                     onToggleStatus={(postId, status) =>
                         updatePostMutation.mutateAsync({
                             postId,
@@ -93,7 +123,7 @@ export function MePostsPage() {
                             onArchive={(post) =>
                                 void updatePostMutation.mutateAsync({
                                     postId: post.id,
-                                    input: { status: "draft" },
+                                    input: { status: "archived" },
                                 })
                             }
                             onDelete={(post) => void deletePostMutation.mutateAsync(post.id)}
@@ -113,11 +143,52 @@ export function MePostsPage() {
                                     input: { content, title },
                                 })
                             }}
-                            posts={postsQuery.data}
+                            onPublish={(post) =>
+                                void updatePostMutation.mutateAsync({
+                                    postId: post.id,
+                                    input: { status: "published" },
+                                })
+                            }
+                            posts={posts}
                         />
                     )}
+                    <button
+                        className="mt-5 text-sm text-[var(--muted)] underline underline-offset-4"
+                        onClick={() => setShowArchive((value) => !value)}
+                        type="button"
+                    >
+                        {showArchive ? "Hide archive" : "Open archive"}
+                    </button>
                 </CardContent>
             </Card>
+
+            {showArchive ? (
+                <Card className="rounded-[28px]">
+                    <CardHeader>
+                        <CardTitle>Archived posts</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {archivedPostsQuery.isLoading ? (
+                            <p className="text-[var(--muted)]">Loading archive...</p>
+                        ) : archivedPostsQuery.isError ? (
+                            <p className="text-rose-600">{archivedPostsQuery.error.message}</p>
+                        ) : (
+                            <PostFeed
+                                emptyLabel="Archive is empty."
+                                isAuthorView
+                                onDelete={(post) => void deletePostMutation.mutateAsync(post.id)}
+                                onPublish={(post) =>
+                                    void updatePostMutation.mutateAsync({
+                                        postId: post.id,
+                                        input: { status: "published" },
+                                    })
+                                }
+                                posts={archivedPosts}
+                            />
+                        )}
+                    </CardContent>
+                </Card>
+            ) : null}
         </section>
     )
 }

@@ -151,6 +151,19 @@ export interface FeedProjectDto extends ProjectDto {
   hasAccess: boolean;
 }
 
+export type ContentStatus = "draft" | "published" | "archived";
+
+export interface PostCommentDto {
+  id: string;
+  postId: string;
+  authorId: string;
+  walletAddress: string;
+  displayName: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type SubscriptionPaymentAsset = "erc20" | "native";
 
 export interface SubscriptionPaymentIntentDto {
@@ -214,11 +227,14 @@ export interface PostDto {
   authorId: string;
   title: string;
   content: string;
-  status: "draft" | "published";
+  status: ContentStatus;
   policyMode: PolicyMode;
   policy: AccessPolicy | null;
   accessPolicyId: string | null;
   attachmentIds: string[];
+  likesCount: number;
+  commentsCount: number;
+  likedByMe: boolean;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -229,7 +245,7 @@ export interface ProjectDto {
   authorId: string;
   title: string;
   description: string;
-  status: "draft" | "published";
+  status: ContentStatus;
   policyMode: PolicyMode;
   policy: AccessPolicy | null;
   accessPolicyId: string | null;
@@ -334,7 +350,7 @@ export interface UpsertContractDeploymentInput {
 export interface CreatePostInput {
   title: string;
   content: string;
-  status?: "draft" | "published";
+  status?: ContentStatus;
   policyMode?: PolicyMode;
   policy?: AccessPolicy | null;
   policyInput?: AccessPolicyInput;
@@ -345,7 +361,7 @@ export interface CreatePostInput {
 export interface UpdatePostInput {
   title?: string;
   content?: string;
-  status?: "draft" | "published";
+  status?: ContentStatus;
   policyMode?: PolicyMode;
   policy?: AccessPolicy | null;
   policyInput?: AccessPolicyInput;
@@ -356,7 +372,7 @@ export interface UpdatePostInput {
 export interface CreateProjectInput {
   title: string;
   description?: string;
-  status?: "draft" | "published";
+  status?: ContentStatus;
   policyMode?: PolicyMode;
   policy?: AccessPolicy | null;
   policyInput?: AccessPolicyInput;
@@ -366,11 +382,15 @@ export interface CreateProjectInput {
 export interface UpdateProjectInput {
   title?: string;
   description?: string;
-  status?: "draft" | "published";
+  status?: ContentStatus;
   policyMode?: PolicyMode;
   policy?: AccessPolicy | null;
   policyInput?: AccessPolicyInput;
   accessPolicyId?: string | null;
+}
+
+export interface CreatePostCommentInput {
+  content: string;
 }
 
 export interface CreateProjectFolderInput {

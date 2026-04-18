@@ -4,7 +4,9 @@ import { getDb } from "../lib/mongo";
 import type {
   AccessPolicyPresetDoc,
   AuthorProfileDoc,
+  PostCommentDoc,
   PostDoc,
+  PostLikeDoc,
   ProjectDoc,
   ProjectNodeDoc,
   SubscriptionEntitlementDoc,
@@ -232,9 +234,13 @@ export async function createPost(doc: Omit<PostDoc, "_id">): Promise<PostDoc> {
 
 export async function listPostsByAuthorId(
   authorId: ObjectId,
+  status?: PostDoc["status"],
 ): Promise<PostDoc[]> {
   const posts = await getPostsCollection();
-  return posts.find({ authorId }).sort({ createdAt: -1 }).toArray();
+  return posts
+    .find(status ? { authorId, status } : { authorId, status: { $ne: "archived" } })
+    .sort({ createdAt: -1 })
+    .toArray();
 }
 
 export async function listPublishedPostsByAuthorId(
@@ -307,6 +313,78 @@ export async function deletePostsByAuthorId(authorId: ObjectId): Promise<void> {
   await posts.deleteMany({ authorId });
 }
 
+export async function getPostLikesCollection(): Promise<
+  Collection<PostLikeDoc>
+> {
+  await ensureIndexes();
+  return getCollection<PostLikeDoc>("post_likes");
+}
+
+export async function getPostCommentsCollection(): Promise<
+  Collection<PostCommentDoc>
+> {
+  await ensureIndexes();
+  return getCollection<PostCommentDoc>("post_comments");
+}
+
+export async function findPostLike(
+  postId: ObjectId,
+  walletAddress: string,
+): Promise<PostLikeDoc | null> {
+  const likes = await getPostLikesCollection();
+  return likes.findOne({ postId, walletAddress });
+}
+
+export async function createPostLike(doc: PostLikeDoc): Promise<PostLikeDoc> {
+  const likes = await getPostLikesCollection();
+  await likes.updateOne(
+    { postId: doc.postId, walletAddress: doc.walletAddress },
+    { $setOnInsert: doc },
+    { upsert: true },
+  );
+  return doc;
+}
+
+export async function deletePostLike(
+  postId: ObjectId,
+  walletAddress: string,
+): Promise<void> {
+  const likes = await getPostLikesCollection();
+  await likes.deleteOne({ postId, walletAddress });
+}
+
+export async function countPostLikes(postId: ObjectId): Promise<number> {
+  const likes = await getPostLikesCollection();
+  return likes.countDocuments({ postId });
+}
+
+export async function countPostComments(postId: ObjectId): Promise<number> {
+  const comments = await getPostCommentsCollection();
+  return comments.countDocuments({ postId });
+}
+
+export async function listPostComments(
+  postId: ObjectId,
+): Promise<PostCommentDoc[]> {
+  const comments = await getPostCommentsCollection();
+  return comments.find({ postId }).sort({ createdAt: 1 }).toArray();
+}
+
+export async function createPostComment(
+  doc: PostCommentDoc,
+): Promise<PostCommentDoc> {
+  const comments = await getPostCommentsCollection();
+  await comments.insertOne(doc);
+  return doc;
+}
+
+export async function deletePostCommentsByPostId(postId: ObjectId): Promise<void> {
+  const comments = await getPostCommentsCollection();
+  await comments.deleteMany({ postId });
+  const likes = await getPostLikesCollection();
+  await likes.deleteMany({ postId });
+}
+
 export async function countPostsByAccessPolicyId(
   authorId: ObjectId,
   accessPolicyId: ObjectId,
@@ -328,9 +406,13 @@ export async function createProject(doc: ProjectDoc): Promise<ProjectDoc> {
 
 export async function listProjectsByAuthorId(
   authorId: ObjectId,
+  status?: ProjectDoc["status"],
 ): Promise<ProjectDoc[]> {
   const projects = await getProjectsCollection();
-  return projects.find({ authorId }).sort({ createdAt: -1 }).toArray();
+  return projects
+    .find(status ? { authorId, status } : { authorId, status: { $ne: "archived" } })
+    .sort({ createdAt: -1 })
+    .toArray();
 }
 
 export async function listPublishedProjectsByAuthorId(
@@ -803,6 +885,8 @@ async function ensureIndexes(): Promise<void> {
     posts,
     projects,
     projectNodes,
+    postLikes,
+    postComments,
     subscriptionPlans,
     subscriptionEntitlements,
     subscriptionPaymentIntents,
@@ -814,6 +898,8 @@ async function ensureIndexes(): Promise<void> {
     getCollection<PostDoc>("posts"),
     getCollection<ProjectDoc>("projects"),
     getCollection<ProjectNodeDoc>("project_nodes"),
+    getCollection<PostLikeDoc>("post_likes"),
+    getCollection<PostCommentDoc>("post_comments"),
     getCollection<SubscriptionPlanDoc>("subscription_plans"),
     getCollection<SubscriptionEntitlementDoc>("subscription_entitlements"),
     getCollection<SubscriptionPaymentIntentDoc>("subscription_payment_intents"),
@@ -842,6 +928,10 @@ async function ensureIndexes(): Promise<void> {
     posts.createIndex({ authorId: 1, status: 1, publishedAt: -1 }),
     posts.createIndex({ authorId: 1, accessPolicyId: 1 }),
     posts.createIndex({ authorId: 1, createdAt: -1 }),
+    postLikes.createIndex({ postId: 1, walletAddress: 1 }, { unique: true }),
+    postLikes.createIndex({ walletAddress: 1, createdAt: -1 }),
+    postComments.createIndex({ postId: 1, createdAt: 1 }),
+    postComments.createIndex({ walletAddress: 1, createdAt: -1 }),
     projects.createIndex({ authorId: 1, status: 1, publishedAt: -1 }),
     projects.createIndex({ authorId: 1, accessPolicyId: 1 }),
     projectNodes.createIndex({ projectId: 1, parentId: 1, name: 1 }),

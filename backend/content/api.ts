@@ -14,12 +14,14 @@ import type {
   ContractDeploymentResponse,
   CreateAccessPolicyPresetRequest,
   CreateAuthorProfileRequest,
+  CreatePostCommentRequest,
   CreatePostRequest,
   CreateProjectFolderRequest,
   CreateProjectRequest,
   CreateSubscriptionPaymentIntentRequest,
   FeedPostResponse,
   FeedProjectResponse,
+  PostCommentResponse,
   PostResponse,
   ProjectNodeListResponse,
   ProjectNodeResponse,
@@ -409,16 +411,27 @@ export const createMyPost = api(
   async (req: CreatePostRequest): Promise<PostResponse> => {
     const auth = getAuthData()!;
     const post = await service.createMyPost(auth.walletAddress, req);
-    return service.toPostResponse(post);
+    return service.buildPostResponse(post, auth.walletAddress);
   },
 );
 
+interface ListMyPostsRequest {
+  status?: "draft" | "published" | "archived";
+}
+
 export const listMyPosts = api(
   { method: "GET", path: "/me/posts", expose: true, auth: true },
-  async (): Promise<{ posts: PostResponse[] }> => {
+  async ({ status }: ListMyPostsRequest): Promise<{ posts: PostResponse[] }> => {
     const auth = getAuthData()!;
-    const posts = await service.listMyPosts(auth.walletAddress);
-    return { posts: posts.map(service.toPostResponse) };
+    const posts =
+      status === "archived"
+        ? await service.listMyArchivedPosts(auth.walletAddress)
+        : await service.listMyPosts(auth.walletAddress);
+    return {
+      posts: await Promise.all(
+        posts.map((post) => service.buildPostResponse(post, auth.walletAddress)),
+      ),
+    };
   },
 );
 
@@ -430,7 +443,7 @@ export const updateMyPost = api(
   }: UpdatePostRequest & { postId: string }): Promise<PostResponse> => {
     const auth = getAuthData()!;
     const post = await service.updateMyPost(auth.walletAddress, postId, req);
-    return service.toPostResponse(post);
+    return service.buildPostResponse(post, auth.walletAddress);
   },
 );
 
@@ -478,7 +491,73 @@ export const getAuthorPost = api(
       postId,
       viewerWallet,
     );
-    return service.toPostResponse(post);
+    return service.buildPostResponse(post, viewerWallet);
+  },
+);
+
+export const listPostComments = api(
+  {
+    method: "GET",
+    path: "/authors/:slug/posts/:postId/comments",
+    expose: true,
+  },
+  async ({
+    slug,
+    postId,
+    authorization,
+  }: GetAuthorPostRequest): Promise<{ comments: PostCommentResponse[] }> => {
+    const viewerWallet = await getOptionalViewerWallet(authorization);
+    const comments = await service.listPostCommentsBySlug(
+      slug,
+      postId,
+      viewerWallet,
+    );
+    return { comments: comments.map(service.toPostCommentResponse) };
+  },
+);
+
+export const createPostComment = api(
+  {
+    method: "POST",
+    path: "/authors/:slug/posts/:postId/comments",
+    expose: true,
+    auth: true,
+  },
+  async ({
+    slug,
+    postId,
+    ...req
+  }: CreatePostCommentRequest & {
+    slug: string;
+    postId: string;
+  }): Promise<PostCommentResponse> => {
+    const auth = getAuthData()!;
+    const comment = await service.createPostCommentBySlug(
+      slug,
+      postId,
+      auth.walletAddress,
+      req,
+    );
+    return service.toPostCommentResponse(comment);
+  },
+);
+
+export const togglePostLike = api(
+  {
+    method: "POST",
+    path: "/authors/:slug/posts/:postId/like",
+    expose: true,
+    auth: true,
+  },
+  async ({
+    slug,
+    postId,
+  }: {
+    slug: string;
+    postId: string;
+  }): Promise<{ liked: boolean; likesCount: number }> => {
+    const auth = getAuthData()!;
+    return service.togglePostLikeBySlug(slug, postId, auth.walletAddress);
   },
 );
 
@@ -493,9 +572,12 @@ export const createMyProject = api(
 
 export const listMyProjects = api(
   { method: "GET", path: "/me/projects", expose: true, auth: true },
-  async (): Promise<{ projects: ProjectResponse[] }> => {
+  async ({ status }: ListMyPostsRequest): Promise<{ projects: ProjectResponse[] }> => {
     const auth = getAuthData()!;
-    const projects = await service.listMyProjects(auth.walletAddress);
+    const projects =
+      status === "archived"
+        ? await service.listMyArchivedProjects(auth.walletAddress)
+        : await service.listMyProjects(auth.walletAddress);
     return { projects: projects.map(service.toProjectResponse) };
   },
 );

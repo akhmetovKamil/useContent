@@ -1,4 +1,10 @@
-import type { CreatePostInput, PostDto, UpdatePostInput } from "@contracts/types/content"
+import type {
+    CreatePostCommentInput,
+    CreatePostInput,
+    PostCommentDto,
+    PostDto,
+    UpdatePostInput,
+} from "@contracts/types/content"
 
 import { http } from "@/utils/api/http"
 
@@ -8,8 +14,10 @@ class PostsApi {
         return response.data
     }
 
-    async listMyPosts() {
-        const response = await http.get<{ posts: PostDto[] }>("/me/posts")
+    async listMyPosts(status?: PostDto["status"]) {
+        const response = await http.get<{ posts: PostDto[] }>("/me/posts", {
+            params: { status },
+        })
         return response.data.posts
     }
 
@@ -24,6 +32,28 @@ class PostsApi {
 
     async getAuthorPost(slug: string, postId: string) {
         const response = await http.get<PostDto>(`/authors/${slug}/posts/${postId}`)
+        return response.data
+    }
+
+    async listPostComments(slug: string, postId: string) {
+        const response = await http.get<{ comments: PostCommentDto[] }>(
+            `/authors/${slug}/posts/${postId}/comments`
+        )
+        return response.data.comments
+    }
+
+    async createPostComment(slug: string, postId: string, input: CreatePostCommentInput) {
+        const response = await http.post<PostCommentDto>(
+            `/authors/${slug}/posts/${postId}/comments`,
+            input
+        )
+        return response.data
+    }
+
+    async togglePostLike(slug: string, postId: string) {
+        const response = await http.post<{ liked: boolean; likesCount: number }>(
+            `/authors/${slug}/posts/${postId}/like`
+        )
         return response.data
     }
 }

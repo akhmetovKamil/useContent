@@ -16,8 +16,10 @@ class ProjectsApi {
         return response.data
     }
 
-    async listMyProjects() {
-        const response = await http.get<{ projects: ProjectDto[] }>("/me/projects")
+    async listMyProjects(status?: ProjectDto["status"]) {
+        const response = await http.get<{ projects: ProjectDto[] }>("/me/projects", {
+            params: { status },
+        })
         return response.data.projects
     }
 

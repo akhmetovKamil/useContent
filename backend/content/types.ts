@@ -7,6 +7,7 @@ import type {
   AuthorSubscriberDto,
   AuthorProfileDto,
   ConfirmSubscriptionPaymentInput,
+  ContentStatus,
   ContractDeploymentDto,
   ContractDeploymentLookupDto,
   CreateAccessPolicyPresetInput,
@@ -18,6 +19,8 @@ import type {
   FeedPostDto,
   FeedProjectDto,
   PostDto,
+  PostCommentDto,
+  CreatePostCommentInput,
   ProjectDto,
   ProjectNodeListDto,
   ProjectNodeDto,
@@ -86,7 +89,7 @@ export interface PostDoc {
   authorId: ObjectId;
   title: string;
   content: string;
-  status: "draft" | "published";
+  status: ContentStatus;
   policyMode: PolicyMode;
   policy: AccessPolicy | null;
   accessPolicyId: ObjectId | null;
@@ -101,12 +104,31 @@ export interface ProjectDoc {
   authorId: ObjectId;
   title: string;
   description: string;
-  status: "draft" | "published";
+  status: ContentStatus;
   policyMode: PolicyMode;
   policy: AccessPolicy | null;
   accessPolicyId: ObjectId | null;
   rootNodeId: ObjectId;
   publishedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PostLikeDoc {
+  _id: ObjectId;
+  postId: ObjectId;
+  authorId: ObjectId;
+  walletAddress: string;
+  createdAt: Date;
+}
+
+export interface PostCommentDoc {
+  _id: ObjectId;
+  postId: ObjectId;
+  authorId: ObjectId;
+  walletAddress: string;
+  displayName: string;
+  content: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -199,6 +221,7 @@ export type AccessPolicyPresetResponse = AccessPolicyPresetDto;
 export type SubscriptionEntitlementResponse = SubscriptionEntitlementDto;
 export type ReaderSubscriptionResponse = ReaderSubscriptionDto;
 export type FeedPostResponse = FeedPostDto;
+export type PostCommentResponse = PostCommentDto;
 export type FeedProjectResponse = FeedProjectDto;
 export type ContractDeploymentResponse = ContractDeploymentDto;
 export type ContractDeploymentLookupResponse = ContractDeploymentLookupDto;
@@ -216,6 +239,7 @@ export type UpdateAuthorProfileRequest = UpdateAuthorProfileInput;
 export type UpsertSubscriptionPlanRequest = UpsertSubscriptionPlanInput;
 export type CreatePostRequest = CreatePostInput;
 export type UpdatePostRequest = UpdatePostInput;
+export type CreatePostCommentRequest = CreatePostCommentInput;
 export type CreateProjectRequest = CreateProjectInput;
 export type UpdateProjectRequest = UpdateProjectInput;
 export type CreateProjectFolderRequest = CreateProjectFolderInput;

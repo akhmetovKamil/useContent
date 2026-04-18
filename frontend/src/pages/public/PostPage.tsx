@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom"
 
+import { PostFeed } from "@/components/posts/PostFeed"
 import { useAuthorPostQuery } from "@/queries/posts"
 
 export function PostPage() {
@@ -18,18 +19,20 @@ export function PostPage() {
                     Failed to open @{slug}'s post: {postQuery.error.message}
                 </p>
             ) : postQuery.data ? (
-                <>
-                    <h2 className="mt-3 font-[var(--serif)] text-3xl text-[var(--foreground)]">
-                        {postQuery.data.title}
-                    </h2>
-                    <div className="mt-3 flex flex-wrap gap-3 text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
-                        <span>{postQuery.data.status}</span>
-                        <span>{postQuery.data.policyMode}</span>
-                    </div>
-                    <p className="mt-6 whitespace-pre-wrap text-base leading-7 text-[var(--foreground)]">
-                        {postQuery.data.content}
-                    </p>
-                </>
+                <div className="mt-5">
+                    <PostFeed
+                        emptyLabel="Post not found."
+                        posts={[
+                            {
+                                ...postQuery.data,
+                                authorDisplayName: slug ?? "Author",
+                                authorSlug: slug ?? "",
+                                accessLabel: null,
+                                hasAccess: true,
+                            },
+                        ]}
+                    />
+                </div>
             ) : null}
         </section>
     )

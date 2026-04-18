@@ -1,10 +1,18 @@
 import type { FeedPostDto, PostDto } from "@contracts/types/content"
-import { LockKeyhole } from "lucide-react"
+import { Heart, LockKeyhole, MessageCircle } from "lucide-react"
+import { useState } from "react"
 import { Link } from "react-router-dom"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import {
+    useCreatePostCommentMutation,
+    usePostCommentsQuery,
+    useTogglePostLikeMutation,
+} from "@/queries/posts"
+import { useAuthStore } from "@/stores/auth-store"
 import { cn } from "@/utils/cn"
 
 type FeedPost = PostDto | FeedPostDto
@@ -15,6 +23,7 @@ interface PostFeedProps {
     onArchive?: (post: PostDto) => void
     onDelete?: (post: PostDto) => void
     onEdit?: (post: PostDto) => void
+    onPublish?: (post: PostDto) => void
     posts?: FeedPost[]
     showAuthor?: boolean
 }
@@ -25,6 +34,7 @@ export function PostFeed({
     onArchive,
     onDelete,
     onEdit,
+    onPublish,
     posts = [],
     showAuthor = false,
 }: PostFeedProps) {
@@ -41,6 +51,7 @@ export function PostFeed({
                     onArchive={onArchive}
                     onDelete={onDelete}
                     onEdit={onEdit}
+                    onPublish={onPublish}
                     post={post}
                     showAuthor={showAuthor}
                 />
@@ -54,6 +65,7 @@ function PostCard({
     onArchive,
     onDelete,
     onEdit,
+    onPublish,
     post,
     showAuthor,
 }: {
@@ -61,12 +73,23 @@ function PostCard({
     onArchive?: (post: PostDto) => void
     onDelete?: (post: PostDto) => void
     onEdit?: (post: PostDto) => void
+    onPublish?: (post: PostDto) => void
     post: FeedPost
     showAuthor: boolean
 }) {
+    const token = useAuthStore((state) => state.token)
+    const [commentsOpen, setCommentsOpen] = useState(false)
+    const [comment, setComment] = useState("")
     const author = "authorSlug" in post ? post : null
     const postLink = author ? `/authors/${author.authorSlug}/posts/${post.id}` : undefined
     const hasAccess = !("hasAccess" in post) || post.hasAccess
+    const commentsQuery = usePostCommentsQuery(
+        author?.authorSlug ?? "",
+        post.id,
+        Boolean(author) && commentsOpen && hasAccess
+    )
+    const likeMutation = useTogglePostLikeMutation(author?.authorSlug ?? "", post.id)
+    const commentMutation = useCreatePostCommentMutation(author?.authorSlug ?? "", post.id)
 
     return (
         <Card className="rounded-[28px] transition-colors hover:bg-[var(--accent-soft)]">
@@ -110,6 +133,17 @@ function PostCard({
                     </div>
                     {isAuthorView ? (
                         <div className="flex flex-wrap gap-2">
+                            {post.status === "draft" ? (
+                                <Button
+                                    className="rounded-full"
+                                    onClick={() => onPublish?.(post)}
+                                    size="sm"
+                                    type="button"
+                                    variant="outline"
+                                >
+                                    Publish
+                                </Button>
+                            ) : null}
                             <Button
                                 className="rounded-full"
                                 onClick={() => onEdit?.(post)}
@@ -122,6 +156,7 @@ function PostCard({
                             <Button
                                 className="rounded-full"
                                 onClick={() => onArchive?.(post)}
+                                disabled={post.status === "archived"}
                                 size="sm"
                                 type="button"
                                 variant="outline"
@@ -143,9 +178,108 @@ function PostCard({
             </CardHeader>
             <CardContent>
                 {hasAccess ? (
-                    <p className={cn("whitespace-pre-wrap text-sm leading-6 text-[var(--muted)]")}>
-                        {post.content}
-                    </p>
+                    <>
+                        <p
+                            className={cn(
+                                "whitespace-pre-wrap text-sm leading-6 text-[var(--muted)]"
+                            )}
+                        >
+                            {post.content}
+                        </p>
+                        <div className="mt-5 flex flex-wrap items-center gap-2">
+                            {author ? (
+                                <Button
+                                    className="rounded-full"
+                                    disabled={!token || likeMutation.isPending}
+                                    onClick={() => void likeMutation.mutateAsync()}
+                                    size="sm"
+                                    type="button"
+                                    variant={post.likedByMe ? "default" : "outline"}
+                                >
+                                    <Heart
+                                        className={cn(
+                                            "size-4",
+                                            post.likedByMe ? "fill-current" : ""
+                                        )}
+                                    />
+                                    {post.likesCount}
+                                </Button>
+                            ) : (
+                                <Badge className="rounded-full">{post.likesCount} likes</Badge>
+                            )}
+                            <Button
+                                className="rounded-full"
+                                disabled={!author}
+                                onClick={() => setCommentsOpen((value) => !value)}
+                                size="sm"
+                                type="button"
+                                variant="outline"
+                            >
+                                <MessageCircle className="size-4" />
+                                {post.commentsCount}
+                            </Button>
+                        </div>
+
+                        {author && commentsOpen ? (
+                            <div className="mt-5 rounded-[22px] border border-[var(--line)] bg-[var(--surface)] p-4">
+                                {commentsQuery.isLoading ? (
+                                    <p className="text-sm text-[var(--muted)]">
+                                        Loading comments...
+                                    </p>
+                                ) : commentsQuery.isError ? (
+                                    <p className="text-sm text-rose-600">
+                                        Failed to load comments: {commentsQuery.error.message}
+                                    </p>
+                                ) : commentsQuery.data?.length ? (
+                                    <div className="grid gap-3">
+                                        {commentsQuery.data.map((item) => (
+                                            <div key={item.id}>
+                                                <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--muted)]">
+                                                    <span className="font-medium text-[var(--foreground)]">
+                                                        {item.displayName}
+                                                    </span>
+                                                    <span>{formatDate(item.createdAt)}</span>
+                                                </div>
+                                                <p className="mt-1 text-sm leading-6 text-[var(--foreground)]">
+                                                    {item.content}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-[var(--muted)]">No comments yet.</p>
+                                )}
+
+                                {token ? (
+                                    <form
+                                        className="mt-4 flex gap-2"
+                                        onSubmit={(event) => {
+                                            event.preventDefault()
+                                            if (!comment.trim()) {
+                                                return
+                                            }
+                                            void commentMutation
+                                                .mutateAsync({ content: comment })
+                                                .then(() => setComment(""))
+                                        }}
+                                    >
+                                        <Input
+                                            onChange={(event) => setComment(event.target.value)}
+                                            placeholder="Write a comment..."
+                                            value={comment}
+                                        />
+                                        <Button disabled={commentMutation.isPending} type="submit">
+                                            Send
+                                        </Button>
+                                    </form>
+                                ) : (
+                                    <p className="mt-4 text-xs text-[var(--muted)]">
+                                        Sign in to like and comment.
+                                    </p>
+                                )}
+                            </div>
+                        ) : null}
+                    </>
                 ) : (
                     <div className="flex flex-col gap-2 rounded-[22px] border border-dashed border-[var(--line)] bg-[var(--surface)] p-4 text-sm text-[var(--muted)] sm:flex-row sm:items-center">
                         <LockKeyhole className="size-4 shrink-0 text-[var(--foreground)]" />

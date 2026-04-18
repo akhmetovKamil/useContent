@@ -1,4 +1,5 @@
 import type { PolicyMode } from "@contracts/types/access"
+import type { ContentStatus } from "@contracts/types/content"
 import { useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
@@ -15,8 +16,6 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-
-type ContentStatus = "draft" | "published"
 
 interface ManagedContentItem {
     id: string
@@ -43,6 +42,7 @@ interface ContentManagerPageProps {
     isLoading: boolean
     items?: ManagedContentItem[]
     kind: "post" | "project"
+    hideCreate?: boolean
     loadError?: Error | null
     loadingLabel: string
     missingSessionLabel: string
@@ -55,6 +55,7 @@ interface ContentManagerPageProps {
     }) => Promise<unknown>
     onDelete: (itemId: string) => Promise<unknown>
     onOpen?: (item: ManagedContentItem) => void
+    onArchive?: (itemId: string) => Promise<unknown>
     onToggleStatus: (itemId: string, status: ContentStatus) => Promise<unknown>
     title: string
     token: string | null
@@ -70,12 +71,14 @@ export function ContentManagerPage({
     isLoading,
     items,
     kind,
+    hideCreate = false,
     loadError,
     loadingLabel,
     missingSessionLabel,
     onCreate,
     onDelete,
     onOpen,
+    onArchive,
     onToggleStatus,
     title,
     token,
@@ -97,113 +100,120 @@ export function ContentManagerPage({
                 <p className="mt-3 text-rose-600">Failed to load data: {loadError?.message}</p>
             ) : (
                 <div className="mt-6 grid gap-6">
-                    <form
-                        className="grid gap-4 rounded-lg border border-[var(--line)] bg-[var(--surface)] p-5"
-                        onSubmit={(event) => {
-                            event.preventDefault()
-                            void onCreate({
-                                title: draftTitle,
-                                body,
-                                status,
-                                policyMode,
-                                accessPolicyId: policyMode === "custom" ? accessPolicyId : null,
-                            }).then(() => {
-                                setDraftTitle("")
-                                setBody("")
-                                setStatus("draft")
-                                setPolicyMode("inherited")
-                                setAccessPolicyId("")
-                            })
-                        }}
-                    >
-                        <div>
-                            <Eyebrow className="tracking-[0.3em]">create {kind}</Eyebrow>
-                            <p className="mt-2 text-sm text-[var(--muted)]">{intro}</p>
-                        </div>
-
-                        <Label>
-                            Title
-                            <Input
-                                onChange={(event) => setDraftTitle(event.target.value)}
-                                value={draftTitle}
-                            />
-                        </Label>
-
-                        <Label>
-                            {bodyLabel}
-                            <Textarea
-                                className="min-h-36"
-                                onChange={(event) => setBody(event.target.value)}
-                                value={body}
-                            />
-                        </Label>
-
-                        <div className="grid gap-4 md:grid-cols-2">
-                            <Label>
-                                Status
-                                <Select
-                                    onValueChange={(value) => setStatus(value as ContentStatus)}
-                                    value={status}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="draft">draft</SelectItem>
-                                        <SelectItem value="published">published</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </Label>
-
-                            <Label>
-                                Access mode
-                                <Select
-                                    onValueChange={(value) => setPolicyMode(value as PolicyMode)}
-                                    value={policyMode}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="inherited">inherited</SelectItem>
-                                        <SelectItem value="public">public</SelectItem>
-                                        <SelectItem value="custom">custom</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </Label>
-                        </div>
-
-                        {policyMode === "custom" ? (
-                            <Label>
-                                Saved access policy
-                                <Select onValueChange={setAccessPolicyId} value={accessPolicyId}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select policy" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {accessPolicies.map((policy) => (
-                                            <SelectItem key={policy.id} value={policy.id}>
-                                                {policy.name}
-                                                {policy.isDefault ? " (default)" : ""}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </Label>
-                        ) : null}
-
-                        {createError ? (
-                            <p className="text-sm text-rose-600">{createError.message}</p>
-                        ) : null}
-
-                        <Button
-                            className="w-fit rounded-full"
-                            disabled={createPending}
-                            type="submit"
+                    {hideCreate ? null : (
+                        <form
+                            className="grid gap-4 rounded-lg border border-[var(--line)] bg-[var(--surface)] p-5"
+                            onSubmit={(event) => {
+                                event.preventDefault()
+                                void onCreate({
+                                    title: draftTitle,
+                                    body,
+                                    status,
+                                    policyMode,
+                                    accessPolicyId: policyMode === "custom" ? accessPolicyId : null,
+                                }).then(() => {
+                                    setDraftTitle("")
+                                    setBody("")
+                                    setStatus("draft")
+                                    setPolicyMode("inherited")
+                                    setAccessPolicyId("")
+                                })
+                            }}
                         >
-                            {createPending ? "Saving..." : `Create ${kind}`}
-                        </Button>
-                    </form>
+                            <div>
+                                <Eyebrow className="tracking-[0.3em]">create {kind}</Eyebrow>
+                                <p className="mt-2 text-sm text-[var(--muted)]">{intro}</p>
+                            </div>
+
+                            <Label>
+                                Title
+                                <Input
+                                    onChange={(event) => setDraftTitle(event.target.value)}
+                                    value={draftTitle}
+                                />
+                            </Label>
+
+                            <Label>
+                                {bodyLabel}
+                                <Textarea
+                                    className="min-h-36"
+                                    onChange={(event) => setBody(event.target.value)}
+                                    value={body}
+                                />
+                            </Label>
+
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <Label>
+                                    Status
+                                    <Select
+                                        onValueChange={(value) => setStatus(value as ContentStatus)}
+                                        value={status}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="draft">draft</SelectItem>
+                                            <SelectItem value="published">published</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </Label>
+
+                                <Label>
+                                    Access mode
+                                    <Select
+                                        onValueChange={(value) =>
+                                            setPolicyMode(value as PolicyMode)
+                                        }
+                                        value={policyMode}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="inherited">inherited</SelectItem>
+                                            <SelectItem value="public">public</SelectItem>
+                                            <SelectItem value="custom">custom</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </Label>
+                            </div>
+
+                            {policyMode === "custom" ? (
+                                <Label>
+                                    Saved access policy
+                                    <Select
+                                        onValueChange={setAccessPolicyId}
+                                        value={accessPolicyId}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select policy" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {accessPolicies.map((policy) => (
+                                                <SelectItem key={policy.id} value={policy.id}>
+                                                    {policy.name}
+                                                    {policy.isDefault ? " (default)" : ""}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </Label>
+                            ) : null}
+
+                            {createError ? (
+                                <p className="text-sm text-rose-600">{createError.message}</p>
+                            ) : null}
+
+                            <Button
+                                className="w-fit rounded-full"
+                                disabled={createPending}
+                                type="submit"
+                            >
+                                {createPending ? "Saving..." : `Create ${kind}`}
+                            </Button>
+                        </form>
+                    )}
 
                     <div className="grid gap-4">
                         {isLoading ? <p className="text-[var(--muted)]">{loadingLabel}</p> : null}
@@ -216,6 +226,7 @@ export function ContentManagerPage({
                                     kind={kind}
                                     onDelete={onDelete}
                                     onOpen={onOpen}
+                                    onArchive={onArchive}
                                     onToggleStatus={onToggleStatus}
                                 />
                             ))
@@ -234,15 +245,16 @@ function ContentCard({
     kind,
     onDelete,
     onOpen,
+    onArchive,
     onToggleStatus,
 }: {
     item: ManagedContentItem
     kind: "post" | "project"
     onDelete: (itemId: string) => Promise<unknown>
     onOpen?: (item: ManagedContentItem) => void
+    onArchive?: (itemId: string) => Promise<unknown>
     onToggleStatus: (itemId: string, status: ContentStatus) => Promise<unknown>
 }) {
-    const nextStatus = item.status === "published" ? "draft" : "published"
     const body =
         kind === "post" ? item.content : item.description || "Project description is still empty"
 
@@ -271,13 +283,25 @@ function ContentCard({
                     ) : null}
                     <Button
                         className="rounded-full"
-                        onClick={() => void onToggleStatus(item.id, nextStatus)}
+                        disabled={item.status === "published"}
+                        onClick={() => void onToggleStatus(item.id, "published")}
                         size="sm"
                         type="button"
                         variant="outline"
                     >
-                        {item.status === "published" ? "Move to draft" : "Publish"}
+                        Publish
                     </Button>
+                    {onArchive ? (
+                        <Button
+                            className="rounded-full"
+                            onClick={() => void onArchive(item.id)}
+                            size="sm"
+                            type="button"
+                            variant="outline"
+                        >
+                            Archive
+                        </Button>
+                    ) : null}
                     <Button
                         className="rounded-full"
                         onClick={() => {
