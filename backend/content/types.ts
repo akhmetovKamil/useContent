@@ -16,6 +16,7 @@ import type {
   CreateProjectFolderInput,
   CreateSubscriptionPaymentIntentInput,
   FeedPostDto,
+  FeedProjectDto,
   PostDto,
   ProjectDto,
   ProjectNodeDto,
@@ -197,6 +198,7 @@ export type AccessPolicyPresetResponse = AccessPolicyPresetDto;
 export type SubscriptionEntitlementResponse = SubscriptionEntitlementDto;
 export type ReaderSubscriptionResponse = ReaderSubscriptionDto;
 export type FeedPostResponse = FeedPostDto;
+export type FeedProjectResponse = FeedProjectDto;
 export type ContractDeploymentResponse = ContractDeploymentDto;
 export type ContractDeploymentLookupResponse = ContractDeploymentLookupDto;
 export type SubscriptionPaymentIntentResponse = SubscriptionPaymentIntentDto;

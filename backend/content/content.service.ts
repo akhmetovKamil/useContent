@@ -30,6 +30,7 @@ import type {
   CreateProjectRequest,
   CreateSubscriptionPaymentIntentRequest,
   FeedPostResponse,
+  FeedProjectResponse,
   PostDoc,
   PostResponse,
   ProjectDoc,
@@ -1160,9 +1161,19 @@ export async function deleteMyProject(
 
 export async function listAuthorProjectsBySlug(
   slug: string,
-): Promise<ProjectDoc[]> {
+  viewerWallet?: string,
+): Promise<FeedProjectResponse[]> {
   const author = await getAuthorProfileBySlug(slug);
-  return repo.listPublishedProjectsByAuthorId(author._id);
+  const projects = await repo.listPublishedProjectsByAuthorId(author._id);
+  return Promise.all(
+    projects.map((project) =>
+      buildFeedProjectResponse(
+        project,
+        author,
+        viewerWallet ? normalizeWallet(viewerWallet) : undefined,
+      ),
+    ),
+  );
 }
 
 export async function getAuthorProjectBySlugAndId(
@@ -1525,6 +1536,54 @@ export function toProjectResponse(project: ProjectDoc): ProjectResponse {
     createdAt: project.createdAt.toISOString(),
     updatedAt: project.updatedAt.toISOString(),
   };
+}
+
+export function toFeedProjectResponse(
+  project: ProjectDoc,
+  author: AuthorProfileDoc,
+  access?: { accessLabel: string | null; hasAccess: boolean },
+): FeedProjectResponse {
+  return {
+    ...toProjectResponse(project),
+    authorSlug: author.slug,
+    authorDisplayName: author.displayName,
+    accessLabel: access?.accessLabel ?? null,
+    hasAccess: access?.hasAccess ?? true,
+  };
+}
+
+async function buildFeedProjectResponse(
+  project: ProjectDoc,
+  author: AuthorProfileDoc,
+  viewerWallet?: string,
+): Promise<FeedProjectResponse> {
+  const resolvedPolicy = resolveEntityPolicy(
+    project.policyMode,
+    author.defaultPolicy,
+    project.policy,
+  );
+  const [plans, subscriptions] = await Promise.all([
+    repo.listSubscriptionPlansByAuthorId(author._id),
+    viewerWallet ? buildSubscriptionGrants(author._id, viewerWallet) : [],
+  ]);
+  const evaluation = evaluateAccessPolicy(resolvedPolicy, {
+    subscriptions,
+    tokenBalances: [],
+    nftOwnerships: [],
+  });
+  const hasAccess = evaluation.allowed;
+
+  return toFeedProjectResponse(
+    {
+      ...project,
+      description: hasAccess ? project.description : "",
+    },
+    author,
+    {
+      accessLabel: describeAccessPolicy(resolvedPolicy.root, plans),
+      hasAccess,
+    },
+  );
 }
 
 function normalizeWallet(walletAddress: string): string {

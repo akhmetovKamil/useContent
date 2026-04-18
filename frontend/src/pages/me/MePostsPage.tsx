@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { Link } from "react-router-dom"
 
 import { ContentManagerPage } from "@/components/content-manager/ContentManagerPage"
 import { PostFeed } from "@/components/posts/PostFeed"
@@ -35,8 +36,8 @@ export function MePostsPage() {
                     >
                         {showEditor ? "Hide editor" : "Create post"}
                     </Button>
-                    <Button className="rounded-full" disabled variant="outline">
-                        Projects coming soon
+                    <Button asChild className="rounded-full" variant="outline">
+                        <Link to="/me/projects">Projects</Link>
                     </Button>
                 </div>
             </PageSection>

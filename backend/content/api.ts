@@ -18,6 +18,7 @@ import type {
   CreateProjectRequest,
   CreateSubscriptionPaymentIntentRequest,
   FeedPostResponse,
+  FeedProjectResponse,
   PostResponse,
   ProjectResponse,
   ReaderSubscriptionResponse,
@@ -548,15 +549,22 @@ function getDeploymentRegistryToken(): string {
   }
 }
 
+interface ListAuthorProjectsRequest {
+  slug: string;
+  authorization?: Header<"Authorization">;
+}
+
 export const listAuthorProjects = api(
   { method: "GET", path: "/authors/:slug/projects", expose: true },
   async ({
     slug,
-  }: {
-    slug: string;
-  }): Promise<{ projects: ProjectResponse[] }> => {
-    const projects = await service.listAuthorProjectsBySlug(slug);
-    return { projects: projects.map(service.toProjectResponse) };
+    authorization,
+  }: ListAuthorProjectsRequest): Promise<{
+    projects: FeedProjectResponse[];
+  }> => {
+    const viewerWallet = await getOptionalViewerWallet(authorization);
+    const projects = await service.listAuthorProjectsBySlug(slug, viewerWallet);
+    return { projects };
   },
 );
 

@@ -3,7 +3,7 @@ import type {
     AuthorCatalogItemDto,
     AuthorProfileDto,
     FeedPostDto,
-    ProjectDto,
+    FeedProjectDto,
     SubscriptionPlanDto,
 } from "@contracts/types/content"
 
@@ -45,7 +45,7 @@ class AuthorsApi {
     }
 
     async listAuthorProjects(slug: string) {
-        const response = await http.get<{ projects: ProjectDto[] }>(`/authors/${slug}/projects`)
+        const response = await http.get<{ projects: FeedProjectDto[] }>(`/authors/${slug}/projects`)
         return response.data.projects
     }
 }

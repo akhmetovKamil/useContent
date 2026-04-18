@@ -27,8 +27,8 @@ export function AuthorFeedPage() {
                     <Button asChild className="rounded-full" variant="outline">
                         <Link to={`/authors/${authorSlug}`}>Author profile</Link>
                     </Button>
-                    <Button className="rounded-full" disabled variant="outline">
-                        Projects coming soon
+                    <Button asChild className="rounded-full" variant="outline">
+                        <Link to={`/authors/${authorSlug}#projects`}>Projects</Link>
                     </Button>
                 </div>
             </PageSection>

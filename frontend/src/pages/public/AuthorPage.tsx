@@ -1,8 +1,9 @@
 import { CheckCircle2, LockKeyhole, ShieldCheck } from "lucide-react"
-import { useParams } from "react-router-dom"
+import { Link, useParams } from "react-router-dom"
 import { formatUnits } from "viem"
 
 import { PostFeed } from "@/components/posts/PostFeed"
+import { ProjectList } from "@/components/projects/ProjectList"
 import { SubscribeButton } from "@/components/subscriptions/SubscribeButton"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -10,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuthorAccessPoliciesQuery, useAuthorProfileQuery } from "@/queries/authors"
 import { useAuthorPostsQuery } from "@/queries/posts"
 import { useMyReaderSubscriptionsQuery } from "@/queries/profile"
+import { useAuthorProjectsQuery } from "@/queries/projects"
 import { useAuthorSubscriptionPlansQuery } from "@/queries/subscription-plans"
 import { useAuthStore } from "@/stores/auth-store"
 import { getTokenPresets } from "@/utils/config/tokens"
@@ -20,6 +22,7 @@ export function AuthorPage() {
     const token = useAuthStore((state) => state.token)
     const authorQuery = useAuthorProfileQuery(authorSlug)
     const postsQuery = useAuthorPostsQuery(authorSlug)
+    const projectsQuery = useAuthorProjectsQuery(authorSlug)
     const plansQuery = useAuthorSubscriptionPlansQuery(authorSlug)
     const policiesQuery = useAuthorAccessPoliciesQuery(authorSlug)
     const subscriptionsQuery = useMyReaderSubscriptionsQuery(Boolean(token))
@@ -214,8 +217,8 @@ export function AuthorPage() {
                             <div>
                                 <CardTitle>Posts by {authorQuery.data.displayName}</CardTitle>
                             </div>
-                            <Button className="rounded-full" disabled variant="outline">
-                                Projects coming soon
+                            <Button asChild className="rounded-full" variant="outline">
+                                <Link to="#projects">Projects</Link>
                             </Button>
                         </CardHeader>
                         <CardContent>
@@ -225,6 +228,29 @@ export function AuthorPage() {
                                 <p className="text-sm text-rose-600">{postsQuery.error.message}</p>
                             ) : (
                                 <PostFeed emptyLabel="No posts yet." posts={postsQuery.data} />
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card className="rounded-[28px]" id="projects">
+                        <CardHeader>
+                            <CardTitle>Projects by {authorQuery.data.displayName}</CardTitle>
+                            <CardDescription>
+                                Structured spaces published by this author.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {projectsQuery.isLoading ? (
+                                <p className="text-sm text-[var(--muted)]">Loading projects...</p>
+                            ) : projectsQuery.isError ? (
+                                <p className="text-sm text-rose-600">
+                                    {projectsQuery.error.message}
+                                </p>
+                            ) : (
+                                <ProjectList
+                                    emptyLabel="No projects yet."
+                                    projects={projectsQuery.data}
+                                />
                             )}
                         </CardContent>
                     </Card>

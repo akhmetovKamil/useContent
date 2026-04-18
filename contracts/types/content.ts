@@ -144,6 +144,13 @@ export interface FeedPostDto extends PostDto {
   hasAccess: boolean;
 }
 
+export interface FeedProjectDto extends ProjectDto {
+  authorSlug: string;
+  authorDisplayName: string;
+  accessLabel: string | null;
+  hasAccess: boolean;
+}
+
 export type SubscriptionPaymentAsset = "erc20" | "native";
 
 export interface SubscriptionPaymentIntentDto {
