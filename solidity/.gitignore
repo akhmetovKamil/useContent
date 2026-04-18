@@ -2,3 +2,7 @@ artifacts/
 cache/
 coverage/
 types/
+.agents/
+.claude/
+.skills/
+CLAUDE.md

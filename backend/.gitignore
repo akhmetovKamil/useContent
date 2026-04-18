@@ -6,5 +6,8 @@ node_modules
 /encore.gen
 .DS_Store
 .claude/
+.agents/
+.skills/
+CLAUDE.md
 .mcp.json
 .secrets.local.cue
