@@ -18,6 +18,7 @@ import {
 } from "@/queries/posts"
 import { useAuthStore } from "@/stores/auth-store"
 import { cn } from "@/utils/cn"
+import { v4 as uuidv4 } from "uuid"
 
 export function PostPage() {
     const { slug = "", postId = "" } = useParams()
@@ -223,7 +224,7 @@ function getViewerKey() {
         return existing
     }
 
-    const next = crypto.randomUUID()
+    const next = uuidv4();
     window.localStorage.setItem(key, next)
     return next
 }
