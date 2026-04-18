@@ -1,11 +1,14 @@
 import type { ProjectNodeDto } from "@contracts/types/content"
 import { Download, FileText, Folder, FolderPlus, Pencil, Trash2, Upload } from "lucide-react"
 import { useRef, useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 
+import { projectsApi } from "@/api/ProjectsApi"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Modal } from "@/components/ui/modal"
 import {
     useAuthorProjectNodesQuery,
     useCreateMyProjectFolderMutation,
@@ -16,6 +19,7 @@ import {
     useUpdateMyProjectNodeMutation,
     useUploadMyProjectFileMutation,
 } from "@/queries/projects"
+import { queryKeys } from "@/queries/queryKeys"
 
 type ProjectTreeMode = "author" | "reader"
 
@@ -28,7 +32,14 @@ interface ProjectFileTreeProps {
 
 export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: ProjectFileTreeProps) {
     const [currentFolderId, setCurrentFolderId] = useState<string | null>(rootNodeId)
+    const [deleteNodeTarget, setDeleteNodeTarget] = useState<ProjectNodeDto | null>(null)
+    const [folderName, setFolderName] = useState("")
+    const [folderModalOpen, setFolderModalOpen] = useState(false)
+    const [renameName, setRenameName] = useState("")
+    const [renameNodeTarget, setRenameNodeTarget] = useState<ProjectNodeDto | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const folderInputRef = useRef<HTMLInputElement>(null)
+    const queryClient = useQueryClient()
     const isAuthor = mode === "author"
     const myNodesQuery = useMyProjectNodesQuery(
         projectId,
@@ -57,7 +68,7 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
     }
 
     async function createFolder() {
-        const name = window.prompt("Folder name")
+        const name = folderName.trim()
         if (!name) {
             return
         }
@@ -66,14 +77,18 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
             parentId: currentFolderId,
             visibility: "published",
         })
+        setFolderName("")
+        setFolderModalOpen(false)
     }
 
     async function renameNode(node: ProjectNodeDto) {
-        const name = window.prompt("New name", node.name)
+        const name = renameName.trim()
         if (!name || name === node.name) {
             return
         }
         await updateNodeMutation.mutateAsync({ nodeId: node.id, input: { name } })
+        setRenameName("")
+        setRenameNodeTarget(null)
     }
 
     async function toggleVisibility(node: ProjectNodeDto) {
@@ -84,10 +99,8 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
     }
 
     async function deleteNode(node: ProjectNodeDto) {
-        if (!window.confirm(`Delete ${node.name}?`)) {
-            return
-        }
         await deleteNodeMutation.mutateAsync(node.id)
+        setDeleteNodeTarget(null)
     }
 
     async function downloadFile(node: ProjectNodeDto) {
@@ -96,6 +109,43 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
             return
         }
         await downloadAuthorFileMutation.mutateAsync({ nodeId: node.id, fileName: node.name })
+    }
+
+    async function uploadFiles(files: File[]) {
+        await Promise.all(files.map((file) => uploadFileMutation.mutateAsync(file)))
+    }
+
+    async function uploadFolderFiles(files: File[]) {
+        const folderIds = new Map<string, string | null>()
+        folderIds.set("", currentFolderId)
+
+        for (const file of files) {
+            const relativePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath
+            const pathParts = (relativePath || file.name).split("/").filter(Boolean)
+            const fileName = pathParts.pop() ?? file.name
+            let parentId = currentFolderId
+            let pathKey = ""
+
+            for (const segment of pathParts) {
+                pathKey = pathKey ? `${pathKey}/${segment}` : segment
+                if (!folderIds.has(pathKey)) {
+                    const folder = await projectsApi.createMyProjectFolder(projectId, {
+                        name: segment,
+                        parentId,
+                        visibility: "published",
+                    })
+                    folderIds.set(pathKey, folder.id)
+                }
+                parentId = folderIds.get(pathKey) ?? currentFolderId
+            }
+
+            const uploadFile = new File([file], fileName, { type: file.type })
+            await projectsApi.uploadMyProjectFile(projectId, uploadFile, parentId)
+        }
+
+        await queryClient.invalidateQueries({
+            queryKey: queryKeys.myProjectNodes(projectId, currentFolderId),
+        })
     }
 
     return (
@@ -113,7 +163,7 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                     <div className="flex flex-wrap gap-2">
                         <Button
                             className="rounded-full"
-                            onClick={() => void createFolder()}
+                            onClick={() => setFolderModalOpen(true)}
                             size="sm"
                             type="button"
                             variant="outline"
@@ -128,19 +178,44 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                             type="button"
                         >
                             <Upload className="size-4" />
-                            Upload file
+                            Upload files
+                        </Button>
+                        <Button
+                            className="rounded-full"
+                            onClick={() => folderInputRef.current?.click()}
+                            size="sm"
+                            type="button"
+                            variant="outline"
+                        >
+                            <Upload className="size-4" />
+                            Upload folder
                         </Button>
                         <Input
                             className="hidden"
                             onChange={(event) => {
-                                const file = event.target.files?.[0]
-                                if (file) {
-                                    void uploadFileMutation.mutateAsync(file)
+                                const files = Array.from(event.target.files ?? [])
+                                if (files.length) {
+                                    void uploadFiles(files)
                                 }
                                 event.currentTarget.value = ""
                             }}
+                            multiple
                             ref={fileInputRef}
                             type="file"
+                        />
+                        <Input
+                            className="hidden"
+                            onChange={(event) => {
+                                const files = Array.from(event.target.files ?? [])
+                                if (files.length) {
+                                    void uploadFolderFiles(files)
+                                }
+                                event.currentTarget.value = ""
+                            }}
+                            multiple
+                            ref={folderInputRef}
+                            type="file"
+                            {...{ directory: "", webkitdirectory: "" }}
                         />
                     </div>
                 ) : null}
@@ -219,7 +294,10 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                                         <>
                                             <Button
                                                 className="rounded-full"
-                                                onClick={() => void renameNode(node)}
+                                                onClick={() => {
+                                                    setRenameNodeTarget(node)
+                                                    setRenameName(node.name)
+                                                }}
                                                 size="sm"
                                                 type="button"
                                                 variant="outline"
@@ -240,7 +318,7 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                                             </Button>
                                             <Button
                                                 className="rounded-full"
-                                                onClick={() => void deleteNode(node)}
+                                                onClick={() => setDeleteNodeTarget(node)}
                                                 size="sm"
                                                 type="button"
                                                 variant="destructive"
@@ -260,6 +338,117 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                     </div>
                 )}
             </CardContent>
+
+            <Modal
+                description="Create a folder inside the current project location."
+                onOpenChange={setFolderModalOpen}
+                open={folderModalOpen}
+                title="New folder"
+            >
+                <form
+                    className="grid gap-4"
+                    onSubmit={(event) => {
+                        event.preventDefault()
+                        void createFolder()
+                    }}
+                >
+                    <Input
+                        autoFocus
+                        onChange={(event) => setFolderName(event.target.value)}
+                        placeholder="Folder name"
+                        value={folderName}
+                    />
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            onClick={() => setFolderModalOpen(false)}
+                            type="button"
+                            variant="outline"
+                        >
+                            Cancel
+                        </Button>
+                        <Button disabled={createFolderMutation.isPending} type="submit">
+                            Create folder
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
+
+            <Modal
+                description="Rename this project file or folder."
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setRenameNodeTarget(null)
+                    }
+                }}
+                open={Boolean(renameNodeTarget)}
+                title="Rename item"
+            >
+                <form
+                    className="grid gap-4"
+                    onSubmit={(event) => {
+                        event.preventDefault()
+                        if (renameNodeTarget) {
+                            void renameNode(renameNodeTarget)
+                        }
+                    }}
+                >
+                    <Input
+                        autoFocus
+                        onChange={(event) => setRenameName(event.target.value)}
+                        placeholder="New name"
+                        value={renameName}
+                    />
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            onClick={() => setRenameNodeTarget(null)}
+                            type="button"
+                            variant="outline"
+                        >
+                            Cancel
+                        </Button>
+                        <Button disabled={updateNodeMutation.isPending} type="submit">
+                            Save name
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
+
+            <Modal
+                description={
+                    deleteNodeTarget
+                        ? `This will delete "${deleteNodeTarget.name}" from the project.`
+                        : undefined
+                }
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeleteNodeTarget(null)
+                    }
+                }}
+                open={Boolean(deleteNodeTarget)}
+                title="Delete item?"
+            >
+                <div className="flex justify-end gap-2">
+                    <Button
+                        onClick={() => setDeleteNodeTarget(null)}
+                        type="button"
+                        variant="outline"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        disabled={deleteNodeMutation.isPending}
+                        onClick={() => {
+                            if (deleteNodeTarget) {
+                                void deleteNode(deleteNodeTarget)
+                            }
+                        }}
+                        type="button"
+                        variant="destructive"
+                    >
+                        Delete
+                    </Button>
+                </div>
+            </Modal>
         </Card>
     )
 }

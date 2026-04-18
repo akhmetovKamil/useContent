@@ -60,6 +60,53 @@ export function useUpdateMyPostMutation() {
     return useMutation({
         mutationFn: ({ postId, input }: { postId: string; input: UpdatePostInput }) =>
             postsApi.updateMyPost(postId, input),
+        onMutate: async ({ postId, input }) => {
+            if (!input.status) {
+                return
+            }
+
+            const activeKey = queryKeys.myPosts()
+            const archiveKey = queryKeys.myPosts("archived")
+            await Promise.all([
+                queryClient.cancelQueries({ queryKey: activeKey }),
+                queryClient.cancelQueries({ queryKey: archiveKey }),
+            ])
+
+            const previousActive = queryClient.getQueryData<PostDto[]>(activeKey)
+            const previousArchive = queryClient.getQueryData<PostDto[]>(archiveKey)
+            const existing = [...(previousActive ?? []), ...(previousArchive ?? [])].find(
+                (post) => post.id === postId
+            )
+
+            if (!existing) {
+                return { previousActive, previousArchive }
+            }
+
+            const nextPost = { ...existing, ...input, status: input.status }
+            const removePost = (posts?: PostDto[]) => posts?.filter((post) => post.id !== postId)
+            const addPost = (posts: PostDto[] | undefined, post: PostDto) => [
+                post,
+                ...(posts ?? []).filter((item) => item.id !== post.id),
+            ]
+
+            queryClient.setQueryData<PostDto[]>(activeKey, (posts) => removePost(posts) ?? [])
+            queryClient.setQueryData<PostDto[]>(archiveKey, (posts) => removePost(posts) ?? [])
+
+            if (input.status === "archived") {
+                queryClient.setQueryData<PostDto[]>(archiveKey, (posts) => addPost(posts, nextPost))
+            } else {
+                queryClient.setQueryData<PostDto[]>(activeKey, (posts) => addPost(posts, nextPost))
+            }
+
+            return { previousActive, previousArchive }
+        },
+        onError: (_error, _variables, context) => {
+            if (!context) {
+                return
+            }
+            queryClient.setQueryData(queryKeys.myPosts(), context.previousActive)
+            queryClient.setQueryData(queryKeys.myPosts("archived"), context.previousArchive)
+        },
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: ["me", "posts"] })
             void queryClient.invalidateQueries({ queryKey: ["authors"] })
@@ -137,6 +184,17 @@ export function useTogglePostLikeMutation(slug: string, postId: string) {
             void queryClient.invalidateQueries({ queryKey: queryKeys.authorPost(slug, postId) })
             void queryClient.invalidateQueries({ queryKey: queryKeys.authorPosts(slug) })
             void queryClient.invalidateQueries({ queryKey: queryKeys.myFeedPosts })
+        },
+    })
+}
+
+export function useRecordPostViewMutation(slug: string, postId: string) {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (viewerKey: string) => postsApi.recordPostView(slug, postId, { viewerKey }),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: queryKeys.authorPost(slug, postId) })
         },
     })
 }

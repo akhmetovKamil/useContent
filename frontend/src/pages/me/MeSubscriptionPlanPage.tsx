@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Modal } from "@/components/ui/modal"
 import { Eyebrow, PageSection } from "@/components/ui/page"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -71,6 +72,7 @@ export function MeSubscriptionPlanPage() {
     const [policyName, setPolicyName] = useState("Subscribers only")
     const [policyDescription, setPolicyDescription] = useState("")
     const [policyIsDefault, setPolicyIsDefault] = useState(false)
+    const [deletePolicyId, setDeletePolicyId] = useState<string | null>(null)
     const [policyBuilder, setPolicyBuilder] = useState<AccessPolicyBuilderState>(
         createDefaultPolicyBuilderState()
     )
@@ -644,13 +646,7 @@ export function MeSubscriptionPlanPage() {
                                             {!policy.isDefault ? (
                                                 <Button
                                                     className="rounded-full"
-                                                    onClick={() => {
-                                                        if (window.confirm("Delete policy?")) {
-                                                            void deletePolicyMutation.mutateAsync(
-                                                                policy.id
-                                                            )
-                                                        }
-                                                    }}
+                                                    onClick={() => setDeletePolicyId(policy.id)}
                                                     size="sm"
                                                     type="button"
                                                     variant="destructive"
@@ -666,6 +662,37 @@ export function MeSubscriptionPlanPage() {
                     </Card>
                 </div>
             )}
+            <Modal
+                description="Posts and projects using this policy should be moved to another policy first."
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeletePolicyId(null)
+                    }
+                }}
+                open={Boolean(deletePolicyId)}
+                title="Delete access policy?"
+            >
+                <div className="flex justify-end gap-2">
+                    <Button onClick={() => setDeletePolicyId(null)} type="button" variant="outline">
+                        Cancel
+                    </Button>
+                    <Button
+                        disabled={deletePolicyMutation.isPending}
+                        onClick={() => {
+                            if (!deletePolicyId) {
+                                return
+                            }
+                            void deletePolicyMutation
+                                .mutateAsync(deletePolicyId)
+                                .then(() => setDeletePolicyId(null))
+                        }}
+                        type="button"
+                        variant="destructive"
+                    >
+                        Delete policy
+                    </Button>
+                </div>
+            </Modal>
         </PageSection>
     )
 }

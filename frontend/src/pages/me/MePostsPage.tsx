@@ -1,3 +1,4 @@
+import type { PostDto } from "@contracts/types/content"
 import { useState } from "react"
 import { Link } from "react-router-dom"
 
@@ -5,7 +6,10 @@ import { PostComposer } from "@/components/posts/PostComposer"
 import { PostFeed } from "@/components/posts/PostFeed"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Modal } from "@/components/ui/modal"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
+import { Textarea } from "@/components/ui/textarea"
 import { useMyAccessPoliciesQuery } from "@/queries/access-policies"
 import {
     useCreateMyPostMutation,
@@ -30,6 +34,9 @@ export function MePostsPage() {
     const uploadAttachmentMutation = useUploadMyPostAttachmentMutation()
     const [showEditor, setShowEditor] = useState(false)
     const [showArchive, setShowArchive] = useState(false)
+    const [editingPost, setEditingPost] = useState<PostDto | null>(null)
+    const [editContent, setEditContent] = useState("")
+    const [editTitle, setEditTitle] = useState("")
     const archivedPostsQuery = useMyPostsQuery(Boolean(token) && showArchive, "archived")
     const authorSlug = authorQuery.data?.slug ?? ""
     const authorDisplayName = authorQuery.data?.displayName ?? "Author"
@@ -108,20 +115,9 @@ export function MePostsPage() {
                             }
                             onDelete={(post) => void deletePostMutation.mutateAsync(post.id)}
                             onEdit={(post) => {
-                                const title = window.prompt("Post title", post.title)
-                                if (title === null) {
-                                    return
-                                }
-
-                                const content = window.prompt("Post content", post.content)
-                                if (content === null) {
-                                    return
-                                }
-
-                                void updatePostMutation.mutateAsync({
-                                    postId: post.id,
-                                    input: { content, title },
-                                })
+                                setEditingPost(post)
+                                setEditTitle(post.title)
+                                setEditContent(post.content)
                             }}
                             onPublish={(post) =>
                                 void updatePostMutation.mutateAsync({
@@ -163,12 +159,72 @@ export function MePostsPage() {
                                         input: { status: "published" },
                                     })
                                 }
+                                onUnarchive={(post) =>
+                                    void updatePostMutation.mutateAsync({
+                                        postId: post.id,
+                                        input: { status: "published" },
+                                    })
+                                }
                                 posts={archivedPosts}
                             />
                         )}
                     </CardContent>
                 </Card>
             ) : null}
+
+            <Modal
+                description="Update the post copy without changing its access policy or attachments."
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setEditingPost(null)
+                    }
+                }}
+                open={Boolean(editingPost)}
+                title="Edit post"
+            >
+                <form
+                    className="grid gap-4"
+                    onSubmit={(event) => {
+                        event.preventDefault()
+                        if (!editingPost) {
+                            return
+                        }
+                        void updatePostMutation
+                            .mutateAsync({
+                                postId: editingPost.id,
+                                input: {
+                                    content: editContent,
+                                    title: editTitle,
+                                },
+                            })
+                            .then(() => setEditingPost(null))
+                    }}
+                >
+                    <Input
+                        onChange={(event) => setEditTitle(event.target.value)}
+                        placeholder="Post title"
+                        value={editTitle}
+                    />
+                    <Textarea
+                        className="min-h-40"
+                        onChange={(event) => setEditContent(event.target.value)}
+                        placeholder="Post content"
+                        value={editContent}
+                    />
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            onClick={() => setEditingPost(null)}
+                            type="button"
+                            variant="outline"
+                        >
+                            Cancel
+                        </Button>
+                        <Button disabled={updatePostMutation.isPending} type="submit">
+                            Save changes
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
         </section>
     )
 }

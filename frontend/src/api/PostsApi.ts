@@ -4,6 +4,7 @@ import type {
     PostAttachmentDto,
     PostCommentDto,
     PostDto,
+    RecordPostViewInput,
     UpdatePostInput,
 } from "@contracts/types/content"
 
@@ -74,6 +75,14 @@ class PostsApi {
     async togglePostLike(slug: string, postId: string) {
         const response = await http.post<{ liked: boolean; likesCount: number }>(
             `/authors/${slug}/posts/${postId}/like`
+        )
+        return response.data
+    }
+
+    async recordPostView(slug: string, postId: string, input: RecordPostViewInput) {
+        const response = await http.post<{ viewsCount: number }>(
+            `/authors/${slug}/posts/${postId}/view`,
+            input
         )
         return response.data
     }

@@ -1,5 +1,5 @@
 import type { FeedPostDto, PostDto } from "@contracts/types/content"
-import { Heart, LockKeyhole, MessageCircle } from "lucide-react"
+import { Eye, Heart, LockKeyhole, MessageCircle } from "lucide-react"
 import { useState } from "react"
 import { Link } from "react-router-dom"
 
@@ -26,6 +26,7 @@ interface PostFeedProps {
     onDelete?: (post: PostDto) => void
     onEdit?: (post: PostDto) => void
     onPublish?: (post: PostDto) => void
+    onUnarchive?: (post: PostDto) => void
     posts?: FeedPost[]
     showAuthor?: boolean
 }
@@ -37,6 +38,7 @@ export function PostFeed({
     onDelete,
     onEdit,
     onPublish,
+    onUnarchive,
     posts = [],
     showAuthor = false,
 }: PostFeedProps) {
@@ -54,6 +56,7 @@ export function PostFeed({
                     onDelete={onDelete}
                     onEdit={onEdit}
                     onPublish={onPublish}
+                    onUnarchive={onUnarchive}
                     post={post}
                     showAuthor={showAuthor}
                 />
@@ -68,6 +71,7 @@ function PostCard({
     onDelete,
     onEdit,
     onPublish,
+    onUnarchive,
     post,
     showAuthor,
 }: {
@@ -76,6 +80,7 @@ function PostCard({
     onDelete?: (post: PostDto) => void
     onEdit?: (post: PostDto) => void
     onPublish?: (post: PostDto) => void
+    onUnarchive?: (post: PostDto) => void
     post: FeedPost
     showAuthor: boolean
 }) {
@@ -153,6 +158,17 @@ function PostCard({
                                     Publish
                                 </Button>
                             ) : null}
+                            {post.status === "archived" ? (
+                                <Button
+                                    className="rounded-full"
+                                    onClick={() => onUnarchive?.(post)}
+                                    size="sm"
+                                    type="button"
+                                    variant="outline"
+                                >
+                                    Unarchive
+                                </Button>
+                            ) : null}
                             <Button
                                 className="rounded-full"
                                 onClick={() => onEdit?.(post)}
@@ -162,16 +178,17 @@ function PostCard({
                             >
                                 Edit
                             </Button>
-                            <Button
-                                className="rounded-full"
-                                onClick={() => onArchive?.(post)}
-                                disabled={post.status === "archived"}
-                                size="sm"
-                                type="button"
-                                variant="outline"
-                            >
-                                Archive
-                            </Button>
+                            {post.status !== "archived" ? (
+                                <Button
+                                    className="rounded-full"
+                                    onClick={() => onArchive?.(post)}
+                                    size="sm"
+                                    type="button"
+                                    variant="outline"
+                                >
+                                    Archive
+                                </Button>
+                            ) : null}
                             <Button
                                 className="rounded-full"
                                 onClick={() => onDelete?.(post)}
@@ -227,6 +244,10 @@ function PostCard({
                                 <MessageCircle className="size-4" />
                                 {post.commentsCount}
                             </Button>
+                            <Badge className="rounded-full border border-[var(--line)] bg-transparent">
+                                <Eye className="size-3.5" />
+                                {post.viewsCount} views
+                            </Badge>
                         </div>
 
                         {attachments.length ? (

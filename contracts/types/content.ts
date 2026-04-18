@@ -249,10 +249,15 @@ export interface PostDto {
   linkedProjectIds: string[];
   likesCount: number;
   commentsCount: number;
+  viewsCount: number;
   likedByMe: boolean;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface RecordPostViewInput {
+  viewerKey: string;
 }
 
 export interface ProjectDto {

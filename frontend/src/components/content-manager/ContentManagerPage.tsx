@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Modal } from "@/components/ui/modal"
 import { Eyebrow, PageSection } from "@/components/ui/page"
 import {
     Select,
@@ -88,6 +89,7 @@ export function ContentManagerPage({
     const [status, setStatus] = useState<ContentStatus>("draft")
     const [policyMode, setPolicyMode] = useState<PolicyMode>("inherited")
     const [accessPolicyId, setAccessPolicyId] = useState("")
+    const [deleteTarget, setDeleteTarget] = useState<ManagedContentItem | null>(null)
     const bodyLabel = kind === "post" ? "Content" : "Description"
 
     return (
@@ -224,9 +226,9 @@ export function ContentManagerPage({
                                     item={item}
                                     key={item.id}
                                     kind={kind}
-                                    onDelete={onDelete}
                                     onOpen={onOpen}
                                     onArchive={onArchive}
+                                    onRequestDelete={setDeleteTarget}
                                     onToggleStatus={onToggleStatus}
                                 />
                             ))
@@ -236,6 +238,38 @@ export function ContentManagerPage({
                     </div>
                 </div>
             )}
+            <Modal
+                description={
+                    deleteTarget
+                        ? `This will permanently delete "${deleteTarget.title}".`
+                        : undefined
+                }
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeleteTarget(null)
+                    }
+                }}
+                open={Boolean(deleteTarget)}
+                title={`Delete ${kind}?`}
+            >
+                <div className="flex justify-end gap-2">
+                    <Button onClick={() => setDeleteTarget(null)} type="button" variant="outline">
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={() => {
+                            if (!deleteTarget) {
+                                return
+                            }
+                            void onDelete(deleteTarget.id).then(() => setDeleteTarget(null))
+                        }}
+                        type="button"
+                        variant="destructive"
+                    >
+                        Delete
+                    </Button>
+                </div>
+            </Modal>
         </PageSection>
     )
 }
@@ -243,16 +277,16 @@ export function ContentManagerPage({
 function ContentCard({
     item,
     kind,
-    onDelete,
     onOpen,
     onArchive,
+    onRequestDelete,
     onToggleStatus,
 }: {
     item: ManagedContentItem
     kind: "post" | "project"
-    onDelete: (itemId: string) => Promise<unknown>
     onOpen?: (item: ManagedContentItem) => void
     onArchive?: (itemId: string) => Promise<unknown>
+    onRequestDelete: (item: ManagedContentItem) => void
     onToggleStatus: (itemId: string, status: ContentStatus) => Promise<unknown>
 }) {
     const body =
@@ -304,11 +338,7 @@ function ContentCard({
                     ) : null}
                     <Button
                         className="rounded-full"
-                        onClick={() => {
-                            if (window.confirm(`Delete this ${kind}?`)) {
-                                void onDelete(item.id)
-                            }
-                        }}
+                        onClick={() => onRequestDelete(item)}
                         size="sm"
                         type="button"
                         variant="destructive"

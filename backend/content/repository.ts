@@ -8,6 +8,7 @@ import type {
   PostAttachmentDoc,
   PostDoc,
   PostLikeDoc,
+  PostViewDoc,
   ProjectDoc,
   ProjectNodeDoc,
   SubscriptionEntitlementDoc,
@@ -239,7 +240,9 @@ export async function listPostsByAuthorId(
 ): Promise<PostDoc[]> {
   const posts = await getPostsCollection();
   return posts
-    .find(status ? { authorId, status } : { authorId, status: { $ne: "archived" } })
+    .find(
+      status ? { authorId, status } : { authorId, status: { $ne: "archived" } },
+    )
     .sort({ createdAt: -1 })
     .toArray();
 }
@@ -349,6 +352,13 @@ export async function getPostAttachmentsCollection(): Promise<
   return getCollection<PostAttachmentDoc>("post_attachments");
 }
 
+export async function getPostViewsCollection(): Promise<
+  Collection<PostViewDoc>
+> {
+  await ensureIndexes();
+  return getCollection<PostViewDoc>("post_views");
+}
+
 export async function findPostLike(
   postId: ObjectId,
   walletAddress: string,
@@ -385,6 +395,33 @@ export async function countPostComments(postId: ObjectId): Promise<number> {
   return comments.countDocuments({ postId });
 }
 
+export async function countPostViews(postId: ObjectId): Promise<number> {
+  const views = await getPostViewsCollection();
+  return views.countDocuments({ postId });
+}
+
+export async function recordPostView(
+  postId: ObjectId,
+  viewerKey: string,
+): Promise<number> {
+  const now = new Date();
+  const views = await getPostViewsCollection();
+  await views.updateOne(
+    { postId, viewerKey },
+    {
+      $setOnInsert: {
+        _id: new ObjectId(),
+        postId,
+        viewerKey,
+        createdAt: now,
+      },
+      $set: { updatedAt: now },
+    },
+    { upsert: true },
+  );
+  return countPostViews(postId);
+}
+
 export async function listPostComments(
   postId: ObjectId,
 ): Promise<PostCommentDoc[]> {
@@ -400,11 +437,15 @@ export async function createPostComment(
   return doc;
 }
 
-export async function deletePostCommentsByPostId(postId: ObjectId): Promise<void> {
+export async function deletePostCommentsByPostId(
+  postId: ObjectId,
+): Promise<void> {
   const comments = await getPostCommentsCollection();
   await comments.deleteMany({ postId });
   const likes = await getPostLikesCollection();
   await likes.deleteMany({ postId });
+  const views = await getPostViewsCollection();
+  await views.deleteMany({ postId });
 }
 
 export async function createPostAttachment(
@@ -464,7 +505,9 @@ export async function listProjectsByAuthorId(
 ): Promise<ProjectDoc[]> {
   const projects = await getProjectsCollection();
   return projects
-    .find(status ? { authorId, status } : { authorId, status: { $ne: "archived" } })
+    .find(
+      status ? { authorId, status } : { authorId, status: { $ne: "archived" } },
+    )
     .sort({ createdAt: -1 })
     .toArray();
 }
@@ -942,6 +985,7 @@ async function ensureIndexes(): Promise<void> {
     postAttachments,
     postLikes,
     postComments,
+    postViews,
     subscriptionPlans,
     subscriptionEntitlements,
     subscriptionPaymentIntents,
@@ -956,6 +1000,7 @@ async function ensureIndexes(): Promise<void> {
     getCollection<PostAttachmentDoc>("post_attachments"),
     getCollection<PostLikeDoc>("post_likes"),
     getCollection<PostCommentDoc>("post_comments"),
+    getCollection<PostViewDoc>("post_views"),
     getCollection<SubscriptionPlanDoc>("subscription_plans"),
     getCollection<SubscriptionEntitlementDoc>("subscription_entitlements"),
     getCollection<SubscriptionPaymentIntentDoc>("subscription_payment_intents"),
@@ -990,6 +1035,8 @@ async function ensureIndexes(): Promise<void> {
     postLikes.createIndex({ walletAddress: 1, createdAt: -1 }),
     postComments.createIndex({ postId: 1, createdAt: 1 }),
     postComments.createIndex({ walletAddress: 1, createdAt: -1 }),
+    postViews.createIndex({ postId: 1, viewerKey: 1 }, { unique: true }),
+    postViews.createIndex({ viewerKey: 1, createdAt: -1 }),
     projects.createIndex({ authorId: 1, status: 1, publishedAt: -1 }),
     projects.createIndex({ authorId: 1, accessPolicyId: 1 }),
     projectNodes.createIndex({ projectId: 1, parentId: 1, name: 1 }),

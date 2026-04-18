@@ -1,9 +1,11 @@
+import { useState } from "react"
 import { Link, Navigate, useNavigate } from "react-router-dom"
 
 import { AuthorProfileForm } from "@/components/author-onboarding/AuthorProfileForm"
 import { AppearancePicker } from "@/components/settings/AppearancePicker"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Modal } from "@/components/ui/modal"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
 import {
     useDeleteMyAuthorProfileMutation,
@@ -20,6 +22,7 @@ export function MeAuthorPage() {
     const authorQuery = useMyAuthorProfileQuery(Boolean(token))
     const updateAuthorMutation = useUpdateMyAuthorProfileMutation()
     const deleteAuthorMutation = useDeleteMyAuthorProfileMutation()
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false)
 
     if (!token) {
         return <Navigate replace to="/" />
@@ -73,19 +76,7 @@ export function MeAuthorPage() {
                         <button
                             className="text-sm font-medium text-rose-600 underline underline-offset-4 transition hover:text-rose-700 disabled:opacity-60"
                             disabled={deleteAuthorMutation.isPending}
-                            onClick={() => {
-                                const confirmed = window.confirm(
-                                    "Delete your author account? Your user wallet account will stay active, but author profile, posts, projects, access policies, subscription plans, payment intents, and entitlements will be removed from the database."
-                                )
-                                if (!confirmed) {
-                                    return
-                                }
-
-                                void deleteAuthorMutation.mutateAsync().then(() => {
-                                    setMode("reader")
-                                    navigate("/")
-                                })
-                            }}
+                            onClick={() => setDeleteModalOpen(true)}
                             type="button"
                         >
                             {deleteAuthorMutation.isPending
@@ -106,6 +97,36 @@ export function MeAuthorPage() {
                     </CardContent>
                 </Card>
             )}
+            <Modal
+                description="Your user wallet account will stay active, but the author profile, posts, projects, access policies, subscription plans, payment intents, and entitlements will be removed from the database."
+                onOpenChange={setDeleteModalOpen}
+                open={deleteModalOpen}
+                title="Delete author account?"
+            >
+                <div className="flex justify-end gap-2">
+                    <Button
+                        onClick={() => setDeleteModalOpen(false)}
+                        type="button"
+                        variant="outline"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        disabled={deleteAuthorMutation.isPending}
+                        onClick={() => {
+                            void deleteAuthorMutation.mutateAsync().then(() => {
+                                setDeleteModalOpen(false)
+                                setMode("reader")
+                                navigate("/")
+                            })
+                        }}
+                        type="button"
+                        variant="destructive"
+                    >
+                        Delete author account
+                    </Button>
+                </div>
+            </Modal>
         </section>
     )
 }

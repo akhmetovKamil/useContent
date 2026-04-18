@@ -27,6 +27,7 @@ import type {
   ProjectNodeResponse,
   ProjectResponse,
   ReaderSubscriptionResponse,
+  RecordPostViewRequest,
   SubscriptionPaymentIntentResponse,
   SubscriptionPlanResponse,
   SubscriptionEntitlementResponse,
@@ -421,7 +422,9 @@ interface ListMyPostsRequest {
 
 export const listMyPosts = api(
   { method: "GET", path: "/me/posts", expose: true, auth: true },
-  async ({ status }: ListMyPostsRequest): Promise<{ posts: PostResponse[] }> => {
+  async ({
+    status,
+  }: ListMyPostsRequest): Promise<{ posts: PostResponse[] }> => {
     const auth = getAuthData()!;
     const posts =
       status === "archived"
@@ -429,7 +432,9 @@ export const listMyPosts = api(
         : await service.listMyPosts(auth.walletAddress);
     return {
       posts: await Promise.all(
-        posts.map((post) => service.buildPostResponse(post, auth.walletAddress)),
+        posts.map((post) =>
+          service.buildPostResponse(post, auth.walletAddress),
+        ),
       ),
     };
   },
@@ -561,6 +566,32 @@ export const togglePostLike = api(
   },
 );
 
+export const recordPostView = api(
+  {
+    method: "POST",
+    path: "/authors/:slug/posts/:postId/view",
+    expose: true,
+  },
+  async ({
+    slug,
+    postId,
+    authorization,
+    ...req
+  }: RecordPostViewRequest & {
+    slug: string;
+    postId: string;
+    authorization?: Header<"Authorization">;
+  }): Promise<{ viewsCount: number }> => {
+    const viewerWallet = await getOptionalViewerWallet(authorization);
+    return service.recordPostViewBySlug(
+      slug,
+      postId,
+      req.viewerKey,
+      viewerWallet,
+    );
+  },
+);
+
 export const uploadMyPostAttachment = api.raw(
   {
     method: "POST",
@@ -621,7 +652,9 @@ export const createMyProject = api(
 
 export const listMyProjects = api(
   { method: "GET", path: "/me/projects", expose: true, auth: true },
-  async ({ status }: ListMyPostsRequest): Promise<{ projects: ProjectResponse[] }> => {
+  async ({
+    status,
+  }: ListMyPostsRequest): Promise<{ projects: ProjectResponse[] }> => {
     const auth = getAuthData()!;
     const projects =
       status === "archived"
@@ -966,7 +999,9 @@ async function getOptionalViewerWallet(
   }
 }
 
-async function readRequestBody(req: AsyncIterable<string | Buffer | Uint8Array>) {
+async function readRequestBody(
+  req: AsyncIterable<string | Buffer | Uint8Array>,
+) {
   const chunks: Buffer[] = [];
   for await (const chunk of req) {
     chunks.push(toBuffer(chunk));

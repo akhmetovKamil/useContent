@@ -22,6 +22,7 @@ import type {
   PostCommentDto,
   PostAttachmentDto,
   PostAttachmentKind,
+  RecordPostViewInput,
   CreatePostCommentInput,
   ProjectDto,
   ProjectNodeListDto,
@@ -148,6 +149,14 @@ export interface PostAttachmentDoc {
   createdAt: Date;
 }
 
+export interface PostViewDoc {
+  _id: ObjectId;
+  postId: ObjectId;
+  viewerKey: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface ProjectNodeDoc {
   _id: ObjectId;
   authorId: ObjectId;
@@ -256,6 +265,7 @@ export type UpsertSubscriptionPlanRequest = UpsertSubscriptionPlanInput;
 export type CreatePostRequest = CreatePostInput;
 export type UpdatePostRequest = UpdatePostInput;
 export type CreatePostCommentRequest = CreatePostCommentInput;
+export type RecordPostViewRequest = RecordPostViewInput;
 export type CreateProjectRequest = CreateProjectInput;
 export type UpdateProjectRequest = UpdateProjectInput;
 export type CreateProjectFolderRequest = CreateProjectFolderInput;

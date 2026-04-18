@@ -41,15 +41,17 @@ class ProjectsApi {
     }
 
     async createMyProjectFolder(projectId: string, input: CreateProjectFolderInput) {
-        const response = await http.post<ProjectNodeDto>("/me/project-folders", input, {
-            params: { projectId },
+        const response = await http.post<ProjectNodeDto>("/me/project-folders", {
+            ...input,
+            projectId,
         })
         return response.data
     }
 
     async updateMyProjectNode(projectId: string, nodeId: string, input: UpdateProjectNodeInput) {
-        const response = await http.patch<ProjectNodeDto>(`/me/project-nodes/${nodeId}`, input, {
-            params: { projectId },
+        const response = await http.patch<ProjectNodeDto>(`/me/project-nodes/${nodeId}`, {
+            ...input,
+            projectId,
         })
         return response.data
     }

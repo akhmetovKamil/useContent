@@ -1118,6 +1118,23 @@ export async function togglePostLikeBySlug(
   };
 }
 
+export async function recordPostViewBySlug(
+  slug: string,
+  postId: string,
+  viewerKey: string,
+  viewerWallet?: string,
+): Promise<{ viewsCount: number }> {
+  const { post } = await getReadablePostContext(slug, postId, viewerWallet);
+  const normalizedViewerKey = viewerKey.trim().slice(0, 160);
+  if (!normalizedViewerKey) {
+    throw APIError.invalidArgument("viewerKey is required");
+  }
+
+  return {
+    viewsCount: await repo.recordPostView(post._id, normalizedViewerKey),
+  };
+}
+
 export async function listAuthorPostsBySlug(
   slug: string,
   viewerWallet?: string,
@@ -1621,7 +1638,10 @@ export async function getAuthorProjectFileBySlug(
     throw APIError.permissionDenied("access to this file is restricted");
   }
   if (node.parentId) {
-    const parent = await resolveProjectFolder(project, node.parentId.toHexString());
+    const parent = await resolveProjectFolder(
+      project,
+      node.parentId.toHexString(),
+    );
     await assertPublishedProjectPath(project, parent);
   }
   return readProjectFileObject(node);
@@ -1839,6 +1859,7 @@ export function toPostResponse(
   stats?: {
     likesCount?: number;
     commentsCount?: number;
+    viewsCount?: number;
     likedByMe?: boolean;
     attachments?: PostAttachmentDoc[];
   },
@@ -1859,6 +1880,7 @@ export function toPostResponse(
     ),
     likesCount: stats?.likesCount ?? 0,
     commentsCount: stats?.commentsCount ?? 0,
+    viewsCount: stats?.viewsCount ?? 0,
     likedByMe: stats?.likedByMe ?? false,
     publishedAt: post.publishedAt?.toISOString() ?? null,
     createdAt: post.createdAt.toISOString(),
@@ -1912,6 +1934,7 @@ export function toFeedPostResponse(
     stats?: {
       likesCount?: number;
       commentsCount?: number;
+      viewsCount?: number;
       likedByMe?: boolean;
       attachments?: PostAttachmentDoc[];
     };
@@ -2018,7 +2041,9 @@ export function toProjectResponse(project: ProjectDoc): ProjectResponse {
   };
 }
 
-export function toProjectNodeResponse(node: ProjectNodeDoc): ProjectNodeResponse {
+export function toProjectNodeResponse(
+  node: ProjectNodeDoc,
+): ProjectNodeResponse {
   return {
     id: node._id.toHexString(),
     authorId: node.authorId.toHexString(),
@@ -2460,7 +2485,9 @@ async function getReadablePostContext(
     author.defaultPolicy,
     post.policy,
   );
-  const normalizedWallet = viewerWallet ? normalizeWallet(viewerWallet) : undefined;
+  const normalizedWallet = viewerWallet
+    ? normalizeWallet(viewerWallet)
+    : undefined;
   const evaluation = evaluateAccessPolicy(resolvedPolicy, {
     subscriptions: normalizedWallet
       ? await buildSubscriptionGrants(author._id, normalizedWallet)
@@ -2482,20 +2509,26 @@ async function buildPostStats(
 ): Promise<{
   likesCount: number;
   commentsCount: number;
+  viewsCount: number;
   likedByMe: boolean;
   attachments: PostAttachmentDoc[];
 }> {
-  const normalizedWallet = viewerWallet ? normalizeWallet(viewerWallet) : undefined;
-  const [likesCount, commentsCount, like, attachments] = await Promise.all([
-    repo.countPostLikes(post._id),
-    repo.countPostComments(post._id),
-    normalizedWallet ? repo.findPostLike(post._id, normalizedWallet) : null,
-    repo.listPostAttachments(post._id),
-  ]);
+  const normalizedWallet = viewerWallet
+    ? normalizeWallet(viewerWallet)
+    : undefined;
+  const [likesCount, commentsCount, viewsCount, like, attachments] =
+    await Promise.all([
+      repo.countPostLikes(post._id),
+      repo.countPostComments(post._id),
+      repo.countPostViews(post._id),
+      normalizedWallet ? repo.findPostLike(post._id, normalizedWallet) : null,
+      repo.listPostAttachments(post._id),
+    ]);
 
   return {
     likesCount,
     commentsCount,
+    viewsCount,
     likedByMe: Boolean(like),
     attachments,
   };
@@ -2507,7 +2540,8 @@ async function assertPublishedProjectPath(
 ): Promise<void> {
   const breadcrumbs = await buildProjectBreadcrumbs(project, folder);
   const hiddenNode = breadcrumbs.find(
-    (node) => !node._id.equals(project.rootNodeId) && node.visibility !== "published",
+    (node) =>
+      !node._id.equals(project.rootNodeId) && node.visibility !== "published",
   );
   if (hiddenNode) {
     throw APIError.permissionDenied("access to this folder is restricted");
@@ -2640,11 +2674,16 @@ async function normalizeLinkedProjectIds(
   author: AuthorProfileDoc,
   projectIds: string[],
 ): Promise<ObjectId[]> {
-  const objectIds = projectIds.map((id) => parseObjectId(id, "linkedProjectId"));
+  const objectIds = projectIds.map((id) =>
+    parseObjectId(id, "linkedProjectId"),
+  );
   const uniqueIds = uniqueObjectIds(objectIds);
 
   for (const projectId of uniqueIds) {
-    const project = await repo.findProjectByIdAndAuthorId(projectId, author._id);
+    const project = await repo.findProjectByIdAndAuthorId(
+      projectId,
+      author._id,
+    );
     if (!project) {
       throw APIError.invalidArgument("linked project was not found");
     }
