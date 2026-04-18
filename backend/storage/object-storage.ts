@@ -56,10 +56,27 @@ export function createProjectObjectKey(input: {
   return [
     "authors",
     input.authorId,
-    "projects",
+    "Projects",
     input.projectId,
     "nodes",
     input.nodeId,
+    encodeURIComponent(input.fileName),
+  ].join("/");
+}
+
+export function createPostAttachmentObjectKey(input: {
+  authorId: string;
+  postId: string;
+  attachmentId: string;
+  fileName: string;
+}): string {
+  return [
+    "authors",
+    input.authorId,
+    "Posts",
+    input.postId,
+    "attachments",
+    input.attachmentId,
     encodeURIComponent(input.fileName),
   ].join("/");
 }

@@ -11,6 +11,7 @@ import {
   resolveEntityPolicy,
 } from "../domain/access";
 import {
+  createPostAttachmentObjectKey,
   createProjectObjectKey,
   deleteObject,
   getObject,
@@ -41,6 +42,8 @@ import type {
   PostDoc,
   PostCommentDoc,
   PostCommentResponse,
+  PostAttachmentDoc,
+  PostAttachmentResponse,
   PostResponse,
   ProjectDoc,
   ProjectNodeDoc,
@@ -870,6 +873,10 @@ export async function createMyPost(
     policyMode,
   );
   const attachmentIds = normalizeAttachmentIds(input.attachmentIds ?? []);
+  const linkedProjectIds = await normalizeLinkedProjectIds(
+    author,
+    input.linkedProjectIds ?? [],
+  );
 
   resolveEntityPolicy(policyMode, author.defaultPolicy, policySelection.policy);
 
@@ -882,6 +889,7 @@ export async function createMyPost(
     policy: policySelection.policy,
     accessPolicyId: policySelection.accessPolicyId,
     attachmentIds,
+    linkedProjectIds,
     publishedAt: status === "published" ? now : null,
     createdAt: now,
     updatedAt: now,
@@ -945,6 +953,10 @@ export async function updateMyPost(
       input.attachmentIds === undefined
         ? existing.attachmentIds
         : normalizeAttachmentIds(input.attachmentIds),
+    linkedProjectIds:
+      input.linkedProjectIds === undefined
+        ? (existing.linkedProjectIds ?? [])
+        : await normalizeLinkedProjectIds(author, input.linkedProjectIds),
     publishedAt: resolvePublishedAt(
       existing.publishedAt,
       existing.status,
@@ -970,7 +982,77 @@ export async function deleteMyPost(
   if (!deleted) {
     throw APIError.notFound("post not found");
   }
+  const attachments = await repo.deletePostAttachmentsByPostId(objectId);
+  for (const attachment of attachments) {
+    await deleteObject(attachment.storageKey);
+  }
   await repo.deletePostCommentsByPostId(objectId);
+}
+
+export async function uploadMyPostAttachment(
+  walletAddress: string,
+  postId: string,
+  input: {
+    name: string;
+    body: Buffer;
+    contentType: string;
+  },
+): Promise<PostAttachmentDoc> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const post = await repo.findPostByIdAndAuthorId(
+    parseObjectId(postId, "postId"),
+    author._id,
+  );
+  if (!post) {
+    throw APIError.notFound("post not found");
+  }
+
+  const now = new Date();
+  const attachmentId = new ObjectId();
+  const fileName = normalizeProjectNodeName(input.name);
+  const mimeType = input.contentType || "application/octet-stream";
+  const storageKey = createPostAttachmentObjectKey({
+    authorId: author._id.toHexString(),
+    postId: post._id.toHexString(),
+    attachmentId: attachmentId.toHexString(),
+    fileName,
+  });
+
+  await putObject(storageKey, input.body, mimeType);
+
+  const attachment = await repo.createPostAttachment({
+    _id: attachmentId,
+    postId: post._id,
+    authorId: author._id,
+    kind: resolvePostAttachmentKind(mimeType),
+    fileName,
+    storageKey,
+    mimeType,
+    size: input.body.length,
+    createdAt: now,
+  });
+
+  await repo.appendPostAttachmentId(post._id, author._id, attachment._id, now);
+
+  return attachment;
+}
+
+export async function getMyPostAttachment(
+  walletAddress: string,
+  postId: string,
+  attachmentId: string,
+): Promise<{ body: Buffer; contentType: string; fileName: string }> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const post = await repo.findPostByIdAndAuthorId(
+    parseObjectId(postId, "postId"),
+    author._id,
+  );
+  if (!post) {
+    throw APIError.notFound("post not found");
+  }
+
+  const attachment = await resolvePostAttachment(post, attachmentId);
+  return readPostAttachmentObject(attachment);
 }
 
 export async function listPostCommentsBySlug(
@@ -1087,6 +1169,17 @@ export async function getAuthorPostBySlugAndId(
   }
 
   return post;
+}
+
+export async function getAuthorPostAttachmentBySlug(
+  slug: string,
+  postId: string,
+  attachmentId: string,
+  viewerWallet?: string,
+): Promise<{ body: Buffer; contentType: string; fileName: string }> {
+  const { post } = await getReadablePostContext(slug, postId, viewerWallet);
+  const attachment = await resolvePostAttachment(post, attachmentId);
+  return readPostAttachmentObject(attachment);
 }
 
 export async function createMyProject(
@@ -1743,7 +1836,12 @@ export function toSubscriptionPlanResponse(
 
 export function toPostResponse(
   post: PostDoc,
-  stats?: { likesCount?: number; commentsCount?: number; likedByMe?: boolean },
+  stats?: {
+    likesCount?: number;
+    commentsCount?: number;
+    likedByMe?: boolean;
+    attachments?: PostAttachmentDoc[];
+  },
 ): PostResponse {
   return {
     id: post._id.toHexString(),
@@ -1754,13 +1852,32 @@ export function toPostResponse(
     policyMode: post.policyMode,
     policy: post.policy,
     accessPolicyId: post.accessPolicyId?.toHexString() ?? null,
-    attachmentIds: post.attachmentIds.map((id) => id.toHexString()),
+    attachmentIds: (post.attachmentIds ?? []).map((id) => id.toHexString()),
+    attachments: (stats?.attachments ?? []).map(toPostAttachmentResponse),
+    linkedProjectIds: (post.linkedProjectIds ?? []).map((id) =>
+      id.toHexString(),
+    ),
     likesCount: stats?.likesCount ?? 0,
     commentsCount: stats?.commentsCount ?? 0,
     likedByMe: stats?.likedByMe ?? false,
     publishedAt: post.publishedAt?.toISOString() ?? null,
     createdAt: post.createdAt.toISOString(),
     updatedAt: post.updatedAt.toISOString(),
+  };
+}
+
+export function toPostAttachmentResponse(
+  attachment: PostAttachmentDoc,
+): PostAttachmentResponse {
+  return {
+    id: attachment._id.toHexString(),
+    postId: attachment.postId.toHexString(),
+    authorId: attachment.authorId.toHexString(),
+    kind: attachment.kind,
+    fileName: attachment.fileName,
+    mimeType: attachment.mimeType,
+    size: attachment.size,
+    createdAt: attachment.createdAt.toISOString(),
   };
 }
 
@@ -1792,7 +1909,12 @@ export function toFeedPostResponse(
   access?: {
     accessLabel: string | null;
     hasAccess: boolean;
-    stats?: { likesCount?: number; commentsCount?: number; likedByMe?: boolean };
+    stats?: {
+      likesCount?: number;
+      commentsCount?: number;
+      likedByMe?: boolean;
+      attachments?: PostAttachmentDoc[];
+    };
   },
 ): FeedPostResponse {
   return {
@@ -1826,6 +1948,7 @@ async function buildFeedPostResponse(
   const hasAccess = evaluation.allowed;
 
   const stats = await buildPostStats(post, viewerWallet);
+  const visibleStats = hasAccess ? stats : { ...stats, attachments: [] };
 
   return toFeedPostResponse(
     {
@@ -1836,7 +1959,7 @@ async function buildFeedPostResponse(
     {
       accessLabel: describeAccessPolicy(resolvedPolicy.root, plans),
       hasAccess,
-      stats,
+      stats: visibleStats,
     },
   );
 }
@@ -2356,18 +2479,25 @@ async function getReadablePostContext(
 async function buildPostStats(
   post: PostDoc,
   viewerWallet?: string,
-): Promise<{ likesCount: number; commentsCount: number; likedByMe: boolean }> {
+): Promise<{
+  likesCount: number;
+  commentsCount: number;
+  likedByMe: boolean;
+  attachments: PostAttachmentDoc[];
+}> {
   const normalizedWallet = viewerWallet ? normalizeWallet(viewerWallet) : undefined;
-  const [likesCount, commentsCount, like] = await Promise.all([
+  const [likesCount, commentsCount, like, attachments] = await Promise.all([
     repo.countPostLikes(post._id),
     repo.countPostComments(post._id),
     normalizedWallet ? repo.findPostLike(post._id, normalizedWallet) : null,
+    repo.listPostAttachments(post._id),
   ]);
 
   return {
     likesCount,
     commentsCount,
     likedByMe: Boolean(like),
+    attachments,
   };
 }
 
@@ -2504,6 +2634,61 @@ function resolvePublishedAt(
 
 function normalizeAttachmentIds(attachmentIds: string[]): ObjectId[] {
   return attachmentIds.map((id) => new ObjectId(id));
+}
+
+async function normalizeLinkedProjectIds(
+  author: AuthorProfileDoc,
+  projectIds: string[],
+): Promise<ObjectId[]> {
+  const objectIds = projectIds.map((id) => parseObjectId(id, "linkedProjectId"));
+  const uniqueIds = uniqueObjectIds(objectIds);
+
+  for (const projectId of uniqueIds) {
+    const project = await repo.findProjectByIdAndAuthorId(projectId, author._id);
+    if (!project) {
+      throw APIError.invalidArgument("linked project was not found");
+    }
+  }
+
+  return uniqueIds;
+}
+
+function resolvePostAttachmentKind(mimeType: string) {
+  if (mimeType.startsWith("image/")) {
+    return "image" as const;
+  }
+  if (mimeType.startsWith("video/")) {
+    return "video" as const;
+  }
+  if (mimeType.startsWith("audio/")) {
+    return "audio" as const;
+  }
+  return "file" as const;
+}
+
+async function resolvePostAttachment(
+  post: PostDoc,
+  attachmentId: string,
+): Promise<PostAttachmentDoc> {
+  const attachment = await repo.findPostAttachmentByIdAndPostId(
+    parseObjectId(attachmentId, "attachmentId"),
+    post._id,
+  );
+  if (!attachment) {
+    throw APIError.notFound("post attachment not found");
+  }
+  return attachment;
+}
+
+async function readPostAttachmentObject(
+  attachment: PostAttachmentDoc,
+): Promise<{ body: Buffer; contentType: string; fileName: string }> {
+  const object = await getObject(attachment.storageKey);
+  return {
+    body: object.body,
+    contentType: object.contentType,
+    fileName: attachment.fileName,
+  };
 }
 
 function parseObjectId(value: string, field: string): ObjectId {

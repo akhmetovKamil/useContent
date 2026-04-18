@@ -55,6 +55,7 @@ export interface Post {
   policy: AccessPolicy | null;
   accessPolicyId: string | null;
   attachmentIds: string[];
+  linkedProjectIds: string[];
   publishedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;

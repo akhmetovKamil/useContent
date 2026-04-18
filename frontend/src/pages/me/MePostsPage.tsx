@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
 
-import { ContentManagerPage } from "@/components/content-manager/ContentManagerPage"
+import { PostComposer } from "@/components/posts/PostComposer"
 import { PostFeed } from "@/components/posts/PostFeed"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,8 +12,10 @@ import {
     useDeleteMyPostMutation,
     useMyPostsQuery,
     useUpdateMyPostMutation,
+    useUploadMyPostAttachmentMutation,
 } from "@/queries/posts"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
+import { useMyProjectsQuery } from "@/queries/projects"
 import { useAuthStore } from "@/stores/auth-store"
 
 export function MePostsPage() {
@@ -21,9 +23,11 @@ export function MePostsPage() {
     const postsQuery = useMyPostsQuery(Boolean(token))
     const authorQuery = useMyAuthorProfileQuery(Boolean(token))
     const policiesQuery = useMyAccessPoliciesQuery(Boolean(token))
+    const projectsQuery = useMyProjectsQuery(Boolean(token))
     const createPostMutation = useCreateMyPostMutation()
     const updatePostMutation = useUpdateMyPostMutation()
     const deletePostMutation = useDeleteMyPostMutation()
+    const uploadAttachmentMutation = useUploadMyPostAttachmentMutation()
     const [showEditor, setShowEditor] = useState(false)
     const [showArchive, setShowArchive] = useState(false)
     const archivedPostsQuery = useMyPostsQuery(Boolean(token) && showArchive, "archived")
@@ -67,43 +71,19 @@ export function MePostsPage() {
             </PageSection>
 
             {showEditor ? (
-                <ContentManagerPage
+                <PostComposer
                     accessPolicies={policiesQuery.data}
                     createError={createPostMutation.error}
-                    createPending={createPostMutation.isPending}
-                    emptyLabel="No posts yet."
-                    intro="For custom access, choose a saved access policy. New conditions are created on the Access page."
-                    isError={postsQuery.isError}
-                    isLoading={postsQuery.isLoading}
-                    items={[]}
-                    kind="post"
-                    loadError={postsQuery.error}
-                    loadingLabel="Loading posts..."
-                    missingSessionLabel="After sign-in, author posts and the next editor steps will appear here."
-                    onCreate={({ accessPolicyId, body, policyMode, status, title }) =>
-                        createPostMutation.mutateAsync({
-                            accessPolicyId,
-                            content: body,
-                            policyMode,
-                            status,
-                            title,
-                        })
-                    }
-                    onDelete={(postId) => deletePostMutation.mutateAsync(postId)}
-                    onArchive={(postId) =>
-                        updatePostMutation.mutateAsync({
-                            postId,
-                            input: { status: "archived" },
-                        })
-                    }
-                    onToggleStatus={(postId, status) =>
-                        updatePostMutation.mutateAsync({
-                            postId,
-                            input: { status },
-                        })
-                    }
-                    title="Create a new post"
-                    token={token}
+                    isPending={createPostMutation.isPending || uploadAttachmentMutation.isPending}
+                    projectOptions={projectsQuery.data}
+                    onSubmit={async (input, files) => {
+                        const post = await createPostMutation.mutateAsync(input)
+                        await Promise.all(
+                            files.map((file) =>
+                                uploadAttachmentMutation.mutateAsync({ file, postId: post.id })
+                            )
+                        )
+                    }}
                 />
             ) : null}
 

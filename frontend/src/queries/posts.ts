@@ -79,6 +79,40 @@ export function useDeleteMyPostMutation() {
     })
 }
 
+export function useUploadMyPostAttachmentMutation() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: ({ postId, file }: { postId: string; file: File }) =>
+            postsApi.uploadMyPostAttachment(postId, file),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: ["me", "posts"] })
+            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+        },
+    })
+}
+
+export function useDownloadMyPostAttachmentMutation() {
+    return useMutation({
+        mutationFn: ({
+            postId,
+            attachmentId,
+            fileName,
+        }: {
+            postId: string
+            attachmentId: string
+            fileName: string
+        }) => postsApi.downloadMyPostAttachment(postId, attachmentId, fileName),
+    })
+}
+
+export function useDownloadAuthorPostAttachmentMutation(slug: string, postId: string) {
+    return useMutation({
+        mutationFn: ({ attachmentId, fileName }: { attachmentId: string; fileName: string }) =>
+            postsApi.downloadAuthorPostAttachment(slug, postId, attachmentId, fileName),
+    })
+}
+
 export function useCreatePostCommentMutation(slug: string, postId: string) {
     const queryClient = useQueryClient()
 

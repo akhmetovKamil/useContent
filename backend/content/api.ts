@@ -561,6 +561,55 @@ export const togglePostLike = api(
   },
 );
 
+export const uploadMyPostAttachment = api.raw(
+  {
+    method: "POST",
+    path: "/me/post-files/upload/*postId",
+    expose: true,
+    auth: true,
+  },
+  async (req, resp) => {
+    const auth = getAuthData()!;
+    const url = new URL(req.url ?? "", "http://localhost");
+    const postId = url.pathname.replace("/me/post-files/upload/", "");
+    const name = url.searchParams.get("name") ?? "";
+    const body = await readRequestBody(req);
+    const contentType = String(
+      req.headers["content-type"] ?? "application/octet-stream",
+    );
+    const attachment = await service.uploadMyPostAttachment(
+      auth.walletAddress,
+      postId,
+      { name, body, contentType },
+    );
+
+    resp.writeHead(200, { "Content-Type": "application/json" });
+    resp.end(JSON.stringify(service.toPostAttachmentResponse(attachment)));
+  },
+);
+
+export const downloadMyPostAttachment = api.raw(
+  {
+    method: "GET",
+    path: "/me/post-files/download/*path",
+    expose: true,
+    auth: true,
+  },
+  async (req, resp) => {
+    const auth = getAuthData()!;
+    const [postId, attachmentId] = parseFilePath(
+      req.url ?? "",
+      "/me/post-files/download/",
+    );
+    const file = await service.getMyPostAttachment(
+      auth.walletAddress,
+      postId,
+      attachmentId,
+    );
+    writeFileResponse(resp, file);
+  },
+);
+
 export const createMyProject = api(
   { method: "POST", path: "/me/projects", expose: true, auth: true },
   async (req: CreateProjectRequest): Promise<ProjectResponse> => {
@@ -868,6 +917,30 @@ export const downloadAuthorProjectFile = api.raw(
       slug,
       projectId,
       nodeId,
+      viewerWallet,
+    );
+    writeFileResponse(resp, file);
+  },
+);
+
+export const downloadAuthorPostAttachment = api.raw(
+  {
+    method: "GET",
+    path: "/post-files/download/*path",
+    expose: true,
+  },
+  async (req, resp) => {
+    const [slug, postId, attachmentId] = parseFilePath(
+      req.url ?? "",
+      "/post-files/download/",
+    );
+    const viewerWallet = await getOptionalViewerWallet(
+      String(req.headers.authorization ?? ""),
+    );
+    const file = await service.getAuthorPostAttachmentBySlug(
+      slug,
+      postId,
+      attachmentId,
       viewerWallet,
     );
     writeFileResponse(resp, file);

@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import {
     useCreatePostCommentMutation,
+    useDownloadAuthorPostAttachmentMutation,
+    useDownloadMyPostAttachmentMutation,
     usePostCommentsQuery,
     useTogglePostLikeMutation,
 } from "@/queries/posts"
@@ -83,6 +85,8 @@ function PostCard({
     const author = "authorSlug" in post ? post : null
     const postLink = author ? `/authors/${author.authorSlug}/posts/${post.id}` : undefined
     const hasAccess = !("hasAccess" in post) || post.hasAccess
+    const attachments = post.attachments ?? []
+    const linkedProjectIds = post.linkedProjectIds ?? []
     const commentsQuery = usePostCommentsQuery(
         author?.authorSlug ?? "",
         post.id,
@@ -90,6 +94,11 @@ function PostCard({
     )
     const likeMutation = useTogglePostLikeMutation(author?.authorSlug ?? "", post.id)
     const commentMutation = useCreatePostCommentMutation(author?.authorSlug ?? "", post.id)
+    const downloadMyAttachmentMutation = useDownloadMyPostAttachmentMutation()
+    const downloadAuthorAttachmentMutation = useDownloadAuthorPostAttachmentMutation(
+        author?.authorSlug ?? "",
+        post.id
+    )
 
     return (
         <Card className="rounded-[28px] transition-colors hover:bg-[var(--accent-soft)]">
@@ -219,6 +228,62 @@ function PostCard({
                                 {post.commentsCount}
                             </Button>
                         </div>
+
+                        {attachments.length ? (
+                            <div className="mt-4 flex flex-wrap gap-2">
+                                {attachments.map((attachment) => (
+                                    <Button
+                                        className="rounded-full"
+                                        key={attachment.id}
+                                        onClick={() => {
+                                            if (isAuthorView) {
+                                                void downloadMyAttachmentMutation.mutateAsync({
+                                                    attachmentId: attachment.id,
+                                                    fileName: attachment.fileName,
+                                                    postId: post.id,
+                                                })
+                                                return
+                                            }
+                                            if (author) {
+                                                void downloadAuthorAttachmentMutation.mutateAsync({
+                                                    attachmentId: attachment.id,
+                                                    fileName: attachment.fileName,
+                                                })
+                                            }
+                                        }}
+                                        size="sm"
+                                        type="button"
+                                        variant="outline"
+                                    >
+                                        {attachment.kind}: {attachment.fileName}
+                                    </Button>
+                                ))}
+                            </div>
+                        ) : null}
+
+                        {author && linkedProjectIds.length ? (
+                            <div className="mt-4 flex flex-wrap gap-2">
+                                {linkedProjectIds.map((projectId) => (
+                                    <Button
+                                        asChild
+                                        className="rounded-full"
+                                        key={projectId}
+                                        size="sm"
+                                        variant="outline"
+                                    >
+                                        <Link
+                                            to={
+                                                isAuthorView
+                                                    ? "/me/projects"
+                                                    : `/authors/${author.authorSlug}/projects/${projectId}`
+                                            }
+                                        >
+                                            Attached project
+                                        </Link>
+                                    </Button>
+                                ))}
+                            </div>
+                        ) : null}
 
                         {author && commentsOpen ? (
                             <div className="mt-5 rounded-[22px] border border-[var(--line)] bg-[var(--surface)] p-4">

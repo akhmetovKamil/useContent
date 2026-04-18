@@ -5,6 +5,7 @@ import type {
   AccessPolicyPresetDoc,
   AuthorProfileDoc,
   PostCommentDoc,
+  PostAttachmentDoc,
   PostDoc,
   PostLikeDoc,
   ProjectDoc,
@@ -299,6 +300,20 @@ export async function updatePost(
   );
 }
 
+export async function appendPostAttachmentId(
+  id: ObjectId,
+  authorId: ObjectId,
+  attachmentId: ObjectId,
+  updatedAt: Date,
+): Promise<PostDoc | null> {
+  const posts = await getPostsCollection();
+  return posts.findOneAndUpdate(
+    { _id: id, authorId },
+    { $addToSet: { attachmentIds: attachmentId }, $set: { updatedAt } },
+    { returnDocument: "after" },
+  );
+}
+
 export async function deletePost(
   id: ObjectId,
   authorId: ObjectId,
@@ -325,6 +340,13 @@ export async function getPostCommentsCollection(): Promise<
 > {
   await ensureIndexes();
   return getCollection<PostCommentDoc>("post_comments");
+}
+
+export async function getPostAttachmentsCollection(): Promise<
+  Collection<PostAttachmentDoc>
+> {
+  await ensureIndexes();
+  return getCollection<PostAttachmentDoc>("post_attachments");
 }
 
 export async function findPostLike(
@@ -383,6 +405,38 @@ export async function deletePostCommentsByPostId(postId: ObjectId): Promise<void
   await comments.deleteMany({ postId });
   const likes = await getPostLikesCollection();
   await likes.deleteMany({ postId });
+}
+
+export async function createPostAttachment(
+  doc: PostAttachmentDoc,
+): Promise<PostAttachmentDoc> {
+  const attachments = await getPostAttachmentsCollection();
+  await attachments.insertOne(doc);
+  return doc;
+}
+
+export async function listPostAttachments(
+  postId: ObjectId,
+): Promise<PostAttachmentDoc[]> {
+  const attachments = await getPostAttachmentsCollection();
+  return attachments.find({ postId }).sort({ createdAt: 1 }).toArray();
+}
+
+export async function findPostAttachmentByIdAndPostId(
+  id: ObjectId,
+  postId: ObjectId,
+): Promise<PostAttachmentDoc | null> {
+  const attachments = await getPostAttachmentsCollection();
+  return attachments.findOne({ _id: id, postId });
+}
+
+export async function deletePostAttachmentsByPostId(
+  postId: ObjectId,
+): Promise<PostAttachmentDoc[]> {
+  const attachments = await getPostAttachmentsCollection();
+  const existing = await attachments.find({ postId }).toArray();
+  await attachments.deleteMany({ postId });
+  return existing;
 }
 
 export async function countPostsByAccessPolicyId(
@@ -885,6 +939,7 @@ async function ensureIndexes(): Promise<void> {
     posts,
     projects,
     projectNodes,
+    postAttachments,
     postLikes,
     postComments,
     subscriptionPlans,
@@ -898,6 +953,7 @@ async function ensureIndexes(): Promise<void> {
     getCollection<PostDoc>("posts"),
     getCollection<ProjectDoc>("projects"),
     getCollection<ProjectNodeDoc>("project_nodes"),
+    getCollection<PostAttachmentDoc>("post_attachments"),
     getCollection<PostLikeDoc>("post_likes"),
     getCollection<PostCommentDoc>("post_comments"),
     getCollection<SubscriptionPlanDoc>("subscription_plans"),
@@ -928,6 +984,8 @@ async function ensureIndexes(): Promise<void> {
     posts.createIndex({ authorId: 1, status: 1, publishedAt: -1 }),
     posts.createIndex({ authorId: 1, accessPolicyId: 1 }),
     posts.createIndex({ authorId: 1, createdAt: -1 }),
+    postAttachments.createIndex({ postId: 1, createdAt: 1 }),
+    postAttachments.createIndex({ authorId: 1, createdAt: -1 }),
     postLikes.createIndex({ postId: 1, walletAddress: 1 }, { unique: true }),
     postLikes.createIndex({ walletAddress: 1, createdAt: -1 }),
     postComments.createIndex({ postId: 1, createdAt: 1 }),

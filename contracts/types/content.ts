@@ -164,6 +164,19 @@ export interface PostCommentDto {
   updatedAt: string;
 }
 
+export type PostAttachmentKind = "image" | "video" | "audio" | "file";
+
+export interface PostAttachmentDto {
+  id: string;
+  postId: string;
+  authorId: string;
+  kind: PostAttachmentKind;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  createdAt: string;
+}
+
 export type SubscriptionPaymentAsset = "erc20" | "native";
 
 export interface SubscriptionPaymentIntentDto {
@@ -232,6 +245,8 @@ export interface PostDto {
   policy: AccessPolicy | null;
   accessPolicyId: string | null;
   attachmentIds: string[];
+  attachments: PostAttachmentDto[];
+  linkedProjectIds: string[];
   likesCount: number;
   commentsCount: number;
   likedByMe: boolean;
@@ -356,6 +371,7 @@ export interface CreatePostInput {
   policyInput?: AccessPolicyInput;
   accessPolicyId?: string | null;
   attachmentIds?: string[];
+  linkedProjectIds?: string[];
 }
 
 export interface UpdatePostInput {
@@ -367,6 +383,7 @@ export interface UpdatePostInput {
   policyInput?: AccessPolicyInput;
   accessPolicyId?: string | null;
   attachmentIds?: string[];
+  linkedProjectIds?: string[];
 }
 
 export interface CreateProjectInput {

@@ -20,6 +20,8 @@ import type {
   FeedProjectDto,
   PostDto,
   PostCommentDto,
+  PostAttachmentDto,
+  PostAttachmentKind,
   CreatePostCommentInput,
   ProjectDto,
   ProjectNodeListDto,
@@ -94,6 +96,7 @@ export interface PostDoc {
   policy: AccessPolicy | null;
   accessPolicyId: ObjectId | null;
   attachmentIds: ObjectId[];
+  linkedProjectIds: ObjectId[];
   publishedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -131,6 +134,18 @@ export interface PostCommentDoc {
   content: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface PostAttachmentDoc {
+  _id: ObjectId;
+  postId: ObjectId;
+  authorId: ObjectId;
+  kind: PostAttachmentKind;
+  fileName: string;
+  storageKey: string;
+  mimeType: string;
+  size: number;
+  createdAt: Date;
 }
 
 export interface ProjectNodeDoc {
@@ -222,6 +237,7 @@ export type SubscriptionEntitlementResponse = SubscriptionEntitlementDto;
 export type ReaderSubscriptionResponse = ReaderSubscriptionDto;
 export type FeedPostResponse = FeedPostDto;
 export type PostCommentResponse = PostCommentDto;
+export type PostAttachmentResponse = PostAttachmentDto;
 export type FeedProjectResponse = FeedProjectDto;
 export type ContractDeploymentResponse = ContractDeploymentDto;
 export type ContractDeploymentLookupResponse = ContractDeploymentLookupDto;

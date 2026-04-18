@@ -9,6 +9,7 @@ import type {
 } from "@contracts/types/content"
 
 import { http } from "@/utils/api/http"
+import { downloadBlob } from "@/utils/download-blob"
 
 class ProjectsApi {
     async createMyProject(input: CreateProjectInput) {
@@ -110,14 +111,3 @@ class ProjectsApi {
 }
 
 export const projectsApi = new ProjectsApi()
-
-function downloadBlob(blob: Blob, fileName: string) {
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = fileName
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    URL.revokeObjectURL(url)
-}

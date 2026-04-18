@@ -1,12 +1,14 @@
 import type {
     CreatePostCommentInput,
     CreatePostInput,
+    PostAttachmentDto,
     PostCommentDto,
     PostDto,
     UpdatePostInput,
 } from "@contracts/types/content"
 
 import { http } from "@/utils/api/http"
+import { downloadBlob } from "@/utils/download-blob"
 
 class PostsApi {
     async createMyPost(input: CreatePostInput) {
@@ -28,6 +30,25 @@ class PostsApi {
 
     async deleteMyPost(postId: string) {
         await http.delete(`/me/posts/${postId}`)
+    }
+
+    async uploadMyPostAttachment(postId: string, file: File) {
+        const response = await http.post<PostAttachmentDto>(
+            `/me/post-files/upload/${postId}`,
+            file,
+            {
+                headers: { "Content-Type": file.type || "application/octet-stream" },
+                params: { name: file.name },
+            }
+        )
+        return response.data
+    }
+
+    async downloadMyPostAttachment(postId: string, attachmentId: string, fileName: string) {
+        const response = await http.get<Blob>(`/me/post-files/download/${postId}/${attachmentId}`, {
+            responseType: "blob",
+        })
+        downloadBlob(response.data, fileName)
     }
 
     async getAuthorPost(slug: string, postId: string) {
@@ -55,6 +76,21 @@ class PostsApi {
             `/authors/${slug}/posts/${postId}/like`
         )
         return response.data
+    }
+
+    async downloadAuthorPostAttachment(
+        slug: string,
+        postId: string,
+        attachmentId: string,
+        fileName: string
+    ) {
+        const response = await http.get<Blob>(
+            `/post-files/download/${slug}/${postId}/${attachmentId}`,
+            {
+                responseType: "blob",
+            }
+        )
+        downloadBlob(response.data, fileName)
     }
 }
 
