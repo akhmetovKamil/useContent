@@ -675,7 +675,7 @@ interface ListProjectNodesRequest {
 export const listMyProjectNodes = api(
   {
     method: "GET",
-    path: "/me/projects/:projectId/nodes",
+    path: "/me/project-nodes",
     expose: true,
     auth: true,
   },
@@ -691,7 +691,7 @@ export const listMyProjectNodes = api(
 export const createMyProjectFolder = api(
   {
     method: "POST",
-    path: "/me/projects/:projectId/folders",
+    path: "/me/project-folders",
     expose: true,
     auth: true,
   },
@@ -714,7 +714,7 @@ export const createMyProjectFolder = api(
 export const updateMyProjectNode = api(
   {
     method: "PATCH",
-    path: "/me/projects/:projectId/nodes/:nodeId",
+    path: "/me/project-nodes/:nodeId",
     expose: true,
     auth: true,
   },
@@ -740,7 +740,7 @@ export const updateMyProjectNode = api(
 export const deleteMyProjectNode = api(
   {
     method: "DELETE",
-    path: "/me/projects/:projectId/nodes/:nodeId",
+    path: "/me/project-nodes/:nodeId",
     expose: true,
     auth: true,
   },
@@ -880,7 +880,7 @@ interface ListAuthorProjectNodesRequest {
 export const listAuthorProjectNodes = api(
   {
     method: "GET",
-    path: "/authors/:slug/projects/:projectId/nodes",
+    path: "/author-project-nodes",
     expose: true,
   },
   async ({

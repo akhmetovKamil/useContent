@@ -34,27 +34,30 @@ class ProjectsApi {
     }
 
     async listMyProjectNodes(projectId: string, parentId?: string | null) {
-        const response = await http.get<ProjectNodeListDto>(`/me/projects/${projectId}/nodes`, {
-            params: { parentId: parentId || undefined },
+        const response = await http.get<ProjectNodeListDto>("/me/project-nodes", {
+            params: { parentId: parentId || undefined, projectId },
         })
         return response.data
     }
 
     async createMyProjectFolder(projectId: string, input: CreateProjectFolderInput) {
-        const response = await http.post<ProjectNodeDto>(`/me/projects/${projectId}/folders`, input)
+        const response = await http.post<ProjectNodeDto>("/me/project-folders", input, {
+            params: { projectId },
+        })
         return response.data
     }
 
     async updateMyProjectNode(projectId: string, nodeId: string, input: UpdateProjectNodeInput) {
-        const response = await http.patch<ProjectNodeDto>(
-            `/me/projects/${projectId}/nodes/${nodeId}`,
-            input
-        )
+        const response = await http.patch<ProjectNodeDto>(`/me/project-nodes/${nodeId}`, input, {
+            params: { projectId },
+        })
         return response.data
     }
 
     async deleteMyProjectNode(projectId: string, nodeId: string) {
-        await http.delete(`/me/projects/${projectId}/nodes/${nodeId}`)
+        await http.delete(`/me/project-nodes/${nodeId}`, {
+            params: { projectId },
+        })
     }
 
     async uploadMyProjectFile(projectId: string, file: File, parentId?: string | null) {
@@ -85,12 +88,9 @@ class ProjectsApi {
     }
 
     async listAuthorProjectNodes(slug: string, projectId: string, parentId?: string | null) {
-        const response = await http.get<ProjectNodeListDto>(
-            `/authors/${slug}/projects/${projectId}/nodes`,
-            {
-                params: { parentId: parentId || undefined },
-            }
-        )
+        const response = await http.get<ProjectNodeListDto>("/author-project-nodes", {
+            params: { parentId: parentId || undefined, projectId, slug },
+        })
         return response.data
     }
 
