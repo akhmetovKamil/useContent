@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom"
 
+import { ProjectFileTree } from "@/components/project-tree/ProjectFileTree"
 import { useAuthorProjectQuery } from "@/queries/projects"
 
 export function ProjectPage() {
@@ -29,6 +30,12 @@ export function ProjectPage() {
                     <p className="mt-6 whitespace-pre-wrap text-base leading-7 text-[var(--foreground)]">
                         {projectQuery.data.description || "Project description is still empty."}
                     </p>
+                    <ProjectFileTree
+                        mode="reader"
+                        projectId={projectQuery.data.id}
+                        rootNodeId={projectQuery.data.rootNodeId}
+                        slug={slug}
+                    />
                 </>
             ) : null}
         </section>

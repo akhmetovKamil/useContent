@@ -15,11 +15,14 @@ import type {
   CreateAccessPolicyPresetRequest,
   CreateAuthorProfileRequest,
   CreatePostRequest,
+  CreateProjectFolderRequest,
   CreateProjectRequest,
   CreateSubscriptionPaymentIntentRequest,
   FeedPostResponse,
   FeedProjectResponse,
   PostResponse,
+  ProjectNodeListResponse,
+  ProjectNodeResponse,
   ProjectResponse,
   ReaderSubscriptionResponse,
   SubscriptionPaymentIntentResponse,
@@ -31,6 +34,7 @@ import type {
   UpsertSubscriptionPlanRequest,
   UpdateMyProfileRequest,
   UpdatePostRequest,
+  UpdateProjectNodeRequest,
   UpdateProjectRequest,
   UserProfileResponse,
 } from "./types";
@@ -532,6 +536,150 @@ export const deleteMyProject = api(
   },
 );
 
+interface ListProjectNodesRequest {
+  projectId: string;
+  parentId?: string | null;
+}
+
+export const listMyProjectNodes = api(
+  {
+    method: "GET",
+    path: "/me/projects/:projectId/nodes",
+    expose: true,
+    auth: true,
+  },
+  async ({
+    projectId,
+    parentId,
+  }: ListProjectNodesRequest): Promise<ProjectNodeListResponse> => {
+    const auth = getAuthData()!;
+    return service.listMyProjectNodes(auth.walletAddress, projectId, parentId);
+  },
+);
+
+export const createMyProjectFolder = api(
+  {
+    method: "POST",
+    path: "/me/projects/:projectId/folders",
+    expose: true,
+    auth: true,
+  },
+  async ({
+    projectId,
+    ...req
+  }: CreateProjectFolderRequest & {
+    projectId: string;
+  }): Promise<ProjectNodeResponse> => {
+    const auth = getAuthData()!;
+    const folder = await service.createMyProjectFolder(
+      auth.walletAddress,
+      projectId,
+      req,
+    );
+    return service.toProjectNodeResponse(folder);
+  },
+);
+
+export const updateMyProjectNode = api(
+  {
+    method: "PATCH",
+    path: "/me/projects/:projectId/nodes/:nodeId",
+    expose: true,
+    auth: true,
+  },
+  async ({
+    projectId,
+    nodeId,
+    ...req
+  }: UpdateProjectNodeRequest & {
+    projectId: string;
+    nodeId: string;
+  }): Promise<ProjectNodeResponse> => {
+    const auth = getAuthData()!;
+    const node = await service.updateMyProjectNode(
+      auth.walletAddress,
+      projectId,
+      nodeId,
+      req,
+    );
+    return service.toProjectNodeResponse(node);
+  },
+);
+
+export const deleteMyProjectNode = api(
+  {
+    method: "DELETE",
+    path: "/me/projects/:projectId/nodes/:nodeId",
+    expose: true,
+    auth: true,
+  },
+  async ({
+    projectId,
+    nodeId,
+  }: {
+    projectId: string;
+    nodeId: string;
+  }): Promise<void> => {
+    const auth = getAuthData()!;
+    await service.deleteMyProjectNode(auth.walletAddress, projectId, nodeId);
+  },
+);
+
+export const uploadMyProjectFile = api.raw(
+  {
+    method: "POST",
+    path: "/me/project-files/upload/*projectId",
+    expose: true,
+    auth: true,
+  },
+  async (req, resp) => {
+    const auth = getAuthData()!;
+    const url = new URL(req.url ?? "", "http://localhost");
+    const projectId = url.pathname.replace("/me/project-files/upload/", "");
+    const name = url.searchParams.get("name") ?? "";
+    const parentId = url.searchParams.get("parentId");
+    const body = await readRequestBody(req);
+    const contentType = String(
+      req.headers["content-type"] ?? "application/octet-stream",
+    );
+    const node = await service.uploadMyProjectFile(
+      auth.walletAddress,
+      projectId,
+      {
+        parentId,
+        name,
+        body,
+        contentType,
+      },
+    );
+
+    resp.writeHead(200, { "Content-Type": "application/json" });
+    resp.end(JSON.stringify(service.toProjectNodeResponse(node)));
+  },
+);
+
+export const downloadMyProjectFile = api.raw(
+  {
+    method: "GET",
+    path: "/me/project-files/download/*path",
+    expose: true,
+    auth: true,
+  },
+  async (req, resp) => {
+    const auth = getAuthData()!;
+    const [projectId, nodeId] = parseFilePath(
+      req.url ?? "",
+      "/me/project-files/download/",
+    );
+    const file = await service.getMyProjectFile(
+      auth.walletAddress,
+      projectId,
+      nodeId,
+    );
+    writeFileResponse(resp, file);
+  },
+);
+
 function assertDeploymentRegistryToken(
   deploymentRegistryToken: string | undefined,
 ): void {
@@ -591,6 +739,59 @@ export const getAuthorProject = api(
   },
 );
 
+interface ListAuthorProjectNodesRequest {
+  slug: string;
+  projectId: string;
+  parentId?: string | null;
+  authorization?: Header<"Authorization">;
+}
+
+export const listAuthorProjectNodes = api(
+  {
+    method: "GET",
+    path: "/authors/:slug/projects/:projectId/nodes",
+    expose: true,
+  },
+  async ({
+    slug,
+    projectId,
+    parentId,
+    authorization,
+  }: ListAuthorProjectNodesRequest): Promise<ProjectNodeListResponse> => {
+    const viewerWallet = await getOptionalViewerWallet(authorization);
+    return service.listAuthorProjectNodesBySlug(
+      slug,
+      projectId,
+      parentId,
+      viewerWallet,
+    );
+  },
+);
+
+export const downloadAuthorProjectFile = api.raw(
+  {
+    method: "GET",
+    path: "/project-files/download/*path",
+    expose: true,
+  },
+  async (req, resp) => {
+    const [slug, projectId, nodeId] = parseFilePath(
+      req.url ?? "",
+      "/project-files/download/",
+    );
+    const viewerWallet = await getOptionalViewerWallet(
+      String(req.headers.authorization ?? ""),
+    );
+    const file = await service.getAuthorProjectFileBySlug(
+      slug,
+      projectId,
+      nodeId,
+      viewerWallet,
+    );
+    writeFileResponse(resp, file);
+  },
+);
+
 async function getOptionalViewerWallet(
   authorization?: string,
 ): Promise<string | undefined> {
@@ -608,4 +809,44 @@ async function getOptionalViewerWallet(
     }
     throw error;
   }
+}
+
+async function readRequestBody(req: AsyncIterable<string | Buffer | Uint8Array>) {
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) {
+    chunks.push(toBuffer(chunk));
+  }
+  return Buffer.concat(chunks);
+}
+
+function parseFilePath(url: string, prefix: string): string[] {
+  const path = new URL(url, "http://localhost").pathname.replace(prefix, "");
+  return path.split("/").filter(Boolean).map(decodeURIComponent);
+}
+
+function writeFileResponse(
+  resp: {
+    writeHead: (statusCode: number, headers: Record<string, string>) => void;
+    end: (chunk?: Buffer) => void;
+  },
+  file: { body: Buffer; contentType: string; fileName: string },
+): void {
+  resp.writeHead(200, {
+    "Content-Type": file.contentType,
+    "Content-Length": String(file.body.length),
+    "Content-Disposition": `attachment; filename="${encodeURIComponent(
+      file.fileName,
+    )}"`,
+  });
+  resp.end(file.body);
+}
+
+function toBuffer(chunk: string | Buffer | Uint8Array): Buffer {
+  if (typeof chunk === "string") {
+    return Buffer.from(chunk);
+  }
+  if (Buffer.isBuffer(chunk)) {
+    return chunk;
+  }
+  return Buffer.from(chunk);
 }

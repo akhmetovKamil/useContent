@@ -20,6 +20,10 @@ export const queryKeys = {
     authorProjects: (slug: string) => ["authors", slug, "projects"] as const,
     authorProject: (slug: string, projectId: string) =>
         ["authors", slug, "projects", projectId] as const,
+    authorProjectNodes: (slug: string, projectId: string, parentId?: string | null) =>
+        ["authors", slug, "projects", projectId, "nodes", parentId ?? "root"] as const,
+    myProjectNodes: (projectId: string, parentId?: string | null) =>
+        ["me", "projects", projectId, "nodes", parentId ?? "root"] as const,
     authorSubscriptionPlan: (slug: string) => ["authors", slug, "subscription-plan"] as const,
     authorSubscriptionPlans: (slug: string) => ["authors", slug, "subscription-plans"] as const,
 } as const

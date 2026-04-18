@@ -19,6 +19,7 @@ import type {
   FeedProjectDto,
   PostDto,
   ProjectDto,
+  ProjectNodeListDto,
   ProjectNodeDto,
   ReaderSubscriptionDto,
   SubscriptionEntitlementDto,
@@ -206,6 +207,7 @@ export type SubscriptionPlanResponse = SubscriptionPlanDto;
 export type PostResponse = PostDto;
 export type ProjectResponse = ProjectDto;
 export type ProjectNodeResponse = ProjectNodeDto;
+export type ProjectNodeListResponse = ProjectNodeListDto;
 export type UpdateMyProfileRequest = UpdateMyProfileInput;
 export type CreateAccessPolicyPresetRequest = CreateAccessPolicyPresetInput;
 export type UpdateAccessPolicyPresetRequest = UpdateAccessPolicyPresetInput;

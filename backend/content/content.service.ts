@@ -10,7 +10,12 @@ import {
   isAccessPolicy,
   resolveEntityPolicy,
 } from "../domain/access";
-import { deleteObject } from "../storage/object-storage";
+import {
+  createProjectObjectKey,
+  deleteObject,
+  getObject,
+  putObject,
+} from "../storage/object-storage";
 import { verifyPlanRegistration, verifySubscriptionPayment } from "./onchain";
 import * as repo from "./repository";
 import type {
@@ -27,6 +32,7 @@ import type {
   CreateAccessPolicyPresetRequest,
   CreateAuthorProfileRequest,
   CreatePostRequest,
+  CreateProjectFolderRequest,
   CreateProjectRequest,
   CreateSubscriptionPaymentIntentRequest,
   FeedPostResponse,
@@ -34,6 +40,9 @@ import type {
   PostDoc,
   PostResponse,
   ProjectDoc,
+  ProjectNodeDoc,
+  ProjectNodeListResponse,
+  ProjectNodeResponse,
   ProjectResponse,
   ReaderSubscriptionResponse,
   SubscriptionPlanDoc,
@@ -48,6 +57,7 @@ import type {
   UpsertSubscriptionPlanRequest,
   UpdateMyProfileRequest,
   UpdatePostRequest,
+  UpdateProjectNodeRequest,
   UpdateProjectRequest,
   UserDoc,
   UserProfileResponse,
@@ -1212,6 +1222,239 @@ export async function getAuthorProjectBySlugAndId(
   return project;
 }
 
+export async function listMyProjectNodes(
+  walletAddress: string,
+  projectId: string,
+  parentId?: string | null,
+): Promise<ProjectNodeListResponse> {
+  const { project } = await getMyProjectContext(walletAddress, projectId);
+  const currentFolder = await resolveProjectFolder(
+    project,
+    parentId ?? project.rootNodeId.toHexString(),
+  );
+  const nodes = await repo.listProjectNodesByParent(
+    project._id,
+    currentFolder._id,
+  );
+
+  return {
+    nodes: nodes.map(toProjectNodeResponse),
+    currentFolderId: currentFolder._id.toHexString(),
+    breadcrumbs: (await buildProjectBreadcrumbs(project, currentFolder)).map(
+      toProjectNodeResponse,
+    ),
+  };
+}
+
+export async function listAuthorProjectNodesBySlug(
+  slug: string,
+  projectId: string,
+  parentId?: string | null,
+  viewerWallet?: string,
+): Promise<ProjectNodeListResponse> {
+  const project = await getAuthorProjectBySlugAndId(
+    slug,
+    projectId,
+    viewerWallet,
+  );
+  const currentFolder = await resolveProjectFolder(
+    project,
+    parentId ?? project.rootNodeId.toHexString(),
+  );
+  await assertPublishedProjectPath(project, currentFolder);
+  const nodes = await repo.listPublishedProjectNodesByParent(
+    project._id,
+    currentFolder._id,
+  );
+
+  return {
+    nodes: nodes.map(toProjectNodeResponse),
+    currentFolderId: currentFolder._id.toHexString(),
+    breadcrumbs: (await buildProjectBreadcrumbs(project, currentFolder)).map(
+      toProjectNodeResponse,
+    ),
+  };
+}
+
+export async function createMyProjectFolder(
+  walletAddress: string,
+  projectId: string,
+  input: CreateProjectFolderRequest,
+): Promise<ProjectNodeDoc> {
+  const { author, project } = await getMyProjectContext(
+    walletAddress,
+    projectId,
+  );
+  const parent = await resolveProjectFolder(
+    project,
+    input.parentId ?? project.rootNodeId.toHexString(),
+  );
+  const now = new Date();
+
+  return repo.createProjectNode({
+    _id: new ObjectId(),
+    authorId: author._id,
+    projectId: project._id,
+    parentId: parent._id,
+    kind: "folder",
+    name: normalizeProjectNodeName(input.name),
+    storageKey: null,
+    mimeType: null,
+    size: null,
+    visibility: input.visibility ?? "published",
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
+export async function uploadMyProjectFile(
+  walletAddress: string,
+  projectId: string,
+  input: {
+    parentId?: string | null;
+    name: string;
+    body: Buffer;
+    contentType: string;
+  },
+): Promise<ProjectNodeDoc> {
+  const { author, project } = await getMyProjectContext(
+    walletAddress,
+    projectId,
+  );
+  const parent = await resolveProjectFolder(
+    project,
+    input.parentId ?? project.rootNodeId.toHexString(),
+  );
+  const now = new Date();
+  const nodeId = new ObjectId();
+  const name = normalizeProjectNodeName(input.name);
+  const storageKey = createProjectObjectKey({
+    authorId: author._id.toHexString(),
+    projectId: project._id.toHexString(),
+    nodeId: nodeId.toHexString(),
+    fileName: name,
+  });
+
+  await putObject(
+    storageKey,
+    input.body,
+    input.contentType || "application/octet-stream",
+  );
+
+  return repo.createProjectNode({
+    _id: nodeId,
+    authorId: author._id,
+    projectId: project._id,
+    parentId: parent._id,
+    kind: "file",
+    name,
+    storageKey,
+    mimeType: input.contentType || "application/octet-stream",
+    size: input.body.length,
+    visibility: "published",
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
+export async function updateMyProjectNode(
+  walletAddress: string,
+  projectId: string,
+  nodeId: string,
+  input: UpdateProjectNodeRequest,
+): Promise<ProjectNodeDoc> {
+  const { project } = await getMyProjectContext(walletAddress, projectId);
+  const node = await resolveProjectNode(project, nodeId);
+  if (node._id.equals(project.rootNodeId)) {
+    throw APIError.invalidArgument("project root cannot be updated here");
+  }
+
+  const update: Parameters<typeof repo.updateProjectNode>[2] = {
+    updatedAt: new Date(),
+  };
+
+  if (input.name !== undefined) {
+    update.name = normalizeProjectNodeName(input.name);
+  }
+
+  if (input.visibility !== undefined) {
+    update.visibility = input.visibility;
+  }
+
+  if (input.parentId !== undefined) {
+    const parent = await resolveProjectFolder(project, input.parentId);
+    if (parent._id.equals(node._id)) {
+      throw APIError.invalidArgument("folder cannot be moved into itself");
+    }
+    update.parentId = parent._id;
+  }
+
+  const updated = await repo.updateProjectNode(node._id, project._id, update);
+  if (!updated) {
+    throw APIError.notFound("project node not found");
+  }
+
+  return updated;
+}
+
+export async function deleteMyProjectNode(
+  walletAddress: string,
+  projectId: string,
+  nodeId: string,
+): Promise<void> {
+  const { project } = await getMyProjectContext(walletAddress, projectId);
+  const node = await resolveProjectNode(project, nodeId);
+  if (node._id.equals(project.rootNodeId)) {
+    throw APIError.invalidArgument("project root cannot be deleted");
+  }
+
+  const descendants =
+    node.kind === "folder"
+      ? await repo.findProjectNodeChildrenRecursive(project._id, node._id)
+      : [];
+  const nodesToDelete = [node, ...descendants];
+
+  for (const item of nodesToDelete) {
+    if (item.kind === "file" && item.storageKey) {
+      await deleteObject(item.storageKey);
+    }
+  }
+
+  await repo.deleteProjectNodes(nodesToDelete.map((item) => item._id));
+}
+
+export async function getMyProjectFile(
+  walletAddress: string,
+  projectId: string,
+  nodeId: string,
+): Promise<{ body: Buffer; contentType: string; fileName: string }> {
+  const { project } = await getMyProjectContext(walletAddress, projectId);
+  const node = await resolveProjectNode(project, nodeId);
+  return readProjectFileObject(node);
+}
+
+export async function getAuthorProjectFileBySlug(
+  slug: string,
+  projectId: string,
+  nodeId: string,
+  viewerWallet?: string,
+): Promise<{ body: Buffer; contentType: string; fileName: string }> {
+  const project = await getAuthorProjectBySlugAndId(
+    slug,
+    projectId,
+    viewerWallet,
+  );
+  const node = await resolveProjectNode(project, nodeId);
+  if (node.visibility !== "published") {
+    throw APIError.permissionDenied("access to this file is restricted");
+  }
+  if (node.parentId) {
+    const parent = await resolveProjectFolder(project, node.parentId.toHexString());
+    await assertPublishedProjectPath(project, parent);
+  }
+  return readProjectFileObject(node);
+}
+
 export async function createAuthorProfile(
   walletAddress: string,
   input: CreateAuthorProfileRequest,
@@ -1538,6 +1781,23 @@ export function toProjectResponse(project: ProjectDoc): ProjectResponse {
   };
 }
 
+export function toProjectNodeResponse(node: ProjectNodeDoc): ProjectNodeResponse {
+  return {
+    id: node._id.toHexString(),
+    authorId: node.authorId.toHexString(),
+    projectId: node.projectId.toHexString(),
+    parentId: node.parentId?.toHexString() ?? null,
+    kind: node.kind,
+    name: node.name,
+    storageKey: node.storageKey,
+    mimeType: node.mimeType,
+    size: node.size,
+    visibility: node.visibility,
+    createdAt: node.createdAt.toISOString(),
+    updatedAt: node.updatedAt.toISOString(),
+  };
+}
+
 export function toFeedProjectResponse(
   project: ProjectDoc,
   author: AuthorProfileDoc,
@@ -1850,6 +2110,114 @@ function normalizeProjectDescription(description: string): string {
     throw APIError.invalidArgument("project description is too long");
   }
   return value;
+}
+
+function normalizeProjectNodeName(name: string): string {
+  const value = name.trim();
+  if (!value) {
+    throw APIError.invalidArgument("project node name is required");
+  }
+  if (value.length > 160) {
+    throw APIError.invalidArgument("project node name is too long");
+  }
+  if (value.includes("/") || value === "." || value === "..") {
+    throw APIError.invalidArgument("project node name is invalid");
+  }
+  return value;
+}
+
+async function getMyProjectContext(
+  walletAddress: string,
+  projectId: string,
+): Promise<{ author: AuthorProfileDoc; project: ProjectDoc }> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const project = await repo.findProjectByIdAndAuthorId(
+    parseObjectId(projectId, "projectId"),
+    author._id,
+  );
+  if (!project) {
+    throw APIError.notFound("project not found");
+  }
+  return { author, project };
+}
+
+async function resolveProjectNode(
+  project: ProjectDoc,
+  nodeId: string,
+): Promise<ProjectNodeDoc> {
+  const node = await repo.findProjectNodeByIdAndProjectId(
+    parseObjectId(nodeId, "nodeId"),
+    project._id,
+  );
+  if (!node) {
+    throw APIError.notFound("project node not found");
+  }
+  return node;
+}
+
+async function resolveProjectFolder(
+  project: ProjectDoc,
+  folderId: string | null | undefined,
+): Promise<ProjectNodeDoc> {
+  const node = await resolveProjectNode(
+    project,
+    folderId ?? project.rootNodeId.toHexString(),
+  );
+  if (node.kind !== "folder") {
+    throw APIError.invalidArgument("project node is not a folder");
+  }
+  return node;
+}
+
+async function buildProjectBreadcrumbs(
+  project: ProjectDoc,
+  folder: ProjectNodeDoc,
+): Promise<ProjectNodeDoc[]> {
+  const breadcrumbs: ProjectNodeDoc[] = [folder];
+  let parentId = folder.parentId;
+
+  while (parentId) {
+    const parent = await repo.findProjectNodeByIdAndProjectId(
+      parentId,
+      project._id,
+    );
+    if (!parent) {
+      break;
+    }
+
+    breadcrumbs.unshift(parent);
+    parentId = parent.parentId;
+  }
+
+  return breadcrumbs;
+}
+
+async function assertPublishedProjectPath(
+  project: ProjectDoc,
+  folder: ProjectNodeDoc,
+): Promise<void> {
+  const breadcrumbs = await buildProjectBreadcrumbs(project, folder);
+  const hiddenNode = breadcrumbs.find(
+    (node) => !node._id.equals(project.rootNodeId) && node.visibility !== "published",
+  );
+  if (hiddenNode) {
+    throw APIError.permissionDenied("access to this folder is restricted");
+  }
+}
+
+async function readProjectFileObject(
+  node: ProjectNodeDoc,
+): Promise<{ body: Buffer; contentType: string; fileName: string }> {
+  if (node.kind !== "file" || !node.storageKey) {
+    throw APIError.invalidArgument("project node is not a file");
+  }
+
+  const object = await getObject(node.storageKey);
+  return {
+    body: object.body,
+    contentType: object.contentType,
+    fileName: node.name,
+  };
 }
 
 async function normalizeRequestedAuthorDefaultPolicy(

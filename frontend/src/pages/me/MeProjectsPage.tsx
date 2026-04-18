@@ -1,4 +1,9 @@
+import type { ProjectDto } from "@contracts/types/content"
+import { useEffect, useState } from "react"
+
 import { ContentManagerPage } from "@/components/content-manager/ContentManagerPage"
+import { ProjectFileTree } from "@/components/project-tree/ProjectFileTree"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useMyAccessPoliciesQuery } from "@/queries/access-policies"
 import {
     useCreateMyProjectMutation,
@@ -10,44 +15,82 @@ import { useAuthStore } from "@/stores/auth-store"
 
 export function MeProjectsPage() {
     const token = useAuthStore((state) => state.token)
+    const [selectedProject, setSelectedProject] = useState<ProjectDto | null>(null)
     const projectsQuery = useMyProjectsQuery(Boolean(token))
     const policiesQuery = useMyAccessPoliciesQuery(Boolean(token))
     const createProjectMutation = useCreateMyProjectMutation()
     const updateProjectMutation = useUpdateMyProjectMutation()
     const deleteProjectMutation = useDeleteMyProjectMutation()
 
+    useEffect(() => {
+        if (!selectedProject || !projectsQuery.data) {
+            return
+        }
+
+        const freshProject = projectsQuery.data.find((project) => project.id === selectedProject.id)
+        if (!freshProject) {
+            setSelectedProject(null)
+            return
+        }
+
+        if (freshProject !== selectedProject) {
+            setSelectedProject(freshProject)
+        }
+    }, [projectsQuery.data, selectedProject])
+
     return (
-        <ContentManagerPage
-            accessPolicies={policiesQuery.data}
-            createError={createProjectMutation.error}
-            createPending={createProjectMutation.isPending}
-            emptyLabel="No projects yet."
-            intro="For custom access, choose a saved access policy. New conditions are created on the Access page."
-            isError={projectsQuery.isError}
-            isLoading={projectsQuery.isLoading}
-            items={projectsQuery.data}
-            kind="project"
-            loadError={projectsQuery.error}
-            loadingLabel="Loading projects..."
-            missingSessionLabel="After sign-in, project trees and the file side of the content platform will appear here."
-            onCreate={({ accessPolicyId, body, policyMode, status, title }) =>
-                createProjectMutation.mutateAsync({
-                    accessPolicyId,
-                    description: body,
-                    policyMode,
-                    status,
-                    title,
-                })
-            }
-            onDelete={(projectId) => deleteProjectMutation.mutateAsync(projectId)}
-            onToggleStatus={(projectId, status) =>
-                updateProjectMutation.mutateAsync({
-                    projectId,
-                    input: { status },
-                })
-            }
-            title="Structured project spaces with private access"
-            token={token}
-        />
+        <div className="grid gap-6">
+            <ContentManagerPage
+                accessPolicies={policiesQuery.data}
+                createError={createProjectMutation.error}
+                createPending={createProjectMutation.isPending}
+                emptyLabel="No projects yet."
+                intro="For custom access, choose a saved access policy. New conditions are created on the Access page."
+                isError={projectsQuery.isError}
+                isLoading={projectsQuery.isLoading}
+                items={projectsQuery.data}
+                kind="project"
+                loadError={projectsQuery.error}
+                loadingLabel="Loading projects..."
+                missingSessionLabel="After sign-in, project trees and the file side of the content platform will appear here."
+                onCreate={({ accessPolicyId, body, policyMode, status, title }) =>
+                    createProjectMutation.mutateAsync({
+                        accessPolicyId,
+                        description: body,
+                        policyMode,
+                        status,
+                        title,
+                    })
+                }
+                onDelete={(projectId) => deleteProjectMutation.mutateAsync(projectId)}
+                onOpen={(project) => setSelectedProject(project as ProjectDto)}
+                onToggleStatus={(projectId, status) =>
+                    updateProjectMutation.mutateAsync({
+                        projectId,
+                        input: { status },
+                    })
+                }
+                title="Structured project spaces with private access"
+                token={token}
+            />
+
+            {selectedProject ? (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{selectedProject.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="whitespace-pre-wrap text-sm leading-6 text-[var(--muted)]">
+                            {selectedProject.description || "Project description is still empty."}
+                        </p>
+                        <ProjectFileTree
+                            mode="author"
+                            projectId={selectedProject.id}
+                            rootNodeId={selectedProject.rootNodeId}
+                        />
+                    </CardContent>
+                </Card>
+            ) : null}
+        </div>
     )
 }

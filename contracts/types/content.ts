@@ -254,6 +254,12 @@ export interface ProjectNodeDto {
   updatedAt: string;
 }
 
+export interface ProjectNodeListDto {
+  nodes: ProjectNodeDto[];
+  currentFolderId: string;
+  breadcrumbs: ProjectNodeDto[];
+}
+
 export interface UpdateMyProfileInput {
   username?: string | null;
   displayName?: string;

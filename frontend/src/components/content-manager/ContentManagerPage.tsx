@@ -54,6 +54,7 @@ interface ContentManagerPageProps {
         title: string
     }) => Promise<unknown>
     onDelete: (itemId: string) => Promise<unknown>
+    onOpen?: (item: ManagedContentItem) => void
     onToggleStatus: (itemId: string, status: ContentStatus) => Promise<unknown>
     title: string
     token: string | null
@@ -74,6 +75,7 @@ export function ContentManagerPage({
     missingSessionLabel,
     onCreate,
     onDelete,
+    onOpen,
     onToggleStatus,
     title,
     token,
@@ -213,6 +215,7 @@ export function ContentManagerPage({
                                     key={item.id}
                                     kind={kind}
                                     onDelete={onDelete}
+                                    onOpen={onOpen}
                                     onToggleStatus={onToggleStatus}
                                 />
                             ))
@@ -230,11 +233,13 @@ function ContentCard({
     item,
     kind,
     onDelete,
+    onOpen,
     onToggleStatus,
 }: {
     item: ManagedContentItem
     kind: "post" | "project"
     onDelete: (itemId: string) => Promise<unknown>
+    onOpen?: (item: ManagedContentItem) => void
     onToggleStatus: (itemId: string, status: ContentStatus) => Promise<unknown>
 }) {
     const nextStatus = item.status === "published" ? "draft" : "published"
@@ -253,6 +258,17 @@ function ContentCard({
             <CardContent>
                 <p className="line-clamp-3 text-sm leading-6 text-[var(--muted)]">{body}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
+                    {onOpen ? (
+                        <Button
+                            className="rounded-full"
+                            onClick={() => onOpen(item)}
+                            size="sm"
+                            type="button"
+                            variant="outline"
+                        >
+                            Open files
+                        </Button>
+                    ) : null}
                     <Button
                         className="rounded-full"
                         onClick={() => void onToggleStatus(item.id, nextStatus)}
