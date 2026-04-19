@@ -44,8 +44,8 @@ Practice period: `с 26.03.2026 по 22.04.2026`.
 
 | No. | Individual assignment | Dates |
 | --- | --- | --- |
-| 1 | Анализ текущего состояния платформы useContent, уточнение требований к эксплуатационной версии, пользовательским сценариям автора и подписчика | с 26.03.2026 по 31.03.2026 |
-| 2 | Развитие архитектуры платформы: frontend-части, backend-модулей контента, системы политик доступа и моделей подписок | с 01.04.2026 по 07.04.2026 |
+| 1 | Первичная эксплуатация текущей версии платформы useContent, выявление ограничений существующей реализации, уточнение требований к пользовательским сценариям автора и подписчика | с 26.03.2026 по 31.03.2026 |
+| 2 | Развитие архитектуры платформы и реализация frontend-части: backend-модулей контента, системы политик доступа и моделей подписок | с 01.04.2026 по 07.04.2026 |
 | 3 | Реализация расширенной версии платформы: workspace автора и пользователя, ленты постов, проектов, файловой структуры, on-chain подписок и управления доступом | с 08.04.2026 по 17.04.2026 |
 | 4 | Интеграция компонентов, проверка работоспособности, тестирование backend и smart contract, подготовка отчета и приложений | с 20.04.2026 по 22.04.2026 |
 
@@ -124,19 +124,21 @@ Recommended subsections:
 - `2.3. Комментарии, реакции и просмотры`: likes, comments, view counter, author comment highlighting, access check before interaction.
 - `2.4. Проекты и файловая структура`: project description, tags, folder tree, multi-file upload, MinIO storage, file preview, file/folder download, access policy checks.
 - `2.5. On-chain подписки`: `SubscriptionManager`, plan registration, `planKey`, native and ERC-20 payments, 20% platform fee, 80% author payout, `SubscriptionPaid` event, `paidUntil`.
-- `2.6. Развертывание и эксплуатационная инфраструктура`: frontend Dockerfile, nginx config, docker-compose frontend service, GitHub Actions, manual contract deployment workflow, Coolify.
+- `2.6. Развертывание и эксплуатационная инфраструктура`: very short subsection only. Mention that the frontend was added to `docker-compose`, a frontend `Dockerfile` and basic `nginx` config were prepared, and smart contract deployment was moved to a manual controlled workflow. Do not expand this into a separate infrastructure-heavy section.
 
 Recommended figures:
 
 - `01_user_home.png`
 - `02_author_onboarding.png`
 - `03_author_workspace.png`
+- `04_access_policies.png`
 - `05_subscription_plan_publish.png`
-- `06_author_public_profile.png`
-- `07_post_feed.png`
-- `08_post_details_comments.png`
-- `09_project_tree.png`
-- `10_project_file_preview.png`
+- `06_rabby_contract_signature.png`
+- `07_author_public_profile.png`
+- `08_post_feed.png`
+- `09_post_details_comments.png`
+- `10_project_tree.png`
+- `11_project_file_preview.png`
 
 ### 3. Verification and Testing
 
@@ -150,8 +152,8 @@ Recommended subsections:
 
 Recommended figures:
 
-- `11_backend_tests.png`
-- `12_solidity_tests.png`
+- `12_backend_tests.png`
+- `13_solidity_tests.png`
 
 ### Conclusion
 
@@ -184,7 +186,6 @@ Use at least 8-10 sources:
 - MinIO documentation
 - Docker documentation
 - GitHub Actions documentation
-- Coolify documentation
 
 Dates of access should be close to the writing date or the practice period, for example `19.04.2026`.
 
@@ -199,19 +200,19 @@ Create screenshots in `files/Практика 2/Ахметов Камиль/scre
 | `03_author_workspace.png` | Author workspace with metrics | Section 2.1 |
 | `04_access_policies.png` | Access page with plans and saved policies | Section 1.4 |
 | `05_subscription_plan_publish.png` | On-chain plan form or publish state | Section 2.5 |
-| `06_author_public_profile.png` | Public author page with access tiers | Sections 2.1/2.5 |
-| `07_post_feed.png` | Post feed with access/tier badge | Section 2.2 |
-| `08_post_details_comments.png` | Post details with likes and comments | Section 2.3 |
-| `09_project_tree.png` | Project file tree | Section 2.4 |
-| `10_project_file_preview.png` | File preview or download flow | Section 2.4 |
-| `11_backend_tests.png` | Successful backend tests | Section 3.1 |
-| `12_solidity_tests.png` | Successful Hardhat tests | Section 3.2 |
-| `13_github_actions_contract.png` | Manual contract deployment workflow | Section 2.6 |
-| `14_coolify_frontend_backend.png` | Coolify services for frontend/backend | Section 2.6 |
+| `06_rabby_contract_signature.png` | Rabby Wallet transaction/signature confirmation for plan publishing or subscription payment | Section 2.5 |
+| `07_author_public_profile.png` | Public author page with access tiers | Sections 2.1/2.5 |
+| `08_post_feed.png` | Post feed with access/tier badge | Section 2.2 |
+| `09_post_details_comments.png` | Post details with likes and comments | Section 2.3 |
+| `10_project_tree.png` | Project file tree | Section 2.4 |
+| `11_project_file_preview.png` | File preview or download flow | Section 2.4 |
+| `12_backend_tests.png` | Successful backend tests | Section 3.1 |
+| `13_solidity_tests.png` | Successful Hardhat tests | Section 3.2 |
 
 If the report becomes too large, keep these priority figures:
 
 - access policies
+- Rabby Wallet contract signature
 - author workspace
 - public author page
 - post details
@@ -234,7 +235,7 @@ Do not insert all files completely. Use selected fragments with file headings.
 | `frontend/src/components/posts/PostComposer.tsx` | Post creation, attachments, policies |
 | `frontend/src/components/posts/PostFeed.tsx` | Feed rendering, tiers, hidden content, reactions |
 | `frontend/src/components/project-tree/ProjectFileTree.tsx` | Project file tree, upload, preview, download |
-| `.github/workflows/deploy-contracts.yml` | Manual smart contract deployment workflow |
+| `frontend/Dockerfile`, `frontend/nginx.conf`, `docker-compose.yml` | Only if appendix space remains: short deployment configuration fragments for frontend container and nginx |
 
 Appendix formatting:
 
