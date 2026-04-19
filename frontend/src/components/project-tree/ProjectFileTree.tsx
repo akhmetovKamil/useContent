@@ -1,9 +1,20 @@
 import type { ProjectNodeDto } from "@contracts/types/content"
-import { Download, FileText, Folder, FolderPlus, Pencil, Trash2, Upload } from "lucide-react"
+import {
+    Download,
+    Eye,
+    FileText,
+    Folder,
+    FolderPlus,
+    PackageOpen,
+    Pencil,
+    Trash2,
+    Upload,
+} from "lucide-react"
 import { useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 
 import { projectsApi } from "@/api/ProjectsApi"
+import { ProjectFilePreview } from "@/components/project-tree/ProjectFilePreview"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,6 +46,8 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
     const [deleteNodeTarget, setDeleteNodeTarget] = useState<ProjectNodeDto | null>(null)
     const [folderName, setFolderName] = useState("")
     const [folderModalOpen, setFolderModalOpen] = useState(false)
+    const [bulkDownloadPending, setBulkDownloadPending] = useState(false)
+    const [previewNode, setPreviewNode] = useState<ProjectNodeDto | null>(null)
     const [renameName, setRenameName] = useState("")
     const [renameNodeTarget, setRenameNodeTarget] = useState<ProjectNodeDto | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -111,6 +124,30 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
         await downloadAuthorFileMutation.mutateAsync({ nodeId: node.id, fileName: node.name })
     }
 
+    async function downloadFolder(folderId = currentFolderId) {
+        setBulkDownloadPending(true)
+        try {
+            const bundle = isAuthor
+                ? await projectsApi.getMyProjectBundle(projectId, folderId)
+                : await projectsApi.getAuthorProjectBundle(slug, projectId, folderId)
+
+            for (const file of bundle.files) {
+                if (isAuthor) {
+                    await projectsApi.downloadMyProjectFile(projectId, file.nodeId, file.path)
+                } else {
+                    await projectsApi.downloadAuthorProjectFile(
+                        slug,
+                        projectId,
+                        file.nodeId,
+                        file.path
+                    )
+                }
+            }
+        } finally {
+            setBulkDownloadPending(false)
+        }
+    }
+
     async function uploadFiles(files: File[]) {
         await Promise.all(files.map((file) => uploadFileMutation.mutateAsync(file)))
     }
@@ -146,6 +183,8 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
         await queryClient.invalidateQueries({
             queryKey: queryKeys.myProjectNodes(projectId, currentFolderId),
         })
+        await queryClient.invalidateQueries({ queryKey: ["me", "projects"] })
+        await queryClient.invalidateQueries({ queryKey: ["authors"] })
     }
 
     return (
@@ -154,8 +193,7 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                 <div>
                     <CardTitle>Project files</CardTitle>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-                        Browse folders and files inside this project. Folder downloads and previews
-                        will be added after the core upload flow is stable.
+                        Browse, preview, upload, and download structured project files.
                     </p>
                 </div>
 
@@ -222,6 +260,19 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
             </CardHeader>
 
             <CardContent>
+                <div className="mb-4 flex flex-wrap gap-2">
+                    <Button
+                        className="rounded-full"
+                        disabled={bulkDownloadPending}
+                        onClick={() => void downloadFolder()}
+                        size="sm"
+                        type="button"
+                        variant="outline"
+                    >
+                        <PackageOpen className="size-4" />
+                        {bulkDownloadPending ? "Downloading..." : "Download current folder"}
+                    </Button>
+                </div>
                 <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-[var(--muted)]">
                     {nodesQuery.data?.breadcrumbs.map((breadcrumb, index) => (
                         <Button
@@ -279,17 +330,41 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                                 <div className="flex flex-wrap items-center gap-2 md:justify-end">
                                     <Badge>{node.visibility}</Badge>
                                     {node.kind === "file" ? (
+                                        <>
+                                            <Button
+                                                className="rounded-full"
+                                                onClick={() => setPreviewNode(node)}
+                                                size="sm"
+                                                type="button"
+                                                variant="outline"
+                                            >
+                                                <Eye className="size-4" />
+                                                Preview
+                                            </Button>
+                                            <Button
+                                                className="rounded-full"
+                                                onClick={() => void downloadFile(node)}
+                                                size="sm"
+                                                type="button"
+                                                variant="outline"
+                                            >
+                                                <Download className="size-4" />
+                                                Download
+                                            </Button>
+                                        </>
+                                    ) : (
                                         <Button
                                             className="rounded-full"
-                                            onClick={() => void downloadFile(node)}
+                                            disabled={bulkDownloadPending}
+                                            onClick={() => void downloadFolder(node.id)}
                                             size="sm"
                                             type="button"
                                             variant="outline"
                                         >
-                                            <Download className="size-4" />
-                                            Download
+                                            <PackageOpen className="size-4" />
+                                            Download folder
                                         </Button>
-                                    ) : null}
+                                    )}
                                     {isAuthor ? (
                                         <>
                                             <Button
@@ -448,6 +523,29 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                         Delete
                     </Button>
                 </div>
+            </Modal>
+
+            <Modal
+                className="max-w-5xl"
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPreviewNode(null)
+                    }
+                }}
+                open={Boolean(previewNode)}
+                title="File preview"
+            >
+                {previewNode ? (
+                    <ProjectFilePreview
+                        downloadUrl={
+                            isAuthor
+                                ? `/me/project-files/download/${projectId}/${previewNode.id}`
+                                : `/project-files/download/${slug}/${projectId}/${previewNode.id}`
+                        }
+                        node={previewNode}
+                        onDownload={() => void downloadFile(previewNode)}
+                    />
+                ) : null}
             </Modal>
         </Card>
     )

@@ -270,6 +270,9 @@ export interface ProjectDto {
   policy: AccessPolicy | null;
   accessPolicyId: string | null;
   rootNodeId: string;
+  fileCount: number;
+  folderCount: number;
+  totalSize: number;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -294,6 +297,22 @@ export interface ProjectNodeListDto {
   nodes: ProjectNodeDto[];
   currentFolderId: string;
   breadcrumbs: ProjectNodeDto[];
+}
+
+export interface ProjectBundleItemDto {
+  nodeId: string;
+  name: string;
+  path: string;
+  mimeType: string | null;
+  size: number;
+}
+
+export interface ProjectBundleDto {
+  folderId: string;
+  files: ProjectBundleItemDto[];
+  fileCount: number;
+  folderCount: number;
+  totalSize: number;
 }
 
 export interface UpdateMyProfileInput {

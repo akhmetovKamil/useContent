@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom"
 
 import { ProjectFileTree } from "@/components/project-tree/ProjectFileTree"
+import { Badge } from "@/components/ui/badge"
 import { useAuthorProjectQuery } from "@/queries/projects"
 
 export function ProjectPage() {
@@ -23,9 +24,16 @@ export function ProjectPage() {
                     <h2 className="mt-3 font-[var(--serif)] text-3xl text-[var(--foreground)]">
                         {projectQuery.data.title}
                     </h2>
-                    <div className="mt-3 flex flex-wrap gap-3 text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
-                        <span>{projectQuery.data.status}</span>
-                        <span>{projectQuery.data.policyMode}</span>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        <Badge className="rounded-full">{projectQuery.data.status}</Badge>
+                        <Badge className="rounded-full">{projectQuery.data.policyMode}</Badge>
+                        <Badge className="rounded-full">{projectQuery.data.fileCount} files</Badge>
+                        <Badge className="rounded-full">
+                            {projectQuery.data.folderCount} folders
+                        </Badge>
+                        <Badge className="rounded-full">
+                            {formatFileSize(projectQuery.data.totalSize)}
+                        </Badge>
                     </div>
                     <p className="mt-6 whitespace-pre-wrap text-base leading-7 text-[var(--foreground)]">
                         {projectQuery.data.description || "Project description is still empty."}
@@ -40,4 +48,14 @@ export function ProjectPage() {
             ) : null}
         </section>
     )
+}
+
+function formatFileSize(size: number) {
+    if (size < 1024) {
+        return `${size} B`
+    }
+    if (size < 1024 * 1024) {
+        return `${(size / 1024).toFixed(1)} KB`
+    }
+    return `${(size / 1024 / 1024).toFixed(1)} MB`
 }

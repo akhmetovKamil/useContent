@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 
 import { ContentManagerPage } from "@/components/content-manager/ContentManagerPage"
 import { ProjectFileTree } from "@/components/project-tree/ProjectFileTree"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useMyAccessPoliciesQuery } from "@/queries/access-policies"
 import {
@@ -121,6 +122,18 @@ export function MeProjectsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>{selectedProject.title}</CardTitle>
+                        <div className="flex flex-wrap gap-2">
+                            <Badge className="rounded-full">{selectedProject.status}</Badge>
+                            <Badge className="rounded-full">
+                                {selectedProject.fileCount} files
+                            </Badge>
+                            <Badge className="rounded-full">
+                                {selectedProject.folderCount} folders
+                            </Badge>
+                            <Badge className="rounded-full">
+                                {formatFileSize(selectedProject.totalSize)}
+                            </Badge>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <p className="whitespace-pre-wrap text-sm leading-6 text-[var(--muted)]">
@@ -136,4 +149,14 @@ export function MeProjectsPage() {
             ) : null}
         </div>
     )
+}
+
+function formatFileSize(size: number) {
+    if (size < 1024) {
+        return `${size} B`
+    }
+    if (size < 1024 * 1024) {
+        return `${(size / 1024).toFixed(1)} KB`
+    }
+    return `${(size / 1024 / 1024).toFixed(1)} MB`
 }

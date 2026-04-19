@@ -629,6 +629,51 @@ export async function listProjectNodesByProjectId(
   return projectNodes.find({ projectId }).toArray();
 }
 
+export async function getProjectNodeStats(projectId: ObjectId): Promise<{
+  fileCount: number;
+  folderCount: number;
+  totalSize: number;
+}> {
+  const projectNodes = await getProjectNodesCollection();
+  const [stats] = await projectNodes
+    .aggregate<{
+      fileCount: number;
+      folderCount: number;
+      totalSize: number;
+    }>([
+      { $match: { projectId } },
+      {
+        $group: {
+          _id: null,
+          fileCount: {
+            $sum: { $cond: [{ $eq: ["$kind", "file"] }, 1, 0] },
+          },
+          folderCount: {
+            $sum: { $cond: [{ $eq: ["$kind", "folder"] }, 1, 0] },
+          },
+          totalSize: {
+            $sum: { $cond: [{ $eq: ["$kind", "file"] }, "$size", 0] },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          fileCount: 1,
+          folderCount: 1,
+          totalSize: 1,
+        },
+      },
+    ])
+    .toArray();
+
+  return {
+    fileCount: stats?.fileCount ?? 0,
+    folderCount: Math.max((stats?.folderCount ?? 0) - 1, 0),
+    totalSize: stats?.totalSize ?? 0,
+  };
+}
+
 export async function findProjectNodeChildrenRecursive(
   projectId: ObjectId,
   parentId: ObjectId,

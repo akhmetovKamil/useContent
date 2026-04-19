@@ -46,6 +46,7 @@ import type {
   PostAttachmentResponse,
   PostResponse,
   ProjectDoc,
+  ProjectBundleResponse,
   ProjectNodeDoc,
   ProjectNodeListResponse,
   ProjectNodeResponse,
@@ -1465,6 +1466,38 @@ export async function listAuthorProjectNodesBySlug(
   };
 }
 
+export async function getMyProjectBundle(
+  walletAddress: string,
+  projectId: string,
+  folderId?: string | null,
+): Promise<ProjectBundleResponse> {
+  const { project } = await getMyProjectContext(walletAddress, projectId);
+  const folder = await resolveProjectFolder(
+    project,
+    folderId ?? project.rootNodeId.toHexString(),
+  );
+  return buildProjectBundle(project, folder, false);
+}
+
+export async function getAuthorProjectBundleBySlug(
+  slug: string,
+  projectId: string,
+  folderId?: string | null,
+  viewerWallet?: string,
+): Promise<ProjectBundleResponse> {
+  const project = await getAuthorProjectBySlugAndId(
+    slug,
+    projectId,
+    viewerWallet,
+  );
+  const folder = await resolveProjectFolder(
+    project,
+    folderId ?? project.rootNodeId.toHexString(),
+  );
+  await assertPublishedProjectPath(project, folder);
+  return buildProjectBundle(project, folder, true);
+}
+
 export async function createMyProjectFolder(
   walletAddress: string,
   projectId: string,
@@ -2024,7 +2057,10 @@ function describeAccessPolicyNode(
   }
 }
 
-export function toProjectResponse(project: ProjectDoc): ProjectResponse {
+export function toProjectResponse(
+  project: ProjectDoc,
+  stats?: { fileCount: number; folderCount: number; totalSize: number },
+): ProjectResponse {
   return {
     id: project._id.toHexString(),
     authorId: project.authorId.toHexString(),
@@ -2035,10 +2071,22 @@ export function toProjectResponse(project: ProjectDoc): ProjectResponse {
     policy: project.policy,
     accessPolicyId: project.accessPolicyId?.toHexString() ?? null,
     rootNodeId: project.rootNodeId.toHexString(),
+    fileCount: stats?.fileCount ?? 0,
+    folderCount: stats?.folderCount ?? 0,
+    totalSize: stats?.totalSize ?? 0,
     publishedAt: project.publishedAt?.toISOString() ?? null,
     createdAt: project.createdAt.toISOString(),
     updatedAt: project.updatedAt.toISOString(),
   };
+}
+
+export async function buildProjectResponse(
+  project: ProjectDoc,
+): Promise<ProjectResponse> {
+  return toProjectResponse(
+    project,
+    await repo.getProjectNodeStats(project._id),
+  );
 }
 
 export function toProjectNodeResponse(
@@ -2063,10 +2111,14 @@ export function toProjectNodeResponse(
 export function toFeedProjectResponse(
   project: ProjectDoc,
   author: AuthorProfileDoc,
-  access?: { accessLabel: string | null; hasAccess: boolean },
+  access?: {
+    accessLabel: string | null;
+    hasAccess: boolean;
+    stats?: { fileCount: number; folderCount: number; totalSize: number };
+  },
 ): FeedProjectResponse {
   return {
-    ...toProjectResponse(project),
+    ...toProjectResponse(project, access?.stats),
     authorSlug: author.slug,
     authorDisplayName: author.displayName,
     accessLabel: access?.accessLabel ?? null,
@@ -2084,9 +2136,10 @@ async function buildFeedProjectResponse(
     author.defaultPolicy,
     project.policy,
   );
-  const [plans, subscriptions] = await Promise.all([
+  const [plans, subscriptions, stats] = await Promise.all([
     repo.listSubscriptionPlansByAuthorId(author._id),
     viewerWallet ? buildSubscriptionGrants(author._id, viewerWallet) : [],
+    repo.getProjectNodeStats(project._id),
   ]);
   const evaluation = evaluateAccessPolicy(resolvedPolicy, {
     subscriptions,
@@ -2104,6 +2157,7 @@ async function buildFeedProjectResponse(
     {
       accessLabel: describeAccessPolicy(resolvedPolicy.root, plans),
       hasAccess,
+      stats,
     },
   );
 }
@@ -2463,6 +2517,52 @@ async function buildProjectBreadcrumbs(
   }
 
   return breadcrumbs;
+}
+
+async function buildProjectBundle(
+  project: ProjectDoc,
+  folder: ProjectNodeDoc,
+  publishedOnly: boolean,
+): Promise<ProjectBundleResponse> {
+  const files: ProjectBundleResponse["files"] = [];
+  let folderCount = 0;
+
+  async function collect(
+    parent: ProjectNodeDoc,
+    basePath: string,
+  ): Promise<void> {
+    const children = publishedOnly
+      ? await repo.listPublishedProjectNodesByParent(project._id, parent._id)
+      : await repo.listProjectNodesByParent(project._id, parent._id);
+
+    for (const child of children) {
+      const path = basePath ? `${basePath}/${child.name}` : child.name;
+
+      if (child.kind === "folder") {
+        folderCount += 1;
+        await collect(child, path);
+        continue;
+      }
+
+      files.push({
+        nodeId: child._id.toHexString(),
+        name: child.name,
+        path,
+        mimeType: child.mimeType,
+        size: child.size ?? 0,
+      });
+    }
+  }
+
+  await collect(folder, "");
+
+  return {
+    folderId: folder._id.toHexString(),
+    files,
+    fileCount: files.length,
+    folderCount,
+    totalSize: files.reduce((total, file) => total + file.size, 0),
+  };
 }
 
 async function getReadablePostContext(

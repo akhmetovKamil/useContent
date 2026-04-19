@@ -23,6 +23,7 @@ import type {
   FeedProjectResponse,
   PostCommentResponse,
   PostResponse,
+  ProjectBundleResponse,
   ProjectNodeListResponse,
   ProjectNodeResponse,
   ProjectResponse,
@@ -646,7 +647,7 @@ export const createMyProject = api(
   async (req: CreateProjectRequest): Promise<ProjectResponse> => {
     const auth = getAuthData()!;
     const project = await service.createMyProject(auth.walletAddress, req);
-    return service.toProjectResponse(project);
+    return service.buildProjectResponse(project);
   },
 );
 
@@ -660,7 +661,9 @@ export const listMyProjects = api(
       status === "archived"
         ? await service.listMyArchivedProjects(auth.walletAddress)
         : await service.listMyProjects(auth.walletAddress);
-    return { projects: projects.map(service.toProjectResponse) };
+    return {
+      projects: await Promise.all(projects.map(service.buildProjectResponse)),
+    };
   },
 );
 
@@ -683,7 +686,7 @@ export const updateMyProject = api(
       projectId,
       req,
     );
-    return service.toProjectResponse(project);
+    return service.buildProjectResponse(project);
   },
 );
 
@@ -786,6 +789,25 @@ export const deleteMyProjectNode = api(
   }): Promise<void> => {
     const auth = getAuthData()!;
     await service.deleteMyProjectNode(auth.walletAddress, projectId, nodeId);
+  },
+);
+
+export const getMyProjectBundle = api(
+  {
+    method: "GET",
+    path: "/me/project-bundle",
+    expose: true,
+    auth: true,
+  },
+  async ({
+    projectId,
+    folderId,
+  }: {
+    projectId: string;
+    folderId?: string | null;
+  }): Promise<ProjectBundleResponse> => {
+    const auth = getAuthData()!;
+    return service.getMyProjectBundle(auth.walletAddress, projectId, folderId);
   },
 );
 
@@ -899,7 +921,7 @@ export const getAuthorProject = api(
       projectId,
       viewerWallet,
     );
-    return service.toProjectResponse(project);
+    return service.buildProjectResponse(project);
   },
 );
 
@@ -927,6 +949,33 @@ export const listAuthorProjectNodes = api(
       slug,
       projectId,
       parentId,
+      viewerWallet,
+    );
+  },
+);
+
+export const getAuthorProjectBundle = api(
+  {
+    method: "GET",
+    path: "/author-project-bundle",
+    expose: true,
+  },
+  async ({
+    slug,
+    projectId,
+    folderId,
+    authorization,
+  }: {
+    slug: string;
+    projectId: string;
+    folderId?: string | null;
+    authorization?: Header<"Authorization">;
+  }): Promise<ProjectBundleResponse> => {
+    const viewerWallet = await getOptionalViewerWallet(authorization);
+    return service.getAuthorProjectBundleBySlug(
+      slug,
+      projectId,
+      folderId,
       viewerWallet,
     );
   },

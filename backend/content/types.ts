@@ -24,6 +24,7 @@ import type {
   PostAttachmentKind,
   RecordPostViewInput,
   CreatePostCommentInput,
+  ProjectBundleDto,
   ProjectDto,
   ProjectNodeListDto,
   ProjectNodeDto,
@@ -254,6 +255,7 @@ export type SubscriptionPaymentIntentResponse = SubscriptionPaymentIntentDto;
 export type SubscriptionPlanResponse = SubscriptionPlanDto;
 export type PostResponse = PostDto;
 export type ProjectResponse = ProjectDto;
+export type ProjectBundleResponse = ProjectBundleDto;
 export type ProjectNodeResponse = ProjectNodeDto;
 export type ProjectNodeListResponse = ProjectNodeListDto;
 export type UpdateMyProfileRequest = UpdateMyProfileInput;

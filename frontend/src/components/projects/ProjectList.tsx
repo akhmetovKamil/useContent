@@ -1,5 +1,5 @@
 import type { FeedProjectDto, ProjectDto } from "@contracts/types/content"
-import { FolderKanban, LockKeyhole } from "lucide-react"
+import { FileText, FolderKanban, HardDrive, LockKeyhole } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import { Badge } from "@/components/ui/badge"
@@ -63,6 +63,14 @@ function ProjectCard({ project, showAuthor }: { project: ProjectItem; showAuthor
                         </CardTitle>
                         <div className="mt-3 flex flex-wrap items-center gap-2">
                             <Badge className="rounded-full">{project.status}</Badge>
+                            <Badge className="rounded-full">
+                                <FileText className="size-3.5" />
+                                {project.fileCount} files
+                            </Badge>
+                            <Badge className="rounded-full">
+                                <HardDrive className="size-3.5" />
+                                {formatFileSize(project.totalSize)}
+                            </Badge>
                             {"accessLabel" in project && project.accessLabel ? (
                                 <Badge
                                     className="rounded-full"
@@ -95,4 +103,14 @@ function ProjectCard({ project, showAuthor }: { project: ProjectItem; showAuthor
             </CardContent>
         </Card>
     )
+}
+
+function formatFileSize(size: number) {
+    if (size < 1024) {
+        return `${size} B`
+    }
+    if (size < 1024 * 1024) {
+        return `${(size / 1024).toFixed(1)} KB`
+    }
+    return `${(size / 1024 / 1024).toFixed(1)} MB`
 }

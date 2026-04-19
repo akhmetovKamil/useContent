@@ -1,6 +1,7 @@
 import type {
     CreateProjectFolderInput,
     CreateProjectInput,
+    ProjectBundleDto,
     ProjectDto,
     ProjectNodeDto,
     ProjectNodeListDto,
@@ -84,6 +85,13 @@ class ProjectsApi {
         downloadBlob(response.data, fileName)
     }
 
+    async getMyProjectBundle(projectId: string, folderId?: string | null) {
+        const response = await http.get<ProjectBundleDto>("/me/project-bundle", {
+            params: { folderId: folderId || undefined, projectId },
+        })
+        return response.data
+    }
+
     async getAuthorProject(slug: string, projectId: string) {
         const response = await http.get<ProjectDto>(`/authors/${slug}/projects/${projectId}`)
         return response.data
@@ -109,6 +117,13 @@ class ProjectsApi {
             }
         )
         downloadBlob(response.data, fileName)
+    }
+
+    async getAuthorProjectBundle(slug: string, projectId: string, folderId?: string | null) {
+        const response = await http.get<ProjectBundleDto>("/author-project-bundle", {
+            params: { folderId: folderId || undefined, projectId, slug },
+        })
+        return response.data
     }
 }
 

@@ -1,4 +1,5 @@
 import { Eye, Heart, MessageCircle } from "lucide-react"
+import { v4 as uuidv4 } from "uuid"
 import { useEffect, useMemo, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 
@@ -18,7 +19,6 @@ import {
 } from "@/queries/posts"
 import { useAuthStore } from "@/stores/auth-store"
 import { cn } from "@/utils/cn"
-import { v4 as uuidv4 } from "uuid"
 
 export function PostPage() {
     const { slug = "", postId = "" } = useParams()
@@ -224,7 +224,7 @@ function getViewerKey() {
         return existing
     }
 
-    const next = uuidv4();
+    const next = uuidv4()
     window.localStorage.setItem(key, next)
     return next
 }

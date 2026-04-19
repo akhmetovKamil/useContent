@@ -82,6 +82,8 @@ export function useCreateMyProjectFolderMutation(projectId: string, parentId?: s
             void queryClient.invalidateQueries({
                 queryKey: queryKeys.myProjectNodes(projectId, parentId),
             })
+            void queryClient.invalidateQueries({ queryKey: ["me", "projects"] })
+            void queryClient.invalidateQueries({ queryKey: ["authors"] })
         },
     })
 }
@@ -95,6 +97,8 @@ export function useUploadMyProjectFileMutation(projectId: string, parentId?: str
             void queryClient.invalidateQueries({
                 queryKey: queryKeys.myProjectNodes(projectId, parentId),
             })
+            void queryClient.invalidateQueries({ queryKey: ["me", "projects"] })
+            void queryClient.invalidateQueries({ queryKey: ["authors"] })
         },
     })
 }
@@ -109,6 +113,8 @@ export function useUpdateMyProjectNodeMutation(projectId: string, parentId?: str
             void queryClient.invalidateQueries({
                 queryKey: queryKeys.myProjectNodes(projectId, parentId),
             })
+            void queryClient.invalidateQueries({ queryKey: ["me", "projects"] })
+            void queryClient.invalidateQueries({ queryKey: ["authors"] })
         },
     })
 }
