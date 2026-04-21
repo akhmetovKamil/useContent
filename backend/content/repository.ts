@@ -3,6 +3,7 @@ import { ObjectId, type Collection, type Document } from "mongodb";
 import { getDb } from "../lib/mongo";
 import type {
   AccessPolicyPresetDoc,
+  AuthorPlatformSubscriptionDoc,
   AuthorProfileDoc,
   PostCommentDoc,
   PostAttachmentDoc,
@@ -88,6 +89,22 @@ export async function getAuthorProfilesCollection(): Promise<
 > {
   await ensureIndexes();
   return getCollection<AuthorProfileDoc>("author_profiles");
+}
+
+export async function getAuthorPlatformSubscriptionsCollection(): Promise<
+  Collection<AuthorPlatformSubscriptionDoc>
+> {
+  await ensureIndexes();
+  return getCollection<AuthorPlatformSubscriptionDoc>(
+    "author_platform_subscriptions",
+  );
+}
+
+export async function findAuthorPlatformSubscriptionByAuthorId(
+  authorId: ObjectId,
+): Promise<AuthorPlatformSubscriptionDoc | null> {
+  const subscriptions = await getAuthorPlatformSubscriptionsCollection();
+  return subscriptions.findOne({ authorId });
 }
 
 export async function findAuthorProfileByUserId(

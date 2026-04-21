@@ -8,6 +8,7 @@ import type {
   AuthorSubscriberDto,
   AuthorProfileDto,
   AuthorStorageUsageDto,
+  AuthorPlatformBillingDto,
   ConfirmSubscriptionPaymentInput,
   ContentStatus,
   ContractDeploymentDto,
@@ -30,6 +31,9 @@ import type {
   ProjectDto,
   ProjectNodeListDto,
   ProjectNodeDto,
+  PlatformBillingStatus,
+  PlatformFeature,
+  PlatformPlanDto,
   ReaderSubscriptionDto,
   SubscriptionEntitlementDto,
   SubscriptionPaymentIntentDto,
@@ -44,6 +48,8 @@ import type {
   UpsertSubscriptionPlanInput,
   UserProfileDto,
 } from "../../contracts/types/content";
+
+export type { PlatformBillingStatus, PlatformFeature };
 
 export interface UserWalletDoc {
   address: string;
@@ -82,6 +88,25 @@ export interface AuthorProfileDoc {
 export interface AuthorStorageUsageStats {
   postsBytes: number;
   projectsBytes: number;
+}
+
+export type PlatformPlanDoc = PlatformPlanDto;
+
+export interface AuthorPlatformSubscriptionDoc {
+  _id: ObjectId;
+  authorId: ObjectId;
+  walletAddress: string;
+  planCode: PlatformPlanDto["code"];
+  status: Exclude<PlatformBillingStatus, "free">;
+  baseStorageBytes: number;
+  extraStorageBytes: number;
+  totalStorageBytes: number;
+  features: PlatformFeature[];
+  validUntil: Date | null;
+  graceUntil: Date | null;
+  lastTxHash: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface AccessPolicyPresetDoc {
@@ -247,6 +272,8 @@ export interface ContractDeploymentDoc {
 export type UserProfileResponse = UserProfileDto;
 export type AuthorProfileResponse = AuthorProfileDto;
 export type AuthorStorageUsageResponse = AuthorStorageUsageDto;
+export type AuthorPlatformBillingResponse = AuthorPlatformBillingDto;
+export type PlatformPlanResponse = PlatformPlanDto;
 export type AuthorCatalogItemResponse = AuthorCatalogItemDto;
 export type AuthorAccessPolicyResponse = AuthorAccessPolicyDto;
 export type AccessPolicyConditionResponse = AccessPolicyConditionDto;

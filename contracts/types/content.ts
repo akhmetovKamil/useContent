@@ -94,6 +94,43 @@ export interface AuthorStorageUsageDto {
   totalUsedBytes: number;
 }
 
+export type PlatformFeature = "posts" | "projects" | "homepage_promo";
+
+export type PlatformBillingStatus = "free" | "active" | "grace" | "expired";
+
+export interface PlatformPlanDto {
+  code: "free" | "basic";
+  title: string;
+  description: string;
+  priceUsdCents: number;
+  billingPeriodDays: number;
+  baseStorageBytes: number;
+  maxExtraStorageBytes: number;
+  pricePerExtraGbUsdCents: number;
+  features: PlatformFeature[];
+  active: boolean;
+  sortOrder: number;
+}
+
+export interface AuthorPlatformBillingDto {
+  authorId: string;
+  plan: PlatformPlanDto;
+  planCode: PlatformPlanDto["code"];
+  status: PlatformBillingStatus;
+  validUntil: string | null;
+  graceUntil: string | null;
+  baseStorageBytes: number;
+  extraStorageBytes: number;
+  totalStorageBytes: number;
+  usedStorageBytes: number;
+  remainingStorageBytes: number;
+  postsBytes: number;
+  projectsBytes: number;
+  features: PlatformFeature[];
+  isProjectCreationAllowed: boolean;
+  isUploadAllowed: boolean;
+}
+
 export interface AccessPolicyPresetDto {
   id: string;
   authorId: string;

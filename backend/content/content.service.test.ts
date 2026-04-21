@@ -6,6 +6,10 @@ vi.mock("encore.dev/api", () => {
     static invalidArgument(message: string) {
       return new MockAPIError(message);
     }
+
+    static failedPrecondition(message: string) {
+      return new MockAPIError(message);
+    }
   }
 
   return {
@@ -22,6 +26,10 @@ vi.mock("../storage/object-storage", () => {
 import * as repo from "./repository";
 import {
   buildAccessPolicyFromInput,
+  buildAuthorPlatformBilling,
+  assertAuthorPlatformFeature,
+  assertAuthorStorageQuota,
+  listPlatformPlans,
   toAuthorStorageUsageResponse,
 } from "./content.service";
 import type { AuthorProfileDoc } from "./types";
@@ -29,6 +37,9 @@ import type { AuthorProfileDoc } from "./types";
 vi.mock("./repository", () => {
   return {
     findSubscriptionPlanByAuthorIdAndCode: vi.fn(),
+    findAuthorPlatformSubscriptionByAuthorId: vi.fn(),
+    sumPostAttachmentBytesByAuthorId: vi.fn(),
+    sumProjectFileBytesByAuthorId: vi.fn(),
   };
 });
 
@@ -166,6 +177,98 @@ describe("toAuthorStorageUsageResponse", () => {
       projectsBytes: 3400,
       totalUsedBytes: 4600,
     });
+  });
+});
+
+describe("platform billing foundation", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test("lists free and basic platform plans", () => {
+    const plans = listPlatformPlans();
+
+    expect(plans.map((plan) => plan.code)).toEqual(["free", "basic"]);
+    expect(plans[0]?.baseStorageBytes).toBe(1024 * 1024 * 1024);
+    expect(plans[1]?.features).toContain("projects");
+  });
+
+  test("uses free billing state by default", async () => {
+    const author = createAuthorProfileDoc();
+    vi.mocked(repo.findAuthorPlatformSubscriptionByAuthorId).mockResolvedValue(
+      null,
+    );
+    vi.mocked(repo.sumPostAttachmentBytesByAuthorId).mockResolvedValue(500);
+    vi.mocked(repo.sumProjectFileBytesByAuthorId).mockResolvedValue(700);
+
+    await expect(buildAuthorPlatformBilling(author)).resolves.toMatchObject({
+      authorId: author._id.toHexString(),
+      planCode: "free",
+      status: "free",
+      usedStorageBytes: 1200,
+      totalStorageBytes: 1024 * 1024 * 1024,
+      isProjectCreationAllowed: false,
+      isUploadAllowed: true,
+    });
+  });
+
+  test("uses active basic subscription limits", async () => {
+    const author = createAuthorProfileDoc();
+    vi.mocked(repo.findAuthorPlatformSubscriptionByAuthorId).mockResolvedValue({
+      _id: new ObjectId("65f222222222222222222222"),
+      authorId: author._id,
+      walletAddress: "0xabc",
+      planCode: "basic",
+      status: "active",
+      baseStorageBytes: 3 * 1024 * 1024 * 1024,
+      extraStorageBytes: 2 * 1024 * 1024 * 1024,
+      totalStorageBytes: 5 * 1024 * 1024 * 1024,
+      features: ["posts", "projects", "homepage_promo"],
+      validUntil: new Date("2026-05-01T00:00:00.000Z"),
+      graceUntil: null,
+      lastTxHash: null,
+      createdAt: new Date("2026-04-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-04-01T00:00:00.000Z"),
+    });
+    vi.mocked(repo.sumPostAttachmentBytesByAuthorId).mockResolvedValue(1000);
+    vi.mocked(repo.sumProjectFileBytesByAuthorId).mockResolvedValue(2000);
+
+    await expect(buildAuthorPlatformBilling(author)).resolves.toMatchObject({
+      planCode: "basic",
+      status: "active",
+      usedStorageBytes: 3000,
+      totalStorageBytes: 5 * 1024 * 1024 * 1024,
+      isProjectCreationAllowed: true,
+      features: ["posts", "projects", "homepage_promo"],
+    });
+  });
+
+  test("rejects project feature on free plan", async () => {
+    const author = createAuthorProfileDoc();
+    vi.mocked(repo.findAuthorPlatformSubscriptionByAuthorId).mockResolvedValue(
+      null,
+    );
+    vi.mocked(repo.sumPostAttachmentBytesByAuthorId).mockResolvedValue(0);
+    vi.mocked(repo.sumProjectFileBytesByAuthorId).mockResolvedValue(0);
+
+    await expect(
+      assertAuthorPlatformFeature(author, "projects"),
+    ).rejects.toThrowError("feature not available on current plan");
+  });
+
+  test("rejects upload when free storage quota would be exceeded", async () => {
+    const author = createAuthorProfileDoc();
+    vi.mocked(repo.findAuthorPlatformSubscriptionByAuthorId).mockResolvedValue(
+      null,
+    );
+    vi.mocked(repo.sumPostAttachmentBytesByAuthorId).mockResolvedValue(
+      1024 * 1024 * 1024,
+    );
+    vi.mocked(repo.sumProjectFileBytesByAuthorId).mockResolvedValue(0);
+
+    await expect(assertAuthorStorageQuota(author, 1)).rejects.toThrowError(
+      "storage quota exceeded",
+    );
   });
 });
 

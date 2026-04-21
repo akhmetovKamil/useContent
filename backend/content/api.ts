@@ -8,6 +8,7 @@ import type {
   AuthorAccessPolicyResponse,
   AuthorCatalogItemResponse,
   AuthorProfileResponse,
+  AuthorPlatformBillingResponse,
   AuthorStorageUsageResponse,
   AuthorSubscriberResponse,
   ConfirmSubscriptionPaymentRequest,
@@ -28,6 +29,7 @@ import type {
   ProjectNodeListResponse,
   ProjectNodeResponse,
   ProjectResponse,
+  PlatformPlanResponse,
   ReaderSubscriptionResponse,
   RecordPostViewRequest,
   SubscriptionPaymentIntentResponse,
@@ -116,6 +118,26 @@ export const getMyAuthorStorageUsage = api(
   async (): Promise<AuthorStorageUsageResponse> => {
     const auth = getAuthData()!;
     return service.getMyAuthorStorageUsage(auth.walletAddress);
+  },
+);
+
+export const listPlatformPlans = api(
+  { method: "GET", path: "/platform/plans", expose: true },
+  async (): Promise<{ plans: PlatformPlanResponse[] }> => {
+    return { plans: service.listPlatformPlans() };
+  },
+);
+
+export const getMyAuthorPlatformBilling = api(
+  {
+    method: "GET",
+    path: "/me/author/platform-billing",
+    expose: true,
+    auth: true,
+  },
+  async (): Promise<AuthorPlatformBillingResponse> => {
+    const auth = getAuthData()!;
+    return service.getMyAuthorPlatformBilling(auth.walletAddress);
   },
 );
 

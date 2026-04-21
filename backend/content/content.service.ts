@@ -33,6 +33,7 @@ import type {
   AuthorProfileDoc,
   AuthorProfileResponse,
   AuthorSubscriberResponse,
+  AuthorPlatformBillingResponse,
   ConfirmSubscriptionPaymentRequest,
   AuthorStorageUsageResponse,
   AuthorStorageUsageStats,
@@ -59,6 +60,9 @@ import type {
   ProjectNodeListResponse,
   ProjectNodeResponse,
   ProjectResponse,
+  PlatformFeature,
+  PlatformPlanResponse,
+  PlatformPlanDoc,
   ReaderSubscriptionResponse,
   SubscriptionPlanDoc,
   SubscriptionPlanResponse,
@@ -79,6 +83,36 @@ import type {
 } from "./types";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const GIB = 1024 * 1024 * 1024;
+
+const platformPlans: PlatformPlanDoc[] = [
+  {
+    code: "free",
+    title: "Free",
+    description: "Start publishing posts with a small storage quota.",
+    priceUsdCents: 0,
+    billingPeriodDays: 30,
+    baseStorageBytes: GIB,
+    maxExtraStorageBytes: 0,
+    pricePerExtraGbUsdCents: 0,
+    features: ["posts"],
+    active: true,
+    sortOrder: 1,
+  },
+  {
+    code: "basic",
+    title: "Basic",
+    description: "Unlock projects and future homepage promotion tools.",
+    priceUsdCents: 500,
+    billingPeriodDays: 30,
+    baseStorageBytes: 3 * GIB,
+    maxExtraStorageBytes: 10 * GIB,
+    pricePerExtraGbUsdCents: 100,
+    features: ["posts", "projects", "homepage_promo"],
+    active: true,
+    sortOrder: 2,
+  },
+];
 
 export async function getOrCreateUserByWallet(
   walletAddress: string,
@@ -174,15 +208,109 @@ export async function getMyAuthorStorageUsage(
   walletAddress: string,
 ): Promise<AuthorStorageUsageResponse> {
   const author = await getMyAuthorProfile(walletAddress);
+  return toAuthorStorageUsageResponse(
+    author,
+    await getAuthorStorageUsageStats(author),
+  );
+}
+
+export function listPlatformPlans(): PlatformPlanResponse[] {
+  return [...platformPlans].sort(
+    (left, right) => left.sortOrder - right.sortOrder,
+  );
+}
+
+export async function getMyAuthorPlatformBilling(
+  walletAddress: string,
+): Promise<AuthorPlatformBillingResponse> {
+  const author = await getMyAuthorProfile(walletAddress);
+  return buildAuthorPlatformBilling(author);
+}
+
+export async function buildAuthorPlatformBilling(
+  author: AuthorProfileDoc,
+): Promise<AuthorPlatformBillingResponse> {
+  const [usage, subscription] = await Promise.all([
+    getAuthorStorageUsageStats(author),
+    repo.findAuthorPlatformSubscriptionByAuthorId(author._id),
+  ]);
+  const activeSubscription =
+    subscription?.status === "active" ? subscription : null;
+  const plan = getPlatformPlan(activeSubscription?.planCode ?? "free");
+  const baseStorageBytes =
+    activeSubscription?.baseStorageBytes ?? plan.baseStorageBytes;
+  const extraStorageBytes = activeSubscription?.extraStorageBytes ?? 0;
+  const totalStorageBytes =
+    activeSubscription?.totalStorageBytes ??
+    baseStorageBytes + extraStorageBytes;
+  const usedStorageBytes = usage.postsBytes + usage.projectsBytes;
+  const features = activeSubscription?.features ?? plan.features;
+
+  return {
+    authorId: author._id.toHexString(),
+    plan,
+    planCode: plan.code,
+    status: activeSubscription ? "active" : "free",
+    validUntil: activeSubscription?.validUntil?.toISOString() ?? null,
+    graceUntil: activeSubscription?.graceUntil?.toISOString() ?? null,
+    baseStorageBytes,
+    extraStorageBytes,
+    totalStorageBytes,
+    usedStorageBytes,
+    remainingStorageBytes: Math.max(totalStorageBytes - usedStorageBytes, 0),
+    postsBytes: usage.postsBytes,
+    projectsBytes: usage.projectsBytes,
+    features,
+    isProjectCreationAllowed: hasPlatformFeature(features, "projects"),
+    isUploadAllowed: usedStorageBytes < totalStorageBytes,
+  };
+}
+
+async function getAuthorStorageUsageStats(
+  author: AuthorProfileDoc,
+): Promise<AuthorStorageUsageStats> {
   const [postsBytes, projectsBytes] = await Promise.all([
     repo.sumPostAttachmentBytesByAuthorId(author._id),
     repo.sumProjectFileBytesByAuthorId(author._id),
   ]);
 
-  return toAuthorStorageUsageResponse(author, {
-    postsBytes,
-    projectsBytes,
-  });
+  return { postsBytes, projectsBytes };
+}
+
+function getPlatformPlan(code: PlatformPlanDoc["code"]): PlatformPlanDoc {
+  const plan = platformPlans.find((item) => item.code === code && item.active);
+  if (!plan) {
+    throw APIError.failedPrecondition("platform plan required");
+  }
+
+  return plan;
+}
+
+function hasPlatformFeature(
+  features: PlatformFeature[],
+  feature: PlatformFeature,
+): boolean {
+  return features.includes(feature);
+}
+
+export async function assertAuthorPlatformFeature(
+  author: AuthorProfileDoc,
+  feature: PlatformFeature,
+): Promise<void> {
+  const billing = await buildAuthorPlatformBilling(author);
+  if (!hasPlatformFeature(billing.features, feature)) {
+    throw APIError.failedPrecondition("feature not available on current plan");
+  }
+}
+
+export async function assertAuthorStorageQuota(
+  author: AuthorProfileDoc,
+  incomingBytes: number,
+): Promise<void> {
+  const billing = await buildAuthorPlatformBilling(author);
+  if (billing.usedStorageBytes + incomingBytes > billing.totalStorageBytes) {
+    throw APIError.failedPrecondition("storage quota exceeded");
+  }
 }
 
 export async function getMyAuthorProfile(
@@ -1064,6 +1192,7 @@ export async function uploadMyPostAttachment(
   if (!post) {
     throw APIError.notFound("post not found");
   }
+  await assertAuthorStorageQuota(author, input.body.length);
 
   const now = new Date();
   const attachmentId = new ObjectId();
@@ -1263,6 +1392,7 @@ export async function createMyProject(
   input: CreateProjectRequest,
 ): Promise<ProjectDoc> {
   const author = await getMyAuthorProfile(walletAddress);
+  await assertAuthorPlatformFeature(author, "projects");
   const now = new Date();
   const projectId = new ObjectId();
   const rootNodeId = new ObjectId();
@@ -1602,6 +1732,7 @@ export async function uploadMyProjectFile(
     walletAddress,
     projectId,
   );
+  await assertAuthorStorageQuota(author, input.body.length);
   const parent = await resolveProjectFolder(
     project,
     input.parentId ?? project.rootNodeId.toHexString(),
