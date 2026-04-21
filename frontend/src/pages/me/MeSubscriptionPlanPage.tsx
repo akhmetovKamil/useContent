@@ -13,6 +13,13 @@ import { Modal } from "@/components/ui/modal"
 import { Eyebrow, PageSection } from "@/components/ui/page"
 import { Textarea } from "@/components/ui/textarea"
 import {
+    ChainPicker,
+    getTokenId,
+    TokenAmountInput,
+    TokenPicker,
+    Web3SummaryPanel,
+} from "@/components/web3/Web3Pickers"
+import {
     useCreateMyAccessPolicyMutation,
     useDeleteMyAccessPolicyMutation,
     useMyAccessPoliciesQuery,
@@ -31,8 +38,8 @@ import {
     summarizePolicyInput,
     type AccessPolicyBuilderState,
 } from "@/utils/access-policy"
-import { defaultSubscriptionChain, supportedChainOptions } from "@/utils/config/chains"
-import { getTokenPresets, type TokenPreset } from "@/utils/config/tokens"
+import { defaultSubscriptionChain } from "@/utils/config/chains"
+import { getTokenPresets } from "@/utils/config/tokens"
 import { erc20Abi } from "@/utils/web3/erc20"
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
@@ -222,192 +229,75 @@ export function MeSubscriptionPlanPage() {
                                         />
                                     </Label>
                                 </div>
-                                <div className="grid gap-2">
-                                    <div>
-                                        <div className="text-sm font-medium text-[var(--foreground)]">
-                                            Network
-                                        </div>
-                                        <p className="mt-1 text-xs text-[var(--muted)]">
-                                            Select where this subscription plan will be registered.
-                                        </p>
-                                    </div>
-                                    <div className="grid gap-2 sm:grid-cols-2">
-                                        {supportedChainOptions.map((chain) => (
-                                            <button
-                                                className={`rounded-2xl border p-4 text-left transition ${
-                                                    chainId === String(chain.id)
-                                                        ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                                                        : "border-[var(--line)] bg-[var(--surface)] hover:border-[var(--accent)]"
-                                                }`}
-                                                key={chain.id}
-                                                onClick={() => {
-                                                    setChainId(String(chain.id))
-                                                    const nextToken = getTokenPresets(
-                                                        chain.id
-                                                    ).find((preset) => preset.kind === "erc20")
-                                                    setSelectedTokenId(
-                                                        nextToken ? getTokenId(nextToken) : "custom"
-                                                    )
-                                                    setTokenAddress(nextToken?.address ?? "")
-                                                    setCustomTokenName("")
-                                                    setCustomTokenSymbol("")
-                                                    setCustomTokenLookupState("idle")
-                                                    setCustomTokenLookupError("")
-                                                }}
-                                                type="button"
-                                            >
-                                                <span
-                                                    className={`inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br ${chain.accent} text-xs font-semibold text-white`}
-                                                >
-                                                    {chain.icon}
-                                                </span>
-                                                <span className="ml-3 font-medium">
-                                                    {chain.shortName}
-                                                </span>
-                                                <span className="ml-2 text-xs text-[var(--muted)]">
-                                                    {chain.testnet ? "testnet" : "mainnet"}
-                                                </span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div className="grid gap-2">
-                                    <div>
-                                        <div className="text-sm font-medium text-[var(--foreground)]">
-                                            Token type
-                                        </div>
-                                        <p className="mt-1 text-xs text-[var(--muted)]">
-                                            Use a native chain token or pick an ERC-20 token preset.
-                                        </p>
-                                    </div>
-                                    <div className="grid gap-2 sm:grid-cols-2">
-                                        {tokenPresets.map((preset) => (
-                                            <button
-                                                className={`rounded-2xl border p-3 text-left transition ${
-                                                    selectedTokenId === getTokenId(preset)
-                                                        ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                                                        : "border-[var(--line)] bg-[var(--surface)] hover:border-[var(--accent)]"
-                                                } ${preset.disabled ? "cursor-not-allowed opacity-55" : ""}`}
-                                                disabled={preset.disabled}
-                                                key={getTokenId(preset)}
-                                                onClick={() => {
-                                                    setSelectedTokenId(getTokenId(preset))
-                                                    setTokenAddress(
-                                                        preset.kind === "native"
-                                                            ? ZERO_ADDRESS
-                                                            : (preset.address ?? "")
-                                                    )
-                                                    setCustomTokenDecimals(String(preset.decimals))
-                                                    setCustomTokenName("")
-                                                    setCustomTokenSymbol("")
-                                                    setCustomTokenLookupState("idle")
-                                                    setCustomTokenLookupError("")
-                                                }}
-                                                type="button"
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--foreground)] text-xs font-semibold text-[var(--surface)]">
-                                                        {preset.symbol.slice(0, 4)}
-                                                    </span>
-                                                    <span className="font-medium">
-                                                        {preset.symbol}
-                                                    </span>
-                                                    {preset.disabled ? <Badge>soon</Badge> : null}
-                                                </div>
-                                                <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
-                                                    {preset.helper}
-                                                </p>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                                {selectedToken?.kind === "custom" ? (
-                                    <div className="grid gap-4 md:grid-cols-[1fr_140px]">
-                                        <Label>
-                                            Custom token address
-                                            <Input
-                                                className="font-mono"
-                                                onChange={(event) => {
-                                                    setTokenAddress(event.target.value)
-                                                    setCustomTokenName("")
-                                                    setCustomTokenSymbol("")
-                                                }}
-                                                placeholder="0x..."
-                                                value={tokenAddress}
-                                            />
-                                        </Label>
-                                        <Label>
-                                            Decimals
-                                            <Input
-                                                onChange={(event) =>
-                                                    setCustomTokenDecimals(event.target.value)
-                                                }
-                                                value={customTokenDecimals}
-                                            />
-                                        </Label>
-                                        <div className="md:col-span-2">
-                                            {customTokenLookupState === "loading" ? (
-                                                <p className="text-xs text-[var(--muted)]">
-                                                    Reading ERC-20 metadata...
-                                                </p>
-                                            ) : null}
-                                            {customTokenLookupState === "success" ? (
-                                                <p className="text-xs text-emerald-700">
-                                                    Detected {customTokenName || "token"}{" "}
-                                                    {customTokenSymbol
-                                                        ? `(${customTokenSymbol})`
-                                                        : ""}{" "}
-                                                    with {customTokenDecimals} decimals.
-                                                </p>
-                                            ) : null}
-                                            {customTokenLookupState === "error" ? (
-                                                <p className="text-xs text-amber-700">
-                                                    {customTokenLookupError}
-                                                </p>
-                                            ) : null}
-                                        </div>
-                                    </div>
-                                ) : null}
-                                <Label>
-                                    Amount
-                                    <Input
-                                        onChange={(event) => setAmount(event.target.value)}
-                                        placeholder="10"
-                                        value={amount}
-                                    />
-                                    <span className="mt-1 block text-xs text-[var(--muted)]">
-                                        Saved on-chain amount:{" "}
-                                        <span className="font-mono">{amountInBaseUnits}</span>
-                                    </span>
-                                </Label>
-                                <div className="grid gap-1 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 text-xs text-[var(--muted)]">
-                                    <div>
-                                        Manager:{" "}
-                                        <span className="break-all font-mono">
-                                            {managerDeploymentQuery.isLoading
+                                <ChainPicker
+                                    onChange={(nextChainId) => {
+                                        setChainId(String(nextChainId))
+                                        const nextToken = getTokenPresets(nextChainId).find(
+                                            (preset) => preset.kind === "erc20"
+                                        )
+                                        setSelectedTokenId(
+                                            nextToken ? getTokenId(nextToken) : "custom"
+                                        )
+                                        setTokenAddress(nextToken?.address ?? "")
+                                        setCustomTokenName("")
+                                        setCustomTokenSymbol("")
+                                        setCustomTokenLookupState("idle")
+                                        setCustomTokenLookupError("")
+                                    }}
+                                    value={selectedChainId}
+                                />
+                                <TokenPicker
+                                    chainId={selectedChainId}
+                                    customDecimals={customTokenDecimals}
+                                    lookup={{
+                                        error: customTokenLookupError,
+                                        name: customTokenName,
+                                        state: customTokenLookupState,
+                                        symbol: customTokenSymbol,
+                                    }}
+                                    onAddressChange={(value) => {
+                                        setTokenAddress(value)
+                                        setCustomTokenName("")
+                                        setCustomTokenSymbol("")
+                                    }}
+                                    onCustomDecimalsChange={setCustomTokenDecimals}
+                                    onTokenChange={(nextTokenId, preset) => {
+                                        setSelectedTokenId(nextTokenId)
+                                        setTokenAddress(
+                                            preset.kind === "native"
+                                                ? ZERO_ADDRESS
+                                                : (preset.address ?? "")
+                                        )
+                                        setCustomTokenDecimals(String(preset.decimals))
+                                        setCustomTokenName("")
+                                        setCustomTokenSymbol("")
+                                        setCustomTokenLookupState("idle")
+                                        setCustomTokenLookupError("")
+                                    }}
+                                    selectedTokenId={selectedTokenId}
+                                    tokenAddress={tokenAddress}
+                                />
+                                <TokenAmountInput
+                                    amount={amount}
+                                    baseUnits={amountInBaseUnits}
+                                    onAmountChange={setAmount}
+                                    symbol={selectedToken?.symbol}
+                                />
+                                <Web3SummaryPanel
+                                    items={[
+                                        {
+                                            label: "manager",
+                                            value: managerDeploymentQuery.isLoading
                                                 ? "loading..."
                                                 : managerAddress ||
-                                                  "not configured for selected network"}
-                                        </span>
-                                    </div>
-                                    <div>
-                                        Internal code: <span className="font-mono">{code}</span>
-                                    </div>
-                                    {planKey ? (
-                                        <div>
-                                            Plan key:{" "}
-                                            <span className="break-all font-mono">{planKey}</span>
-                                        </div>
-                                    ) : null}
-                                    {registrationTxHash ? (
-                                        <div>
-                                            Registration tx:{" "}
-                                            <span className="break-all font-mono">
-                                                {registrationTxHash}
-                                            </span>
-                                        </div>
-                                    ) : null}
-                                </div>
+                                                  "not configured for selected network",
+                                        },
+                                        { label: "internal code", value: code },
+                                        { label: "plan key", value: planKey },
+                                        { label: "registration tx", value: registrationTxHash },
+                                    ]}
+                                    title="On-chain registration"
+                                />
                                 {upsertPlanMutation.isError ? (
                                     <p className="text-sm text-rose-600">
                                         {upsertPlanMutation.error.message}
@@ -705,10 +595,6 @@ function buildPlanCode(title: string) {
         .replace(/^-+|-+$/g, "")
 
     return value || "main"
-}
-
-function getTokenId(token: TokenPreset) {
-    return token.address?.toLowerCase() ?? token.kind
 }
 
 function getTokenPresetByAddress(
