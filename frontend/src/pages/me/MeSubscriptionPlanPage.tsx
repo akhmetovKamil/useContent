@@ -753,6 +753,7 @@ function PolicyCard({
                 <Badge>{policy.policy.root.type.toUpperCase()}</Badge>
                 <Badge>{policy.postsCount} posts</Badge>
                 <Badge>{policy.projectsCount} projects</Badge>
+                <Badge>{policy.paidSubscribersCount} paid members</Badge>
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
                 {!policy.isDefault ? (
@@ -811,6 +812,7 @@ function PlanCard({
                 </div>
                 <div>Every {plan.billingPeriodDays} days</div>
                 <div>Chain {plan.chainId}</div>
+                <div>{plan.activeSubscribersCount} active subscribers</div>
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
                 <Button

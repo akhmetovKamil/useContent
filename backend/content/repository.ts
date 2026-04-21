@@ -878,6 +878,24 @@ export async function countActiveSubscriptionEntitlementsByPlanId(
   });
 }
 
+export async function countActiveSubscriptionEntitlementsByPlanIds(
+  planIds: ObjectId[],
+  now: Date,
+): Promise<number> {
+  if (!planIds.length) {
+    return 0;
+  }
+
+  const entitlements = await getSubscriptionEntitlementsCollection();
+  const wallets = await entitlements.distinct("subscriberWallet", {
+    planId: { $in: planIds },
+    status: "active",
+    validUntil: { $gt: now },
+  });
+
+  return wallets.length;
+}
+
 export async function createSubscriptionEntitlement(
   doc: Omit<SubscriptionEntitlementDoc, "_id">,
 ): Promise<SubscriptionEntitlementDoc> {

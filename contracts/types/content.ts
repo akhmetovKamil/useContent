@@ -96,6 +96,7 @@ export interface AccessPolicyPresetDto {
   isDefault: boolean;
   postsCount: number;
   projectsCount: number;
+  paidSubscribersCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -103,7 +104,37 @@ export interface AccessPolicyPresetDto {
 export interface AuthorAccessPolicyDto extends AccessPolicyPresetDto {
   accessLabel: string | null;
   hasAccess: boolean;
+  paidSubscribersCount: number;
+  conditionMode: "single" | "and" | "or";
+  conditions: AccessPolicyConditionDto[];
 }
+
+export type AccessPolicyConditionDto =
+  | {
+      type: "subscription";
+      plan: SubscriptionPlanDto;
+      satisfied: boolean;
+      validUntil: string | null;
+    }
+  | {
+      type: "token_balance";
+      chainId: number;
+      contractAddress: string;
+      minAmount: string;
+      decimals: number;
+      satisfied: boolean;
+      currentBalance: string | null;
+    }
+  | {
+      type: "nft_ownership";
+      chainId: number;
+      contractAddress: string;
+      standard: "erc721" | "erc1155";
+      tokenId?: string;
+      minBalance?: string;
+      satisfied: boolean;
+      currentBalance: string | null;
+    };
 
 export interface SubscriptionEntitlementDto {
   id: string;
@@ -217,6 +248,7 @@ export interface SubscriptionPlanDto {
   planKey: string;
   registrationTxHash: string | null;
   active: boolean;
+  activeSubscribersCount: number;
   createdAt: string;
   updatedAt: string;
 }

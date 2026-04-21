@@ -1,9 +1,11 @@
 import { subscriptionManagerAbi } from "@contracts/abi/SubscriptionManager"
 import type { SubscriptionPlanDto } from "@contracts/types/content"
 import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { useAccount, usePublicClient, useWriteContract } from "wagmi"
 
 import { Button } from "@/components/ui/button"
+import { queryKeys } from "@/queries/queryKeys"
 import {
     useConfirmSubscriptionPaymentMutation,
     useCreateSubscriptionPaymentIntentMutation,
@@ -14,11 +16,13 @@ import { toAddress } from "@/utils/web3/subscriptions"
 
 interface SubscribeButtonProps {
     authorSlug: string
+    label?: string
     plan: SubscriptionPlanDto
 }
 
-export function SubscribeButton({ authorSlug, plan }: SubscribeButtonProps) {
+export function SubscribeButton({ authorSlug, label = "Subscribe", plan }: SubscribeButtonProps) {
     const { address } = useAccount()
+    const queryClient = useQueryClient()
     const publicClient = usePublicClient({ chainId: plan.chainId })
     const token = useAuthStore((state) => state.token)
     const { writeContractAsync } = useWriteContract()
@@ -82,6 +86,15 @@ export function SubscribeButton({ authorSlug, plan }: SubscribeButtonProps) {
                 intentId: intent.id,
                 input: { txHash: paymentHash },
             })
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: queryKeys.authorAccessPolicies(authorSlug),
+                }),
+                queryClient.invalidateQueries({ queryKey: queryKeys.authorPosts(authorSlug) }),
+                queryClient.invalidateQueries({ queryKey: queryKeys.authorProjects(authorSlug) }),
+                queryClient.invalidateQueries({ queryKey: queryKeys.myReaderSubscriptions }),
+                queryClient.invalidateQueries({ queryKey: queryKeys.myFeedPosts }),
+            ])
             setStatus("Subscription active")
         } catch (caught) {
             setError(caught instanceof Error ? caught.message : "Failed to subscribe")
@@ -99,7 +112,7 @@ export function SubscribeButton({ authorSlug, plan }: SubscribeButtonProps) {
                 onClick={() => void subscribe()}
                 type="button"
             >
-                {!token ? "Sign in to subscribe" : "Subscribe"}
+                {!token ? "Sign in to unlock" : label}
             </Button>
             {status ? <p className="text-sm text-[var(--muted)]">{status}</p> : null}
             {error ? <p className="text-sm text-rose-600">{error}</p> : null}

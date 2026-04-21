@@ -298,7 +298,7 @@ export const getMySubscriptionPlan = api(
   async (): Promise<SubscriptionPlanResponse> => {
     const auth = getAuthData()!;
     const plan = await service.getMySubscriptionPlan(auth.walletAddress);
-    return service.toSubscriptionPlanResponse(plan);
+    return service.toSubscriptionPlanResponseWithStats(plan);
   },
 );
 
@@ -307,7 +307,11 @@ export const listMySubscriptionPlans = api(
   async (): Promise<{ plans: SubscriptionPlanResponse[] }> => {
     const auth = getAuthData()!;
     const plans = await service.listMySubscriptionPlans(auth.walletAddress);
-    return { plans: plans.map(service.toSubscriptionPlanResponse) };
+    return {
+      plans: await Promise.all(
+        plans.map((plan) => service.toSubscriptionPlanResponseWithStats(plan)),
+      ),
+    };
   },
 );
 
@@ -321,7 +325,7 @@ export const upsertMySubscriptionPlan = api(
       auth.walletAddress,
       req,
     );
-    return service.toSubscriptionPlanResponse(plan);
+    return service.toSubscriptionPlanResponseWithStats(plan);
   },
 );
 
@@ -350,7 +354,7 @@ export const getAuthorSubscriptionPlan = api(
   { method: "GET", path: "/authors/:slug/subscription-plan", expose: true },
   async ({ slug }: { slug: string }): Promise<SubscriptionPlanResponse> => {
     const plan = await service.getAuthorSubscriptionPlanBySlug(slug);
-    return service.toSubscriptionPlanResponse(plan);
+    return service.toSubscriptionPlanResponseWithStats(plan);
   },
 );
 
@@ -362,7 +366,11 @@ export const listAuthorSubscriptionPlans = api(
     slug: string;
   }): Promise<{ plans: SubscriptionPlanResponse[] }> => {
     const plans = await service.listAuthorSubscriptionPlansBySlug(slug);
-    return { plans: plans.map(service.toSubscriptionPlanResponse) };
+    return {
+      plans: await Promise.all(
+        plans.map((plan) => service.toSubscriptionPlanResponseWithStats(plan)),
+      ),
+    };
   },
 );
 

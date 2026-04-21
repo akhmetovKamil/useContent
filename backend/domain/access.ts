@@ -24,6 +24,7 @@ export interface SubscriptionGrant {
   authorId: string;
   planId: string;
   active: boolean;
+  validUntil?: string;
 }
 
 export interface TokenBalanceGrant {
@@ -84,7 +85,7 @@ export function isAccessPolicy(value: unknown): value is AccessPolicy {
 export function resolveEntityPolicy(
   policyMode: "public" | "inherited" | "custom",
   authorDefaultPolicy: AccessPolicy,
-  customPolicy?: AccessPolicy | null
+  customPolicy?: AccessPolicy | null,
 ): AccessPolicy {
   if (policyMode === "public") {
     return createPublicPolicy();
@@ -102,7 +103,7 @@ export function resolveEntityPolicy(
 
 export function evaluateAccessPolicy(
   policy: AccessPolicy,
-  context: AccessEvaluationContext
+  context: AccessEvaluationContext,
 ): AccessEvaluationResult {
   if (!isAccessPolicy(policy)) {
     return { allowed: false, reason: "invalid_policy" };
@@ -113,7 +114,7 @@ export function evaluateAccessPolicy(
 
 function evaluatePolicyNode(
   node: AccessPolicyNode,
-  context: AccessEvaluationContext
+  context: AccessEvaluationContext,
 ): AccessEvaluationResult {
   switch (node.type) {
     case "public":
@@ -203,7 +204,8 @@ function isAccessPolicyNode(value: unknown): value is AccessPolicyNode {
         typeof candidate.contractAddress === "string" &&
         candidate.contractAddress.length > 0 &&
         (candidate.standard === "erc721" || candidate.standard === "erc1155") &&
-        (candidate.tokenId === undefined || typeof candidate.tokenId === "string") &&
+        (candidate.tokenId === undefined ||
+          typeof candidate.tokenId === "string") &&
         (candidate.minBalance === undefined ||
           (typeof candidate.minBalance === "string" &&
             /^[0-9]+$/.test(candidate.minBalance)))
@@ -222,27 +224,27 @@ function isAccessPolicyNode(value: unknown): value is AccessPolicyNode {
 
 function hasActiveSubscription(
   node: SubscriptionPolicyNode,
-  context: AccessEvaluationContext
+  context: AccessEvaluationContext,
 ): boolean {
   return (
     context.subscriptions?.some(
       (grant) =>
         grant.active &&
         grant.authorId === node.authorId &&
-        grant.planId === node.planId
+        grant.planId === node.planId,
     ) ?? false
   );
 }
 
 function hasRequiredTokenBalance(
   node: TokenBalancePolicyNode,
-  context: AccessEvaluationContext
+  context: AccessEvaluationContext,
 ): boolean {
   const grant = context.tokenBalances?.find(
     (entry) =>
       entry.chainId === node.chainId &&
       normalizeAddress(entry.contractAddress) ===
-        normalizeAddress(node.contractAddress)
+        normalizeAddress(node.contractAddress),
   );
 
   if (!grant) {
@@ -254,7 +256,7 @@ function hasRequiredTokenBalance(
 
 function hasRequiredNftOwnership(
   node: NftOwnershipPolicyNode,
-  context: AccessEvaluationContext
+  context: AccessEvaluationContext,
 ): boolean {
   return (
     context.nftOwnerships?.some((grant) => {

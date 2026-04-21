@@ -2,6 +2,7 @@ import type { ObjectId } from "mongodb";
 import type { AccessPolicy, PolicyMode } from "../domain/access";
 import type {
   AccessPolicyPresetDto,
+  AccessPolicyConditionDto,
   AuthorAccessPolicyDto,
   AuthorCatalogItemDto,
   AuthorSubscriberDto,
@@ -241,6 +242,7 @@ export type UserProfileResponse = UserProfileDto;
 export type AuthorProfileResponse = AuthorProfileDto;
 export type AuthorCatalogItemResponse = AuthorCatalogItemDto;
 export type AuthorAccessPolicyResponse = AuthorAccessPolicyDto;
+export type AccessPolicyConditionResponse = AccessPolicyConditionDto;
 export type AuthorSubscriberResponse = AuthorSubscriberDto;
 export type AccessPolicyPresetResponse = AccessPolicyPresetDto;
 export type SubscriptionEntitlementResponse = SubscriptionEntitlementDto;

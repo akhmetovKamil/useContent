@@ -1,4 +1,6 @@
-import { CheckCircle2, LockKeyhole, ShieldCheck } from "lucide-react"
+import type { AccessPolicyConditionDto, AuthorAccessPolicyDto } from "@contracts/types/content"
+import { CheckCircle2, ExternalLink, LockKeyhole, ShieldCheck, UsersRound } from "lucide-react"
+import { useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { formatUnits } from "viem"
 
@@ -8,34 +10,27 @@ import { SubscribeButton } from "@/components/subscriptions/SubscribeButton"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+} from "@/components/ui/sheet"
 import { useAuthorAccessPoliciesQuery, useAuthorProfileQuery } from "@/queries/authors"
 import { useAuthorPostsQuery } from "@/queries/posts"
-import { useMyReaderSubscriptionsQuery } from "@/queries/profile"
 import { useAuthorProjectsQuery } from "@/queries/projects"
-import { useAuthorSubscriptionPlansQuery } from "@/queries/subscription-plans"
-import { useAuthStore } from "@/stores/auth-store"
 import { getTokenPresets } from "@/utils/config/tokens"
 
 export function AuthorPage() {
     const { slug } = useParams()
     const authorSlug = slug ?? ""
-    const token = useAuthStore((state) => state.token)
     const authorQuery = useAuthorProfileQuery(authorSlug)
     const postsQuery = useAuthorPostsQuery(authorSlug)
     const projectsQuery = useAuthorProjectsQuery(authorSlug)
-    const plansQuery = useAuthorSubscriptionPlansQuery(authorSlug)
     const policiesQuery = useAuthorAccessPoliciesQuery(authorSlug)
-    const subscriptionsQuery = useMyReaderSubscriptionsQuery(Boolean(token))
-    const activeSubscriptionByPlanId = new Map(
-        (subscriptionsQuery.data ?? [])
-            .filter(
-                (subscription) =>
-                    subscription.authorSlug === authorSlug &&
-                    subscription.status === "active" &&
-                    new Date(subscription.validUntil).getTime() > Date.now()
-            )
-            .map((subscription) => [subscription.planId, subscription])
-    )
+    const [selectedTierId, setSelectedTierId] = useState<string | null>(null)
+    const selectedTier = policiesQuery.data?.find((policy) => policy.id === selectedTierId) ?? null
 
     return (
         <section className="grid gap-6">
@@ -80,7 +75,7 @@ export function AuthorPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="rounded-[28px]">
+                    <Card className="rounded-[32px]">
                         <CardHeader>
                             <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
                                 <ShieldCheck className="size-4" />
@@ -88,126 +83,24 @@ export function AuthorPage() {
                             </div>
                             <CardTitle>Choose what you want to unlock</CardTitle>
                             <CardDescription>
-                                Each tier is paid separately and may unlock different posts.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {plansQuery.isLoading ? (
-                                <p className="text-sm text-[var(--muted)]">Loading tiers...</p>
-                            ) : plansQuery.data?.length ? (
-                                <div className="grid gap-4 lg:grid-cols-2">
-                                    {plansQuery.data.map((plan) => {
-                                        const subscription = activeSubscriptionByPlanId.get(plan.id)
-
-                                        return (
-                                            <article
-                                                className="grid gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5"
-                                                key={plan.id}
-                                            >
-                                                <div className="flex flex-wrap items-start justify-between gap-3">
-                                                    <div>
-                                                        <h3 className="text-xl font-medium text-[var(--foreground)]">
-                                                            {plan.title}
-                                                        </h3>
-                                                        <p className="mt-1 text-sm text-[var(--muted)]">
-                                                            {formatPlanPrice(
-                                                                plan.chainId,
-                                                                plan.tokenAddress,
-                                                                plan.price,
-                                                                plan.paymentAsset ?? "erc20"
-                                                            )}{" "}
-                                                            every {plan.billingPeriodDays} days
-                                                        </p>
-                                                    </div>
-                                                    <Badge
-                                                        className="rounded-full"
-                                                        variant={
-                                                            subscription ? "success" : "warning"
-                                                        }
-                                                    >
-                                                        {subscription ? "active" : "not active"}
-                                                    </Badge>
-                                                </div>
-                                                {subscription ? (
-                                                    <p className="text-sm text-[var(--muted)]">
-                                                        Active until{" "}
-                                                        {formatDate(subscription.validUntil)}
-                                                    </p>
-                                                ) : null}
-                                                <SubscribeButton
-                                                    authorSlug={authorSlug}
-                                                    plan={plan}
-                                                />
-                                            </article>
-                                        )
-                                    })}
-                                </div>
-                            ) : (
-                                <p className="text-sm text-[var(--muted)]">
-                                    This author has no active subscription tiers yet.
-                                </p>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    <Card className="rounded-[28px]">
-                        <CardHeader>
-                            <CardTitle>Access conditions</CardTitle>
-                            <CardDescription>
-                                These rules decide which posts become visible for your wallet.
+                                Tiers combine subscriptions, token ownership, and NFT ownership.
+                                Public content stays available without a wallet.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             {policiesQuery.isLoading ? (
-                                <p className="text-sm text-[var(--muted)]">Loading conditions...</p>
-                            ) : policiesQuery.data?.length ? (
-                                <div className="grid gap-3">
-                                    {policiesQuery.data.map((policy) => (
-                                        <article
-                                            className="flex flex-col gap-3 rounded-[22px] border border-[var(--line)] bg-[var(--surface)] p-4 sm:flex-row sm:items-center sm:justify-between"
+                                <p className="text-sm text-[var(--muted)]">Loading tiers...</p>
+                            ) : (
+                                <div className="grid gap-4 lg:grid-cols-3">
+                                    <PublicTierCard />
+                                    {policiesQuery.data?.map((policy) => (
+                                        <TierCard
                                             key={policy.id}
-                                        >
-                                            <div>
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                    <span className="text-base font-medium text-[var(--foreground)]">
-                                                        {policy.name}
-                                                    </span>
-                                                    <Badge className="rounded-full">
-                                                        {policy.accessLabel ??
-                                                            policy.policy.root.type}
-                                                    </Badge>
-                                                    {policy.isDefault ? (
-                                                        <Badge
-                                                            className="rounded-full"
-                                                            variant="success"
-                                                        >
-                                                            default
-                                                        </Badge>
-                                                    ) : null}
-                                                </div>
-                                                <p className="mt-2 text-sm text-[var(--muted)]">
-                                                    {policy.description ||
-                                                        "No extra description for this condition."}
-                                                </p>
-                                            </div>
-                                            <Badge
-                                                className="w-fit rounded-full"
-                                                variant={policy.hasAccess ? "success" : "warning"}
-                                            >
-                                                {policy.hasAccess ? (
-                                                    <CheckCircle2 className="mr-1 size-3.5" />
-                                                ) : (
-                                                    <LockKeyhole className="mr-1 size-3.5" />
-                                                )}
-                                                {policy.hasAccess ? "available" : "locked"}
-                                            </Badge>
-                                        </article>
+                                            onOpen={() => setSelectedTierId(policy.id)}
+                                            policy={policy}
+                                        />
                                     ))}
                                 </div>
-                            ) : (
-                                <p className="text-sm text-[var(--muted)]">
-                                    No reusable access conditions have been published yet.
-                                </p>
                             )}
                         </CardContent>
                     </Card>
@@ -254,10 +147,252 @@ export function AuthorPage() {
                             )}
                         </CardContent>
                     </Card>
+
+                    <TierSheet
+                        authorSlug={authorSlug}
+                        onOpenChange={(open) => {
+                            if (!open) {
+                                setSelectedTierId(null)
+                            }
+                        }}
+                        open={Boolean(selectedTier)}
+                        tier={selectedTier}
+                    />
                 </>
             ) : null}
         </section>
     )
+}
+
+function PublicTierCard() {
+    return (
+        <article className="grid gap-4 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-5">
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <h3 className="font-[var(--serif)] text-2xl text-[var(--foreground)]">
+                        Public
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                        Free posts and projects that do not require wallet ownership checks.
+                    </p>
+                </div>
+                <Badge variant="success">open</Badge>
+            </div>
+            <Button asChild className="w-fit rounded-full" variant="outline">
+                <Link to="#projects">Browse public content</Link>
+            </Button>
+        </article>
+    )
+}
+
+function TierCard({ onOpen, policy }: { onOpen: () => void; policy: AuthorAccessPolicyDto }) {
+    return (
+        <article className="grid gap-4 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-5 transition hover:-translate-y-0.5 hover:shadow-[var(--shadow)]">
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <h3 className="font-[var(--serif)] text-2xl text-[var(--foreground)]">
+                        {policy.name}
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                        {policy.description || "Unlock this tier by meeting its conditions."}
+                    </p>
+                </div>
+                <Badge variant={policy.hasAccess ? "success" : "warning"}>
+                    {policy.hasAccess ? "unlocked" : "locked"}
+                </Badge>
+            </div>
+            <div className="flex flex-wrap gap-2">
+                <Badge>{policy.conditionMode.toUpperCase()}</Badge>
+                {policy.conditions.map((condition, index) => (
+                    <Badge key={`${condition.type}-${index}`}>
+                        {formatConditionChip(condition)}
+                    </Badge>
+                ))}
+            </div>
+            <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
+                <UsersRound className="size-4" />
+                {policy.paidSubscribersCount} paid members
+            </div>
+            <Button className="w-fit rounded-full" onClick={onOpen} type="button">
+                {policy.hasAccess ? "View tier" : "Unlock tier"}
+            </Button>
+        </article>
+    )
+}
+
+function TierSheet({
+    authorSlug,
+    onOpenChange,
+    open,
+    tier,
+}: {
+    authorSlug: string
+    onOpenChange: (open: boolean) => void
+    open: boolean
+    tier: AuthorAccessPolicyDto | null
+}) {
+    if (!tier) {
+        return null
+    }
+
+    return (
+        <Sheet onOpenChange={onOpenChange} open={open}>
+            <SheetContent onClose={() => onOpenChange(false)}>
+                <SheetHeader>
+                    <Badge className="w-fit" variant={tier.hasAccess ? "success" : "warning"}>
+                        {tier.hasAccess ? "Unlocked" : "Locked"}
+                    </Badge>
+                    <SheetTitle>{tier.name}</SheetTitle>
+                    <SheetDescription>
+                        {tier.description || "Meet every required condition to unlock this tier."}
+                    </SheetDescription>
+                </SheetHeader>
+
+                <div className="mt-6 grid gap-4">
+                    <div className="rounded-[24px] border border-[var(--line)] bg-[var(--surface-strong)] p-4">
+                        <div className="text-sm font-medium text-[var(--foreground)]">
+                            Policy logic
+                        </div>
+                        <p className="mt-1 text-sm text-[var(--muted)]">
+                            {describeConditionMode(tier.conditionMode)}
+                        </p>
+                    </div>
+
+                    {tier.conditions.map((condition, index) => (
+                        <ConditionCard
+                            authorSlug={authorSlug}
+                            condition={condition}
+                            key={`${condition.type}-${index}`}
+                        />
+                    ))}
+
+                    {tier.hasAccess ? (
+                        <Button asChild className="rounded-full">
+                            <Link to="#projects">View unlocked content</Link>
+                        </Button>
+                    ) : null}
+                </div>
+            </SheetContent>
+        </Sheet>
+    )
+}
+
+function ConditionCard({
+    authorSlug,
+    condition,
+}: {
+    authorSlug: string
+    condition: AccessPolicyConditionDto
+}) {
+    return (
+        <article className="grid gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-4">
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <div className="flex items-center gap-2 font-medium text-[var(--foreground)]">
+                        {condition.satisfied ? (
+                            <CheckCircle2 className="size-4 text-emerald-600" />
+                        ) : (
+                            <LockKeyhole className="size-4 text-amber-600" />
+                        )}
+                        {getConditionTitle(condition)}
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                        {getConditionDescription(condition)}
+                    </p>
+                </div>
+                <Badge variant={condition.satisfied ? "success" : "warning"}>
+                    {condition.satisfied ? "satisfied" : "missing"}
+                </Badge>
+            </div>
+
+            {condition.type === "subscription" ? (
+                <div className="grid gap-3">
+                    {condition.validUntil ? (
+                        <p className="text-sm text-[var(--muted)]">
+                            Active until {formatDate(condition.validUntil)}
+                        </p>
+                    ) : null}
+                    {!condition.satisfied ? (
+                        <SubscribeButton
+                            authorSlug={authorSlug}
+                            label="Pay subscription"
+                            plan={condition.plan}
+                        />
+                    ) : null}
+                </div>
+            ) : (
+                <Button asChild className="w-fit rounded-full" size="sm" variant="outline">
+                    <a
+                        href={getExplorerAddressUrl(condition.chainId, condition.contractAddress)}
+                        rel="noreferrer"
+                        target="_blank"
+                    >
+                        View contract
+                        <ExternalLink className="size-4" />
+                    </a>
+                </Button>
+            )}
+        </article>
+    )
+}
+
+function getConditionTitle(condition: AccessPolicyConditionDto) {
+    switch (condition.type) {
+        case "subscription":
+            return condition.plan.title
+        case "token_balance":
+            return "Token balance"
+        case "nft_ownership":
+            return `${condition.standard.toUpperCase()} ownership`
+        default:
+            return "Condition"
+    }
+}
+
+function getConditionDescription(condition: AccessPolicyConditionDto) {
+    switch (condition.type) {
+        case "subscription":
+            return `${formatPlanPrice(
+                condition.plan.chainId,
+                condition.plan.tokenAddress,
+                condition.plan.price,
+                condition.plan.paymentAsset
+            )} every ${condition.plan.billingPeriodDays} days.`
+        case "token_balance":
+            return `Requires ${condition.minAmount} raw units on chain ${condition.chainId}. Current balance: ${
+                condition.currentBalance ?? "not detected"
+            }.`
+        case "nft_ownership":
+            return `Requires ${condition.tokenId ? `token #${condition.tokenId}` : "collection ownership"} on chain ${
+                condition.chainId
+            }. Current balance: ${condition.currentBalance ?? "not detected"}.`
+        default:
+            return ""
+    }
+}
+
+function describeConditionMode(mode: AuthorAccessPolicyDto["conditionMode"]) {
+    if (mode === "and") {
+        return "Every condition below must be satisfied."
+    }
+    if (mode === "or") {
+        return "Any condition below can unlock this tier."
+    }
+
+    return "This tier uses one condition."
+}
+
+function formatConditionChip(condition: AccessPolicyConditionDto) {
+    switch (condition.type) {
+        case "subscription":
+            return "Subscription"
+        case "token_balance":
+            return "Token"
+        case "nft_ownership":
+            return "NFT"
+        default:
+            return "Rule"
+    }
 }
 
 function formatDate(value: string) {
@@ -287,4 +422,20 @@ function formatPlanPrice(
     } catch {
         return `${price} ${symbol}`
     }
+}
+
+function getExplorerAddressUrl(chainId: number, address: string) {
+    const baseUrl =
+        {
+            1: "https://etherscan.io",
+            10: "https://optimistic.etherscan.io",
+            42161: "https://arbiscan.io",
+            8453: "https://basescan.org",
+            11155111: "https://sepolia.etherscan.io",
+            84532: "https://sepolia.basescan.org",
+            11155420: "https://sepolia-optimism.etherscan.io",
+            421614: "https://sepolia.arbiscan.io",
+        }[chainId] ?? "https://etherscan.io"
+
+    return `${baseUrl}/address/${address}`
 }

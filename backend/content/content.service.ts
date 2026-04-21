@@ -26,6 +26,7 @@ import {
 import * as repo from "./repository";
 import type {
   AccessPolicyPresetDoc,
+  AccessPolicyConditionResponse,
   AccessPolicyPresetResponse,
   AuthorAccessPolicyResponse,
   AuthorCatalogItemResponse,
@@ -404,24 +405,44 @@ export async function listAuthorAccessPoliciesBySlug(
     repo.listAccessPolicyPresetsByAuthorId(author._id),
     repo.listSubscriptionPlansByAuthorId(author._id),
   ]);
+  const plansById = new Map(
+    plans.map((plan) => [plan._id.toHexString(), plan]),
+  );
 
   return Promise.all(
-    policies.map(async (policy) => {
-      const evaluation = evaluateAccessPolicy(
-        policy.policy,
-        await buildAccessEvaluationContext(
+    policies
+      .filter((policy) => policy.policy.root.type !== "public")
+      .map(async (policy) => {
+        const context = await buildAccessEvaluationContext(
           author._id,
           policy.policy,
           viewerWallet,
-        ),
-      );
+        );
+        const evaluation = evaluateAccessPolicy(policy.policy, context);
+        const conditions = await buildAccessPolicyConditionResponses(
+          policy.policy.root,
+          context,
+          plansById,
+        );
+        const planIds = collectSubscriptionPlanIds(policy.policy.root).map(
+          (id) => new ObjectId(id),
+        );
+        const paidSubscribersCount = planIds.length
+          ? await repo.countActiveSubscriptionEntitlementsByPlanIds(
+              planIds,
+              new Date(),
+            )
+          : 0;
 
-      return {
-        ...toAccessPolicyPresetResponse(policy),
-        accessLabel: describeAccessPolicy(policy.policy.root, plans),
-        hasAccess: evaluation.allowed,
-      };
-    }),
+        return {
+          ...toAccessPolicyPresetResponse(policy),
+          accessLabel: describeAccessPolicy(policy.policy.root, plans),
+          hasAccess: evaluation.allowed,
+          paidSubscribersCount,
+          conditionMode: getConditionMode(policy.policy.root),
+          conditions,
+        };
+      }),
   );
 }
 
@@ -1195,7 +1216,11 @@ export async function getAuthorPostBySlugAndId(
 
   const evaluation = evaluateAccessPolicy(
     resolvedPolicy,
-    await buildAccessEvaluationContext(author._id, resolvedPolicy, viewerWallet),
+    await buildAccessEvaluationContext(
+      author._id,
+      resolvedPolicy,
+      viewerWallet,
+    ),
   );
 
   if (!evaluation.allowed) {
@@ -1415,7 +1440,11 @@ export async function getAuthorProjectBySlugAndId(
 
   const evaluation = evaluateAccessPolicy(
     resolvedPolicy,
-    await buildAccessEvaluationContext(author._id, resolvedPolicy, viewerWallet),
+    await buildAccessEvaluationContext(
+      author._id,
+      resolvedPolicy,
+      viewerWallet,
+    ),
   );
 
   if (!evaluation.allowed) {
@@ -1815,6 +1844,7 @@ export function toAccessPolicyPresetResponse(
     isDefault: preset.isDefault,
     postsCount: 0,
     projectsCount: 0,
+    paidSubscribersCount: 0,
     createdAt: preset.createdAt.toISOString(),
     updatedAt: preset.updatedAt.toISOString(),
   };
@@ -1827,11 +1857,21 @@ async function toAccessPolicyPresetResponseWithUsage(
     repo.countPostsByAccessPolicyId(preset.authorId, preset._id),
     repo.countProjectsByAccessPolicyId(preset.authorId, preset._id),
   ]);
+  const planIds = collectSubscriptionPlanIds(preset.policy.root).map(
+    (id) => new ObjectId(id),
+  );
+  const paidSubscribersCount = planIds.length
+    ? await repo.countActiveSubscriptionEntitlementsByPlanIds(
+        planIds,
+        new Date(),
+      )
+    : 0;
 
   return {
     ...toAccessPolicyPresetResponse(preset),
     postsCount,
     projectsCount,
+    paidSubscribersCount,
   };
 }
 
@@ -1895,6 +1935,7 @@ export function toSubscriptionPaymentIntentResponse(
 
 export function toSubscriptionPlanResponse(
   plan: SubscriptionPlanDoc,
+  activeSubscribersCount = 0,
 ): SubscriptionPlanResponse {
   return {
     id: plan._id.toHexString(),
@@ -1912,9 +1953,22 @@ export function toSubscriptionPlanResponse(
       buildPlanKey(plan.authorId.toHexString(), plan.code, plan.chainId),
     registrationTxHash: plan.registrationTxHash ?? null,
     active: plan.active,
+    activeSubscribersCount,
     createdAt: plan.createdAt.toISOString(),
     updatedAt: plan.updatedAt.toISOString(),
   };
+}
+
+export async function toSubscriptionPlanResponseWithStats(
+  plan: SubscriptionPlanDoc,
+): Promise<SubscriptionPlanResponse> {
+  return toSubscriptionPlanResponse(
+    plan,
+    await repo.countActiveSubscriptionEntitlementsByPlanId(
+      plan._id,
+      new Date(),
+    ),
+  );
 }
 
 export function toPostResponse(
@@ -2609,7 +2663,11 @@ async function getReadablePostContext(
   );
   const evaluation = evaluateAccessPolicy(
     resolvedPolicy,
-    await buildAccessEvaluationContext(author._id, resolvedPolicy, viewerWallet),
+    await buildAccessEvaluationContext(
+      author._id,
+      resolvedPolicy,
+      viewerWallet,
+    ),
   );
 
   if (!evaluation.allowed) {
@@ -2883,6 +2941,7 @@ async function buildSubscriptionGrants(
   return entitlements.map((entitlement) => ({
     authorId: entitlement.authorId.toHexString(),
     planId: entitlement.planId.toHexString(),
+    validUntil: entitlement.validUntil.toISOString(),
     active:
       entitlement.status === "active" &&
       entitlement.validUntil.getTime() > Date.now(),
@@ -2932,6 +2991,118 @@ function policyUsesSubscriptionPlan(
   }
 
   return false;
+}
+
+async function buildAccessPolicyConditionResponses(
+  node: AccessPolicyNode,
+  context: AccessEvaluationContext,
+  plansById: Map<string, SubscriptionPlanDoc>,
+): Promise<AccessPolicyConditionResponse[]> {
+  const conditions = collectPolicyConditionNodes(node);
+
+  return Promise.all(
+    conditions.map(async (condition) => {
+      switch (condition.type) {
+        case "subscription": {
+          const plan = plansById.get(condition.planId);
+          if (!plan) {
+            return null;
+          }
+          const subscription = context.subscriptions?.find(
+            (grant) =>
+              grant.authorId === condition.authorId &&
+              grant.planId === condition.planId &&
+              grant.active,
+          );
+          const validUntil =
+            context.subscriptions?.find(
+              (grant) => grant.planId === condition.planId && grant.active,
+            )?.validUntil ?? null;
+
+          return {
+            type: "subscription" as const,
+            plan: await toSubscriptionPlanResponseWithStats(plan),
+            satisfied: Boolean(subscription),
+            validUntil,
+          };
+        }
+        case "token_balance": {
+          const grant = context.tokenBalances?.find(
+            (entry) =>
+              entry.chainId === condition.chainId &&
+              entry.contractAddress.toLowerCase() ===
+                condition.contractAddress.toLowerCase(),
+          );
+
+          return {
+            type: "token_balance" as const,
+            chainId: condition.chainId,
+            contractAddress: condition.contractAddress,
+            minAmount: condition.minAmount,
+            decimals: condition.decimals,
+            satisfied: grant
+              ? BigInt(grant.balance) >= BigInt(condition.minAmount)
+              : false,
+            currentBalance: grant?.balance ?? null,
+          };
+        }
+        case "nft_ownership": {
+          const grant = context.nftOwnerships?.find((entry) => {
+            if (
+              entry.chainId !== condition.chainId ||
+              entry.contractAddress.toLowerCase() !==
+                condition.contractAddress.toLowerCase() ||
+              entry.standard !== condition.standard
+            ) {
+              return false;
+            }
+
+            return !condition.tokenId || entry.tokenId === condition.tokenId;
+          });
+          const minBalance = condition.minBalance ?? "1";
+
+          return {
+            type: "nft_ownership" as const,
+            chainId: condition.chainId,
+            contractAddress: condition.contractAddress,
+            standard: condition.standard,
+            tokenId: condition.tokenId,
+            minBalance: condition.minBalance,
+            satisfied: grant
+              ? BigInt(grant.balance ?? "0") >= BigInt(minBalance)
+              : false,
+            currentBalance: grant?.balance ?? null,
+          };
+        }
+        default:
+          return null;
+      }
+    }),
+  ).then((items) =>
+    items.filter((item): item is AccessPolicyConditionResponse =>
+      Boolean(item),
+    ),
+  );
+}
+
+function collectPolicyConditionNodes(
+  node: AccessPolicyNode,
+): AccessPolicyNode[] {
+  if (node.type === "and" || node.type === "or") {
+    return node.children.flatMap((child) => collectPolicyConditionNodes(child));
+  }
+
+  return node.type === "public" ? [] : [node];
+}
+
+function collectSubscriptionPlanIds(node: AccessPolicyNode): string[] {
+  return collectPolicyConditionNodes(node).flatMap((condition) =>
+    condition.type === "subscription" ? [condition.planId] : [],
+  );
+}
+
+function getConditionMode(node: AccessPolicyNode): "single" | "and" | "or" {
+  return node.type === "and" || node.type === "or" ? node.type : "single";
 }
 
 function shortenWallet(walletAddress: string): string {
