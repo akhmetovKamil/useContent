@@ -10,7 +10,7 @@ export const queryKeys = {
     myAccessPolicies: ["me", "access-policies"] as const,
     mySubscriptionPlan: ["me", "subscription-plan"] as const,
     mySubscriptionPlans: ["me", "subscription-plans"] as const,
-    authors: ["authors"] as const,
+    authors: (search = "") => ["authors", search] as const,
     subscriptionManagerDeployment: (chainId: number) =>
         ["contract-deployments", "subscription-manager", chainId] as const,
     author: (slug: string) => ["authors", slug] as const,

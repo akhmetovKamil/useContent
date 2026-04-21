@@ -10,8 +10,10 @@ import type {
 import { http } from "@/utils/api/http"
 
 class AuthorsApi {
-    async listAuthors() {
-        const response = await http.get<{ authors: AuthorCatalogItemDto[] }>("/authors")
+    async listAuthors(search = "") {
+        const response = await http.get<{ authors: AuthorCatalogItemDto[] }>("/authors", {
+            params: search ? { q: search } : undefined,
+        })
         return response.data.authors
     }
 

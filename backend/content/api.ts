@@ -74,8 +74,12 @@ export const createMyAuthorProfile = api(
 
 export const listAuthors = api(
   { method: "GET", path: "/authors", expose: true },
-  async (): Promise<{ authors: AuthorCatalogItemResponse[] }> => {
-    const authors = await service.listAuthors();
+  async ({
+    q,
+  }: {
+    q?: string;
+  }): Promise<{ authors: AuthorCatalogItemResponse[] }> => {
+    const authors = await service.listAuthors(q);
     return { authors };
   },
 );

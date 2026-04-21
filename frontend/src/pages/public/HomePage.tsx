@@ -1,18 +1,22 @@
-import { ArrowUpRight, UsersRound } from "lucide-react"
+import { ArrowUpRight, Search, UsersRound } from "lucide-react"
+import { useDeferredValue, useState } from "react"
 import { Link } from "react-router-dom"
 
 import { HomeHero } from "@/components/home-page/HomeHero"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { useAuthorsQuery } from "@/queries/authors"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 
 export function HomePage() {
     const token = useAuthStore((state) => state.token)
+    const [authorSearch, setAuthorSearch] = useState("")
+    const deferredAuthorSearch = useDeferredValue(authorSearch)
     const authorQuery = useMyAuthorProfileQuery(Boolean(token))
-    const authorsQuery = useAuthorsQuery(Boolean(token))
+    const authorsQuery = useAuthorsQuery(Boolean(token), deferredAuthorSearch.trim())
 
     return (
         <div className="grid gap-6">
@@ -27,6 +31,15 @@ export function HomePage() {
                             </div>
                             <CardTitle className="mt-3">Explore creator spaces</CardTitle>
                         </div>
+                        <label className="relative w-full sm:max-w-xs">
+                            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[var(--muted)]" />
+                            <Input
+                                className="rounded-full pl-10"
+                                onChange={(event) => setAuthorSearch(event.target.value)}
+                                placeholder="Search by name, tag, or username"
+                                value={authorSearch}
+                            />
+                        </label>
                     </CardHeader>
                     <CardContent>
                         {authorsQuery.isLoading ? (
@@ -65,7 +78,9 @@ export function HomePage() {
                         ) : (
                             <div className="rounded-[24px] border border-dashed border-[var(--line)] p-6">
                                 <p className="text-sm text-[var(--muted)]">
-                                    No authors yet. The first creator space will appear here.
+                                    {deferredAuthorSearch.trim()
+                                        ? "No authors match this search yet."
+                                        : "No authors yet. The first creator space will appear here."}
                                 </p>
                                 {authorQuery.data?.slug ? (
                                     <Button asChild className="mt-4 rounded-full" variant="outline">

@@ -147,8 +147,10 @@ export async function getAuthorProfileBySlug(
   return author;
 }
 
-export async function listAuthors(): Promise<AuthorCatalogItemResponse[]> {
-  const authors = await repo.listAuthorProfiles();
+export async function listAuthors(
+  search?: string,
+): Promise<AuthorCatalogItemResponse[]> {
+  const authors = await repo.listAuthorProfiles(search);
   return Promise.all(
     authors.map(async (author) => {
       const [postsCount, plans] = await Promise.all([

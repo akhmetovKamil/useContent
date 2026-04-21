@@ -111,9 +111,27 @@ export async function findAuthorProfilesByIds(
   return authorProfiles.find({ _id: { $in: ids } }).toArray();
 }
 
-export async function listAuthorProfiles(): Promise<AuthorProfileDoc[]> {
+export async function listAuthorProfiles(
+  search?: string,
+): Promise<AuthorProfileDoc[]> {
   const authorProfiles = await getAuthorProfilesCollection();
-  return authorProfiles.find({}).sort({ createdAt: -1 }).toArray();
+  const normalizedSearch = search?.trim();
+  if (!normalizedSearch) {
+    return authorProfiles.find({}).sort({ createdAt: -1 }).toArray();
+  }
+
+  const pattern = new RegExp(escapeRegExp(normalizedSearch), "i");
+  return authorProfiles
+    .find({
+      $or: [
+        { slug: pattern },
+        { displayName: pattern },
+        { bio: pattern },
+        { tags: pattern },
+      ],
+    })
+    .sort({ createdAt: -1 })
+    .toArray();
 }
 
 export async function createAuthorProfile(
@@ -1158,4 +1176,8 @@ function isMongoIndexNotFoundError(error: unknown): boolean {
     "codeName" in error &&
     (error as { codeName?: unknown }).codeName === "IndexNotFound"
   );
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

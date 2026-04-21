@@ -3,10 +3,10 @@ import { useQuery } from "@tanstack/react-query"
 import { authorsApi } from "@/api/AuthorsApi"
 import { queryKeys } from "./queryKeys"
 
-export function useAuthorsQuery(enabled = true) {
+export function useAuthorsQuery(enabled = true, search = "") {
     return useQuery({
-        queryKey: queryKeys.authors,
-        queryFn: () => authorsApi.listAuthors(),
+        queryKey: queryKeys.authors(search),
+        queryFn: () => authorsApi.listAuthors(search),
         enabled,
     })
 }
