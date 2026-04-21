@@ -10,6 +10,13 @@ import { OnChainPlanPublisher } from "@/components/subscriptions/OnChainPlanPubl
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+    Drawer,
+    DrawerContent,
+    DrawerDescription,
+    DrawerHeader,
+    DrawerTitle,
+} from "@/components/ui/drawer"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Modal } from "@/components/ui/modal"
@@ -438,226 +445,249 @@ export function MeSubscriptionPlanPage() {
                 </div>
             )}
 
-            <Modal
-                className="max-w-5xl"
-                description="A policy is the reusable access tier that posts and projects attach to."
-                onOpenChange={setPolicyModalOpen}
-                open={policyModalOpen}
-                title={editingPolicyId ? "Edit access policy" : "Create access policy"}
-            >
-                <form
-                    className="grid gap-5"
-                    onSubmit={(event) => {
-                        event.preventDefault()
-                        submitPolicy()
-                    }}
+            <Drawer onOpenChange={setPolicyModalOpen} open={policyModalOpen}>
+                <DrawerContent
+                    className="max-w-5xl"
+                    onClose={() => setPolicyModalOpen(false)}
+                    side="right"
                 >
-                    <div className="grid gap-4 md:grid-cols-2">
+                    <DrawerHeader>
+                        <DrawerTitle>
+                            {editingPolicyId ? "Edit access policy" : "Create access policy"}
+                        </DrawerTitle>
+                        <DrawerDescription>
+                            A policy is the reusable access tier that posts and projects attach to.
+                        </DrawerDescription>
+                    </DrawerHeader>
+                    <form
+                        className="mt-6 grid gap-5"
+                        onSubmit={(event) => {
+                            event.preventDefault()
+                            submitPolicy()
+                        }}
+                    >
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <Label>
+                                Policy name
+                                <Input
+                                    onChange={(event) => setPolicyName(event.target.value)}
+                                    value={policyName}
+                                />
+                            </Label>
+                            <label className="flex items-end gap-3 rounded-[18px] border border-[var(--line)] bg-[var(--surface-strong)] p-3 text-sm">
+                                <input
+                                    checked={policyIsDefault}
+                                    onChange={(event) => setPolicyIsDefault(event.target.checked)}
+                                    type="checkbox"
+                                />
+                                Make this the default inherited policy
+                            </label>
+                        </div>
                         <Label>
-                            Policy name
-                            <Input
-                                onChange={(event) => setPolicyName(event.target.value)}
-                                value={policyName}
+                            Description
+                            <Textarea
+                                onChange={(event) => setPolicyDescription(event.target.value)}
+                                value={policyDescription}
                             />
                         </Label>
-                        <label className="flex items-end gap-3 rounded-[18px] border border-[var(--line)] bg-[var(--surface-strong)] p-3 text-sm">
-                            <input
-                                checked={policyIsDefault}
-                                onChange={(event) => setPolicyIsDefault(event.target.checked)}
-                                type="checkbox"
-                            />
-                            Make this the default inherited policy
-                        </label>
-                    </div>
-                    <Label>
-                        Description
-                        <Textarea
-                            onChange={(event) => setPolicyDescription(event.target.value)}
-                            value={policyDescription}
-                        />
-                    </Label>
-                    <AccessPolicyEditor
-                        builder={policyBuilder}
-                        disabled={createPolicyMutation.isPending || updatePolicyMutation.isPending}
-                        onChange={setPolicyBuilder}
-                        onCreatePlan={() => openPlanModal()}
-                        subscriptionPlans={policyOptions}
-                    />
-                    <div className="rounded-[22px] border border-[var(--line)] bg-[var(--surface-strong)] p-4 text-sm text-[var(--muted)]">
-                        Preview: {summarizePolicyInput(policyBuilder)}
-                    </div>
-                    {policyError ? <p className="text-sm text-rose-600">{policyError}</p> : null}
-                    {createPolicyMutation.isError ? (
-                        <p className="text-sm text-rose-600">
-                            {createPolicyMutation.error.message}
-                        </p>
-                    ) : null}
-                    {updatePolicyMutation.isError ? (
-                        <p className="text-sm text-rose-600">
-                            {updatePolicyMutation.error.message}
-                        </p>
-                    ) : null}
-                    <div className="flex justify-end gap-2">
-                        <Button
-                            onClick={() => setPolicyModalOpen(false)}
-                            type="button"
-                            variant="outline"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
+                        <AccessPolicyEditor
+                            builder={policyBuilder}
                             disabled={
                                 createPolicyMutation.isPending || updatePolicyMutation.isPending
                             }
-                            type="submit"
-                        >
-                            {editingPolicyId ? "Save policy" : "Create policy"}
-                        </Button>
-                    </div>
-                </form>
-            </Modal>
+                            onChange={setPolicyBuilder}
+                            onCreatePlan={() => openPlanModal()}
+                            subscriptionPlans={policyOptions}
+                        />
+                        <div className="rounded-[22px] border border-[var(--line)] bg-[var(--surface-strong)] p-4 text-sm text-[var(--muted)]">
+                            Preview: {summarizePolicyInput(policyBuilder)}
+                        </div>
+                        {policyError ? (
+                            <p className="text-sm text-rose-600">{policyError}</p>
+                        ) : null}
+                        {createPolicyMutation.isError ? (
+                            <p className="text-sm text-rose-600">
+                                {createPolicyMutation.error.message}
+                            </p>
+                        ) : null}
+                        {updatePolicyMutation.isError ? (
+                            <p className="text-sm text-rose-600">
+                                {updatePolicyMutation.error.message}
+                            </p>
+                        ) : null}
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                onClick={() => setPolicyModalOpen(false)}
+                                type="button"
+                                variant="outline"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                disabled={
+                                    createPolicyMutation.isPending || updatePolicyMutation.isPending
+                                }
+                                type="submit"
+                            >
+                                {editingPolicyId ? "Save policy" : "Create policy"}
+                            </Button>
+                        </div>
+                    </form>
+                </DrawerContent>
+            </Drawer>
 
-            <Modal
-                className="max-w-5xl"
-                description="Plans define payment amount and on-chain registration. Use them inside subscription conditions."
-                onOpenChange={setPlanModalOpen}
-                open={planModalOpen}
-                title={selectedPlan ? "Edit subscription plan" : "Create subscription plan"}
-            >
-                <div className="grid gap-5">
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <Label>
-                            Plan title
-                            <Input
-                                onChange={(event) => {
-                                    const value = event.target.value
-                                    setTitle(value)
-                                    if (!selectedPlan) {
-                                        setCode(buildPlanCode(value))
-                                    }
-                                }}
-                                value={title}
-                            />
-                        </Label>
-                        <Label>
-                            Billing days
-                            <Input
-                                onChange={(event) => setBillingPeriodDays(event.target.value)}
-                                value={billingPeriodDays}
-                            />
-                        </Label>
+            <Drawer onOpenChange={setPlanModalOpen} open={planModalOpen}>
+                <DrawerContent
+                    className="max-w-5xl"
+                    onClose={() => setPlanModalOpen(false)}
+                    side="right"
+                >
+                    <DrawerHeader>
+                        <DrawerTitle>
+                            {selectedPlan ? "Edit subscription plan" : "Create subscription plan"}
+                        </DrawerTitle>
+                        <DrawerDescription>
+                            Plans define payment amount and on-chain registration. Use them inside
+                            subscription conditions.
+                        </DrawerDescription>
+                    </DrawerHeader>
+                    <div className="mt-6 grid gap-5">
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <Label>
+                                Plan title
+                                <Input
+                                    onChange={(event) => {
+                                        const value = event.target.value
+                                        setTitle(value)
+                                        if (!selectedPlan) {
+                                            setCode(buildPlanCode(value))
+                                        }
+                                    }}
+                                    value={title}
+                                />
+                            </Label>
+                            <Label>
+                                Billing days
+                                <Input
+                                    onChange={(event) => setBillingPeriodDays(event.target.value)}
+                                    value={billingPeriodDays}
+                                />
+                            </Label>
+                        </div>
+                        <ChainPicker
+                            onChange={(nextChainId) => {
+                                setChainId(String(nextChainId))
+                                const nextToken = getTokenPresets(nextChainId).find(
+                                    (preset) => preset.kind === "erc20"
+                                )
+                                setSelectedTokenId(nextToken ? getTokenId(nextToken) : "custom")
+                                setTokenAddress(nextToken?.address ?? "")
+                                setCustomTokenName("")
+                                setCustomTokenSymbol("")
+                                setCustomTokenLookupState("idle")
+                                setCustomTokenLookupError("")
+                            }}
+                            value={selectedChainId}
+                        />
+                        <TokenPicker
+                            chainId={selectedChainId}
+                            customDecimals={customTokenDecimals}
+                            lookup={{
+                                error: customTokenLookupError,
+                                name: customTokenName,
+                                state: customTokenLookupState,
+                                symbol: customTokenSymbol,
+                            }}
+                            onAddressChange={(value) => {
+                                setTokenAddress(value)
+                                setCustomTokenName("")
+                                setCustomTokenSymbol("")
+                            }}
+                            onCustomDecimalsChange={setCustomTokenDecimals}
+                            onTokenChange={(nextTokenId, preset) => {
+                                setSelectedTokenId(nextTokenId)
+                                setTokenAddress(
+                                    preset.kind === "native" ? ZERO_ADDRESS : (preset.address ?? "")
+                                )
+                                setCustomTokenDecimals(String(preset.decimals))
+                                setCustomTokenName("")
+                                setCustomTokenSymbol("")
+                                setCustomTokenLookupState("idle")
+                                setCustomTokenLookupError("")
+                            }}
+                            selectedTokenId={selectedTokenId}
+                            tokenAddress={tokenAddress}
+                        />
+                        <TokenAmountInput
+                            amount={amount}
+                            baseUnits={amountInBaseUnits}
+                            onAmountChange={setAmount}
+                            symbol={selectedToken?.symbol}
+                        />
+                        <Web3SummaryPanel
+                            items={[
+                                {
+                                    label: "manager",
+                                    value: managerDeploymentQuery.isLoading
+                                        ? "loading..."
+                                        : managerAddress || "not configured for selected network",
+                                },
+                                { label: "internal code", value: code },
+                                { label: "plan key", value: planKey },
+                                { label: "registration tx", value: registrationTxHash },
+                            ]}
+                            title="On-chain registration"
+                        />
+                        {upsertPlanMutation.isError ? (
+                            <p className="text-sm text-rose-600">
+                                {upsertPlanMutation.error.message}
+                            </p>
+                        ) : null}
+                        {!managerAddress ? (
+                            <p className="text-sm text-amber-700">
+                                SubscriptionManager is not registered for this network in the
+                                backend registry yet.
+                            </p>
+                        ) : null}
+                        <OnChainPlanPublisher
+                            active
+                            billingPeriodDays={Number(billingPeriodDays)}
+                            chainId={selectedChainId}
+                            code={code}
+                            contractAddress={managerAddress}
+                            disabled={
+                                upsertPlanMutation.isPending ||
+                                !managerAddress ||
+                                !planTokenAddress ||
+                                !amountInBaseUnits
+                            }
+                            existingPlanKey={selectedPlan?.planKey}
+                            onPublished={(published) => {
+                                setPlanKey(published.planKey ?? "")
+                                setRegistrationTxHash(published.registrationTxHash ?? "")
+                                void upsertPlanMutation
+                                    .mutateAsync({
+                                        code,
+                                        title,
+                                        paymentAsset,
+                                        chainId: selectedChainId,
+                                        tokenAddress: planTokenAddress,
+                                        price: amountInBaseUnits,
+                                        billingPeriodDays: Number(billingPeriodDays),
+                                        contractAddress: managerAddress,
+                                        planKey: published.planKey,
+                                        registrationTxHash: published.registrationTxHash,
+                                        active: true,
+                                    })
+                                    .then(() => setPlanModalOpen(false))
+                            }}
+                            price={amountInBaseUnits}
+                            paymentAsset={paymentAsset}
+                            tokenAddress={planTokenAddress}
+                        />
                     </div>
-                    <ChainPicker
-                        onChange={(nextChainId) => {
-                            setChainId(String(nextChainId))
-                            const nextToken = getTokenPresets(nextChainId).find(
-                                (preset) => preset.kind === "erc20"
-                            )
-                            setSelectedTokenId(nextToken ? getTokenId(nextToken) : "custom")
-                            setTokenAddress(nextToken?.address ?? "")
-                            setCustomTokenName("")
-                            setCustomTokenSymbol("")
-                            setCustomTokenLookupState("idle")
-                            setCustomTokenLookupError("")
-                        }}
-                        value={selectedChainId}
-                    />
-                    <TokenPicker
-                        chainId={selectedChainId}
-                        customDecimals={customTokenDecimals}
-                        lookup={{
-                            error: customTokenLookupError,
-                            name: customTokenName,
-                            state: customTokenLookupState,
-                            symbol: customTokenSymbol,
-                        }}
-                        onAddressChange={(value) => {
-                            setTokenAddress(value)
-                            setCustomTokenName("")
-                            setCustomTokenSymbol("")
-                        }}
-                        onCustomDecimalsChange={setCustomTokenDecimals}
-                        onTokenChange={(nextTokenId, preset) => {
-                            setSelectedTokenId(nextTokenId)
-                            setTokenAddress(
-                                preset.kind === "native" ? ZERO_ADDRESS : (preset.address ?? "")
-                            )
-                            setCustomTokenDecimals(String(preset.decimals))
-                            setCustomTokenName("")
-                            setCustomTokenSymbol("")
-                            setCustomTokenLookupState("idle")
-                            setCustomTokenLookupError("")
-                        }}
-                        selectedTokenId={selectedTokenId}
-                        tokenAddress={tokenAddress}
-                    />
-                    <TokenAmountInput
-                        amount={amount}
-                        baseUnits={amountInBaseUnits}
-                        onAmountChange={setAmount}
-                        symbol={selectedToken?.symbol}
-                    />
-                    <Web3SummaryPanel
-                        items={[
-                            {
-                                label: "manager",
-                                value: managerDeploymentQuery.isLoading
-                                    ? "loading..."
-                                    : managerAddress || "not configured for selected network",
-                            },
-                            { label: "internal code", value: code },
-                            { label: "plan key", value: planKey },
-                            { label: "registration tx", value: registrationTxHash },
-                        ]}
-                        title="On-chain registration"
-                    />
-                    {upsertPlanMutation.isError ? (
-                        <p className="text-sm text-rose-600">{upsertPlanMutation.error.message}</p>
-                    ) : null}
-                    {!managerAddress ? (
-                        <p className="text-sm text-amber-700">
-                            SubscriptionManager is not registered for this network in the backend
-                            registry yet.
-                        </p>
-                    ) : null}
-                    <OnChainPlanPublisher
-                        active
-                        billingPeriodDays={Number(billingPeriodDays)}
-                        chainId={selectedChainId}
-                        code={code}
-                        contractAddress={managerAddress}
-                        disabled={
-                            upsertPlanMutation.isPending ||
-                            !managerAddress ||
-                            !planTokenAddress ||
-                            !amountInBaseUnits
-                        }
-                        existingPlanKey={selectedPlan?.planKey}
-                        onPublished={(published) => {
-                            setPlanKey(published.planKey ?? "")
-                            setRegistrationTxHash(published.registrationTxHash ?? "")
-                            void upsertPlanMutation
-                                .mutateAsync({
-                                    code,
-                                    title,
-                                    paymentAsset,
-                                    chainId: selectedChainId,
-                                    tokenAddress: planTokenAddress,
-                                    price: amountInBaseUnits,
-                                    billingPeriodDays: Number(billingPeriodDays),
-                                    contractAddress: managerAddress,
-                                    planKey: published.planKey,
-                                    registrationTxHash: published.registrationTxHash,
-                                    active: true,
-                                })
-                                .then(() => setPlanModalOpen(false))
-                        }}
-                        price={amountInBaseUnits}
-                        paymentAsset={paymentAsset}
-                        tokenAddress={planTokenAddress}
-                    />
-                </div>
-            </Modal>
+                </DrawerContent>
+            </Drawer>
 
             <Modal
                 description="Posts and projects using this policy should be moved to another policy first."
@@ -704,8 +734,8 @@ function FlowCard({
     title: string
 }) {
     return (
-        <div className="rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-5">
-            <div className="grid size-11 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+        <div className="rounded-[30px] border border-[var(--line)] bg-[radial-gradient(circle_at_top_left,var(--accent-soft),transparent_48%),var(--surface)] p-5 shadow-[0_16px_48px_rgba(15,23,42,0.05)]">
+            <div className="grid size-11 place-items-center rounded-2xl bg-[var(--foreground)] text-[var(--background)]">
                 {icon}
             </div>
             <div className="mt-4 font-medium text-[var(--foreground)]">{title}</div>
@@ -726,7 +756,7 @@ function PolicyCard({
     policy: AccessPolicyPresetDto
 }) {
     return (
-        <div className="group rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-5 transition hover:-translate-y-0.5 hover:shadow-[var(--shadow)]">
+        <div className="group rounded-[30px] border border-[var(--line)] bg-[linear-gradient(145deg,var(--surface),var(--surface-strong))] p-5 shadow-[0_18px_58px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow)]">
             <div className="flex items-start justify-between gap-3">
                 <div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -749,7 +779,7 @@ function PolicyCard({
                     <ArrowUpRight className="size-4" />
                 </Button>
             </div>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-4 grid grid-cols-2 gap-2 text-sm md:grid-cols-4">
                 <Badge>{policy.policy.root.type.toUpperCase()}</Badge>
                 <Badge>{policy.postsCount} posts</Badge>
                 <Badge>{policy.projectsCount} projects</Badge>
@@ -793,16 +823,18 @@ function PlanCard({
     plan: SubscriptionPlanDto
 }) {
     return (
-        <div className="rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-5">
+        <div className="rounded-[30px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-[0_16px_48px_rgba(15,23,42,0.05)]">
             <div className="flex items-start justify-between gap-3">
                 <div>
-                    <h3 className="font-medium text-[var(--foreground)]">{plan.title}</h3>
+                    <h3 className="font-[var(--serif)] text-2xl text-[var(--foreground)]">
+                        {plan.title}
+                    </h3>
                     <p className="mt-1 font-mono text-xs text-[var(--muted)]">{plan.code}</p>
                 </div>
                 <Badge>{plan.active ? "active" : "inactive"}</Badge>
             </div>
-            <div className="mt-4 grid gap-2 text-sm text-[var(--muted)]">
-                <div>
+            <div className="mt-5 grid gap-3 text-sm text-[var(--muted)]">
+                <div className="rounded-2xl bg-[var(--surface-strong)] p-3 text-[var(--foreground)]">
                     {formatPlanAmount(
                         plan.chainId,
                         plan.tokenAddress,
@@ -810,9 +842,11 @@ function PlanCard({
                         plan.paymentAsset
                     )}
                 </div>
-                <div>Every {plan.billingPeriodDays} days</div>
-                <div>Chain {plan.chainId}</div>
-                <div>{plan.activeSubscribersCount} active subscribers</div>
+                <div className="flex flex-wrap gap-2">
+                    <Badge>Every {plan.billingPeriodDays} days</Badge>
+                    <Badge>Chain {plan.chainId}</Badge>
+                    <Badge>{plan.activeSubscribersCount} active subscribers</Badge>
+                </div>
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
                 <Button
