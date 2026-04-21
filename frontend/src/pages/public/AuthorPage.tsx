@@ -1,7 +1,6 @@
 import type { AccessPolicyConditionDto, AuthorAccessPolicyDto } from "@contracts/types/content"
 import {
     CheckCircle2,
-    ExternalLink,
     Gem,
     LockKeyhole,
     ShieldCheck,
@@ -11,7 +10,6 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import { Link, useParams } from "react-router-dom"
-import { formatUnits } from "viem"
 
 import { PostFeed } from "@/components/posts/PostFeed"
 import { ProjectList } from "@/components/projects/ProjectList"
@@ -26,10 +24,14 @@ import {
     DrawerHeader,
     DrawerTitle,
 } from "@/components/ui/drawer"
+import {
+    NftConditionAssetCard,
+    TokenConditionAssetCard,
+} from "@/components/web3/AssetConditionCards"
 import { useAuthorAccessPoliciesQuery, useAuthorProfileQuery } from "@/queries/authors"
 import { useAuthorPostsQuery } from "@/queries/posts"
 import { useAuthorProjectsQuery } from "@/queries/projects"
-import { getTokenPresets } from "@/utils/config/tokens"
+import { formatTokenUnits, resolveTokenAssetMetadata } from "@/utils/web3/assets"
 
 export function AuthorPage() {
     const { slug } = useParams()
@@ -342,18 +344,30 @@ function ConditionCard({
                         />
                     ) : null}
                 </div>
-            ) : (
-                <Button asChild className="w-fit rounded-full" size="sm" variant="outline">
-                    <a
-                        href={getExplorerAddressUrl(condition.chainId, condition.contractAddress)}
-                        rel="noreferrer"
-                        target="_blank"
-                    >
-                        View contract
-                        <ExternalLink className="size-4" />
-                    </a>
-                </Button>
-            )}
+            ) : null}
+
+            {condition.type === "token_balance" ? (
+                <TokenConditionAssetCard
+                    chainId={condition.chainId}
+                    contractAddress={condition.contractAddress}
+                    currentBalance={condition.currentBalance}
+                    decimals={condition.decimals}
+                    minAmount={condition.minAmount}
+                    satisfied={condition.satisfied}
+                />
+            ) : null}
+
+            {condition.type === "nft_ownership" ? (
+                <NftConditionAssetCard
+                    chainId={condition.chainId}
+                    contractAddress={condition.contractAddress}
+                    currentBalance={condition.currentBalance}
+                    minBalance={condition.minBalance}
+                    satisfied={condition.satisfied}
+                    standard={condition.standard}
+                    tokenId={condition.tokenId}
+                />
+            ) : null}
         </article>
     )
 }
@@ -393,17 +407,21 @@ function getConditionDescription(condition: AccessPolicyConditionDto) {
             return `${formatPlanPrice(
                 condition.plan.chainId,
                 condition.plan.tokenAddress,
-                condition.plan.price,
-                condition.plan.paymentAsset
+                condition.plan.price
             )} every ${condition.plan.billingPeriodDays} days.`
-        case "token_balance":
-            return `Requires ${formatTokenAmount(condition.minAmount, condition.decimals)} tokens on chain ${
-                condition.chainId
-            }. Current balance: ${
-                condition.currentBalance
-                    ? formatTokenAmount(condition.currentBalance, condition.decimals)
-                    : "not detected"
+        case "token_balance": {
+            const token = resolveTokenAssetMetadata({
+                chainId: condition.chainId,
+                decimals: condition.decimals,
+                tokenAddress: condition.contractAddress,
+            })
+            const required = formatTokenUnits(condition.minAmount, condition.decimals)
+            const current = formatTokenUnits(condition.currentBalance, condition.decimals)
+
+            return `Requires ${required ?? condition.minAmount} ${token.symbol}. Current balance: ${
+                current ? `${current} ${token.symbol}` : "not detected"
             }.`
+        }
         case "nft_ownership":
             return `Requires ${condition.tokenId ? `token #${condition.tokenId}` : "collection ownership"} on chain ${
                 condition.chainId
@@ -445,47 +463,12 @@ function formatDate(value: string) {
     }).format(new Date(value))
 }
 
-function formatPlanPrice(
-    chainId: number,
-    tokenAddress: string,
-    price: string,
-    paymentAsset: "erc20" | "native"
-) {
-    const token = getTokenPresets(chainId).find((preset) =>
-        paymentAsset === "native"
-            ? preset.kind === "native"
-            : preset.address?.toLowerCase() === tokenAddress.toLowerCase()
-    )
-    const decimals = token?.decimals ?? 18
-    const symbol = token?.symbol ?? "tokens"
+function formatPlanPrice(chainId: number, tokenAddress: string, price: string) {
+    const token = resolveTokenAssetMetadata({ chainId, tokenAddress })
 
     try {
-        return `${formatUnits(BigInt(price), decimals)} ${symbol}`
+        return `${formatTokenUnits(price, token.decimals) ?? price} ${token.symbol}`
     } catch {
-        return `${price} ${symbol}`
+        return `${price} ${token.symbol}`
     }
-}
-
-function formatTokenAmount(value: string, decimals: number) {
-    try {
-        return formatUnits(BigInt(value), decimals)
-    } catch {
-        return value
-    }
-}
-
-function getExplorerAddressUrl(chainId: number, address: string) {
-    const baseUrl =
-        {
-            1: "https://etherscan.io",
-            10: "https://optimistic.etherscan.io",
-            42161: "https://arbiscan.io",
-            8453: "https://basescan.org",
-            11155111: "https://sepolia.etherscan.io",
-            84532: "https://sepolia.basescan.org",
-            11155420: "https://sepolia-optimism.etherscan.io",
-            421614: "https://sepolia.arbiscan.io",
-        }[chainId] ?? "https://etherscan.io"
-
-    return `${baseUrl}/address/${address}`
 }

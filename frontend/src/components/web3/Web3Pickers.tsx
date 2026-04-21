@@ -372,8 +372,10 @@ function TokenOption({
             type="button"
         >
             <div className="flex items-center gap-3">
-                <span className="grid h-11 w-11 place-items-center rounded-full bg-[var(--foreground)] font-mono text-xs font-semibold text-[var(--surface)]">
-                    {token.kind === "custom" ? (
+                <span className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-[var(--foreground)] font-mono text-xs font-semibold text-[var(--surface)]">
+                    {token.logoUrl ? (
+                        <img alt="" className="size-full object-cover" src={token.logoUrl} />
+                    ) : token.kind === "custom" ? (
                         <Diamond className="size-4" />
                     ) : (
                         token.symbol.slice(0, 4)
