@@ -9,6 +9,8 @@ import type {
   AuthorProfileDto,
   AuthorStorageUsageDto,
   AuthorPlatformBillingDto,
+  AuthorPlatformCleanupPreviewDto,
+  AuthorPlatformCleanupItemDto,
   ConfirmSubscriptionPaymentInput,
   ContentStatus,
   ContractDeploymentDto,
@@ -104,6 +106,8 @@ export interface AuthorPlatformSubscriptionDoc {
   features: PlatformFeature[];
   validUntil: Date | null;
   graceUntil: Date | null;
+  cleanupScheduledAt: Date | null;
+  lastCleanupAt: Date | null;
   lastTxHash: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -273,6 +277,9 @@ export type UserProfileResponse = UserProfileDto;
 export type AuthorProfileResponse = AuthorProfileDto;
 export type AuthorStorageUsageResponse = AuthorStorageUsageDto;
 export type AuthorPlatformBillingResponse = AuthorPlatformBillingDto;
+export type AuthorPlatformCleanupPreviewResponse =
+  AuthorPlatformCleanupPreviewDto;
+export type AuthorPlatformCleanupItemResponse = AuthorPlatformCleanupItemDto;
 export type PlatformPlanResponse = PlatformPlanDto;
 export type AuthorCatalogItemResponse = AuthorCatalogItemDto;
 export type AuthorAccessPolicyResponse = AuthorAccessPolicyDto;

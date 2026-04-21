@@ -119,6 +119,8 @@ export interface AuthorPlatformBillingDto {
   status: PlatformBillingStatus;
   validUntil: string | null;
   graceUntil: string | null;
+  cleanupScheduledAt: string | null;
+  lastCleanupAt: string | null;
   baseStorageBytes: number;
   extraStorageBytes: number;
   totalStorageBytes: number;
@@ -129,6 +131,28 @@ export interface AuthorPlatformBillingDto {
   features: PlatformFeature[];
   isProjectCreationAllowed: boolean;
   isUploadAllowed: boolean;
+}
+
+export type AuthorPlatformCleanupItemKind = "post_attachment" | "project_file";
+
+export interface AuthorPlatformCleanupItemDto {
+  id: string;
+  kind: AuthorPlatformCleanupItemKind;
+  parentId: string;
+  fileName: string;
+  storageKey: string;
+  size: number;
+  createdAt: string;
+}
+
+export interface AuthorPlatformCleanupPreviewDto {
+  authorId: string;
+  status: PlatformBillingStatus;
+  freeStorageBytes: number;
+  usedStorageBytes: number;
+  bytesToDelete: number;
+  willDeleteBytes: number;
+  candidates: AuthorPlatformCleanupItemDto[];
 }
 
 export interface AccessPolicyPresetDto {

@@ -498,6 +498,13 @@ export async function listPostAttachments(
   return attachments.find({ postId }).sort({ createdAt: 1 }).toArray();
 }
 
+export async function listPostAttachmentsByAuthorId(
+  authorId: ObjectId,
+): Promise<PostAttachmentDoc[]> {
+  const attachments = await getPostAttachmentsCollection();
+  return attachments.find({ authorId }).sort({ createdAt: 1 }).toArray();
+}
+
 export async function findPostAttachmentByIdAndPostId(
   id: ObjectId,
   postId: ObjectId,
@@ -513,6 +520,21 @@ export async function deletePostAttachmentsByPostId(
   const existing = await attachments.find({ postId }).toArray();
   await attachments.deleteMany({ postId });
   return existing;
+}
+
+export async function deletePostAttachmentById(
+  attachment: PostAttachmentDoc,
+): Promise<void> {
+  const attachments = await getPostAttachmentsCollection();
+  await attachments.deleteOne({ _id: attachment._id });
+  const posts = await getPostsCollection();
+  await posts.updateOne(
+    { _id: attachment.postId, authorId: attachment.authorId },
+    {
+      $pull: { attachmentIds: attachment._id },
+      $set: { updatedAt: new Date() },
+    },
+  );
 }
 
 export async function sumPostAttachmentBytesByAuthorId(
@@ -682,6 +704,16 @@ export async function listProjectNodesByProjectId(
 ): Promise<ProjectNodeDoc[]> {
   const projectNodes = await getProjectNodesCollection();
   return projectNodes.find({ projectId }).toArray();
+}
+
+export async function listProjectFileNodesByAuthorId(
+  authorId: ObjectId,
+): Promise<ProjectNodeDoc[]> {
+  const projectNodes = await getProjectNodesCollection();
+  return projectNodes
+    .find({ authorId, kind: "file" })
+    .sort({ createdAt: 1 })
+    .toArray();
 }
 
 export async function getProjectNodeStats(projectId: ObjectId): Promise<{

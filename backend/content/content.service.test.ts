@@ -30,6 +30,7 @@ import {
   assertAuthorPlatformFeature,
   assertAuthorStorageQuota,
   listPlatformPlans,
+  selectCleanupCandidates,
   toAuthorStorageUsageResponse,
 } from "./content.service";
 import type { AuthorProfileDoc } from "./types";
@@ -183,6 +184,7 @@ describe("toAuthorStorageUsageResponse", () => {
 describe("platform billing foundation", () => {
   afterEach(() => {
     vi.clearAllMocks();
+    vi.useRealTimers();
   });
 
   test("lists free and basic platform plans", () => {
@@ -226,6 +228,8 @@ describe("platform billing foundation", () => {
       features: ["posts", "projects", "homepage_promo"],
       validUntil: new Date("2026-05-01T00:00:00.000Z"),
       graceUntil: null,
+      cleanupScheduledAt: null,
+      lastCleanupAt: null,
       lastTxHash: null,
       createdAt: new Date("2026-04-01T00:00:00.000Z"),
       updatedAt: new Date("2026-04-01T00:00:00.000Z"),
@@ -241,6 +245,103 @@ describe("platform billing foundation", () => {
       isProjectCreationAllowed: true,
       features: ["posts", "projects", "homepage_promo"],
     });
+  });
+
+  test("puts expired active subscription into grace", async () => {
+    const author = createAuthorProfileDoc();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-04-05T00:00:00.000Z"));
+    vi.mocked(repo.findAuthorPlatformSubscriptionByAuthorId).mockResolvedValue({
+      _id: new ObjectId("65f333333333333333333333"),
+      authorId: author._id,
+      walletAddress: "0xabc",
+      planCode: "basic",
+      status: "active",
+      baseStorageBytes: 3 * 1024 * 1024 * 1024,
+      extraStorageBytes: 0,
+      totalStorageBytes: 3 * 1024 * 1024 * 1024,
+      features: ["posts", "projects", "homepage_promo"],
+      validUntil: new Date("2026-04-01T00:00:00.000Z"),
+      graceUntil: null,
+      cleanupScheduledAt: null,
+      lastCleanupAt: null,
+      lastTxHash: null,
+      createdAt: new Date("2026-03-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-03-01T00:00:00.000Z"),
+    });
+    vi.mocked(repo.sumPostAttachmentBytesByAuthorId).mockResolvedValue(0);
+    vi.mocked(repo.sumProjectFileBytesByAuthorId).mockResolvedValue(0);
+
+    await expect(buildAuthorPlatformBilling(author)).resolves.toMatchObject({
+      planCode: "basic",
+      status: "grace",
+      graceUntil: "2026-04-08T00:00:00.000Z",
+      isProjectCreationAllowed: false,
+      isUploadAllowed: false,
+    });
+  });
+
+  test("applies free quota after grace expires", async () => {
+    const author = createAuthorProfileDoc();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-04-10T00:00:00.000Z"));
+    vi.mocked(repo.findAuthorPlatformSubscriptionByAuthorId).mockResolvedValue({
+      _id: new ObjectId("65f444444444444444444444"),
+      authorId: author._id,
+      walletAddress: "0xabc",
+      planCode: "basic",
+      status: "active",
+      baseStorageBytes: 3 * 1024 * 1024 * 1024,
+      extraStorageBytes: 0,
+      totalStorageBytes: 3 * 1024 * 1024 * 1024,
+      features: ["posts", "projects", "homepage_promo"],
+      validUntil: new Date("2026-04-01T00:00:00.000Z"),
+      graceUntil: new Date("2026-04-08T00:00:00.000Z"),
+      cleanupScheduledAt: null,
+      lastCleanupAt: null,
+      lastTxHash: null,
+      createdAt: new Date("2026-03-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-03-01T00:00:00.000Z"),
+    });
+    vi.mocked(repo.sumPostAttachmentBytesByAuthorId).mockResolvedValue(500);
+    vi.mocked(repo.sumProjectFileBytesByAuthorId).mockResolvedValue(700);
+
+    await expect(buildAuthorPlatformBilling(author)).resolves.toMatchObject({
+      planCode: "free",
+      status: "expired",
+      usedStorageBytes: 1200,
+      totalStorageBytes: 1024 * 1024 * 1024,
+      isProjectCreationAllowed: false,
+      isUploadAllowed: true,
+    });
+  });
+
+  test("selects oldest cleanup candidates until target bytes are covered", () => {
+    expect(
+      selectCleanupCandidates(
+        [
+          {
+            id: "1",
+            kind: "post_attachment",
+            parentId: "post",
+            fileName: "old.png",
+            storageKey: "old",
+            size: 400,
+            createdAt: "2026-04-01T00:00:00.000Z",
+          },
+          {
+            id: "2",
+            kind: "project_file",
+            parentId: "project",
+            fileName: "next.zip",
+            storageKey: "next",
+            size: 700,
+            createdAt: "2026-04-02T00:00:00.000Z",
+          },
+        ],
+        500,
+      ),
+    ).toHaveLength(2);
   });
 
   test("rejects project feature on free plan", async () => {

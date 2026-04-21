@@ -34,6 +34,8 @@ import type {
   AuthorProfileResponse,
   AuthorSubscriberResponse,
   AuthorPlatformBillingResponse,
+  AuthorPlatformCleanupItemResponse,
+  AuthorPlatformCleanupPreviewResponse,
   ConfirmSubscriptionPaymentRequest,
   AuthorStorageUsageResponse,
   AuthorStorageUsageStats,
@@ -84,6 +86,7 @@ import type {
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const GIB = 1024 * 1024 * 1024;
+const PLATFORM_GRACE_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;
 
 const platformPlans: PlatformPlanDoc[] = [
   {
@@ -227,6 +230,13 @@ export async function getMyAuthorPlatformBilling(
   return buildAuthorPlatformBilling(author);
 }
 
+export async function previewMyAuthorPlatformCleanup(
+  walletAddress: string,
+): Promise<AuthorPlatformCleanupPreviewResponse> {
+  const author = await getMyAuthorProfile(walletAddress);
+  return previewAuthorPlatformCleanup(author);
+}
+
 export async function buildAuthorPlatformBilling(
   author: AuthorProfileDoc,
 ): Promise<AuthorPlatformBillingResponse> {
@@ -234,25 +244,37 @@ export async function buildAuthorPlatformBilling(
     getAuthorStorageUsageStats(author),
     repo.findAuthorPlatformSubscriptionByAuthorId(author._id),
   ]);
-  const activeSubscription =
-    subscription?.status === "active" ? subscription : null;
-  const plan = getPlatformPlan(activeSubscription?.planCode ?? "free");
+  const state = resolvePlatformSubscriptionState(subscription, new Date());
+  const subscriptionPlan =
+    subscription && state.status !== "expired"
+      ? getPlatformPlan(subscription.planCode)
+      : null;
+  const plan = subscriptionPlan ?? getPlatformPlan("free");
   const baseStorageBytes =
-    activeSubscription?.baseStorageBytes ?? plan.baseStorageBytes;
-  const extraStorageBytes = activeSubscription?.extraStorageBytes ?? 0;
+    subscriptionPlan && subscription
+      ? subscription.baseStorageBytes
+      : plan.baseStorageBytes;
+  const extraStorageBytes =
+    subscriptionPlan && subscription ? subscription.extraStorageBytes : 0;
   const totalStorageBytes =
-    activeSubscription?.totalStorageBytes ??
-    baseStorageBytes + extraStorageBytes;
+    subscriptionPlan && subscription
+      ? subscription.totalStorageBytes
+      : baseStorageBytes + extraStorageBytes;
   const usedStorageBytes = usage.postsBytes + usage.projectsBytes;
-  const features = activeSubscription?.features ?? plan.features;
+  const features =
+    state.status === "active"
+      ? (subscription?.features ?? plan.features)
+      : plan.features;
 
   return {
     authorId: author._id.toHexString(),
     plan,
     planCode: plan.code,
-    status: activeSubscription ? "active" : "free",
-    validUntil: activeSubscription?.validUntil?.toISOString() ?? null,
-    graceUntil: activeSubscription?.graceUntil?.toISOString() ?? null,
+    status: state.status,
+    validUntil: subscription?.validUntil?.toISOString() ?? null,
+    graceUntil: state.graceUntil?.toISOString() ?? null,
+    cleanupScheduledAt: subscription?.cleanupScheduledAt?.toISOString() ?? null,
+    lastCleanupAt: subscription?.lastCleanupAt?.toISOString() ?? null,
     baseStorageBytes,
     extraStorageBytes,
     totalStorageBytes,
@@ -261,8 +283,10 @@ export async function buildAuthorPlatformBilling(
     postsBytes: usage.postsBytes,
     projectsBytes: usage.projectsBytes,
     features,
-    isProjectCreationAllowed: hasPlatformFeature(features, "projects"),
-    isUploadAllowed: usedStorageBytes < totalStorageBytes,
+    isProjectCreationAllowed:
+      state.status === "active" && hasPlatformFeature(features, "projects"),
+    isUploadAllowed:
+      state.status !== "grace" && usedStorageBytes < totalStorageBytes,
   };
 }
 
@@ -275,6 +299,157 @@ async function getAuthorStorageUsageStats(
   ]);
 
   return { postsBytes, projectsBytes };
+}
+
+function resolvePlatformSubscriptionState(
+  subscription: Awaited<
+    ReturnType<typeof repo.findAuthorPlatformSubscriptionByAuthorId>
+  > | null,
+  now: Date,
+): {
+  status: "free" | "active" | "grace" | "expired";
+  graceUntil: Date | null;
+} {
+  if (!subscription) {
+    return { status: "free", graceUntil: null };
+  }
+
+  if (
+    subscription.status === "active" &&
+    subscription.validUntil &&
+    subscription.validUntil.getTime() > now.getTime()
+  ) {
+    return { status: "active", graceUntil: subscription.graceUntil };
+  }
+
+  const graceUntil =
+    subscription.graceUntil ??
+    (subscription.validUntil
+      ? new Date(subscription.validUntil.getTime() + PLATFORM_GRACE_PERIOD_MS)
+      : null);
+  if (
+    subscription.status !== "expired" &&
+    graceUntil &&
+    graceUntil.getTime() > now.getTime()
+  ) {
+    return { status: "grace", graceUntil };
+  }
+
+  return { status: "expired", graceUntil };
+}
+
+export async function previewAuthorPlatformCleanup(
+  author: AuthorProfileDoc,
+): Promise<AuthorPlatformCleanupPreviewResponse> {
+  const billing = await buildAuthorPlatformBilling(author);
+  const freePlan = getPlatformPlan("free");
+  const bytesToDelete = Math.max(
+    billing.usedStorageBytes - freePlan.baseStorageBytes,
+    0,
+  );
+  const candidates =
+    bytesToDelete > 0
+      ? selectCleanupCandidates(
+          await listAuthorCleanupCandidates(author),
+          bytesToDelete,
+        )
+      : [];
+
+  return {
+    authorId: author._id.toHexString(),
+    status: billing.status,
+    freeStorageBytes: freePlan.baseStorageBytes,
+    usedStorageBytes: billing.usedStorageBytes,
+    bytesToDelete,
+    willDeleteBytes: candidates.reduce((sum, item) => sum + item.size, 0),
+    candidates,
+  };
+}
+
+async function listAuthorCleanupCandidates(
+  author: AuthorProfileDoc,
+): Promise<AuthorPlatformCleanupItemResponse[]> {
+  const [attachments, projectFiles] = await Promise.all([
+    repo.listPostAttachmentsByAuthorId(author._id),
+    repo.listProjectFileNodesByAuthorId(author._id),
+  ]);
+
+  return [
+    ...attachments.map((attachment) => ({
+      id: attachment._id.toHexString(),
+      kind: "post_attachment" as const,
+      parentId: attachment.postId.toHexString(),
+      fileName: attachment.fileName,
+      storageKey: attachment.storageKey,
+      size: attachment.size,
+      createdAt: attachment.createdAt.toISOString(),
+    })),
+    ...projectFiles.map((node) => ({
+      id: node._id.toHexString(),
+      kind: "project_file" as const,
+      parentId: node.projectId.toHexString(),
+      fileName: node.name,
+      storageKey: node.storageKey ?? "",
+      size: node.size ?? 0,
+      createdAt: node.createdAt.toISOString(),
+    })),
+  ].sort(
+    (left, right) =>
+      new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime(),
+  );
+}
+
+export function selectCleanupCandidates(
+  candidates: AuthorPlatformCleanupItemResponse[],
+  bytesToDelete: number,
+): AuthorPlatformCleanupItemResponse[] {
+  const selected: AuthorPlatformCleanupItemResponse[] = [];
+  let selectedBytes = 0;
+
+  for (const candidate of candidates) {
+    if (selectedBytes >= bytesToDelete) {
+      break;
+    }
+
+    selected.push(candidate);
+    selectedBytes += candidate.size;
+  }
+
+  return selected;
+}
+
+export async function cleanupExpiredAuthorPlatformStorage(
+  author: AuthorProfileDoc,
+): Promise<AuthorPlatformCleanupPreviewResponse> {
+  const preview = await previewAuthorPlatformCleanup(author);
+  if (preview.status !== "expired" || preview.bytesToDelete <= 0) {
+    return preview;
+  }
+
+  for (const candidate of preview.candidates) {
+    if (candidate.kind === "post_attachment") {
+      const attachment = await repo.findPostAttachmentByIdAndPostId(
+        new ObjectId(candidate.id),
+        new ObjectId(candidate.parentId),
+      );
+      if (attachment) {
+        await deleteObject(attachment.storageKey);
+        await repo.deletePostAttachmentById(attachment);
+      }
+      continue;
+    }
+
+    const node = await repo.findProjectNodeByIdAndProjectId(
+      new ObjectId(candidate.id),
+      new ObjectId(candidate.parentId),
+    );
+    if (node?.storageKey) {
+      await deleteObject(node.storageKey);
+      await repo.deleteProjectNodes([node._id]);
+    }
+  }
+
+  return previewAuthorPlatformCleanup(author);
 }
 
 function getPlatformPlan(code: PlatformPlanDoc["code"]): PlatformPlanDoc {
@@ -308,7 +483,10 @@ export async function assertAuthorStorageQuota(
   incomingBytes: number,
 ): Promise<void> {
   const billing = await buildAuthorPlatformBilling(author);
-  if (billing.usedStorageBytes + incomingBytes > billing.totalStorageBytes) {
+  if (
+    !billing.isUploadAllowed ||
+    billing.usedStorageBytes + incomingBytes > billing.totalStorageBytes
+  ) {
     throw APIError.failedPrecondition("storage quota exceeded");
   }
 }
