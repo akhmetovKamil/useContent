@@ -1,6 +1,7 @@
 import { APIError } from "encore.dev/api";
 import { Contract, Interface, JsonRpcProvider, isAddress } from "ethers";
 import { subscriptionManagerAbi } from "../../contracts/abi/SubscriptionManager";
+import type { AccessPolicy, AccessPolicyNode } from "../domain/access";
 
 const managerInterface = new Interface(subscriptionManagerAbi);
 const legacyManagerAbi = [
@@ -10,6 +11,16 @@ const legacyManagerAbi = [
   "function plans(bytes32 planKey) view returns (address author,address token,uint256 price,uint64 periodSeconds,bool active,bytes32 externalId)",
 ] as const;
 const legacyManagerInterface = new Interface(legacyManagerAbi);
+const erc20ReadAbi = [
+  "function balanceOf(address account) view returns (uint256)",
+] as const;
+const erc721ReadAbi = [
+  "function ownerOf(uint256 tokenId) view returns (address)",
+  "function balanceOf(address owner) view returns (uint256)",
+] as const;
+const erc1155ReadAbi = [
+  "function balanceOf(address account,uint256 id) view returns (uint256)",
+] as const;
 const PAYMENT_ASSET_CODE = {
   erc20: 0,
   native: 1,
@@ -41,6 +52,59 @@ interface VerifySubscriptionPaymentInput {
 
 export interface VerifiedSubscriptionPayment {
   paidUntil: Date;
+}
+
+export interface OnChainAccessGrants {
+  tokenBalances: Array<{
+    chainId: number;
+    contractAddress: string;
+    balance: string;
+  }>;
+  nftOwnerships: Array<{
+    chainId: number;
+    contractAddress: string;
+    standard: "erc721" | "erc1155";
+    tokenId?: string;
+    balance?: string;
+  }>;
+}
+
+export async function readOnChainAccessGrants(
+  policy: AccessPolicy,
+  viewerWallet?: string,
+): Promise<OnChainAccessGrants> {
+  if (!viewerWallet) {
+    return { tokenBalances: [], nftOwnerships: [] };
+  }
+
+  let wallet: string;
+  try {
+    wallet = normalizeAddress(viewerWallet);
+  } catch {
+    return { tokenBalances: [], nftOwnerships: [] };
+  }
+
+  const requirements = collectOnChainRequirements(policy.root);
+  const tokenBalances = (
+    await Promise.all(
+      [...requirements.tokenBalances.values()].map((requirement) =>
+        readTokenBalanceGrant(wallet, requirement),
+      ),
+    )
+  ).filter((grant): grant is OnChainAccessGrants["tokenBalances"][number] =>
+    Boolean(grant),
+  );
+  const nftOwnerships = (
+    await Promise.all(
+      [...requirements.nftOwnerships.values()].map((requirement) =>
+        readNftOwnershipGrant(wallet, requirement),
+      ),
+    )
+  ).filter((grant): grant is OnChainAccessGrants["nftOwnerships"][number] =>
+    Boolean(grant),
+  );
+
+  return { tokenBalances, nftOwnerships };
 }
 
 export async function verifyPlanRegistration(
@@ -181,6 +245,158 @@ function getProvider(chainId: number): JsonRpcProvider {
   return new JsonRpcProvider(url, chainId);
 }
 
+function collectOnChainRequirements(node: AccessPolicyNode): {
+  tokenBalances: Map<
+    string,
+    { chainId: number; contractAddress: string }
+  >;
+  nftOwnerships: Map<
+    string,
+    {
+      chainId: number;
+      contractAddress: string;
+      standard: "erc721" | "erc1155";
+      tokenId?: string;
+    }
+  >;
+} {
+  const tokenBalances = new Map<
+    string,
+    { chainId: number; contractAddress: string }
+  >();
+  const nftOwnerships = new Map<
+    string,
+    {
+      chainId: number;
+      contractAddress: string;
+      standard: "erc721" | "erc1155";
+      tokenId?: string;
+    }
+  >();
+
+  function visit(current: AccessPolicyNode) {
+    if (current.type === "token_balance") {
+      const contractAddress = tryNormalizeAddress(current.contractAddress);
+      if (!contractAddress) {
+        return;
+      }
+      tokenBalances.set(`${current.chainId}:${contractAddress}`, {
+        chainId: current.chainId,
+        contractAddress,
+      });
+      return;
+    }
+
+    if (current.type === "nft_ownership") {
+      const contractAddress = tryNormalizeAddress(current.contractAddress);
+      if (!contractAddress) {
+        return;
+      }
+      nftOwnerships.set(
+        `${current.chainId}:${contractAddress}:${current.standard}:${
+          current.tokenId ?? ""
+        }`,
+        {
+          chainId: current.chainId,
+          contractAddress,
+          standard: current.standard,
+          tokenId: current.tokenId,
+        },
+      );
+      return;
+    }
+
+    if (current.type === "and" || current.type === "or") {
+      for (const child of current.children) {
+        visit(child);
+      }
+    }
+  }
+
+  visit(node);
+  return { tokenBalances, nftOwnerships };
+}
+
+async function readTokenBalanceGrant(
+  wallet: string,
+  requirement: { chainId: number; contractAddress: string },
+): Promise<OnChainAccessGrants["tokenBalances"][number] | null> {
+  try {
+    const token = new Contract(
+      requirement.contractAddress,
+      erc20ReadAbi,
+      getProvider(requirement.chainId),
+    );
+    const balance = await token.balanceOf(wallet);
+    return {
+      chainId: requirement.chainId,
+      contractAddress: requirement.contractAddress,
+      balance: balance.toString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function readNftOwnershipGrant(
+  wallet: string,
+  requirement: {
+    chainId: number;
+    contractAddress: string;
+    standard: "erc721" | "erc1155";
+    tokenId?: string;
+  },
+): Promise<OnChainAccessGrants["nftOwnerships"][number] | null> {
+  try {
+    if (requirement.standard === "erc721") {
+      const nft = new Contract(
+        requirement.contractAddress,
+        erc721ReadAbi,
+        getProvider(requirement.chainId),
+      );
+
+      if (requirement.tokenId) {
+        const owner = await nft.ownerOf(requirement.tokenId);
+        return {
+          chainId: requirement.chainId,
+          contractAddress: requirement.contractAddress,
+          standard: requirement.standard,
+          tokenId: requirement.tokenId,
+          balance: normalizeAddress(owner) === wallet ? "1" : "0",
+        };
+      }
+
+      const balance = await nft.balanceOf(wallet);
+      return {
+        chainId: requirement.chainId,
+        contractAddress: requirement.contractAddress,
+        standard: requirement.standard,
+        balance: balance.toString(),
+      };
+    }
+
+    if (!requirement.tokenId) {
+      return null;
+    }
+
+    const nft = new Contract(
+      requirement.contractAddress,
+      erc1155ReadAbi,
+      getProvider(requirement.chainId),
+    );
+    const balance = await nft.balanceOf(wallet, requirement.tokenId);
+    return {
+      chainId: requirement.chainId,
+      contractAddress: requirement.contractAddress,
+      standard: requirement.standard,
+      tokenId: requirement.tokenId,
+      balance: balance.toString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function getReceipt(provider: JsonRpcProvider, txHash: string) {
   const receipt = await provider.getTransactionReceipt(txHash);
   if (!receipt) {
@@ -262,6 +478,10 @@ function normalizeAddress(address: string): string {
   }
 
   return address.toLowerCase();
+}
+
+function tryNormalizeAddress(address: string): string | null {
+  return isAddress(address) ? address.toLowerCase() : null;
 }
 
 function normalizeBytes32(value: string): string {

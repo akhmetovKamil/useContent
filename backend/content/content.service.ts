@@ -4,6 +4,7 @@ import { ObjectId } from "mongodb";
 import {
   ACCESS_POLICY_VERSION,
   type AccessPolicy,
+  type AccessEvaluationContext,
   type AccessPolicyNode,
   createPublicPolicy,
   evaluateAccessPolicy,
@@ -17,7 +18,11 @@ import {
   getObject,
   putObject,
 } from "../storage/object-storage";
-import { verifyPlanRegistration, verifySubscriptionPayment } from "./onchain";
+import {
+  readOnChainAccessGrants,
+  verifyPlanRegistration,
+  verifySubscriptionPayment,
+} from "./onchain";
 import * as repo from "./repository";
 import type {
   AccessPolicyPresetDoc,
@@ -383,27 +388,29 @@ export async function listAuthorAccessPoliciesBySlug(
   viewerWallet?: string,
 ): Promise<AuthorAccessPolicyResponse[]> {
   const author = await getAuthorProfileBySlug(slug);
-  const [policies, plans, subscriptions] = await Promise.all([
+  const [policies, plans] = await Promise.all([
     repo.listAccessPolicyPresetsByAuthorId(author._id),
     repo.listSubscriptionPlansByAuthorId(author._id),
-    viewerWallet
-      ? buildSubscriptionGrants(author._id, normalizeWallet(viewerWallet))
-      : [],
   ]);
 
-  return policies.map((policy) => {
-    const evaluation = evaluateAccessPolicy(policy.policy, {
-      subscriptions,
-      tokenBalances: [],
-      nftOwnerships: [],
-    });
+  return Promise.all(
+    policies.map(async (policy) => {
+      const evaluation = evaluateAccessPolicy(
+        policy.policy,
+        await buildAccessEvaluationContext(
+          author._id,
+          policy.policy,
+          viewerWallet,
+        ),
+      );
 
-    return {
-      ...toAccessPolicyPresetResponse(policy),
-      accessLabel: describeAccessPolicy(policy.policy.root, plans),
-      hasAccess: evaluation.allowed,
-    };
-  });
+      return {
+        ...toAccessPolicyPresetResponse(policy),
+        accessLabel: describeAccessPolicy(policy.policy.root, plans),
+        hasAccess: evaluation.allowed,
+      };
+    }),
+  );
 }
 
 export async function listMyEntitlements(
@@ -1174,13 +1181,10 @@ export async function getAuthorPostBySlugAndId(
     post.policy,
   );
 
-  const evaluation = evaluateAccessPolicy(resolvedPolicy, {
-    subscriptions: viewerWallet
-      ? await buildSubscriptionGrants(author._id, viewerWallet)
-      : [],
-    tokenBalances: [],
-    nftOwnerships: [],
-  });
+  const evaluation = evaluateAccessPolicy(
+    resolvedPolicy,
+    await buildAccessEvaluationContext(author._id, resolvedPolicy, viewerWallet),
+  );
 
   if (!evaluation.allowed) {
     throw APIError.permissionDenied("access to this post is restricted");
@@ -1397,13 +1401,10 @@ export async function getAuthorProjectBySlugAndId(
     project.policy,
   );
 
-  const evaluation = evaluateAccessPolicy(resolvedPolicy, {
-    subscriptions: viewerWallet
-      ? await buildSubscriptionGrants(author._id, viewerWallet)
-      : [],
-    tokenBalances: [],
-    nftOwnerships: [],
-  });
+  const evaluation = evaluateAccessPolicy(
+    resolvedPolicy,
+    await buildAccessEvaluationContext(author._id, resolvedPolicy, viewerWallet),
+  );
 
   if (!evaluation.allowed) {
     throw APIError.permissionDenied("access to this project is restricted");
@@ -1992,15 +1993,11 @@ async function buildFeedPostResponse(
     author.defaultPolicy,
     post.policy,
   );
-  const [plans, subscriptions] = await Promise.all([
+  const [plans, accessContext] = await Promise.all([
     repo.listSubscriptionPlansByAuthorId(author._id),
-    viewerWallet ? buildSubscriptionGrants(author._id, viewerWallet) : [],
+    buildAccessEvaluationContext(author._id, resolvedPolicy, viewerWallet),
   ]);
-  const evaluation = evaluateAccessPolicy(resolvedPolicy, {
-    subscriptions,
-    tokenBalances: [],
-    nftOwnerships: [],
-  });
+  const evaluation = evaluateAccessPolicy(resolvedPolicy, accessContext);
   const hasAccess = evaluation.allowed;
 
   const stats = await buildPostStats(post, viewerWallet);
@@ -2136,16 +2133,12 @@ async function buildFeedProjectResponse(
     author.defaultPolicy,
     project.policy,
   );
-  const [plans, subscriptions, stats] = await Promise.all([
+  const [plans, accessContext, stats] = await Promise.all([
     repo.listSubscriptionPlansByAuthorId(author._id),
-    viewerWallet ? buildSubscriptionGrants(author._id, viewerWallet) : [],
+    buildAccessEvaluationContext(author._id, resolvedPolicy, viewerWallet),
     repo.getProjectNodeStats(project._id),
   ]);
-  const evaluation = evaluateAccessPolicy(resolvedPolicy, {
-    subscriptions,
-    tokenBalances: [],
-    nftOwnerships: [],
-  });
+  const evaluation = evaluateAccessPolicy(resolvedPolicy, accessContext);
   const hasAccess = evaluation.allowed;
 
   return toFeedProjectResponse(
@@ -2585,16 +2578,10 @@ async function getReadablePostContext(
     author.defaultPolicy,
     post.policy,
   );
-  const normalizedWallet = viewerWallet
-    ? normalizeWallet(viewerWallet)
-    : undefined;
-  const evaluation = evaluateAccessPolicy(resolvedPolicy, {
-    subscriptions: normalizedWallet
-      ? await buildSubscriptionGrants(author._id, normalizedWallet)
-      : [],
-    tokenBalances: [],
-    nftOwnerships: [],
-  });
+  const evaluation = evaluateAccessPolicy(
+    resolvedPolicy,
+    await buildAccessEvaluationContext(author._id, resolvedPolicy, viewerWallet),
+  );
 
   if (!evaluation.allowed) {
     throw APIError.permissionDenied("access to this post is restricted");
@@ -2871,6 +2858,34 @@ async function buildSubscriptionGrants(
       entitlement.status === "active" &&
       entitlement.validUntil.getTime() > Date.now(),
   }));
+}
+
+async function buildAccessEvaluationContext(
+  authorId: ObjectId,
+  policy: AccessPolicy,
+  viewerWallet?: string,
+): Promise<AccessEvaluationContext> {
+  const normalizedWallet = viewerWallet
+    ? normalizeWallet(viewerWallet)
+    : undefined;
+  if (!normalizedWallet) {
+    return {
+      subscriptions: [],
+      tokenBalances: [],
+      nftOwnerships: [],
+    };
+  }
+
+  const [subscriptions, onChainGrants] = await Promise.all([
+    buildSubscriptionGrants(authorId, normalizedWallet),
+    readOnChainAccessGrants(policy, normalizedWallet),
+  ]);
+
+  return {
+    subscriptions,
+    tokenBalances: onChainGrants.tokenBalances,
+    nftOwnerships: onChainGrants.nftOwnerships,
+  };
 }
 
 function policyUsesSubscriptionPlan(

@@ -274,6 +274,7 @@ function RuleCard({ builder, disabled, index, onChange, rule, subscriptionPlans 
                     <LabeledInput
                         disabled={disabled}
                         label="Min amount"
+                        description="Raw token units, for example 1000000 for 1 USDC with 6 decimals."
                         onChange={(value) => updateRule({ ...rule, minAmount: value })}
                         value={rule.minAmount}
                     />
@@ -323,12 +324,14 @@ function RuleCard({ builder, disabled, index, onChange, rule, subscriptionPlans 
                     </Label>
                     <LabeledInput
                         disabled={disabled}
+                        description="Optional for ERC-721, required for ERC-1155."
                         label="Token ID"
                         onChange={(value) => updateRule({ ...rule, tokenId: value })}
                         value={rule.tokenId}
                     />
                     <LabeledInput
                         disabled={disabled}
+                        description="Use 1 for simple ownership checks."
                         label="Min balance"
                         onChange={(value) => updateRule({ ...rule, minBalance: value })}
                         value={rule.minBalance}
@@ -340,21 +343,25 @@ function RuleCard({ builder, disabled, index, onChange, rule, subscriptionPlans 
 }
 
 interface LabeledInputProps {
+    description?: string
     disabled?: boolean
     label: string
     onChange: (value: string) => void
     value: string
 }
 
-function LabeledInput({ disabled, label, onChange, value }: LabeledInputProps) {
+function LabeledInput({ description, disabled, label, onChange, value }: LabeledInputProps) {
     return (
-        <Label>
+        <Label className="gap-1.5">
             {label}
             <Input
                 disabled={disabled}
                 onChange={(event) => onChange(event.target.value)}
                 value={value}
             />
+            {description ? (
+                <span className="text-xs leading-4 text-[var(--muted)]">{description}</span>
+            ) : null}
         </Label>
     )
 }
