@@ -498,6 +498,26 @@ export async function deletePostAttachmentsByPostId(
   return existing;
 }
 
+export async function sumPostAttachmentBytesByAuthorId(
+  authorId: ObjectId,
+): Promise<number> {
+  const attachments = await getPostAttachmentsCollection();
+  const [stats] = await attachments
+    .aggregate<{ totalSize: number }>([
+      { $match: { authorId } },
+      {
+        $group: {
+          _id: null,
+          totalSize: { $sum: { $ifNull: ["$size", 0] } },
+        },
+      },
+      { $project: { _id: 0, totalSize: 1 } },
+    ])
+    .toArray();
+
+  return stats?.totalSize ?? 0;
+}
+
 export async function countPostsByAccessPolicyId(
   authorId: ObjectId,
   accessPolicyId: ObjectId,
@@ -690,6 +710,26 @@ export async function getProjectNodeStats(projectId: ObjectId): Promise<{
     folderCount: Math.max((stats?.folderCount ?? 0) - 1, 0),
     totalSize: stats?.totalSize ?? 0,
   };
+}
+
+export async function sumProjectFileBytesByAuthorId(
+  authorId: ObjectId,
+): Promise<number> {
+  const projectNodes = await getProjectNodesCollection();
+  const [stats] = await projectNodes
+    .aggregate<{ totalSize: number }>([
+      { $match: { authorId, kind: "file" } },
+      {
+        $group: {
+          _id: null,
+          totalSize: { $sum: { $ifNull: ["$size", 0] } },
+        },
+      },
+      { $project: { _id: 0, totalSize: 1 } },
+    ])
+    .toArray();
+
+  return stats?.totalSize ?? 0;
 }
 
 export async function findProjectNodeChildrenRecursive(

@@ -34,6 +34,8 @@ import type {
   AuthorProfileResponse,
   AuthorSubscriberResponse,
   ConfirmSubscriptionPaymentRequest,
+  AuthorStorageUsageResponse,
+  AuthorStorageUsageStats,
   ContractDeploymentDoc,
   ContractDeploymentResponse,
   CreateAccessPolicyPresetRequest,
@@ -166,6 +168,21 @@ export async function listAuthors(
       };
     }),
   );
+}
+
+export async function getMyAuthorStorageUsage(
+  walletAddress: string,
+): Promise<AuthorStorageUsageResponse> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const [postsBytes, projectsBytes] = await Promise.all([
+    repo.sumPostAttachmentBytesByAuthorId(author._id),
+    repo.sumProjectFileBytesByAuthorId(author._id),
+  ]);
+
+  return toAuthorStorageUsageResponse(author, {
+    postsBytes,
+    projectsBytes,
+  });
 }
 
 export async function getMyAuthorProfile(
@@ -1829,6 +1846,18 @@ export function toAuthorProfileResponse(
     subscriptionPlanId: author.subscriptionPlanId?.toHexString() ?? null,
     createdAt: author.createdAt.toISOString(),
     updatedAt: author.updatedAt.toISOString(),
+  };
+}
+
+export function toAuthorStorageUsageResponse(
+  author: AuthorProfileDoc,
+  usage: AuthorStorageUsageStats,
+): AuthorStorageUsageResponse {
+  return {
+    authorId: author._id.toHexString(),
+    postsBytes: usage.postsBytes,
+    projectsBytes: usage.projectsBytes,
+    totalUsedBytes: usage.postsBytes + usage.projectsBytes,
   };
 }
 

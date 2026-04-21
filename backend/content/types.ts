@@ -7,6 +7,7 @@ import type {
   AuthorCatalogItemDto,
   AuthorSubscriberDto,
   AuthorProfileDto,
+  AuthorStorageUsageDto,
   ConfirmSubscriptionPaymentInput,
   ContentStatus,
   ContractDeploymentDto,
@@ -76,6 +77,11 @@ export interface AuthorProfileDoc {
   subscriptionPlanId: ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface AuthorStorageUsageStats {
+  postsBytes: number;
+  projectsBytes: number;
 }
 
 export interface AccessPolicyPresetDoc {
@@ -240,6 +246,7 @@ export interface ContractDeploymentDoc {
 
 export type UserProfileResponse = UserProfileDto;
 export type AuthorProfileResponse = AuthorProfileDto;
+export type AuthorStorageUsageResponse = AuthorStorageUsageDto;
 export type AuthorCatalogItemResponse = AuthorCatalogItemDto;
 export type AuthorAccessPolicyResponse = AuthorAccessPolicyDto;
 export type AccessPolicyConditionResponse = AccessPolicyConditionDto;

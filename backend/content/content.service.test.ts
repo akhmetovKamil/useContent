@@ -20,7 +20,10 @@ vi.mock("../storage/object-storage", () => {
 });
 
 import * as repo from "./repository";
-import { buildAccessPolicyFromInput } from "./content.service";
+import {
+  buildAccessPolicyFromInput,
+  toAuthorStorageUsageResponse,
+} from "./content.service";
 import type { AuthorProfileDoc } from "./types";
 
 vi.mock("./repository", () => {
@@ -145,6 +148,24 @@ describe("buildAccessPolicyFromInput", () => {
     ).rejects.toThrowError(
       "subscription policy input requires an existing author profile",
     );
+  });
+});
+
+describe("toAuthorStorageUsageResponse", () => {
+  test("combines post attachment and project file bytes", () => {
+    const author = createAuthorProfileDoc();
+
+    expect(
+      toAuthorStorageUsageResponse(author, {
+        postsBytes: 1200,
+        projectsBytes: 3400,
+      }),
+    ).toEqual({
+      authorId: author._id.toHexString(),
+      postsBytes: 1200,
+      projectsBytes: 3400,
+      totalUsedBytes: 4600,
+    });
   });
 });
 

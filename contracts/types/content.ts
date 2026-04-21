@@ -87,6 +87,13 @@ export interface AuthorCatalogItemDto extends AuthorProfileDto {
   subscriptionPlansCount: number;
 }
 
+export interface AuthorStorageUsageDto {
+  authorId: string;
+  postsBytes: number;
+  projectsBytes: number;
+  totalUsedBytes: number;
+}
+
 export interface AccessPolicyPresetDto {
   id: string;
   authorId: string;

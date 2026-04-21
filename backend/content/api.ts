@@ -8,6 +8,7 @@ import type {
   AuthorAccessPolicyResponse,
   AuthorCatalogItemResponse,
   AuthorProfileResponse,
+  AuthorStorageUsageResponse,
   AuthorSubscriberResponse,
   ConfirmSubscriptionPaymentRequest,
   ContractDeploymentLookupResponse,
@@ -107,6 +108,14 @@ export const deleteMyAuthorProfile = api(
   async (): Promise<void> => {
     const auth = getAuthData()!;
     await service.deleteMyAuthorProfile(auth.walletAddress);
+  },
+);
+
+export const getMyAuthorStorageUsage = api(
+  { method: "GET", path: "/me/author/storage-usage", expose: true, auth: true },
+  async (): Promise<AuthorStorageUsageResponse> => {
+    const auth = getAuthData()!;
+    return service.getMyAuthorStorageUsage(auth.walletAddress);
   },
 );
 
