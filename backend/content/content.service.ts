@@ -260,6 +260,16 @@ export async function listMyAccessPolicyPresets(
   return repo.listAccessPolicyPresetsByAuthorId(author._id);
 }
 
+export async function listMyAccessPolicyPresetResponses(
+  walletAddress: string,
+): Promise<AccessPolicyPresetResponse[]> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const policies = await repo.listAccessPolicyPresetsByAuthorId(author._id);
+  return Promise.all(
+    policies.map((policy) => toAccessPolicyPresetResponseWithUsage(policy)),
+  );
+}
+
 export async function createMyAccessPolicyPreset(
   walletAddress: string,
   input: CreateAccessPolicyPresetRequest,
@@ -1803,8 +1813,25 @@ export function toAccessPolicyPresetResponse(
     description: preset.description,
     policy: preset.policy,
     isDefault: preset.isDefault,
+    postsCount: 0,
+    projectsCount: 0,
     createdAt: preset.createdAt.toISOString(),
     updatedAt: preset.updatedAt.toISOString(),
+  };
+}
+
+async function toAccessPolicyPresetResponseWithUsage(
+  preset: AccessPolicyPresetDoc,
+): Promise<AccessPolicyPresetResponse> {
+  const [postsCount, projectsCount] = await Promise.all([
+    repo.countPostsByAccessPolicyId(preset.authorId, preset._id),
+    repo.countProjectsByAccessPolicyId(preset.authorId, preset._id),
+  ]);
+
+  return {
+    ...toAccessPolicyPresetResponse(preset),
+    postsCount,
+    projectsCount,
   };
 }
 

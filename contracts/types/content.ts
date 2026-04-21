@@ -94,6 +94,8 @@ export interface AccessPolicyPresetDto {
   description: string;
   policy: AccessPolicy;
   isDefault: boolean;
+  postsCount: number;
+  projectsCount: number;
   createdAt: string;
   updatedAt: string;
 }

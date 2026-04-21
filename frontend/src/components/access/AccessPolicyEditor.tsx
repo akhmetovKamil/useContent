@@ -1,4 +1,4 @@
-import { Coins, Info, KeyRound, Plus, Sparkles } from "lucide-react"
+import { ChevronDown, Coins, Info, KeyRound, Plus, Sparkles } from "lucide-react"
 import { v4 as uuidv4 } from "uuid"
 import { useState } from "react"
 
@@ -29,11 +29,20 @@ import { createDefaultRule } from "@/utils/access-policy"
 import { cn } from "@/utils/cn"
 import { getChainDisplayConfig } from "@/utils/config/chains"
 
+interface SubscriptionPlanOption {
+    billingPeriodDays?: number
+    chainId?: number
+    code: string
+    price?: string
+    title: string
+}
+
 interface AccessPolicyEditorProps {
     builder: AccessPolicyBuilderState
     disabled?: boolean
     onChange: (nextState: AccessPolicyBuilderState) => void
-    subscriptionPlans?: Array<{ code: string; title: string }>
+    onCreatePlan?: () => void
+    subscriptionPlans?: SubscriptionPlanOption[]
 }
 
 const ruleTypeOptions: Array<{
@@ -63,7 +72,6 @@ const ruleTypeOptions: Array<{
 ]
 
 const composerOptions: Array<{ label: string; value: AccessComposer }> = [
-    { label: "Public", value: "public" },
     { label: "Single", value: "single" },
     { label: "AND", value: "and" },
     { label: "OR", value: "or" },
@@ -73,11 +81,11 @@ export function AccessPolicyEditor({
     builder,
     disabled,
     onChange,
+    onCreatePlan,
     subscriptionPlans = [],
 }: AccessPolicyEditorProps) {
     const [helpOpen, setHelpOpen] = useState(false)
-    const canAddRule =
-        builder.composer !== "public" && builder.composer !== "single" && builder.rules.length < 4
+    const canAddRule = builder.composer !== "single" && builder.rules.length < 4
 
     return (
         <div className="grid gap-4 rounded-[32px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
@@ -96,8 +104,9 @@ export function AccessPolicyEditor({
                                 side="top"
                                 sideOffset={8}
                             >
-                                Public opens content to everyone. Single uses one rule. AND requires
-                                every rule to pass. OR allows access if any rule passes.
+                                Single uses one condition. AND requires every condition to pass. OR
+                                allows access if any condition passes. Public content is selected on
+                                posts and projects.
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
@@ -109,7 +118,7 @@ export function AccessPolicyEditor({
                                 ? builder.rules
                                 : [createDefaultRule()]
                             const nextRules =
-                                composer === "single" || composer === "public"
+                                composer === "single"
                                     ? rules.slice(0, 1)
                                     : rules.length > 1
                                       ? rules
@@ -172,25 +181,20 @@ export function AccessPolicyEditor({
                 </div>
             </div>
 
-            {builder.composer === "public" ? (
-                <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--muted)]">
-                    Public access does not require a wallet subscription, token balance, or NFT.
-                </div>
-            ) : (
-                <div className="grid gap-4">
-                    {builder.rules.map((rule, index) => (
-                        <RuleCard
-                            builder={builder}
-                            disabled={disabled}
-                            index={index}
-                            key={rule.id}
-                            onChange={onChange}
-                            rule={rule}
-                            subscriptionPlans={subscriptionPlans}
-                        />
-                    ))}
-                </div>
-            )}
+            <div className="grid gap-4">
+                {builder.rules.map((rule, index) => (
+                    <RuleCard
+                        builder={builder}
+                        disabled={disabled}
+                        index={index}
+                        key={rule.id}
+                        onChange={onChange}
+                        onCreatePlan={onCreatePlan}
+                        rule={rule}
+                        subscriptionPlans={subscriptionPlans}
+                    />
+                ))}
+            </div>
             <Web3HelpModal
                 description="Access policies can combine subscriptions, token balances, and NFT ownership."
                 onOpenChange={setHelpOpen}
@@ -206,11 +210,20 @@ interface RuleCardProps {
     disabled?: boolean
     index: number
     onChange: (nextState: AccessPolicyBuilderState) => void
+    onCreatePlan?: () => void
     rule: AccessRuleForm
-    subscriptionPlans: Array<{ code: string; title: string }>
+    subscriptionPlans: SubscriptionPlanOption[]
 }
 
-function RuleCard({ builder, disabled, index, onChange, rule, subscriptionPlans }: RuleCardProps) {
+function RuleCard({
+    builder,
+    disabled,
+    index,
+    onChange,
+    onCreatePlan,
+    rule,
+    subscriptionPlans,
+}: RuleCardProps) {
     const canRemove = builder.rules.length > 1
 
     function updateRule(nextRule: AccessRuleForm) {
@@ -300,6 +313,7 @@ function RuleCard({ builder, disabled, index, onChange, rule, subscriptionPlans 
             {rule.type === "subscription" ? (
                 <SubscriptionRuleForm
                     disabled={disabled}
+                    onCreatePlan={onCreatePlan}
                     onChange={updateRule}
                     rule={rule}
                     subscriptionPlans={subscriptionPlans}
@@ -319,45 +333,90 @@ function RuleCard({ builder, disabled, index, onChange, rule, subscriptionPlans 
 
 function SubscriptionRuleForm({
     disabled,
+    onCreatePlan,
     onChange,
     rule,
     subscriptionPlans,
 }: {
     disabled?: boolean
+    onCreatePlan?: () => void
     onChange: (nextRule: AccessRuleForm) => void
     rule: AccessRuleForm
-    subscriptionPlans: Array<{ code: string; title: string }>
+    subscriptionPlans: SubscriptionPlanOption[]
 }) {
+    const [expanded, setExpanded] = useState(true)
+    const selectedPlan = subscriptionPlans.find((plan) => plan.code === rule.planCode)
+
     return (
-        <div className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-4">
-            <Label>
-                Subscription plan
-                {subscriptionPlans.length ? (
-                    <Select
-                        disabled={disabled}
-                        onValueChange={(value) => onChange({ ...rule, planCode: value })}
-                        value={rule.planCode}
+        <div className="grid gap-3 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <div className="text-sm font-medium text-[var(--foreground)]">
+                        Subscription condition
+                    </div>
+                    <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
+                        Select the paid plan that unlocks this policy.
+                    </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {onCreatePlan ? (
+                        <Button
+                            className="rounded-full"
+                            onClick={onCreatePlan}
+                            size="sm"
+                            type="button"
+                            variant="outline"
+                        >
+                            Create plan
+                        </Button>
+                    ) : null}
+                    <Button
+                        className="rounded-full"
+                        onClick={() => setExpanded((value) => !value)}
+                        size="sm"
+                        type="button"
+                        variant="ghost"
                     >
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select plan" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {subscriptionPlans.map((plan) => (
-                                <SelectItem key={plan.code} value={plan.code}>
-                                    {plan.title} ({plan.code})
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                        <ChevronDown
+                            className={`size-4 transition-transform ${expanded ? "rotate-180" : ""}`}
+                        />
+                        {expanded ? "Hide plans" : "Change plan"}
+                    </Button>
+                </div>
+            </div>
+
+            {selectedPlan ? <PlanChoiceCard plan={selectedPlan} selected /> : null}
+
+            <div
+                className={`grid overflow-hidden transition-all duration-300 ${
+                    expanded ? "max-h-[560px] opacity-100" : "max-h-0 opacity-0"
+                }`}
+            >
+                {subscriptionPlans.length ? (
+                    <div className="grid gap-3 pt-1 md:grid-cols-2">
+                        {subscriptionPlans.map((plan) => (
+                            <button
+                                disabled={disabled}
+                                key={plan.code}
+                                onClick={() => {
+                                    onChange({ ...rule, planCode: plan.code })
+                                    setExpanded(false)
+                                }}
+                                type="button"
+                            >
+                                <PlanChoiceCard
+                                    plan={plan}
+                                    selected={rule.planCode === plan.code}
+                                />
+                            </button>
+                        ))}
+                    </div>
                 ) : (
-                    <Input
-                        disabled={disabled}
-                        onChange={(event) => onChange({ ...rule, planCode: event.target.value })}
-                        placeholder="main"
-                        value={rule.planCode}
-                    />
+                    <div className="rounded-2xl border border-dashed border-[var(--line)] p-4 text-sm text-[var(--muted)]">
+                        Create a subscription plan first, then select it here.
+                    </div>
                 )}
-            </Label>
+            </div>
         </div>
     )
 }
@@ -486,6 +545,32 @@ function NftOwnershipRuleForm({
                 standard={rule.standard}
                 tokenId={rule.tokenId}
             />
+        </div>
+    )
+}
+
+function PlanChoiceCard({ plan, selected }: { plan: SubscriptionPlanOption; selected?: boolean }) {
+    return (
+        <div
+            className={cn(
+                "h-full rounded-[22px] border p-4 text-left transition",
+                selected
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                    : "border-[var(--line)] bg-[var(--surface-strong)] hover:border-[var(--accent)]"
+            )}
+        >
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <div className="font-medium text-[var(--foreground)]">{plan.title}</div>
+                    <div className="mt-1 font-mono text-xs text-[var(--muted)]">{plan.code}</div>
+                </div>
+                {selected ? <Badge variant="success">selected</Badge> : null}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+                {plan.price ? <Badge>{plan.price}</Badge> : null}
+                {plan.billingPeriodDays ? <Badge>{plan.billingPeriodDays} days</Badge> : null}
+                {plan.chainId ? <Badge>chain {plan.chainId}</Badge> : null}
+            </div>
         </div>
     )
 }

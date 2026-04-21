@@ -114,10 +114,10 @@ export const listMyAccessPolicyPresets = api(
   { method: "GET", path: "/me/access-policies", expose: true, auth: true },
   async (): Promise<{ policies: AccessPolicyPresetResponse[] }> => {
     const auth = getAuthData()!;
-    const policies = await service.listMyAccessPolicyPresets(
+    const policies = await service.listMyAccessPolicyPresetResponses(
       auth.walletAddress,
     );
-    return { policies: policies.map(service.toAccessPolicyPresetResponse) };
+    return { policies };
   },
 );
 

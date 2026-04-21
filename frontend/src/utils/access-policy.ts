@@ -43,7 +43,7 @@ interface BuildContentPolicyInputOptions {
 
 export function createDefaultPolicyBuilderState(): AccessPolicyBuilderState {
     return {
-        composer: "public",
+        composer: "single",
         rules: [createDefaultRule()],
     }
 }

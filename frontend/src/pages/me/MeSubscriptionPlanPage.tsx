@@ -1,3 +1,6 @@
+import type { AccessPolicyPresetDto, SubscriptionPlanDto } from "@contracts/types/content"
+import { ArrowUpRight, FileText, Layers3, Plus, ShieldCheck, Sparkles } from "lucide-react"
+import type { ReactNode } from "react"
 import { useEffect, useState } from "react"
 import { usePublicClient } from "wagmi"
 import { formatUnits, isAddress, parseUnits, type Address } from "viem"
@@ -35,6 +38,7 @@ import { useAuthStore } from "@/stores/auth-store"
 import {
     buildPolicyInputFromBuilder,
     createDefaultPolicyBuilderState,
+    parsePolicyToBuilder,
     summarizePolicyInput,
     type AccessPolicyBuilderState,
 } from "@/utils/access-policy"
@@ -58,6 +62,11 @@ export function MeSubscriptionPlanPage() {
     const updatePolicyMutation = useUpdateMyAccessPolicyMutation()
     const deletePolicyMutation = useDeleteMyAccessPolicyMutation()
 
+    const [planModalOpen, setPlanModalOpen] = useState(false)
+    const [policyModalOpen, setPolicyModalOpen] = useState(false)
+    const [editingPolicyId, setEditingPolicyId] = useState<string | null>(null)
+    const [deletePolicyId, setDeletePolicyId] = useState<string | null>(null)
+
     const [code, setCode] = useState("main")
     const [title, setTitle] = useState("Main subscription")
     const [chainId, setChainId] = useState(String(defaultSubscriptionChain.id))
@@ -76,14 +85,15 @@ export function MeSubscriptionPlanPage() {
     const [billingPeriodDays, setBillingPeriodDays] = useState("30")
     const [planKey, setPlanKey] = useState("")
     const [registrationTxHash, setRegistrationTxHash] = useState("")
+
     const [policyName, setPolicyName] = useState("Subscribers only")
     const [policyDescription, setPolicyDescription] = useState("")
     const [policyIsDefault, setPolicyIsDefault] = useState(false)
-    const [deletePolicyId, setDeletePolicyId] = useState<string | null>(null)
     const [policyBuilder, setPolicyBuilder] = useState<AccessPolicyBuilderState>(
         createDefaultPolicyBuilderState()
     )
     const [policyError, setPolicyError] = useState<string | null>(null)
+
     const selectedChainId = Number(chainId)
     const publicClient = usePublicClient({ chainId: selectedChainId })
     const managerDeploymentQuery = useSubscriptionManagerDeploymentQuery(selectedChainId)
@@ -96,6 +106,22 @@ export function MeSubscriptionPlanPage() {
             ? Number(customTokenDecimals)
             : (selectedToken?.decimals ?? 18)
     const amountInBaseUnits = toBaseUnits(amount, tokenDecimals)
+    const selectedPlan = plansQuery.data?.find((plan) => plan.code === code)
+    const managerAddress =
+        managerDeploymentQuery.data?.address ?? selectedPlan?.contractAddress ?? ""
+    const policyOptions =
+        plansQuery.data?.map((plan) => ({
+            billingPeriodDays: plan.billingPeriodDays,
+            chainId: plan.chainId,
+            code: plan.code,
+            price: formatPlanAmount(
+                plan.chainId,
+                plan.tokenAddress,
+                plan.price,
+                plan.paymentAsset ?? "erc20"
+            ),
+            title: plan.title,
+        })) ?? []
 
     useEffect(() => {
         if (selectedToken?.kind !== "custom") {
@@ -156,12 +182,32 @@ export function MeSubscriptionPlanPage() {
         }
     }, [publicClient, selectedToken?.kind, tokenAddress])
 
-    useEffect(() => {
-        if (!plansQuery.data?.length) {
-            return
+    function openPlanModal(plan?: SubscriptionPlanDto) {
+        if (plan) {
+            fillPlanForm(plan)
+        } else {
+            resetPlanForm()
         }
+        setPlanModalOpen(true)
+    }
 
-        const plan = plansQuery.data.find((item) => item.code === "main") ?? plansQuery.data[0]
+    function resetPlanForm() {
+        const nextToken = getTokenPresets(defaultSubscriptionChain.id).find(
+            (preset) => preset.kind === "erc20"
+        )
+        setCode("main")
+        setTitle("Main subscription")
+        setChainId(String(defaultSubscriptionChain.id))
+        setTokenAddress(nextToken?.address ?? "")
+        setSelectedTokenId(nextToken ? getTokenId(nextToken) : "custom")
+        setCustomTokenDecimals(String(nextToken?.decimals ?? 18))
+        setAmount("1")
+        setBillingPeriodDays("30")
+        setPlanKey("")
+        setRegistrationTxHash("")
+    }
+
+    function fillPlanForm(plan: SubscriptionPlanDto) {
         const tokenPreset = getTokenPresetByAddress(
             plan.chainId,
             plan.tokenAddress,
@@ -178,239 +224,210 @@ export function MeSubscriptionPlanPage() {
         setBillingPeriodDays(String(plan.billingPeriodDays))
         setPlanKey(plan.planKey)
         setRegistrationTxHash(plan.registrationTxHash ?? "")
-    }, [plansQuery.data])
+    }
 
-    const selectedPlan = plansQuery.data?.find((plan) => plan.code === code)
-    const managerAddress =
-        managerDeploymentQuery.data?.address ?? selectedPlan?.contractAddress ?? ""
+    function openPolicyModal(policy?: AccessPolicyPresetDto) {
+        setPolicyError(null)
+        if (policy) {
+            setEditingPolicyId(policy.id)
+            setPolicyName(policy.name)
+            setPolicyDescription(policy.description)
+            setPolicyIsDefault(policy.isDefault)
+            setPolicyBuilder(
+                policy.policy.root.type === "public"
+                    ? createDefaultPolicyBuilderState()
+                    : parsePolicyToBuilder(policy.policy)
+            )
+        } else {
+            setEditingPolicyId(null)
+            setPolicyName("Subscribers only")
+            setPolicyDescription("")
+            setPolicyIsDefault(false)
+            setPolicyBuilder(createDefaultPolicyBuilderState())
+        }
+        setPolicyModalOpen(true)
+    }
+
+    function submitPolicy() {
+        setPolicyError(null)
+        try {
+            const input = {
+                name: policyName,
+                description: policyDescription,
+                isDefault: policyIsDefault,
+                policyInput: buildPolicyInputFromBuilder(policyBuilder),
+            }
+
+            if (editingPolicyId) {
+                void updatePolicyMutation
+                    .mutateAsync({ policyId: editingPolicyId, input })
+                    .then(() => setPolicyModalOpen(false))
+                return
+            }
+
+            void createPolicyMutation.mutateAsync(input).then(() => setPolicyModalOpen(false))
+        } catch (error) {
+            setPolicyError(error instanceof Error ? error.message : "Failed to build policy")
+        }
+    }
 
     return (
         <PageSection>
-            <Eyebrow>Access rules</Eyebrow>
-            <h2 className="mt-3 font-[var(--serif)] text-3xl text-[var(--foreground)]">
-                Subscription plans and reusable access policies
-            </h2>
+            <Eyebrow>Access center</Eyebrow>
+            <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                    <h2 className="font-[var(--serif)] text-3xl text-[var(--foreground)]">
+                        Access policies
+                    </h2>
+                    <p className="mt-3 max-w-3xl text-[var(--muted)]">
+                        Start with a reusable policy, then attach it to posts and projects.
+                        Subscription plans are only one possible condition inside a policy.
+                    </p>
+                </div>
+                {token ? (
+                    <div className="flex flex-wrap gap-2">
+                        <Button
+                            className="rounded-full"
+                            onClick={() => openPolicyModal()}
+                            type="button"
+                        >
+                            <Plus className="size-4" />
+                            New policy
+                        </Button>
+                        <Button
+                            className="rounded-full"
+                            onClick={() => openPlanModal()}
+                            type="button"
+                            variant="outline"
+                        >
+                            <Plus className="size-4" />
+                            New subscription plan
+                        </Button>
+                    </div>
+                ) : null}
+            </div>
+
             {!token ? (
-                <p className="mt-3 text-[var(--muted)]">
+                <p className="mt-6 text-[var(--muted)]">
                     Subscription plans and saved access policies will appear here after sign-in.
                 </p>
             ) : (
-                <div className="mt-6 grid gap-6 xl:grid-cols-2">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Subscription plans</CardTitle>
-                            <CardDescription>
-                                Create multiple plans and reuse them in access policies.
-                            </CardDescription>
+                <div className="mt-6 grid gap-6">
+                    <div className="grid gap-4 lg:grid-cols-3">
+                        <FlowCard
+                            description="Create one rule set for a content tier."
+                            icon={<ShieldCheck className="size-5" />}
+                            title="1. Define policy"
+                        />
+                        <FlowCard
+                            description="Add subscription, token balance, or NFT ownership conditions."
+                            icon={<Sparkles className="size-5" />}
+                            title="2. Compose conditions"
+                        />
+                        <FlowCard
+                            description="Pick the policy when publishing posts or projects."
+                            icon={<FileText className="size-5" />}
+                            title="3. Attach to content"
+                        />
+                    </div>
+
+                    <Card className="overflow-hidden rounded-[34px]">
+                        <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <CardTitle>Reusable policies</CardTitle>
+                                <CardDescription>
+                                    These are the actual access tiers users see and content uses.
+                                </CardDescription>
+                            </div>
+                            <Button
+                                className="rounded-full"
+                                onClick={() => openPolicyModal()}
+                                type="button"
+                            >
+                                <Plus className="size-4" />
+                                Create policy
+                            </Button>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid gap-4">
-                                <div className="grid gap-4 md:grid-cols-2">
-                                    <Label>
-                                        Title
-                                        <Input
-                                            onChange={(event) => {
-                                                const value = event.target.value
-                                                setTitle(value)
-                                                if (!selectedPlan) {
-                                                    setCode(buildPlanCode(value))
-                                                }
-                                            }}
-                                            value={title}
-                                        />
-                                    </Label>
-                                    <Label>
-                                        Billing days
-                                        <Input
-                                            onChange={(event) =>
-                                                setBillingPeriodDays(event.target.value)
+                            {policiesQuery.isLoading ? (
+                                <p className="text-sm text-[var(--muted)]">Loading policies...</p>
+                            ) : policiesQuery.isError ? (
+                                <p className="text-sm text-rose-600">
+                                    {policiesQuery.error.message}
+                                </p>
+                            ) : policiesQuery.data?.length ? (
+                                <div className="grid gap-4 lg:grid-cols-2">
+                                    {policiesQuery.data.map((policy) => (
+                                        <PolicyCard
+                                            key={policy.id}
+                                            onDelete={() => setDeletePolicyId(policy.id)}
+                                            onEdit={() => openPolicyModal(policy)}
+                                            onMakeDefault={() =>
+                                                void updatePolicyMutation.mutateAsync({
+                                                    policyId: policy.id,
+                                                    input: { isDefault: true },
+                                                })
                                             }
-                                            value={billingPeriodDays}
+                                            policy={policy}
                                         />
-                                    </Label>
+                                    ))}
                                 </div>
-                                <ChainPicker
-                                    onChange={(nextChainId) => {
-                                        setChainId(String(nextChainId))
-                                        const nextToken = getTokenPresets(nextChainId).find(
-                                            (preset) => preset.kind === "erc20"
-                                        )
-                                        setSelectedTokenId(
-                                            nextToken ? getTokenId(nextToken) : "custom"
-                                        )
-                                        setTokenAddress(nextToken?.address ?? "")
-                                        setCustomTokenName("")
-                                        setCustomTokenSymbol("")
-                                        setCustomTokenLookupState("idle")
-                                        setCustomTokenLookupError("")
-                                    }}
-                                    value={selectedChainId}
+                            ) : (
+                                <EmptyState
+                                    action="Create first policy"
+                                    description="Create a policy before publishing private content. Public content can still be selected directly on posts and projects."
+                                    onAction={() => openPolicyModal()}
+                                    title="No access policies yet"
                                 />
-                                <TokenPicker
-                                    chainId={selectedChainId}
-                                    customDecimals={customTokenDecimals}
-                                    lookup={{
-                                        error: customTokenLookupError,
-                                        name: customTokenName,
-                                        state: customTokenLookupState,
-                                        symbol: customTokenSymbol,
-                                    }}
-                                    onAddressChange={(value) => {
-                                        setTokenAddress(value)
-                                        setCustomTokenName("")
-                                        setCustomTokenSymbol("")
-                                    }}
-                                    onCustomDecimalsChange={setCustomTokenDecimals}
-                                    onTokenChange={(nextTokenId, preset) => {
-                                        setSelectedTokenId(nextTokenId)
-                                        setTokenAddress(
-                                            preset.kind === "native"
-                                                ? ZERO_ADDRESS
-                                                : (preset.address ?? "")
-                                        )
-                                        setCustomTokenDecimals(String(preset.decimals))
-                                        setCustomTokenName("")
-                                        setCustomTokenSymbol("")
-                                        setCustomTokenLookupState("idle")
-                                        setCustomTokenLookupError("")
-                                    }}
-                                    selectedTokenId={selectedTokenId}
-                                    tokenAddress={tokenAddress}
-                                />
-                                <TokenAmountInput
-                                    amount={amount}
-                                    baseUnits={amountInBaseUnits}
-                                    onAmountChange={setAmount}
-                                    symbol={selectedToken?.symbol}
-                                />
-                                <Web3SummaryPanel
-                                    items={[
-                                        {
-                                            label: "manager",
-                                            value: managerDeploymentQuery.isLoading
-                                                ? "loading..."
-                                                : managerAddress ||
-                                                  "not configured for selected network",
-                                        },
-                                        { label: "internal code", value: code },
-                                        { label: "plan key", value: planKey },
-                                        { label: "registration tx", value: registrationTxHash },
-                                    ]}
-                                    title="On-chain registration"
-                                />
-                                {upsertPlanMutation.isError ? (
-                                    <p className="text-sm text-rose-600">
-                                        {upsertPlanMutation.error.message}
-                                    </p>
-                                ) : null}
-                                {!managerAddress ? (
-                                    <p className="text-sm text-amber-700">
-                                        SubscriptionManager is not registered for this network in
-                                        the backend registry yet. If deployment already succeeded,
-                                        sync the deployment address to this backend environment.
-                                    </p>
-                                ) : null}
-                                <OnChainPlanPublisher
-                                    active
-                                    billingPeriodDays={Number(billingPeriodDays)}
-                                    chainId={selectedChainId}
-                                    code={code}
-                                    contractAddress={managerAddress}
-                                    disabled={
-                                        upsertPlanMutation.isPending ||
-                                        !managerAddress ||
-                                        !planTokenAddress ||
-                                        !amountInBaseUnits
-                                    }
-                                    existingPlanKey={selectedPlan?.planKey}
-                                    onPublished={(published) => {
-                                        setPlanKey(published.planKey ?? "")
-                                        setRegistrationTxHash(published.registrationTxHash ?? "")
-                                        void upsertPlanMutation.mutateAsync({
-                                            code,
-                                            title,
-                                            paymentAsset,
-                                            chainId: selectedChainId,
-                                            tokenAddress: planTokenAddress,
-                                            price: amountInBaseUnits,
-                                            billingPeriodDays: Number(billingPeriodDays),
-                                            contractAddress: managerAddress,
-                                            planKey: published.planKey,
-                                            registrationTxHash: published.registrationTxHash,
-                                            active: true,
-                                        })
-                                    }}
-                                    price={amountInBaseUnits}
-                                    paymentAsset={paymentAsset}
-                                    tokenAddress={planTokenAddress}
-                                />
-                            </div>
+                            )}
+                        </CardContent>
+                    </Card>
 
-                            <div className="mt-6 grid gap-3">
-                                {plansQuery.data?.map((plan) => (
-                                    <div
-                                        className="rounded-lg border border-[var(--line)] p-4"
-                                        key={plan.id}
-                                    >
-                                        <button
-                                            className="w-full text-left"
-                                            onClick={() => {
-                                                setCode(plan.code)
-                                                setTitle(plan.title)
-                                                setChainId(String(plan.chainId))
-                                                setTokenAddress(
-                                                    plan.paymentAsset === "native"
-                                                        ? ZERO_ADDRESS
-                                                        : plan.tokenAddress
-                                                )
-                                                const tokenPreset = getTokenPresetByAddress(
-                                                    plan.chainId,
-                                                    plan.tokenAddress,
-                                                    plan.paymentAsset ?? "erc20"
-                                                )
-                                                const decimals = tokenPreset?.decimals ?? 18
-                                                setSelectedTokenId(
-                                                    tokenPreset ? getTokenId(tokenPreset) : "custom"
-                                                )
-                                                setCustomTokenDecimals(String(decimals))
-                                                setAmount(formatUnits(BigInt(plan.price), decimals))
-                                                setBillingPeriodDays(String(plan.billingPeriodDays))
-                                                setPlanKey(plan.planKey)
-                                                setRegistrationTxHash(plan.registrationTxHash ?? "")
-                                            }}
-                                            type="button"
-                                        >
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <span className="font-medium">{plan.title}</span>
-                                                <Badge>{plan.chainId}</Badge>
-                                            </div>
-                                            <div className="mt-2 text-sm text-[var(--muted)]">
-                                                {formatPlanAmount(
-                                                    plan.chainId,
-                                                    plan.tokenAddress,
-                                                    plan.price,
-                                                    plan.paymentAsset ?? "erc20"
-                                                )}{" "}
-                                                every {plan.billingPeriodDays} days
-                                            </div>
-                                            <div className="mt-2 break-all font-mono text-xs text-[var(--muted)]">
-                                                {plan.planKey}
-                                            </div>
-                                        </button>
-                                        <Button
-                                            className="mt-3 rounded-full"
-                                            disabled={deletePlanMutation.isPending}
-                                            onClick={() =>
+                    <Card className="rounded-[34px]">
+                        <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <CardTitle>Subscription building blocks</CardTitle>
+                                <CardDescription>
+                                    Plans are hidden behind policies. Create them only when a policy
+                                    needs paid subscription access.
+                                </CardDescription>
+                            </div>
+                            <Button
+                                className="rounded-full"
+                                onClick={() => openPlanModal()}
+                                type="button"
+                                variant="outline"
+                            >
+                                <Plus className="size-4" />
+                                Create plan
+                            </Button>
+                        </CardHeader>
+                        <CardContent>
+                            {plansQuery.isLoading ? (
+                                <p className="text-sm text-[var(--muted)]">Loading plans...</p>
+                            ) : plansQuery.isError ? (
+                                <p className="text-sm text-rose-600">{plansQuery.error.message}</p>
+                            ) : plansQuery.data?.length ? (
+                                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                                    {plansQuery.data.map((plan) => (
+                                        <PlanCard
+                                            key={plan.id}
+                                            onDelete={() =>
                                                 void deletePlanMutation.mutateAsync(plan.id)
                                             }
-                                            type="button"
-                                            variant="outline"
-                                        >
-                                            Delete plan
-                                        </Button>
-                                    </div>
-                                ))}
-                            </div>
+                                            onEdit={() => openPlanModal(plan)}
+                                            plan={plan}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <EmptyState
+                                    action="Create subscription plan"
+                                    description="You can also create a plan from inside a subscription condition."
+                                    onAction={() => openPlanModal()}
+                                    title="No subscription plans yet"
+                                />
+                            )}
                             {deletePlanMutation.isError ? (
                                 <p className="mt-3 text-sm text-rose-600">
                                     {deletePlanMutation.error.message}
@@ -418,140 +435,230 @@ export function MeSubscriptionPlanPage() {
                             ) : null}
                         </CardContent>
                     </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Access policies</CardTitle>
-                            <CardDescription>
-                                These conditions can be selected for posts and projects later.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <form
-                                className="grid gap-4"
-                                onSubmit={(event) => {
-                                    event.preventDefault()
-                                    setPolicyError(null)
-                                    try {
-                                        void createPolicyMutation.mutateAsync({
-                                            name: policyName,
-                                            description: policyDescription,
-                                            isDefault: policyIsDefault,
-                                            policyInput: buildPolicyInputFromBuilder(policyBuilder),
-                                        })
-                                    } catch (error) {
-                                        setPolicyError(
-                                            error instanceof Error
-                                                ? error.message
-                                                : "Failed to build policy"
-                                        )
-                                    }
-                                }}
-                            >
-                                <Label>
-                                    Name
-                                    <Input
-                                        onChange={(event) => setPolicyName(event.target.value)}
-                                        value={policyName}
-                                    />
-                                </Label>
-                                <Label>
-                                    Description
-                                    <Textarea
-                                        onChange={(event) =>
-                                            setPolicyDescription(event.target.value)
-                                        }
-                                        value={policyDescription}
-                                    />
-                                </Label>
-                                <AccessPolicyEditor
-                                    builder={policyBuilder}
-                                    disabled={createPolicyMutation.isPending}
-                                    onChange={setPolicyBuilder}
-                                    subscriptionPlans={plansQuery.data ?? []}
-                                />
-                                <p className="text-sm text-[var(--muted)]">
-                                    Preview: {summarizePolicyInput(policyBuilder)}
-                                </p>
-                                <label className="flex items-center gap-3 text-sm">
-                                    <input
-                                        checked={policyIsDefault}
-                                        onChange={(event) =>
-                                            setPolicyIsDefault(event.target.checked)
-                                        }
-                                        type="checkbox"
-                                    />
-                                    Make default
-                                </label>
-                                {policyError ? (
-                                    <p className="text-sm text-rose-600">{policyError}</p>
-                                ) : null}
-                                {createPolicyMutation.isError ? (
-                                    <p className="text-sm text-rose-600">
-                                        {createPolicyMutation.error.message}
-                                    </p>
-                                ) : null}
-                                <Button
-                                    className="w-fit rounded-full"
-                                    disabled={createPolicyMutation.isPending}
-                                    type="submit"
-                                >
-                                    {createPolicyMutation.isPending ? "Saving..." : "Create policy"}
-                                </Button>
-                            </form>
-
-                            <div className="mt-6 grid gap-3">
-                                {policiesQuery.data?.map((policy) => (
-                                    <div
-                                        className="rounded-lg border border-[var(--line)] p-4"
-                                        key={policy.id}
-                                    >
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <span className="font-medium">{policy.name}</span>
-                                            {policy.isDefault ? (
-                                                <Badge variant="success">default</Badge>
-                                            ) : null}
-                                            <Badge>{policy.policy.root.type}</Badge>
-                                        </div>
-                                        <p className="mt-2 text-sm text-[var(--muted)]">
-                                            {policy.description || "No description"}
-                                        </p>
-                                        <div className="mt-4 flex flex-wrap gap-2">
-                                            {!policy.isDefault ? (
-                                                <Button
-                                                    className="rounded-full"
-                                                    onClick={() =>
-                                                        void updatePolicyMutation.mutateAsync({
-                                                            policyId: policy.id,
-                                                            input: { isDefault: true },
-                                                        })
-                                                    }
-                                                    size="sm"
-                                                    type="button"
-                                                    variant="outline"
-                                                >
-                                                    Make default
-                                                </Button>
-                                            ) : null}
-                                            {!policy.isDefault ? (
-                                                <Button
-                                                    className="rounded-full"
-                                                    onClick={() => setDeletePolicyId(policy.id)}
-                                                    size="sm"
-                                                    type="button"
-                                                    variant="destructive"
-                                                >
-                                                    Delete
-                                                </Button>
-                                            ) : null}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
                 </div>
             )}
+
+            <Modal
+                className="max-w-5xl"
+                description="A policy is the reusable access tier that posts and projects attach to."
+                onOpenChange={setPolicyModalOpen}
+                open={policyModalOpen}
+                title={editingPolicyId ? "Edit access policy" : "Create access policy"}
+            >
+                <form
+                    className="grid gap-5"
+                    onSubmit={(event) => {
+                        event.preventDefault()
+                        submitPolicy()
+                    }}
+                >
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <Label>
+                            Policy name
+                            <Input
+                                onChange={(event) => setPolicyName(event.target.value)}
+                                value={policyName}
+                            />
+                        </Label>
+                        <label className="flex items-end gap-3 rounded-[18px] border border-[var(--line)] bg-[var(--surface-strong)] p-3 text-sm">
+                            <input
+                                checked={policyIsDefault}
+                                onChange={(event) => setPolicyIsDefault(event.target.checked)}
+                                type="checkbox"
+                            />
+                            Make this the default inherited policy
+                        </label>
+                    </div>
+                    <Label>
+                        Description
+                        <Textarea
+                            onChange={(event) => setPolicyDescription(event.target.value)}
+                            value={policyDescription}
+                        />
+                    </Label>
+                    <AccessPolicyEditor
+                        builder={policyBuilder}
+                        disabled={createPolicyMutation.isPending || updatePolicyMutation.isPending}
+                        onChange={setPolicyBuilder}
+                        onCreatePlan={() => openPlanModal()}
+                        subscriptionPlans={policyOptions}
+                    />
+                    <div className="rounded-[22px] border border-[var(--line)] bg-[var(--surface-strong)] p-4 text-sm text-[var(--muted)]">
+                        Preview: {summarizePolicyInput(policyBuilder)}
+                    </div>
+                    {policyError ? <p className="text-sm text-rose-600">{policyError}</p> : null}
+                    {createPolicyMutation.isError ? (
+                        <p className="text-sm text-rose-600">
+                            {createPolicyMutation.error.message}
+                        </p>
+                    ) : null}
+                    {updatePolicyMutation.isError ? (
+                        <p className="text-sm text-rose-600">
+                            {updatePolicyMutation.error.message}
+                        </p>
+                    ) : null}
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            onClick={() => setPolicyModalOpen(false)}
+                            type="button"
+                            variant="outline"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            disabled={
+                                createPolicyMutation.isPending || updatePolicyMutation.isPending
+                            }
+                            type="submit"
+                        >
+                            {editingPolicyId ? "Save policy" : "Create policy"}
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
+
+            <Modal
+                className="max-w-5xl"
+                description="Plans define payment amount and on-chain registration. Use them inside subscription conditions."
+                onOpenChange={setPlanModalOpen}
+                open={planModalOpen}
+                title={selectedPlan ? "Edit subscription plan" : "Create subscription plan"}
+            >
+                <div className="grid gap-5">
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <Label>
+                            Plan title
+                            <Input
+                                onChange={(event) => {
+                                    const value = event.target.value
+                                    setTitle(value)
+                                    if (!selectedPlan) {
+                                        setCode(buildPlanCode(value))
+                                    }
+                                }}
+                                value={title}
+                            />
+                        </Label>
+                        <Label>
+                            Billing days
+                            <Input
+                                onChange={(event) => setBillingPeriodDays(event.target.value)}
+                                value={billingPeriodDays}
+                            />
+                        </Label>
+                    </div>
+                    <ChainPicker
+                        onChange={(nextChainId) => {
+                            setChainId(String(nextChainId))
+                            const nextToken = getTokenPresets(nextChainId).find(
+                                (preset) => preset.kind === "erc20"
+                            )
+                            setSelectedTokenId(nextToken ? getTokenId(nextToken) : "custom")
+                            setTokenAddress(nextToken?.address ?? "")
+                            setCustomTokenName("")
+                            setCustomTokenSymbol("")
+                            setCustomTokenLookupState("idle")
+                            setCustomTokenLookupError("")
+                        }}
+                        value={selectedChainId}
+                    />
+                    <TokenPicker
+                        chainId={selectedChainId}
+                        customDecimals={customTokenDecimals}
+                        lookup={{
+                            error: customTokenLookupError,
+                            name: customTokenName,
+                            state: customTokenLookupState,
+                            symbol: customTokenSymbol,
+                        }}
+                        onAddressChange={(value) => {
+                            setTokenAddress(value)
+                            setCustomTokenName("")
+                            setCustomTokenSymbol("")
+                        }}
+                        onCustomDecimalsChange={setCustomTokenDecimals}
+                        onTokenChange={(nextTokenId, preset) => {
+                            setSelectedTokenId(nextTokenId)
+                            setTokenAddress(
+                                preset.kind === "native" ? ZERO_ADDRESS : (preset.address ?? "")
+                            )
+                            setCustomTokenDecimals(String(preset.decimals))
+                            setCustomTokenName("")
+                            setCustomTokenSymbol("")
+                            setCustomTokenLookupState("idle")
+                            setCustomTokenLookupError("")
+                        }}
+                        selectedTokenId={selectedTokenId}
+                        tokenAddress={tokenAddress}
+                    />
+                    <TokenAmountInput
+                        amount={amount}
+                        baseUnits={amountInBaseUnits}
+                        onAmountChange={setAmount}
+                        symbol={selectedToken?.symbol}
+                    />
+                    <Web3SummaryPanel
+                        items={[
+                            {
+                                label: "manager",
+                                value: managerDeploymentQuery.isLoading
+                                    ? "loading..."
+                                    : managerAddress || "not configured for selected network",
+                            },
+                            { label: "internal code", value: code },
+                            { label: "plan key", value: planKey },
+                            { label: "registration tx", value: registrationTxHash },
+                        ]}
+                        title="On-chain registration"
+                    />
+                    {upsertPlanMutation.isError ? (
+                        <p className="text-sm text-rose-600">{upsertPlanMutation.error.message}</p>
+                    ) : null}
+                    {!managerAddress ? (
+                        <p className="text-sm text-amber-700">
+                            SubscriptionManager is not registered for this network in the backend
+                            registry yet.
+                        </p>
+                    ) : null}
+                    <OnChainPlanPublisher
+                        active
+                        billingPeriodDays={Number(billingPeriodDays)}
+                        chainId={selectedChainId}
+                        code={code}
+                        contractAddress={managerAddress}
+                        disabled={
+                            upsertPlanMutation.isPending ||
+                            !managerAddress ||
+                            !planTokenAddress ||
+                            !amountInBaseUnits
+                        }
+                        existingPlanKey={selectedPlan?.planKey}
+                        onPublished={(published) => {
+                            setPlanKey(published.planKey ?? "")
+                            setRegistrationTxHash(published.registrationTxHash ?? "")
+                            void upsertPlanMutation
+                                .mutateAsync({
+                                    code,
+                                    title,
+                                    paymentAsset,
+                                    chainId: selectedChainId,
+                                    tokenAddress: planTokenAddress,
+                                    price: amountInBaseUnits,
+                                    billingPeriodDays: Number(billingPeriodDays),
+                                    contractAddress: managerAddress,
+                                    planKey: published.planKey,
+                                    registrationTxHash: published.registrationTxHash,
+                                    active: true,
+                                })
+                                .then(() => setPlanModalOpen(false))
+                        }}
+                        price={amountInBaseUnits}
+                        paymentAsset={paymentAsset}
+                        tokenAddress={planTokenAddress}
+                    />
+                </div>
+            </Modal>
+
             <Modal
                 description="Posts and projects using this policy should be moved to another policy first."
                 onOpenChange={(open) => {
@@ -584,6 +691,175 @@ export function MeSubscriptionPlanPage() {
                 </div>
             </Modal>
         </PageSection>
+    )
+}
+
+function FlowCard({
+    description,
+    icon,
+    title,
+}: {
+    description: string
+    icon: ReactNode
+    title: string
+}) {
+    return (
+        <div className="rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-5">
+            <div className="grid size-11 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                {icon}
+            </div>
+            <div className="mt-4 font-medium text-[var(--foreground)]">{title}</div>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{description}</p>
+        </div>
+    )
+}
+
+function PolicyCard({
+    onDelete,
+    onEdit,
+    onMakeDefault,
+    policy,
+}: {
+    onDelete: () => void
+    onEdit: () => void
+    onMakeDefault: () => void
+    policy: AccessPolicyPresetDto
+}) {
+    return (
+        <div className="group rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-5 transition hover:-translate-y-0.5 hover:shadow-[var(--shadow)]">
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-[var(--serif)] text-2xl text-[var(--foreground)]">
+                            {policy.name}
+                        </h3>
+                        {policy.isDefault ? <Badge variant="success">default</Badge> : null}
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                        {policy.description || "No description"}
+                    </p>
+                </div>
+                <Button
+                    className="rounded-full"
+                    onClick={onEdit}
+                    size="icon"
+                    type="button"
+                    variant="ghost"
+                >
+                    <ArrowUpRight className="size-4" />
+                </Button>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+                <Badge>{policy.policy.root.type.toUpperCase()}</Badge>
+                <Badge>{policy.postsCount} posts</Badge>
+                <Badge>{policy.projectsCount} projects</Badge>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+                {!policy.isDefault ? (
+                    <Button
+                        className="rounded-full"
+                        onClick={onMakeDefault}
+                        size="sm"
+                        type="button"
+                        variant="outline"
+                    >
+                        Make default
+                    </Button>
+                ) : null}
+                {!policy.isDefault ? (
+                    <Button
+                        className="rounded-full"
+                        onClick={onDelete}
+                        size="sm"
+                        type="button"
+                        variant="destructive"
+                    >
+                        Delete
+                    </Button>
+                ) : null}
+            </div>
+        </div>
+    )
+}
+
+function PlanCard({
+    onDelete,
+    onEdit,
+    plan,
+}: {
+    onDelete: () => void
+    onEdit: () => void
+    plan: SubscriptionPlanDto
+}) {
+    return (
+        <div className="rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-5">
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <h3 className="font-medium text-[var(--foreground)]">{plan.title}</h3>
+                    <p className="mt-1 font-mono text-xs text-[var(--muted)]">{plan.code}</p>
+                </div>
+                <Badge>{plan.active ? "active" : "inactive"}</Badge>
+            </div>
+            <div className="mt-4 grid gap-2 text-sm text-[var(--muted)]">
+                <div>
+                    {formatPlanAmount(
+                        plan.chainId,
+                        plan.tokenAddress,
+                        plan.price,
+                        plan.paymentAsset
+                    )}
+                </div>
+                <div>Every {plan.billingPeriodDays} days</div>
+                <div>Chain {plan.chainId}</div>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+                <Button
+                    className="rounded-full"
+                    onClick={onEdit}
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                >
+                    Edit
+                </Button>
+                <Button
+                    className="rounded-full"
+                    onClick={onDelete}
+                    size="sm"
+                    type="button"
+                    variant="destructive"
+                >
+                    Delete
+                </Button>
+            </div>
+        </div>
+    )
+}
+
+function EmptyState({
+    action,
+    description,
+    onAction,
+    title,
+}: {
+    action: string
+    description: string
+    onAction: () => void
+    title: string
+}) {
+    return (
+        <div className="rounded-[28px] border border-dashed border-[var(--line)] bg-[var(--surface-strong)] p-8 text-center">
+            <div className="mx-auto grid size-12 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                <Layers3 className="size-5" />
+            </div>
+            <h3 className="mt-4 font-medium text-[var(--foreground)]">{title}</h3>
+            <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-[var(--muted)]">
+                {description}
+            </p>
+            <Button className="mt-5 rounded-full" onClick={onAction} type="button">
+                {action}
+            </Button>
+        </div>
     )
 }
 
