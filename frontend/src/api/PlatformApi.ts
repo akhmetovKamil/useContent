@@ -1,5 +1,7 @@
 import type {
     AuthorPlatformBillingDto,
+    AuthorPlatformCleanupPreviewDto,
+    AuthorPlatformCleanupRunDto,
     ConfirmSubscriptionPaymentInput,
     ContractDeploymentLookupDto,
     CreatePlatformSubscriptionPaymentIntentInput,
@@ -17,6 +19,18 @@ class PlatformApi {
 
     async getMyAuthorPlatformBilling() {
         const response = await http.get<AuthorPlatformBillingDto>("/me/author/platform-billing")
+        return response.data
+    }
+
+    async previewMyAuthorPlatformCleanup() {
+        const response = await http.get<AuthorPlatformCleanupPreviewDto>(
+            "/me/author/platform-cleanup-preview"
+        )
+        return response.data
+    }
+
+    async runMyAuthorPlatformCleanup() {
+        const response = await http.post<AuthorPlatformCleanupRunDto>("/me/author/platform-cleanup")
         return response.data
     }
 

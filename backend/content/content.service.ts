@@ -37,6 +37,7 @@ import type {
   AuthorPlatformBillingResponse,
   AuthorPlatformCleanupItemResponse,
   AuthorPlatformCleanupPreviewResponse,
+  AuthorPlatformCleanupRunResponse,
   ConfirmSubscriptionPaymentRequest,
   AuthorStorageUsageResponse,
   AuthorStorageUsageStats,
@@ -239,6 +240,13 @@ export async function previewMyAuthorPlatformCleanup(
 ): Promise<AuthorPlatformCleanupPreviewResponse> {
   const author = await getMyAuthorProfile(walletAddress);
   return previewAuthorPlatformCleanup(author);
+}
+
+export async function runMyAuthorPlatformCleanup(
+  walletAddress: string,
+): Promise<AuthorPlatformCleanupRunResponse> {
+  const author = await getMyAuthorProfile(walletAddress);
+  return cleanupExpiredAuthorPlatformStorage(author);
 }
 
 export async function createPlatformSubscriptionPaymentIntent(
@@ -564,13 +572,35 @@ export function selectCleanupCandidates(
 
 export async function cleanupExpiredAuthorPlatformStorage(
   author: AuthorProfileDoc,
-): Promise<AuthorPlatformCleanupPreviewResponse> {
-  const preview = await previewAuthorPlatformCleanup(author);
-  if (preview.status !== "expired" || preview.bytesToDelete <= 0) {
-    return preview;
+): Promise<AuthorPlatformCleanupRunResponse> {
+  const previewBefore = await previewAuthorPlatformCleanup(author);
+  const now = new Date();
+  const deletedItems: AuthorPlatformCleanupItemResponse[] = [];
+
+  if (previewBefore.status !== "expired" || previewBefore.bytesToDelete <= 0) {
+    const previewAfter = await previewAuthorPlatformCleanup(author);
+    const log = await repo.createAuthorPlatformCleanupLog({
+      authorId: author._id,
+      status: "skipped",
+      deletedBytes: 0,
+      deletedItems,
+      previewBefore,
+      previewAfter,
+      createdAt: now,
+    });
+
+    return {
+      id: log._id.toHexString(),
+      authorId: author._id.toHexString(),
+      status: "skipped",
+      deletedBytes: 0,
+      deletedItems,
+      previewAfter,
+      createdAt: log.createdAt.toISOString(),
+    };
   }
 
-  for (const candidate of preview.candidates) {
+  for (const candidate of previewBefore.candidates) {
     if (candidate.kind === "post_attachment") {
       const attachment = await repo.findPostAttachmentByIdAndPostId(
         new ObjectId(candidate.id),
@@ -579,6 +609,7 @@ export async function cleanupExpiredAuthorPlatformStorage(
       if (attachment) {
         await deleteObject(attachment.storageKey);
         await repo.deletePostAttachmentById(attachment);
+        deletedItems.push(candidate);
       }
       continue;
     }
@@ -590,10 +621,39 @@ export async function cleanupExpiredAuthorPlatformStorage(
     if (node?.storageKey) {
       await deleteObject(node.storageKey);
       await repo.deleteProjectNodes([node._id]);
+      deletedItems.push(candidate);
     }
   }
 
-  return previewAuthorPlatformCleanup(author);
+  const previewAfter = await previewAuthorPlatformCleanup(author);
+  const deletedBytes = deletedItems.reduce(
+    (total, item) => total + item.size,
+    0,
+  );
+  await repo.updateAuthorPlatformSubscriptionByAuthorId(author._id, {
+    cleanupScheduledAt: null,
+    lastCleanupAt: now,
+    updatedAt: now,
+  });
+  const log = await repo.createAuthorPlatformCleanupLog({
+    authorId: author._id,
+    status: "completed",
+    deletedBytes,
+    deletedItems,
+    previewBefore,
+    previewAfter,
+    createdAt: now,
+  });
+
+  return {
+    id: log._id.toHexString(),
+    authorId: author._id.toHexString(),
+    status: "completed",
+    deletedBytes,
+    deletedItems,
+    previewAfter,
+    createdAt: log.createdAt.toISOString(),
+  };
 }
 
 function getPlatformPlan(code: PlatformPlanDoc["code"]): PlatformPlanDoc {

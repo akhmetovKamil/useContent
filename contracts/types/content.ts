@@ -155,6 +155,16 @@ export interface AuthorPlatformCleanupPreviewDto {
   candidates: AuthorPlatformCleanupItemDto[];
 }
 
+export interface AuthorPlatformCleanupRunDto {
+  id: string;
+  authorId: string;
+  status: "skipped" | "completed";
+  deletedBytes: number;
+  deletedItems: AuthorPlatformCleanupItemDto[];
+  previewAfter: AuthorPlatformCleanupPreviewDto;
+  createdAt: string;
+}
+
 export interface AccessPolicyPresetDto {
   id: string;
   authorId: string;

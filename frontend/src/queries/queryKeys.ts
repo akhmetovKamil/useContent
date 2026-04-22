@@ -9,6 +9,7 @@ export const queryKeys = {
     myAuthorSubscribers: ["me", "author", "subscribers"] as const,
     platformPlans: ["platform", "plans"] as const,
     myAuthorPlatformBilling: ["me", "author", "platform-billing"] as const,
+    myAuthorPlatformCleanupPreview: ["me", "author", "platform-cleanup-preview"] as const,
     platformSubscriptionManagerDeployment: (chainId: number) =>
         ["contract-deployments", "platform-subscription-manager", chainId] as const,
     myAccessPolicies: ["me", "access-policies"] as const,

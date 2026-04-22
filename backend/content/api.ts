@@ -10,6 +10,7 @@ import type {
   AuthorProfileResponse,
   AuthorPlatformBillingResponse,
   AuthorPlatformCleanupPreviewResponse,
+  AuthorPlatformCleanupRunResponse,
   AuthorStorageUsageResponse,
   AuthorSubscriberResponse,
   ConfirmSubscriptionPaymentRequest,
@@ -154,6 +155,19 @@ export const previewMyAuthorPlatformCleanup = api(
   async (): Promise<AuthorPlatformCleanupPreviewResponse> => {
     const auth = getAuthData()!;
     return service.previewMyAuthorPlatformCleanup(auth.walletAddress);
+  },
+);
+
+export const runMyAuthorPlatformCleanup = api(
+  {
+    method: "POST",
+    path: "/me/author/platform-cleanup",
+    expose: true,
+    auth: true,
+  },
+  async (): Promise<AuthorPlatformCleanupRunResponse> => {
+    const auth = getAuthData()!;
+    return service.runMyAuthorPlatformCleanup(auth.walletAddress);
   },
 );
 

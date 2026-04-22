@@ -11,6 +11,7 @@ import type {
   AuthorPlatformBillingDto,
   AuthorPlatformCleanupPreviewDto,
   AuthorPlatformCleanupItemDto,
+  AuthorPlatformCleanupRunDto,
   ConfirmSubscriptionPaymentInput,
   ContentStatus,
   ContractDeploymentDto,
@@ -176,6 +177,17 @@ export interface PostCommentDoc {
   updatedAt: Date;
 }
 
+export interface AuthorPlatformCleanupLogDoc {
+  _id: ObjectId;
+  authorId: ObjectId;
+  status: "skipped" | "completed";
+  deletedBytes: number;
+  deletedItems: AuthorPlatformCleanupItemDto[];
+  previewBefore: AuthorPlatformCleanupPreviewDto;
+  previewAfter: AuthorPlatformCleanupPreviewDto;
+  createdAt: Date;
+}
+
 export interface PostAttachmentDoc {
   _id: ObjectId;
   postId: ObjectId;
@@ -301,6 +313,7 @@ export type AuthorPlatformBillingResponse = AuthorPlatformBillingDto;
 export type AuthorPlatformCleanupPreviewResponse =
   AuthorPlatformCleanupPreviewDto;
 export type AuthorPlatformCleanupItemResponse = AuthorPlatformCleanupItemDto;
+export type AuthorPlatformCleanupRunResponse = AuthorPlatformCleanupRunDto;
 export type PlatformPlanResponse = PlatformPlanDto;
 export type AuthorCatalogItemResponse = AuthorCatalogItemDto;
 export type AuthorAccessPolicyResponse = AuthorAccessPolicyDto;

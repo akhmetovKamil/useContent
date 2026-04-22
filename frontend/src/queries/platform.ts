@@ -22,6 +22,14 @@ export function useMyAuthorPlatformBillingQuery(enabled = true) {
     })
 }
 
+export function useMyAuthorPlatformCleanupPreviewQuery(enabled = true) {
+    return useQuery({
+        queryKey: queryKeys.myAuthorPlatformCleanupPreview,
+        queryFn: () => platformApi.previewMyAuthorPlatformCleanup(),
+        enabled,
+    })
+}
+
 export function usePlatformSubscriptionManagerDeploymentQuery(chainId: number) {
     return useQuery({
         queryKey: queryKeys.platformSubscriptionManagerDeployment(chainId),
@@ -52,6 +60,21 @@ export function useConfirmPlatformSubscriptionPaymentMutation() {
             void queryClient.invalidateQueries({ queryKey: queryKeys.myAuthorPlatformBilling })
             void queryClient.invalidateQueries({ queryKey: queryKeys.myProjects() })
             void queryClient.invalidateQueries({ queryKey: queryKeys.platformPlans })
+        },
+    })
+}
+
+export function useRunMyAuthorPlatformCleanupMutation() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: () => platformApi.runMyAuthorPlatformCleanup(),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: queryKeys.myAuthorPlatformBilling })
+            void queryClient.invalidateQueries({
+                queryKey: queryKeys.myAuthorPlatformCleanupPreview,
+            })
+            void queryClient.invalidateQueries({ queryKey: queryKeys.myProjects() })
         },
     })
 }

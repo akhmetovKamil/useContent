@@ -1,5 +1,9 @@
 import { platformSubscriptionManagerAbi } from "@contracts/abi/PlatformSubscriptionManager"
-import type { AuthorPlatformBillingDto, PlatformPlanDto } from "@contracts/types/content"
+import type {
+    AuthorPlatformBillingDto,
+    AuthorPlatformCleanupPreviewDto,
+    PlatformPlanDto,
+} from "@contracts/types/content"
 import {
     AlertTriangle,
     Check,
@@ -37,8 +41,10 @@ import {
     useConfirmPlatformSubscriptionPaymentMutation,
     useCreatePlatformSubscriptionPaymentIntentMutation,
     useMyAuthorPlatformBillingQuery,
+    useMyAuthorPlatformCleanupPreviewQuery,
     usePlatformPlansQuery,
     usePlatformSubscriptionManagerDeploymentQuery,
+    useRunMyAuthorPlatformCleanupMutation,
 } from "@/queries/platform"
 import { queryKeys } from "@/queries/queryKeys"
 import { useAuthStore } from "@/stores/auth-store"
@@ -54,6 +60,7 @@ export function MePlatformBillingPage() {
     const token = useAuthStore((state) => state.token)
     const plansQuery = usePlatformPlansQuery()
     const billingQuery = useMyAuthorPlatformBillingQuery(Boolean(token))
+    const cleanupPreviewQuery = useMyAuthorPlatformCleanupPreviewQuery(Boolean(token))
     const [extraGb, setExtraGb] = useState(0)
     const [checkoutPlan, setCheckoutPlan] = useState<PlatformPlanDto | null>(null)
     const [paymentChainId, setPaymentChainId] = useState<number>(defaultSubscriptionChain.id)
@@ -126,6 +133,7 @@ export function MePlatformBillingPage() {
 
                 <StoragePanel
                     billing={billingQuery.data}
+                    cleanupPreview={cleanupPreviewQuery.data}
                     extraGb={extraGb}
                     maxExtraGb={maxExtraGb}
                     monthlyEstimateCents={estimateCents}
@@ -346,6 +354,7 @@ function FeatureMatrix() {
 
 function StoragePanel({
     billing,
+    cleanupPreview,
     extraGb,
     maxExtraGb,
     monthlyEstimateCents,
@@ -354,6 +363,7 @@ function StoragePanel({
     plan,
 }: {
     billing?: AuthorPlatformBillingDto
+    cleanupPreview?: AuthorPlatformCleanupPreviewDto
     extraGb: number
     maxExtraGb: number
     monthlyEstimateCents: number
@@ -365,6 +375,8 @@ function StoragePanel({
     const total = billing?.totalStorageBytes ?? 1
     const progress = Math.min(100, Math.round((used / total) * 100))
     const estimatedTotal = (plan?.baseStorageBytes ?? 0) + extraGb * GIB
+    const isOverQuota = Boolean(billing && billing.usedStorageBytes > billing.totalStorageBytes)
+    const runCleanupMutation = useRunMyAuthorPlatformCleanupMutation()
 
     return (
         <Card className="rounded-[30px] xl:sticky xl:top-6">
@@ -392,7 +404,10 @@ function StoragePanel({
                     </div>
                     <div className="mt-5 h-3 overflow-hidden rounded-full bg-[var(--line)]">
                         <div
-                            className="h-full rounded-full bg-[var(--accent)] transition-all"
+                            className={[
+                                "h-full rounded-full transition-all",
+                                isOverQuota ? "bg-rose-500" : "bg-[var(--accent)]",
+                            ].join(" ")}
                             style={{ width: `${progress}%` }}
                         />
                     </div>
@@ -402,6 +417,74 @@ function StoragePanel({
                         <span>Free: {formatFileSize(billing?.remainingStorageBytes ?? 0)}</span>
                     </div>
                 </div>
+
+                {isOverQuota ? (
+                    <Card className="rounded-[26px] border-rose-200 bg-rose-50 text-slate-950">
+                        <CardContent className="grid gap-4 p-5">
+                            <div className="flex items-start gap-3">
+                                <AlertTriangle className="mt-0.5 size-5 shrink-0 text-rose-600" />
+                                <div>
+                                    <div className="font-medium">Storage is over quota</div>
+                                    <p className="mt-1 text-sm leading-6 text-slate-600">
+                                        Uploads stay blocked until the author renews billing,
+                                        deletes files, or runs cleanup after the grace period.
+                                    </p>
+                                </div>
+                            </div>
+                            {cleanupPreview?.bytesToDelete ? (
+                                <div className="grid gap-2 rounded-[20px] bg-white/70 p-4 text-sm">
+                                    <SummaryRow
+                                        label="Needs to remove"
+                                        value={formatFileSize(cleanupPreview.bytesToDelete)}
+                                    />
+                                    <SummaryRow
+                                        label="Cleanup selection"
+                                        value={formatFileSize(cleanupPreview.willDeleteBytes)}
+                                    />
+                                    <div className="mt-2 grid gap-2">
+                                        {cleanupPreview.candidates.slice(0, 3).map((item) => (
+                                            <div
+                                                className="flex items-center justify-between gap-3 text-xs"
+                                                key={`${item.kind}:${item.id}`}
+                                            >
+                                                <span className="truncate">{item.fileName}</span>
+                                                <span className="shrink-0">
+                                                    {formatFileSize(item.size)}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : null}
+                            <Button
+                                className="w-fit rounded-full"
+                                disabled={
+                                    cleanupPreview?.status !== "expired" ||
+                                    !cleanupPreview?.bytesToDelete ||
+                                    runCleanupMutation.isPending
+                                }
+                                onClick={() => runCleanupMutation.mutate()}
+                                type="button"
+                                variant="destructive"
+                            >
+                                {runCleanupMutation.isPending
+                                    ? "Running cleanup..."
+                                    : "Run safe cleanup"}
+                            </Button>
+                            {runCleanupMutation.data ? (
+                                <p className="text-sm text-slate-600">
+                                    Cleanup {runCleanupMutation.data.status}:{" "}
+                                    {formatFileSize(runCleanupMutation.data.deletedBytes)} removed.
+                                </p>
+                            ) : null}
+                            {runCleanupMutation.error ? (
+                                <p className="text-sm text-rose-700">
+                                    {runCleanupMutation.error.message}
+                                </p>
+                            ) : null}
+                        </CardContent>
+                    </Card>
+                ) : null}
 
                 <div className="rounded-[26px] border border-[var(--line)] p-5">
                     <div className="flex items-center justify-between gap-3">

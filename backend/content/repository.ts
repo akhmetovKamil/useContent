@@ -3,6 +3,7 @@ import { ObjectId, type Collection, type Document } from "mongodb";
 import { getDb } from "../lib/mongo";
 import type {
   AccessPolicyPresetDoc,
+  AuthorPlatformCleanupLogDoc,
   AuthorPlatformSubscriptionDoc,
   AuthorProfileDoc,
   PostCommentDoc,
@@ -108,6 +109,19 @@ export async function findAuthorPlatformSubscriptionByAuthorId(
   return subscriptions.findOne({ authorId });
 }
 
+export async function updateAuthorPlatformSubscriptionByAuthorId(
+  authorId: ObjectId,
+  update: Partial<
+    Pick<
+      AuthorPlatformSubscriptionDoc,
+      "cleanupScheduledAt" | "lastCleanupAt" | "updatedAt"
+    >
+  >,
+): Promise<void> {
+  const subscriptions = await getAuthorPlatformSubscriptionsCollection();
+  await subscriptions.updateOne({ authorId }, { $set: update });
+}
+
 export async function upsertAuthorPlatformSubscription(
   doc: Omit<AuthorPlatformSubscriptionDoc, "_id" | "createdAt" | "updatedAt">,
   now: Date,
@@ -138,6 +152,23 @@ export async function upsertAuthorPlatformSubscription(
     },
     { upsert: true, returnDocument: "after" },
   ) as Promise<AuthorPlatformSubscriptionDoc>;
+}
+
+export async function getAuthorPlatformCleanupLogsCollection(): Promise<
+  Collection<AuthorPlatformCleanupLogDoc>
+> {
+  await ensureIndexes();
+  return getCollection<AuthorPlatformCleanupLogDoc>(
+    "author_platform_cleanup_logs",
+  );
+}
+
+export async function createAuthorPlatformCleanupLog(
+  doc: Omit<AuthorPlatformCleanupLogDoc, "_id">,
+): Promise<AuthorPlatformCleanupLogDoc> {
+  const logs = await getAuthorPlatformCleanupLogsCollection();
+  const result = await logs.insertOne(doc as AuthorPlatformCleanupLogDoc);
+  return { _id: result.insertedId, ...doc };
 }
 
 export async function findAuthorProfileByUserId(
@@ -1234,6 +1265,7 @@ async function ensureIndexes(): Promise<void> {
   const [
     users,
     authorProfiles,
+    authorPlatformCleanupLogs,
     accessPolicyPresets,
     posts,
     projects,
@@ -1251,6 +1283,7 @@ async function ensureIndexes(): Promise<void> {
   ] = await Promise.all([
     getCollection<UserDoc>("users"),
     getCollection<AuthorProfileDoc>("author_profiles"),
+    getCollection<AuthorPlatformCleanupLogDoc>("author_platform_cleanup_logs"),
     getCollection<AccessPolicyPresetDoc>("access_policy_presets"),
     getCollection<PostDoc>("posts"),
     getCollection<ProjectDoc>("projects"),
@@ -1344,6 +1377,7 @@ async function ensureIndexes(): Promise<void> {
       },
     ),
     authorPlatformSubscriptions.createIndex({ authorId: 1 }, { unique: true }),
+    authorPlatformCleanupLogs.createIndex({ authorId: 1, createdAt: -1 }),
     contractDeployments.createIndex(
       { chainId: 1, contractName: 1 },
       { unique: true },
