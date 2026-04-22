@@ -17,6 +17,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { formatFileSize } from "@/utils/format"
 
 interface ManagedContentItem {
     id: string
@@ -25,6 +26,7 @@ interface ManagedContentItem {
     policyMode: PolicyMode
     content?: string
     description?: string
+    totalSize?: number
 }
 
 interface SavedAccessPolicyOption {
@@ -299,6 +301,9 @@ function ContentCard({
                     <CardTitle>{item.title}</CardTitle>
                     <Badge>{item.status}</Badge>
                     <Badge>{item.policyMode}</Badge>
+                    {kind === "project" && typeof item.totalSize === "number" ? (
+                        <Badge>{formatFileSize(item.totalSize)}</Badge>
+                    ) : null}
                 </div>
             </CardHeader>
             <CardContent>

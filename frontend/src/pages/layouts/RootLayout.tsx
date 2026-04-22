@@ -3,6 +3,7 @@ import {
     FolderKanban,
     Home,
     Info,
+    Landmark,
     LayoutDashboard,
     ReceiptText,
     Settings,
@@ -46,6 +47,7 @@ const authorNavItems: NavItemConfig[] = [
     { to: "/me/posts", label: "Posts", icon: FileText },
     { to: "/me/projects", label: "Projects", icon: FolderKanban },
     { to: "/me/subscription-plan", label: "Access", icon: ShieldCheck },
+    { to: "/me/platform-billing", label: "Billing", icon: Landmark },
 ]
 
 export function RootLayout() {

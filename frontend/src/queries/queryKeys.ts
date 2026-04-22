@@ -7,6 +7,8 @@ export const queryKeys = {
     myReaderSubscriptions: ["me", "subscriptions"] as const,
     myFeedPosts: ["me", "feed"] as const,
     myAuthorSubscribers: ["me", "author", "subscribers"] as const,
+    platformPlans: ["platform", "plans"] as const,
+    myAuthorPlatformBilling: ["me", "author", "platform-billing"] as const,
     myAccessPolicies: ["me", "access-policies"] as const,
     mySubscriptionPlan: ["me", "subscription-plan"] as const,
     mySubscriptionPlans: ["me", "subscription-plans"] as const,

@@ -8,6 +8,7 @@ import { RootLayout } from "../pages/layouts/RootLayout"
 import { MeAuthorPage } from "../pages/me/MeAuthorPage"
 import { MeFeedPage } from "../pages/me/MeFeedPage"
 import { MePage } from "../pages/me/MePage"
+import { MePlatformBillingPage } from "../pages/me/MePlatformBillingPage"
 import { MePostsPage } from "../pages/me/MePostsPage"
 import { MeProfilePage } from "../pages/me/MeProfilePage"
 import { MeProjectsPage } from "../pages/me/MeProjectsPage"
@@ -47,6 +48,7 @@ export const router = createBrowserRouter([
                     { path: "me/posts", element: <MePostsPage /> },
                     { path: "me/projects", element: <MeProjectsPage /> },
                     { path: "me/subscription-plan", element: <MeSubscriptionPlanPage /> },
+                    { path: "me/platform-billing", element: <MePlatformBillingPage /> },
                 ],
             },
             { path: "authors/:slug/feed", element: <AuthorFeedPage /> },

@@ -4,6 +4,7 @@ import { Link } from "react-router-dom"
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { formatFileSize } from "@/utils/format"
 
 type ProjectItem = ProjectDto | FeedProjectDto
 
@@ -103,14 +104,4 @@ function ProjectCard({ project, showAuthor }: { project: ProjectItem; showAuthor
             </CardContent>
         </Card>
     )
-}
-
-function formatFileSize(size: number) {
-    if (size < 1024) {
-        return `${size} B`
-    }
-    if (size < 1024 * 1024) {
-        return `${(size / 1024).toFixed(1)} KB`
-    }
-    return `${(size / 1024 / 1024).toFixed(1)} MB`
 }
