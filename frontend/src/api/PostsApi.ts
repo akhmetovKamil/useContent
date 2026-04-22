@@ -6,7 +6,7 @@ import type {
     PostDto,
     RecordPostViewInput,
     UpdatePostInput,
-} from "@contracts/types/content"
+} from "@shared/types/content"
 
 import { http } from "@/utils/api/http"
 import { downloadBlob } from "@/utils/download-blob"

@@ -1,4 +1,4 @@
-import type { AccessPolicyConditionDto, AuthorAccessPolicyDto } from "@contracts/types/content"
+import type { AccessPolicyConditionDto, AuthorAccessPolicyDto } from "@shared/types/content"
 import {
     CheckCircle2,
     Gem,

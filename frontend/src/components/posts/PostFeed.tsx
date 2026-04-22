@@ -1,4 +1,4 @@
-import type { FeedPostDto, PostDto } from "@contracts/types/content"
+import type { FeedPostDto, PostDto } from "@shared/types/content"
 import { Eye, Heart, LockKeyhole, MessageCircle } from "lucide-react"
 import { useState } from "react"
 import { Link } from "react-router-dom"

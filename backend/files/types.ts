@@ -4,7 +4,7 @@ import type {
   CreateProjectFolderInput,
   ProjectNodeDto,
   UpdateProjectNodeInput,
-} from "../../contracts/types/content";
+} from "../../shared/types/content";
 
 export interface FileDoc {
   _id: ObjectId;

@@ -2,7 +2,7 @@ import type {
     CreateAuthorProfileInput,
     UpdateAuthorProfileInput,
     UpdateMyProfileInput,
-} from "@contracts/types/content"
+} from "@shared/types/content"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { profileApi } from "@/api/ProfileApi"

@@ -2,7 +2,7 @@ import type {
     AccessPolicyPresetDto,
     CreateAccessPolicyPresetInput,
     UpdateAccessPolicyPresetInput,
-} from "@contracts/types/content"
+} from "@shared/types/content"
 
 import { http } from "@/utils/api/http"
 

@@ -47,7 +47,7 @@ async function main() {
   const chainId = network.chainId.toString();
   const deploymentPath = resolve(
     import.meta.dirname,
-    "../../contracts/deployments",
+    "../../shared/deployments",
     `${chainId}.json`,
   );
 

@@ -1,4 +1,4 @@
-import type { AccessPolicyPresetDto, SubscriptionPlanDto } from "@contracts/types/content"
+import type { AccessPolicyPresetDto, SubscriptionPlanDto } from "@shared/types/content"
 import { ArrowUpRight, FileText, Layers3, Plus, ShieldCheck, Sparkles } from "lucide-react"
 import type { ReactNode } from "react"
 import { useEffect, useState } from "react"

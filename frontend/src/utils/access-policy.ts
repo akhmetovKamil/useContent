@@ -3,7 +3,7 @@ import type {
     NftOwnershipPolicyNode,
     PolicyMode,
     TokenBalancePolicyNode,
-} from "@contracts/types/access"
+} from "@shared/types/access"
 import type {
     AccessPolicyInput,
     AccessPolicyInputAndNode,
@@ -12,7 +12,7 @@ import type {
     AccessPolicyInputOrNode,
     AccessPolicyInputSubscriptionNode,
     AccessPolicyInputTokenBalanceNode,
-} from "@contracts/types/content"
+} from "@shared/types/content"
 import { v4 as uuidv4 } from "uuid"
 
 export type AccessRuleType = "subscription" | "token_balance" | "nft_ownership"

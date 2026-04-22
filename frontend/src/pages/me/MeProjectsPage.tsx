@@ -1,4 +1,4 @@
-import type { ProjectDto } from "@contracts/types/content"
+import type { ProjectDto } from "@shared/types/content"
 import { useEffect, useState } from "react"
 
 import { ContentManagerPage } from "@/components/content-manager/ContentManagerPage"

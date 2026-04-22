@@ -18,7 +18,7 @@
         "baseUrl": ".",
         "paths": {
             "@/*": ["src/*"],
-            "@contracts/*": ["../contracts/*"]
+            "@shared/*": ["../shared/*"]
         },
 
         /* Linting */
@@ -27,5 +27,5 @@
         "erasableSyntaxOnly": true,
         "noFallthroughCasesInSwitch": true
     },
-    "include": ["src", "../contracts/types/**/*.ts", "../contracts/abi/**/*.ts"]
+    "include": ["src", "../shared/types/**/*.ts", "../shared/abi/**/*.ts"]
 }

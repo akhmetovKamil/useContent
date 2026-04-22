@@ -8,7 +8,7 @@ import type {
     UpdateAuthorProfileInput,
     UpdateMyProfileInput,
     UserProfileDto,
-} from "@contracts/types/content"
+} from "@shared/types/content"
 import axios from "axios"
 
 import { http } from "@/utils/api/http"

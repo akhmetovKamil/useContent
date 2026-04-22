@@ -5,7 +5,7 @@ import type {
     FeedPostDto,
     FeedProjectDto,
     SubscriptionPlanDto,
-} from "@contracts/types/content"
+} from "@shared/types/content"
 
 import { http } from "@/utils/api/http"
 

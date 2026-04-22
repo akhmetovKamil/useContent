@@ -1,4 +1,4 @@
-import type { AuthorProfileDto, CreateAuthorProfileInput } from "@contracts/types/content"
+import type { AuthorProfileDto, CreateAuthorProfileInput } from "@shared/types/content"
 import { useEffect, useMemo, useState, type FormEvent } from "react"
 
 import { Button } from "@/components/ui/button"

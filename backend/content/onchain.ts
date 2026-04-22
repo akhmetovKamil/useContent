@@ -1,7 +1,7 @@
 import { APIError } from "encore.dev/api";
 import { Contract, Interface, JsonRpcProvider, isAddress } from "ethers";
-import { platformSubscriptionManagerAbi } from "../../contracts/abi/PlatformSubscriptionManager";
-import { subscriptionManagerAbi } from "../../contracts/abi/SubscriptionManager";
+import { platformSubscriptionManagerAbi } from "../../shared/abi/platform-subscription-manager.abi";
+import { subscriptionManagerAbi } from "../../shared/abi/subscription-manager.abi";
 import type { AccessPolicy, AccessPolicyNode } from "../domain/access";
 
 const managerInterface = new Interface(subscriptionManagerAbi);

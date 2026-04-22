@@ -52,7 +52,7 @@ import type {
   UpsertContractDeploymentInput,
   UpsertSubscriptionPlanInput,
   UserProfileDto,
-} from "../../contracts/types/content";
+} from "../../shared/types/content";
 
 export type { PlatformBillingStatus, PlatformFeature };
 

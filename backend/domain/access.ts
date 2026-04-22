@@ -9,7 +9,7 @@ export {
   type PublicPolicyNode,
   type SubscriptionPolicyNode,
   type TokenBalancePolicyNode,
-} from "../../contracts/types/access";
+} from "../../shared/types/access";
 
 import {
   ACCESS_POLICY_VERSION,
@@ -18,7 +18,7 @@ import {
   type NftOwnershipPolicyNode,
   type SubscriptionPolicyNode,
   type TokenBalancePolicyNode,
-} from "../../contracts/types/access";
+} from "../../shared/types/access";
 
 export interface SubscriptionGrant {
   authorId: string;

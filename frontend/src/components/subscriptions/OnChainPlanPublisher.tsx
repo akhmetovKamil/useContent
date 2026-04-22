@@ -1,5 +1,5 @@
-import { subscriptionManagerAbi } from "@contracts/abi/SubscriptionManager"
-import type { UpsertSubscriptionPlanInput } from "@contracts/types/content"
+import { subscriptionManagerAbi } from "@shared/abi/subscription-manager.abi"
+import type { UpsertSubscriptionPlanInput } from "@shared/types/content"
 import { useState } from "react"
 import { useAccount, usePublicClient, useWriteContract } from "wagmi"
 

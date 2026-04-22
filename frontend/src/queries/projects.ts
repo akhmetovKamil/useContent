@@ -4,7 +4,7 @@ import type {
     ProjectDto,
     UpdateProjectInput,
     UpdateProjectNodeInput,
-} from "@contracts/types/content"
+} from "@shared/types/content"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { authorsApi } from "@/api/AuthorsApi"

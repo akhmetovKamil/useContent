@@ -56,5 +56,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: platform-subscription-manager-deployment-${{ inputs.network }}
-          path: contracts/deployments/*.json
+          path: shared/deployments/*.json
           if-no-files-found: error

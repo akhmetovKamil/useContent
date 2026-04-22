@@ -1,4 +1,4 @@
-import type { PostDto } from "@contracts/types/content"
+import type { PostDto } from "@shared/types/content"
 import { useState } from "react"
 import { Link } from "react-router-dom"
 

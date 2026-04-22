@@ -27,7 +27,7 @@ RUN npm ci
 
 WORKDIR /app
 COPY ./frontend ./frontend
-COPY ./contracts ./contracts
+COPY ./shared ./shared
 
 WORKDIR /app/frontend
 RUN npm run build

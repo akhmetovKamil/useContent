@@ -1,9 +1,9 @@
-import { platformSubscriptionManagerAbi } from "@contracts/abi/PlatformSubscriptionManager"
+import { platformSubscriptionManagerAbi } from "@shared/abi/platform-subscription-manager.abi"
 import type {
     AuthorPlatformBillingDto,
     AuthorPlatformCleanupPreviewDto,
     PlatformPlanDto,
-} from "@contracts/types/content"
+} from "@shared/types/content"
 import {
     AlertTriangle,
     Check,

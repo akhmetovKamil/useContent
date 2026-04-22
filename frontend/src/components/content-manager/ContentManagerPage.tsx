@@ -1,5 +1,5 @@
-import type { PolicyMode } from "@contracts/types/access"
-import type { ContentStatus } from "@contracts/types/content"
+import type { PolicyMode } from "@shared/types/access"
+import type { ContentStatus } from "@shared/types/content"
 import { useState } from "react"
 
 import { Badge } from "@/components/ui/badge"

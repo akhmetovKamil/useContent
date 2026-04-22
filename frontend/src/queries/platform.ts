@@ -1,7 +1,7 @@
 import type {
     ConfirmSubscriptionPaymentInput,
     CreatePlatformSubscriptionPaymentIntentInput,
-} from "@contracts/types/content"
+} from "@shared/types/content"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { platformApi } from "@/api/PlatformApi"

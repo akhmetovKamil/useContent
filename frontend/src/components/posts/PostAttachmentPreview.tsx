@@ -1,4 +1,4 @@
-import type { PostAttachmentDto } from "@contracts/types/content"
+import type { PostAttachmentDto } from "@shared/types/content"
 import { Download } from "lucide-react"
 import { useEffect, useState } from "react"
 
