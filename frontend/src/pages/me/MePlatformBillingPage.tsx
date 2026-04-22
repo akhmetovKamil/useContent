@@ -1,3 +1,4 @@
+import { platformSubscriptionManagerAbi } from "@contracts/abi/PlatformSubscriptionManager"
 import type { AuthorPlatformBillingDto, PlatformPlanDto } from "@contracts/types/content"
 import {
     AlertTriangle,
@@ -11,6 +12,8 @@ import {
     PackageCheck,
 } from "lucide-react"
 import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
+import { useAccount, usePublicClient, useWriteContract } from "wagmi"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -23,9 +26,27 @@ import {
     DrawerTitle,
 } from "@/components/ui/drawer"
 import { Eyebrow, PageSection } from "@/components/ui/page"
-import { useMyAuthorPlatformBillingQuery, usePlatformPlansQuery } from "@/queries/platform"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import {
+    useConfirmPlatformSubscriptionPaymentMutation,
+    useCreatePlatformSubscriptionPaymentIntentMutation,
+    useMyAuthorPlatformBillingQuery,
+    usePlatformPlansQuery,
+    usePlatformSubscriptionManagerDeploymentQuery,
+} from "@/queries/platform"
+import { queryKeys } from "@/queries/queryKeys"
 import { useAuthStore } from "@/stores/auth-store"
+import { defaultSubscriptionChain, supportedChainOptions } from "@/utils/config/chains"
+import { getTokenPresets } from "@/utils/config/tokens"
 import { formatFileSize, formatUsd } from "@/utils/format"
+import { erc20Abi } from "@/utils/web3/erc20"
+import { toAddress } from "@/utils/web3/subscriptions"
 
 const GIB = 1024 * 1024 * 1024
 
@@ -35,6 +56,13 @@ export function MePlatformBillingPage() {
     const billingQuery = useMyAuthorPlatformBillingQuery(Boolean(token))
     const [extraGb, setExtraGb] = useState(0)
     const [checkoutPlan, setCheckoutPlan] = useState<PlatformPlanDto | null>(null)
+    const [paymentChainId, setPaymentChainId] = useState<number>(defaultSubscriptionChain.id)
+    const [paymentTokenAddress, setPaymentTokenAddress] = useState(() => {
+        const firstToken = getTokenPresets(defaultSubscriptionChain.id).find(
+            (preset) => preset.kind === "erc20"
+        )
+        return firstToken?.address ?? "0x0000000000000000000000000000000000000000"
+    })
     const plans = plansQuery.data ?? []
     const basicPlan = plans.find((plan) => plan.code === "basic")
     const selectedPlan = checkoutPlan ?? basicPlan ?? null
@@ -87,6 +115,7 @@ export function MePlatformBillingPage() {
                                 onOpenCheckout={() => {
                                     setCheckoutPlan(plan)
                                     setExtraGb(0)
+                                    setPaymentTokenAddress(getDefaultTokenAddress(paymentChainId))
                                 }}
                                 plan={plan}
                             />
@@ -105,6 +134,7 @@ export function MePlatformBillingPage() {
                     onOpenCheckout={() => {
                         if (selectedPlan) {
                             setCheckoutPlan(selectedPlan)
+                            setPaymentTokenAddress(getDefaultTokenAddress(paymentChainId))
                         }
                     }}
                 />
@@ -117,9 +147,17 @@ export function MePlatformBillingPage() {
                 <DrawerContent onClose={() => setCheckoutPlan(null)} side="right">
                     {checkoutPlan ? (
                         <CheckoutPreview
+                            chainId={paymentChainId}
                             extraGb={extraGb}
                             monthlyEstimateCents={estimateCents}
+                            onChainIdChange={(chainId) => {
+                                setPaymentChainId(chainId)
+                                setPaymentTokenAddress(getDefaultTokenAddress(chainId))
+                            }}
+                            onSuccess={() => setCheckoutPlan(null)}
+                            onTokenAddressChange={setPaymentTokenAddress}
                             plan={checkoutPlan}
+                            tokenAddress={paymentTokenAddress}
                         />
                     ) : null}
                 </DrawerContent>
@@ -424,25 +462,184 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 }
 
 function CheckoutPreview({
+    chainId,
     extraGb,
     monthlyEstimateCents,
+    onChainIdChange,
+    onSuccess,
+    onTokenAddressChange,
     plan,
+    tokenAddress,
 }: {
+    chainId: number
     extraGb: number
     monthlyEstimateCents: number
+    onChainIdChange: (chainId: number) => void
+    onSuccess: () => void
+    onTokenAddressChange: (address: `0x${string}`) => void
     plan: PlatformPlanDto
+    tokenAddress: `0x${string}`
 }) {
+    const { address } = useAccount()
+    const queryClient = useQueryClient()
+    const publicClient = usePublicClient({ chainId })
+    const { writeContractAsync } = useWriteContract()
+    const createIntentMutation = useCreatePlatformSubscriptionPaymentIntentMutation()
+    const confirmPaymentMutation = useConfirmPlatformSubscriptionPaymentMutation()
+    const deploymentQuery = usePlatformSubscriptionManagerDeploymentQuery(chainId)
+    const [status, setStatus] = useState<string | null>(null)
+    const [error, setError] = useState<string | null>(null)
+    const tokenOptions = getTokenPresets(chainId).filter(
+        (
+            preset
+        ): preset is ReturnType<typeof getTokenPresets>[number] & { address: `0x${string}` } =>
+            preset.kind === "erc20" && Boolean(preset.address)
+    )
+    const selectedToken = tokenOptions.find(
+        (token) => token.address.toLowerCase() === tokenAddress.toLowerCase()
+    )
+    const disabled =
+        !address ||
+        !publicClient ||
+        !deploymentQuery.data ||
+        createIntentMutation.isPending ||
+        confirmPaymentMutation.isPending
+
+    async function pay() {
+        if (!address || !publicClient) {
+            return
+        }
+
+        setError(null)
+        setStatus("Creating platform payment intent...")
+
+        try {
+            const intent = await createIntentMutation.mutateAsync({
+                planCode: plan.code,
+                extraStorageGb: extraGb,
+                chainId,
+                tokenAddress,
+            })
+            const managerAddress = toAddress(intent.contractAddress)
+            const token = toAddress(intent.tokenAddress)
+            const amount = BigInt(intent.amount)
+
+            setStatus("Checking token allowance...")
+            const allowance = await publicClient.readContract({
+                address: token,
+                abi: erc20Abi,
+                functionName: "allowance",
+                args: [address, managerAddress],
+            })
+
+            if (allowance < amount) {
+                setStatus("Waiting for token approve...")
+                const approveHash = await writeContractAsync({
+                    address: token,
+                    abi: erc20Abi,
+                    functionName: "approve",
+                    chainId,
+                    args: [managerAddress, amount],
+                })
+                await publicClient.waitForTransactionReceipt({ hash: approveHash })
+            }
+
+            setStatus("Paying platform subscription...")
+            const paymentHash = await writeContractAsync({
+                address: managerAddress,
+                abi: platformSubscriptionManagerAbi,
+                functionName: "subscribe",
+                chainId,
+                args: [intent.tierKey as `0x${string}`, intent.extraStorageGb],
+            })
+
+            setStatus("Confirming billing state...")
+            await publicClient.waitForTransactionReceipt({ hash: paymentHash })
+            await confirmPaymentMutation.mutateAsync({
+                intentId: intent.id,
+                input: { txHash: paymentHash },
+            })
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: queryKeys.myAuthorPlatformBilling }),
+                queryClient.invalidateQueries({ queryKey: queryKeys.myProjects() }),
+            ])
+            setStatus("Platform subscription active")
+            onSuccess()
+        } catch (caught) {
+            setError(caught instanceof Error ? caught.message : "Failed to activate billing")
+            setStatus(null)
+        }
+    }
+
     return (
         <div className="grid gap-6">
             <DrawerHeader>
-                <Eyebrow>payment preview</Eyebrow>
+                <Eyebrow>platform checkout</Eyebrow>
                 <DrawerTitle>{plan.title} creator plan</DrawerTitle>
                 <DrawerDescription>
-                    The real wallet payment flow comes in the next contract/backend revisions. This
-                    drawer keeps the future checkout shape visible without pretending that payment
-                    is already active.
+                    Pay the platform subscription from your connected wallet. This unlocks project
+                    creation and updates your storage quota after backend confirmation.
                 </DrawerDescription>
             </DrawerHeader>
+            <div className="grid gap-4 md:grid-cols-2">
+                <label className="grid gap-2 text-sm">
+                    Network
+                    <Select
+                        onValueChange={(value) => onChainIdChange(Number(value))}
+                        value={String(chainId)}
+                    >
+                        <SelectTrigger>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {supportedChainOptions.map((chain) => (
+                                <SelectItem key={chain.id} value={String(chain.id)}>
+                                    {chain.shortName} · {chain.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </label>
+                <label className="grid gap-2 text-sm">
+                    Payment token
+                    <Select
+                        onValueChange={(value) => onTokenAddressChange(value as `0x${string}`)}
+                        value={tokenAddress}
+                    >
+                        <SelectTrigger>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {tokenOptions.map((token) => (
+                                <SelectItem key={token.address} value={token.address}>
+                                    {token.symbol} · {token.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </label>
+            </div>
+            {deploymentQuery.data ? (
+                <Card className="rounded-[24px] bg-[var(--accent-soft)]">
+                    <CardContent className="grid gap-2 p-4 text-sm">
+                        <SummaryRow
+                            label="Manager"
+                            value={shortAddress(deploymentQuery.data.address)}
+                        />
+                        <SummaryRow
+                            label="Token"
+                            value={selectedToken?.symbol ?? shortAddress(tokenAddress)}
+                        />
+                    </CardContent>
+                </Card>
+            ) : (
+                <Card className="rounded-[24px] border-amber-200 bg-amber-50 text-slate-950">
+                    <CardContent className="p-4 text-sm leading-6">
+                        Deploy `PlatformSubscriptionManager` for this network first. The address is
+                        loaded from backend registry.
+                    </CardContent>
+                </Card>
+            )}
             <Card className="rounded-[28px]">
                 <CardContent className="grid gap-4 p-5">
                     <SummaryRow label="Base plan" value={formatUsd(plan.priceUsdCents)} />
@@ -459,11 +656,30 @@ function CheckoutPreview({
                     />
                 </CardContent>
             </Card>
-            <Button className="rounded-full" disabled type="button">
-                On-chain payment coming next
+            <Button
+                className="rounded-full"
+                disabled={disabled}
+                onClick={() => void pay()}
+                type="button"
+            >
+                <CreditCard className="size-4" />
+                {!address ? "Connect wallet to pay" : "Pay and activate"}
             </Button>
+            {status ? <p className="text-sm text-[var(--muted)]">{status}</p> : null}
+            {error ? <p className="text-sm text-rose-600">{error}</p> : null}
         </div>
     )
+}
+
+function getDefaultTokenAddress(chainId: number): `0x${string}` {
+    return (
+        getTokenPresets(chainId).find((preset) => preset.kind === "erc20")?.address ??
+        "0x0000000000000000000000000000000000000000"
+    )
+}
+
+function shortAddress(value: string) {
+    return value.length > 12 ? `${value.slice(0, 6)}...${value.slice(-4)}` : value
 }
 
 function bytesToGb(bytes: number) {
