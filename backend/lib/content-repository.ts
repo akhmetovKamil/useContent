@@ -1,6 +1,6 @@
 import { secret } from "encore.dev/config";
 import { ObjectId, type Collection, type Document } from "mongodb";
-import { getDb } from "../lib/mongo";
+import { getDb } from "./mongo";
 import type {
   AccessPolicyPresetDoc,
   AuthorPlatformCleanupLogDoc,
@@ -19,7 +19,7 @@ import type {
   SubscriptionPaymentIntentDoc,
   SubscriptionPlanDoc,
   UserDoc,
-} from "./types";
+} from "./content-types";
 
 const mongoUri = secret("MongoUri");
 

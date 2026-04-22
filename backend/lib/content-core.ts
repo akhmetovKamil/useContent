@@ -23,8 +23,8 @@ import {
   verifyPlatformSubscriptionPayment,
   verifyPlanRegistration,
   verifySubscriptionPayment,
-} from "./onchain";
-import * as repo from "./repository";
+} from "../content/onchain";
+import * as repo from "./content-repository";
 import type {
   AccessPolicyPresetDoc,
   AccessPolicyConditionResponse,
@@ -87,7 +87,7 @@ import type {
   UpdateProjectRequest,
   UserDoc,
   UserProfileResponse,
-} from "./types";
+} from "./content-types";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const GIB = 1024 * 1024 * 1024;

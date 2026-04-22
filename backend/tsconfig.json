@@ -30,5 +30,6 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
-  "include": ["./**/*.ts", "../shared/types/**/*.ts", "../shared/abi/**/*.ts"]
+  "include": ["./**/*.ts", "../shared/types/**/*.ts", "../shared/abi/**/*.ts"],
+  "exclude": ["encore.gen/internal/entrypoints/**/*.ts"]
 }

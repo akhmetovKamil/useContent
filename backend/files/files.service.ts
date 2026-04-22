@@ -6,11 +6,11 @@ import {
   getObject,
   putObject,
 } from "../storage/object-storage";
-import * as contentRepo from "../content/repository";
-import * as contentService from "../content/content.service";
+import * as contentService from "../lib/content-core";
+import * as contentRepo from "../lib/content-repository";
 import * as repo from "./repository";
 import type { FileDoc, FileResponse, ProjectNodeResponse } from "./types";
-import type { ProjectDoc, ProjectNodeDoc } from "../content/types";
+import type { ProjectDoc, ProjectNodeDoc } from "../lib/content-types";
 
 export function toResponse(doc: FileDoc): FileResponse {
   return {

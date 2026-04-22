@@ -37,8 +37,8 @@ vi.mock("./onchain", () => {
   };
 });
 
-import * as repo from "./repository";
 import { verifyPlatformSubscriptionPayment } from "./onchain";
+import * as repo from "../lib/content-repository";
 import {
   buildAccessPolicyFromInput,
   buildAuthorPlatformBilling,
@@ -49,10 +49,10 @@ import {
   listPlatformPlans,
   selectCleanupCandidates,
   toAuthorStorageUsageResponse,
-} from "./content.service";
-import type { AuthorProfileDoc } from "./types";
+} from "../lib/content-core";
+import type { AuthorProfileDoc } from "../lib/content-types";
 
-vi.mock("./repository", () => {
+vi.mock("../lib/content-repository", () => {
   return {
     findSubscriptionPlanByAuthorIdAndCode: vi.fn(),
     findUserByPrimaryWallet: vi.fn(),
