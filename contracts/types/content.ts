@@ -302,6 +302,25 @@ export interface SubscriptionPaymentIntentDto {
   updatedAt: string;
 }
 
+export interface PlatformSubscriptionPaymentIntentDto {
+  id: string;
+  authorId: string;
+  walletAddress: string;
+  planCode: PlatformPlanDto["code"];
+  tierKey: string;
+  extraStorageGb: number;
+  chainId: number;
+  tokenAddress: string;
+  contractAddress: string;
+  amount: string;
+  status: "pending" | "submitted" | "confirmed" | "expired" | "cancelled";
+  txHash: string | null;
+  validUntil: string | null;
+  expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface SubscriptionPlanDto {
   id: string;
   authorId: string;
@@ -473,6 +492,13 @@ export interface UpdateAccessPolicyPresetInput {
 
 export interface CreateSubscriptionPaymentIntentInput {
   planCode?: string;
+}
+
+export interface CreatePlatformSubscriptionPaymentIntentInput {
+  planCode: PlatformPlanDto["code"];
+  extraStorageGb: number;
+  chainId: number;
+  tokenAddress: string;
 }
 
 export interface ConfirmSubscriptionPaymentInput {

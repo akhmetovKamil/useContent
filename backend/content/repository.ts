@@ -14,6 +14,7 @@ import type {
   ProjectNodeDoc,
   SubscriptionEntitlementDoc,
   ContractDeploymentDoc,
+  PlatformSubscriptionPaymentIntentDoc,
   SubscriptionPaymentIntentDoc,
   SubscriptionPlanDoc,
   UserDoc,
@@ -105,6 +106,38 @@ export async function findAuthorPlatformSubscriptionByAuthorId(
 ): Promise<AuthorPlatformSubscriptionDoc | null> {
   const subscriptions = await getAuthorPlatformSubscriptionsCollection();
   return subscriptions.findOne({ authorId });
+}
+
+export async function upsertAuthorPlatformSubscription(
+  doc: Omit<AuthorPlatformSubscriptionDoc, "_id" | "createdAt" | "updatedAt">,
+  now: Date,
+): Promise<AuthorPlatformSubscriptionDoc> {
+  const subscriptions = await getAuthorPlatformSubscriptionsCollection();
+  return subscriptions.findOneAndUpdate(
+    { authorId: doc.authorId },
+    {
+      $set: {
+        walletAddress: doc.walletAddress,
+        planCode: doc.planCode,
+        status: doc.status,
+        baseStorageBytes: doc.baseStorageBytes,
+        extraStorageBytes: doc.extraStorageBytes,
+        totalStorageBytes: doc.totalStorageBytes,
+        features: doc.features,
+        validUntil: doc.validUntil,
+        graceUntil: doc.graceUntil,
+        cleanupScheduledAt: doc.cleanupScheduledAt,
+        lastCleanupAt: doc.lastCleanupAt,
+        lastTxHash: doc.lastTxHash,
+        updatedAt: now,
+      },
+      $setOnInsert: {
+        authorId: doc.authorId,
+        createdAt: now,
+      },
+    },
+    { upsert: true, returnDocument: "after" },
+  ) as Promise<AuthorPlatformSubscriptionDoc>;
 }
 
 export async function findAuthorProfileByUserId(
@@ -1140,6 +1173,59 @@ export async function listSubscriptionPaymentIntentsByWallet(
     .toArray();
 }
 
+export async function getPlatformSubscriptionPaymentIntentsCollection(): Promise<
+  Collection<PlatformSubscriptionPaymentIntentDoc>
+> {
+  await ensureIndexes();
+  return getCollection<PlatformSubscriptionPaymentIntentDoc>(
+    "platform_subscription_payment_intents",
+  );
+}
+
+export async function createPlatformSubscriptionPaymentIntent(
+  doc: Omit<PlatformSubscriptionPaymentIntentDoc, "_id">,
+): Promise<PlatformSubscriptionPaymentIntentDoc> {
+  const intents = await getPlatformSubscriptionPaymentIntentsCollection();
+  const insertDoc = { ...doc } as Partial<PlatformSubscriptionPaymentIntentDoc>;
+  if (insertDoc.txHash === null) {
+    delete insertDoc.txHash;
+  }
+
+  const result = await intents.insertOne(
+    insertDoc as PlatformSubscriptionPaymentIntentDoc,
+  );
+  return { _id: result.insertedId, ...doc };
+}
+
+export async function findPlatformSubscriptionPaymentIntentByIdAndWallet(
+  id: ObjectId,
+  walletAddress: string,
+): Promise<PlatformSubscriptionPaymentIntentDoc | null> {
+  const intents = await getPlatformSubscriptionPaymentIntentsCollection();
+  return intents.findOne({ _id: id, walletAddress });
+}
+
+export async function findPlatformSubscriptionPaymentIntentByTxHash(
+  txHash: string,
+): Promise<PlatformSubscriptionPaymentIntentDoc | null> {
+  const intents = await getPlatformSubscriptionPaymentIntentsCollection();
+  return intents.findOne({ txHash });
+}
+
+export async function updatePlatformSubscriptionPaymentIntent(
+  id: ObjectId,
+  update: Partial<
+    Omit<PlatformSubscriptionPaymentIntentDoc, "_id" | "createdAt">
+  >,
+): Promise<PlatformSubscriptionPaymentIntentDoc | null> {
+  const intents = await getPlatformSubscriptionPaymentIntentsCollection();
+  return intents.findOneAndUpdate(
+    { _id: id },
+    { $set: update },
+    { returnDocument: "after" },
+  );
+}
+
 async function ensureIndexes(): Promise<void> {
   if (indexesReady) {
     return;
@@ -1159,6 +1245,8 @@ async function ensureIndexes(): Promise<void> {
     subscriptionPlans,
     subscriptionEntitlements,
     subscriptionPaymentIntents,
+    platformSubscriptionPaymentIntents,
+    authorPlatformSubscriptions,
     contractDeployments,
   ] = await Promise.all([
     getCollection<UserDoc>("users"),
@@ -1174,6 +1262,12 @@ async function ensureIndexes(): Promise<void> {
     getCollection<SubscriptionPlanDoc>("subscription_plans"),
     getCollection<SubscriptionEntitlementDoc>("subscription_entitlements"),
     getCollection<SubscriptionPaymentIntentDoc>("subscription_payment_intents"),
+    getCollection<PlatformSubscriptionPaymentIntentDoc>(
+      "platform_subscription_payment_intents",
+    ),
+    getCollection<AuthorPlatformSubscriptionDoc>(
+      "author_platform_subscriptions",
+    ),
     getCollection<ContractDeploymentDoc>("contract_deployments"),
   ]);
 
@@ -1238,6 +1332,18 @@ async function ensureIndexes(): Promise<void> {
         partialFilterExpression: { txHash: { $type: "string" } },
       },
     ),
+    platformSubscriptionPaymentIntents.createIndex({
+      walletAddress: 1,
+      createdAt: -1,
+    }),
+    platformSubscriptionPaymentIntents.createIndex(
+      { txHash: 1 },
+      {
+        unique: true,
+        partialFilterExpression: { txHash: { $type: "string" } },
+      },
+    ),
+    authorPlatformSubscriptions.createIndex({ authorId: 1 }, { unique: true }),
     contractDeployments.createIndex(
       { chainId: 1, contractName: 1 },
       { unique: true },

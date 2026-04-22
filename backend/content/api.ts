@@ -17,6 +17,7 @@ import type {
   ContractDeploymentResponse,
   CreateAccessPolicyPresetRequest,
   CreateAuthorProfileRequest,
+  CreatePlatformSubscriptionPaymentIntentRequest,
   CreatePostCommentRequest,
   CreatePostRequest,
   CreateProjectFolderRequest,
@@ -31,6 +32,7 @@ import type {
   ProjectNodeResponse,
   ProjectResponse,
   PlatformPlanResponse,
+  PlatformSubscriptionPaymentIntentResponse,
   ReaderSubscriptionResponse,
   RecordPostViewRequest,
   SubscriptionPaymentIntentResponse,
@@ -302,6 +304,28 @@ export const getSubscriptionManagerDeployment = api(
   },
 );
 
+export const getPlatformSubscriptionManagerDeployment = api(
+  {
+    method: "GET",
+    path: "/contract-deployments/platform-subscription-manager/:chainId",
+    expose: true,
+  },
+  async ({
+    chainId,
+  }: {
+    chainId: string;
+  }): Promise<ContractDeploymentLookupResponse> => {
+    const deployment = await service.getPlatformSubscriptionManagerDeployment(
+      Number(chainId),
+    );
+    return {
+      deployment: deployment
+        ? service.toContractDeploymentResponse(deployment)
+        : null,
+    };
+  },
+);
+
 export const upsertContractDeployment = api(
   {
     method: "PUT",
@@ -462,6 +486,48 @@ export const confirmSubscriptionPayment = api(
       req,
     );
     return service.toSubscriptionPaymentIntentResponse(intent);
+  },
+);
+
+export const createPlatformSubscriptionPaymentIntent = api(
+  {
+    method: "POST",
+    path: "/me/author/platform-payment-intents",
+    expose: true,
+    auth: true,
+  },
+  async (
+    req: CreatePlatformSubscriptionPaymentIntentRequest,
+  ): Promise<PlatformSubscriptionPaymentIntentResponse> => {
+    const auth = getAuthData()!;
+    const intent = await service.createPlatformSubscriptionPaymentIntent(
+      auth.walletAddress,
+      req,
+    );
+    return service.toPlatformSubscriptionPaymentIntentResponse(intent);
+  },
+);
+
+export const confirmPlatformSubscriptionPayment = api(
+  {
+    method: "POST",
+    path: "/me/author/platform-payment-intents/:intentId/confirm",
+    expose: true,
+    auth: true,
+  },
+  async ({
+    intentId,
+    ...req
+  }: ConfirmSubscriptionPaymentRequest & {
+    intentId: string;
+  }): Promise<PlatformSubscriptionPaymentIntentResponse> => {
+    const auth = getAuthData()!;
+    const intent = await service.confirmPlatformSubscriptionPayment(
+      auth.walletAddress,
+      intentId,
+      req,
+    );
+    return service.toPlatformSubscriptionPaymentIntentResponse(intent);
   },
 );
 

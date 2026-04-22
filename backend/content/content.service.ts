@@ -20,6 +20,7 @@ import {
 } from "../storage/object-storage";
 import {
   readOnChainAccessGrants,
+  verifyPlatformSubscriptionPayment,
   verifyPlanRegistration,
   verifySubscriptionPayment,
 } from "./onchain";
@@ -43,6 +44,7 @@ import type {
   ContractDeploymentResponse,
   CreateAccessPolicyPresetRequest,
   CreateAuthorProfileRequest,
+  CreatePlatformSubscriptionPaymentIntentRequest,
   CreatePostRequest,
   CreateProjectFolderRequest,
   CreateProjectRequest,
@@ -65,6 +67,8 @@ import type {
   PlatformFeature,
   PlatformPlanResponse,
   PlatformPlanDoc,
+  PlatformSubscriptionPaymentIntentDoc,
+  PlatformSubscriptionPaymentIntentResponse,
   ReaderSubscriptionResponse,
   SubscriptionPlanDoc,
   SubscriptionPlanResponse,
@@ -235,6 +239,146 @@ export async function previewMyAuthorPlatformCleanup(
 ): Promise<AuthorPlatformCleanupPreviewResponse> {
   const author = await getMyAuthorProfile(walletAddress);
   return previewAuthorPlatformCleanup(author);
+}
+
+export async function createPlatformSubscriptionPaymentIntent(
+  walletAddress: string,
+  input: CreatePlatformSubscriptionPaymentIntentRequest,
+): Promise<PlatformSubscriptionPaymentIntentDoc> {
+  const wallet = normalizeWallet(walletAddress);
+  const author = await getMyAuthorProfile(wallet);
+  const plan = getPlatformPlan(input.planCode);
+  if (plan.code === "free") {
+    throw APIError.failedPrecondition(
+      "free platform plan does not require payment",
+    );
+  }
+
+  const extraStorageGb = normalizeExtraStorageGb(input.extraStorageGb, plan);
+  const chainId = normalizeChainId(input.chainId);
+  const tokenAddress = normalizePlanTokenAddress("erc20", input.tokenAddress);
+  const deployment = await repo.findContractDeployment(
+    chainId,
+    "PlatformSubscriptionManager",
+  );
+  if (!deployment) {
+    throw APIError.failedPrecondition(
+      "platform subscription manager is not deployed for this network",
+    );
+  }
+
+  const now = new Date();
+  const tierKey = buildPlatformTierKey(plan.code);
+  return repo.createPlatformSubscriptionPaymentIntent({
+    authorId: author._id,
+    walletAddress: wallet,
+    planCode: plan.code,
+    tierKey,
+    extraStorageGb,
+    chainId,
+    tokenAddress,
+    contractAddress: deployment.address,
+    amount: calculatePlatformPlanAmount(plan, extraStorageGb),
+    status: "pending",
+    txHash: null,
+    validUntil: null,
+    expiresAt: addMinutes(now, 30),
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
+export async function confirmPlatformSubscriptionPayment(
+  walletAddress: string,
+  intentId: string,
+  input: ConfirmSubscriptionPaymentRequest,
+): Promise<PlatformSubscriptionPaymentIntentDoc> {
+  const wallet = normalizeWallet(walletAddress);
+  const txHash = normalizeTxHash(input.txHash);
+  const intent = await repo.findPlatformSubscriptionPaymentIntentByIdAndWallet(
+    parseObjectId(intentId, "intentId"),
+    wallet,
+  );
+  if (!intent) {
+    throw APIError.notFound("platform subscription payment intent not found");
+  }
+  if (intent.status === "cancelled") {
+    throw APIError.failedPrecondition(
+      "platform subscription payment intent is cancelled",
+    );
+  }
+  if (intent.status === "expired" || intent.expiresAt.getTime() < Date.now()) {
+    const expired = await repo.updatePlatformSubscriptionPaymentIntent(
+      intent._id,
+      {
+        status: "expired",
+        updatedAt: new Date(),
+      },
+    );
+    if (!expired) {
+      throw APIError.notFound("platform subscription payment intent not found");
+    }
+    return expired;
+  }
+  if (intent.status === "confirmed") {
+    return intent;
+  }
+
+  const existingTx =
+    await repo.findPlatformSubscriptionPaymentIntentByTxHash(txHash);
+  if (existingTx && !existingTx._id.equals(intent._id)) {
+    throw APIError.alreadyExists(
+      "transaction hash is already attached to platform payment",
+    );
+  }
+
+  const payment = await verifyPlatformSubscriptionPayment({
+    authorWallet: wallet,
+    chainId: intent.chainId,
+    contractAddress: intent.contractAddress,
+    tierKey: intent.tierKey,
+    extraStorageGb: intent.extraStorageGb,
+    tokenAddress: intent.tokenAddress,
+    amount: intent.amount,
+    txHash,
+  });
+  const now = new Date();
+  const plan = getPlatformPlan(intent.planCode);
+  await repo.upsertAuthorPlatformSubscription(
+    {
+      authorId: intent.authorId,
+      walletAddress: wallet,
+      planCode: plan.code,
+      status: "active",
+      baseStorageBytes: plan.baseStorageBytes,
+      extraStorageBytes: intent.extraStorageGb * GIB,
+      totalStorageBytes: plan.baseStorageBytes + intent.extraStorageGb * GIB,
+      features: plan.features,
+      validUntil: payment.paidUntil,
+      graceUntil: new Date(
+        payment.paidUntil.getTime() + PLATFORM_GRACE_PERIOD_MS,
+      ),
+      cleanupScheduledAt: null,
+      lastCleanupAt: null,
+      lastTxHash: txHash,
+    },
+    now,
+  );
+
+  const updated = await repo.updatePlatformSubscriptionPaymentIntent(
+    intent._id,
+    {
+      status: "confirmed",
+      txHash,
+      validUntil: payment.paidUntil,
+      updatedAt: now,
+    },
+  );
+  if (!updated) {
+    throw APIError.notFound("platform subscription payment intent not found");
+  }
+
+  return updated;
 }
 
 export async function buildAuthorPlatformBilling(
@@ -459,6 +603,31 @@ function getPlatformPlan(code: PlatformPlanDoc["code"]): PlatformPlanDoc {
   }
 
   return plan;
+}
+
+function buildPlatformTierKey(code: PlatformPlanDoc["code"]): string {
+  return hashId(`platform:${code}`).toLowerCase();
+}
+
+function calculatePlatformPlanAmount(
+  plan: PlatformPlanDoc,
+  extraStorageGb: number,
+): string {
+  return String(
+    BigInt(plan.priceUsdCents) * 10_000n +
+      BigInt(extraStorageGb) * BigInt(plan.pricePerExtraGbUsdCents) * 10_000n,
+  );
+}
+
+function normalizeExtraStorageGb(value: number, plan: PlatformPlanDoc): number {
+  const maxExtraGb = Math.floor(plan.maxExtraStorageBytes / GIB);
+  if (!Number.isInteger(value) || value < 0 || value > maxExtraGb) {
+    throw APIError.invalidArgument(
+      `extraStorageGb must be an integer between 0 and ${maxExtraGb}`,
+    );
+  }
+
+  return value;
 }
 
 function hasPlatformFeature(
@@ -915,6 +1084,15 @@ export async function getSubscriptionManagerDeployment(
   return repo.findContractDeployment(
     normalizeChainId(chainId),
     "SubscriptionManager",
+  );
+}
+
+export async function getPlatformSubscriptionManagerDeployment(
+  chainId: number,
+): Promise<ContractDeploymentDoc | null> {
+  return repo.findContractDeployment(
+    normalizeChainId(chainId),
+    "PlatformSubscriptionManager",
   );
 }
 
@@ -2265,6 +2443,29 @@ export function toSubscriptionPaymentIntentResponse(
     txHash: intent.txHash,
     entitlementId: intent.entitlementId?.toHexString() ?? null,
     paidUntil: intent.paidUntil?.toISOString() ?? null,
+    expiresAt: intent.expiresAt.toISOString(),
+    createdAt: intent.createdAt.toISOString(),
+    updatedAt: intent.updatedAt.toISOString(),
+  };
+}
+
+export function toPlatformSubscriptionPaymentIntentResponse(
+  intent: PlatformSubscriptionPaymentIntentDoc,
+): PlatformSubscriptionPaymentIntentResponse {
+  return {
+    id: intent._id.toHexString(),
+    authorId: intent.authorId.toHexString(),
+    walletAddress: intent.walletAddress,
+    planCode: intent.planCode,
+    tierKey: intent.tierKey,
+    extraStorageGb: intent.extraStorageGb,
+    chainId: intent.chainId,
+    tokenAddress: intent.tokenAddress,
+    contractAddress: intent.contractAddress,
+    amount: intent.amount,
+    status: intent.status,
+    txHash: intent.txHash,
+    validUntil: intent.validUntil?.toISOString() ?? null,
     expiresAt: intent.expiresAt.toISOString(),
     createdAt: intent.createdAt.toISOString(),
     updatedAt: intent.updatedAt.toISOString(),

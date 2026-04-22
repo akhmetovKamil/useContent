@@ -1,9 +1,11 @@
 import { APIError } from "encore.dev/api";
 import { Contract, Interface, JsonRpcProvider, isAddress } from "ethers";
+import { platformSubscriptionManagerAbi } from "../../contracts/abi/PlatformSubscriptionManager";
 import { subscriptionManagerAbi } from "../../contracts/abi/SubscriptionManager";
 import type { AccessPolicy, AccessPolicyNode } from "../domain/access";
 
 const managerInterface = new Interface(subscriptionManagerAbi);
+const platformManagerInterface = new Interface(platformSubscriptionManagerAbi);
 const legacyManagerAbi = [
   "event PlanRegistered(bytes32 indexed planKey,address indexed author,address indexed token,uint256 price,uint64 periodSeconds,bytes32 externalId)",
   "event PlanUpdated(bytes32 indexed planKey,address indexed author,address indexed token,uint256 price,uint64 periodSeconds,bool active,bytes32 externalId)",
@@ -51,6 +53,21 @@ interface VerifySubscriptionPaymentInput {
 }
 
 export interface VerifiedSubscriptionPayment {
+  paidUntil: Date;
+}
+
+interface VerifyPlatformSubscriptionPaymentInput {
+  authorWallet: string;
+  chainId: number;
+  contractAddress: string;
+  tierKey: string;
+  extraStorageGb: number;
+  tokenAddress: string;
+  amount: string;
+  txHash: string;
+}
+
+export interface VerifiedPlatformSubscriptionPayment {
   paidUntil: Date;
 }
 
@@ -233,6 +250,69 @@ export async function verifySubscriptionPayment(
   };
 }
 
+export async function verifyPlatformSubscriptionPayment(
+  input: VerifyPlatformSubscriptionPaymentInput,
+): Promise<VerifiedPlatformSubscriptionPayment> {
+  const provider = getProvider(input.chainId);
+  const contractAddress = normalizeAddress(input.contractAddress);
+  const receipt = await getReceipt(provider, input.txHash);
+
+  if (receipt.status !== 1) {
+    throw APIError.failedPrecondition(
+      "platform subscription transaction failed",
+    );
+  }
+  const manager = new Contract(
+    contractAddress,
+    platformSubscriptionManagerAbi,
+    provider,
+  );
+  const paymentToken = await manager.paymentToken();
+  if (normalizeAddress(paymentToken) !== normalizeAddress(input.tokenAddress)) {
+    throw APIError.failedPrecondition(
+      "platform subscription manager token does not match intent",
+    );
+  }
+
+  const event = receipt.logs
+    .filter((log) => normalizeAddress(log.address) === contractAddress)
+    .map((log) => tryParsePlatformManagerLog(log))
+    .find(
+      (log) =>
+        log &&
+        log.name === "PlatformSubscriptionPaid" &&
+        normalizeBytes32(String(log.args.tierKey)) === input.tierKey,
+    );
+
+  if (!event) {
+    throw APIError.failedPrecondition(
+      "platform subscription payment event not found",
+    );
+  }
+
+  if (
+    normalizeAddress(event.args.author) !== normalizeAddress(input.authorWallet)
+  ) {
+    throw APIError.failedPrecondition(
+      "platform subscription event author does not match wallet",
+    );
+  }
+  if (Number(event.args.extraStorageGb) !== input.extraStorageGb) {
+    throw APIError.failedPrecondition(
+      "platform subscription event extra storage does not match intent",
+    );
+  }
+  if (event.args.amount.toString() !== input.amount) {
+    throw APIError.failedPrecondition(
+      "platform subscription event amount does not match intent",
+    );
+  }
+
+  return {
+    paidUntil: new Date(Number(event.args.paidUntil) * 1000),
+  };
+}
+
 function getProvider(chainId: number): JsonRpcProvider {
   const url =
     process.env[`RPC_URL_${chainId}`] ??
@@ -246,10 +326,7 @@ function getProvider(chainId: number): JsonRpcProvider {
 }
 
 function collectOnChainRequirements(node: AccessPolicyNode): {
-  tokenBalances: Map<
-    string,
-    { chainId: number; contractAddress: string }
-  >;
+  tokenBalances: Map<string, { chainId: number; contractAddress: string }>;
   nftOwnerships: Map<
     string,
     {
@@ -465,6 +542,20 @@ function tryParseManagerLog(log: { topics: readonly string[]; data: string }) {
     } catch {
       return null;
     }
+  }
+}
+
+function tryParsePlatformManagerLog(log: {
+  topics: readonly string[];
+  data: string;
+}) {
+  try {
+    return platformManagerInterface.parseLog({
+      topics: [...log.topics],
+      data: log.data,
+    });
+  } catch {
+    return null;
   }
 }
 

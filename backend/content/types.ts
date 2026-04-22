@@ -17,6 +17,7 @@ import type {
   ContractDeploymentLookupDto,
   CreateAccessPolicyPresetInput,
   CreateAuthorProfileInput,
+  CreatePlatformSubscriptionPaymentIntentInput,
   CreatePostInput,
   CreateProjectInput,
   CreateProjectFolderInput,
@@ -36,6 +37,7 @@ import type {
   PlatformBillingStatus,
   PlatformFeature,
   PlatformPlanDto,
+  PlatformSubscriptionPaymentIntentDto,
   ReaderSubscriptionDto,
   SubscriptionEntitlementDto,
   SubscriptionPaymentIntentDto,
@@ -261,6 +263,25 @@ export interface SubscriptionPaymentIntentDoc {
   updatedAt: Date;
 }
 
+export interface PlatformSubscriptionPaymentIntentDoc {
+  _id: ObjectId;
+  authorId: ObjectId;
+  walletAddress: string;
+  planCode: PlatformPlanDto["code"];
+  tierKey: string;
+  extraStorageGb: number;
+  chainId: number;
+  tokenAddress: string;
+  contractAddress: string;
+  amount: string;
+  status: "pending" | "submitted" | "confirmed" | "expired" | "cancelled";
+  txHash: string | null;
+  validUntil: Date | null;
+  expiresAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface ContractDeploymentDoc {
   _id: ObjectId;
   chainId: number;
@@ -295,6 +316,8 @@ export type FeedProjectResponse = FeedProjectDto;
 export type ContractDeploymentResponse = ContractDeploymentDto;
 export type ContractDeploymentLookupResponse = ContractDeploymentLookupDto;
 export type SubscriptionPaymentIntentResponse = SubscriptionPaymentIntentDto;
+export type PlatformSubscriptionPaymentIntentResponse =
+  PlatformSubscriptionPaymentIntentDto;
 export type SubscriptionPlanResponse = SubscriptionPlanDto;
 export type PostResponse = PostDto;
 export type ProjectResponse = ProjectDto;
@@ -317,5 +340,7 @@ export type CreateProjectFolderRequest = CreateProjectFolderInput;
 export type UpdateProjectNodeRequest = UpdateProjectNodeInput;
 export type CreateSubscriptionPaymentIntentRequest =
   CreateSubscriptionPaymentIntentInput;
+export type CreatePlatformSubscriptionPaymentIntentRequest =
+  CreatePlatformSubscriptionPaymentIntentInput;
 export type ConfirmSubscriptionPaymentRequest = ConfirmSubscriptionPaymentInput;
 export type UpsertContractDeploymentRequest = UpsertContractDeploymentInput;

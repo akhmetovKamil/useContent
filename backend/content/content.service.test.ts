@@ -10,6 +10,14 @@ vi.mock("encore.dev/api", () => {
     static failedPrecondition(message: string) {
       return new MockAPIError(message);
     }
+
+    static notFound(message: string) {
+      return new MockAPIError(message);
+    }
+
+    static alreadyExists(message: string) {
+      return new MockAPIError(message);
+    }
   }
 
   return {
@@ -23,12 +31,21 @@ vi.mock("../storage/object-storage", () => {
   };
 });
 
+vi.mock("./onchain", () => {
+  return {
+    verifyPlatformSubscriptionPayment: vi.fn(),
+  };
+});
+
 import * as repo from "./repository";
+import { verifyPlatformSubscriptionPayment } from "./onchain";
 import {
   buildAccessPolicyFromInput,
   buildAuthorPlatformBilling,
   assertAuthorPlatformFeature,
   assertAuthorStorageQuota,
+  confirmPlatformSubscriptionPayment,
+  createPlatformSubscriptionPaymentIntent,
   listPlatformPlans,
   selectCleanupCandidates,
   toAuthorStorageUsageResponse,
@@ -38,7 +55,15 @@ import type { AuthorProfileDoc } from "./types";
 vi.mock("./repository", () => {
   return {
     findSubscriptionPlanByAuthorIdAndCode: vi.fn(),
+    findUserByPrimaryWallet: vi.fn(),
+    findAuthorProfileByUserId: vi.fn(),
+    findContractDeployment: vi.fn(),
     findAuthorPlatformSubscriptionByAuthorId: vi.fn(),
+    createPlatformSubscriptionPaymentIntent: vi.fn(),
+    findPlatformSubscriptionPaymentIntentByIdAndWallet: vi.fn(),
+    findPlatformSubscriptionPaymentIntentByTxHash: vi.fn(),
+    updatePlatformSubscriptionPaymentIntent: vi.fn(),
+    upsertAuthorPlatformSubscription: vi.fn(),
     sumPostAttachmentBytesByAuthorId: vi.fn(),
     sumProjectFileBytesByAuthorId: vi.fn(),
   };
@@ -369,6 +394,116 @@ describe("platform billing foundation", () => {
 
     await expect(assertAuthorStorageQuota(author, 1)).rejects.toThrowError(
       "storage quota exceeded",
+    );
+  });
+
+  test("creates platform payment intent from deployed manager", async () => {
+    const author = createAuthorProfileDoc();
+    vi.mocked(repo.findUserByPrimaryWallet).mockResolvedValue({
+      _id: new ObjectId(author.userId),
+      username: null,
+      displayName: "Kamil",
+      bio: "",
+      avatarFileId: null,
+      primaryWallet: "0xabc",
+      wallets: [],
+      role: "user",
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    });
+    vi.mocked(repo.findAuthorProfileByUserId).mockResolvedValue(author);
+    vi.mocked(repo.findContractDeployment).mockResolvedValue({
+      _id: new ObjectId("65f555555555555555555555"),
+      chainId: 11155111,
+      contractName: "PlatformSubscriptionManager",
+      address: "0xmanager",
+      platformTreasury: "0xtreasury",
+      deployedBy: "0xdeployer",
+      deploymentTxHash: null,
+      createdAt: new Date("2026-04-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-04-01T00:00:00.000Z"),
+    });
+    vi.mocked(repo.createPlatformSubscriptionPaymentIntent).mockImplementation(
+      async (doc) => ({
+        _id: new ObjectId("65f666666666666666666666"),
+        ...doc,
+      }),
+    );
+
+    const intent = await createPlatformSubscriptionPaymentIntent("0xabc", {
+      planCode: "basic",
+      extraStorageGb: 2,
+      chainId: 11155111,
+      tokenAddress: "0xtoken",
+    });
+
+    expect(intent).toMatchObject({
+      planCode: "basic",
+      extraStorageGb: 2,
+      contractAddress: "0xmanager",
+      amount: "7000000",
+      status: "pending",
+    });
+    expect(repo.createPlatformSubscriptionPaymentIntent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authorId: author._id,
+        tierKey: expect.any(String),
+      }),
+    );
+  });
+
+  test("confirms platform payment and updates author subscription", async () => {
+    const author = createAuthorProfileDoc();
+    const intentId = new ObjectId("65f777777777777777777777");
+    const intent = {
+      _id: intentId,
+      authorId: author._id,
+      walletAddress: "0xabc",
+      planCode: "basic" as const,
+      tierKey: "0xtier",
+      extraStorageGb: 1,
+      chainId: 11155111,
+      tokenAddress: "0xtoken",
+      contractAddress: "0xmanager",
+      amount: "6000000",
+      status: "pending" as const,
+      txHash: null,
+      validUntil: null,
+      expiresAt: new Date("2026-04-01T00:30:00.000Z"),
+      createdAt: new Date("2026-04-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-04-01T00:00:00.000Z"),
+    };
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-04-01T00:05:00.000Z"));
+    vi.mocked(
+      repo.findPlatformSubscriptionPaymentIntentByIdAndWallet,
+    ).mockResolvedValue(intent);
+    vi.mocked(
+      repo.findPlatformSubscriptionPaymentIntentByTxHash,
+    ).mockResolvedValue(null);
+    vi.mocked(verifyPlatformSubscriptionPayment).mockResolvedValue({
+      paidUntil: new Date("2026-05-01T00:00:00.000Z"),
+    });
+    vi.mocked(repo.updatePlatformSubscriptionPaymentIntent).mockImplementation(
+      async (_id, update) => ({ ...intent, ...update }),
+    );
+
+    const confirmed = await confirmPlatformSubscriptionPayment(
+      "0xabc",
+      intentId.toHexString(),
+      { txHash: "0x" + "a".repeat(64) },
+    );
+
+    expect(confirmed.status).toBe("confirmed");
+    expect(repo.upsertAuthorPlatformSubscription).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authorId: author._id,
+        planCode: "basic",
+        extraStorageBytes: 1024 * 1024 * 1024,
+        totalStorageBytes: 4 * 1024 * 1024 * 1024,
+        lastTxHash: "0x" + "a".repeat(64),
+      }),
+      expect.any(Date),
     );
   });
 });
