@@ -1,4 +1,5 @@
 export * from "./common";
+export * from "./auth";
 export * from "./access";
 export * from "./profile";
 export * from "./platform";

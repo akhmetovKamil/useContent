@@ -1,4 +1,5 @@
 import { subscriptionManagerAbi } from "@shared/abi/subscription-manager.abi"
+import { ZERO_ADDRESS } from "@shared/consts"
 import type { UpsertSubscriptionPlanInput } from "@shared/types/content"
 import { useState } from "react"
 import { useAccount, usePublicClient, useWriteContract } from "wagmi"
@@ -11,8 +12,6 @@ import {
     buildPlanKey,
     toAddress,
 } from "@/utils/web3/subscriptions"
-
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 interface OnChainPlanPublisherProps {
     active: boolean

@@ -1,4 +1,5 @@
 import type { AccessPolicyPresetDto, SubscriptionPlanDto } from "@shared/types/content"
+import { ZERO_ADDRESS } from "@shared/consts"
 import { ArrowUpRight, FileText, Layers3, Plus, ShieldCheck, Sparkles } from "lucide-react"
 import type { ReactNode } from "react"
 import { useEffect, useState } from "react"
@@ -52,8 +53,6 @@ import {
 import { defaultSubscriptionChain } from "@/utils/config/chains"
 import { getTokenPresets } from "@/utils/config/tokens"
 import { erc20Abi } from "@/utils/web3/erc20"
-
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 const defaultToken = getTokenPresets(defaultSubscriptionChain.id).find(
     (preset) => preset.kind === "erc20"

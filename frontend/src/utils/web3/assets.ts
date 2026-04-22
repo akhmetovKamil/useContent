@@ -1,9 +1,8 @@
+import { ZERO_ADDRESS } from "@shared/consts"
 import { formatUnits } from "viem"
 
 import { getChainDisplayConfig, supportedChainOptions } from "@/utils/config/chains"
 import { getTokenPresets, type TokenPreset } from "@/utils/config/tokens"
-
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 export interface TokenAssetMetadata {
     address: string

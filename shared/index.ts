@@ -1,3 +1,4 @@
+export * from "./types/auth";
 export * from "./types/access";
 export * from "./types/content";
 export * from "./abi/platform-subscription-manager.abi";

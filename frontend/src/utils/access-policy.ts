@@ -1,3 +1,4 @@
+import { ZERO_ADDRESS } from "@shared/consts"
 import type {
     AccessPolicy,
     NftOwnershipPolicyNode,
@@ -54,7 +55,7 @@ export function createDefaultRule(): AccessRuleForm {
         type: "subscription",
         planCode: "main",
         chainId: "11155111",
-        contractAddress: "0x0000000000000000000000000000000000000000",
+        contractAddress: ZERO_ADDRESS,
         minAmount: "100",
         decimals: "18",
         standard: "erc721",

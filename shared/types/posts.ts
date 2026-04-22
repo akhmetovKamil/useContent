@@ -7,8 +7,9 @@ import type {
   StorageSizedDto,
   WalletAddress,
 } from "./common";
+import type { CONTENT_STATUSES } from "../consts";
 
-export type ContentStatus = "draft" | "published" | "archived";
+export type ContentStatus = (typeof CONTENT_STATUSES)[number];
 
 export interface PostCommentDto extends AuthorOwnedDto {
   id: EntityId;

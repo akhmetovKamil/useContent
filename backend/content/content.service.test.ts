@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { ZERO_ADDRESS } from "../../shared/consts";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 vi.mock("encore.dev/api", () => {
@@ -136,10 +137,10 @@ describe("buildAccessPolicyFromInput", () => {
       title: "Main",
       paymentAsset: "native",
       chainId: 11155111,
-      tokenAddress: "0x0000000000000000000000000000000000000000",
+      tokenAddress: ZERO_ADDRESS,
       price: "1000000",
       billingPeriodDays: 30,
-      contractAddress: "0x0000000000000000000000000000000000000000",
+      contractAddress: ZERO_ADDRESS,
       planKey:
         "0x1111111111111111111111111111111111111111111111111111111111111111",
       registrationTxHash: null,

@@ -4,13 +4,14 @@ import type {
   OnChainPaymentBaseDto,
   WalletAddress,
 } from "./common";
+import type { PLATFORM_FEATURES, PLATFORM_PLAN_CODES } from "../consts";
 
-export type PlatformFeature = "posts" | "projects" | "homepage_promo";
+export type PlatformFeature = (typeof PLATFORM_FEATURES)[number];
 
 export type PlatformBillingStatus = "free" | "active" | "grace" | "expired";
 
 export interface PlatformPlanDto {
-  code: "free" | "basic";
+  code: (typeof PLATFORM_PLAN_CODES)[number];
   title: string;
   description: string;
   priceUsdCents: number;

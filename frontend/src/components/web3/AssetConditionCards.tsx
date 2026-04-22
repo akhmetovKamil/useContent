@@ -1,3 +1,4 @@
+import { ZERO_ADDRESS } from "@shared/consts"
 import { ExternalLink, Gem, ImageIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -292,7 +293,7 @@ function getPriceFallback(isTestnet?: boolean, isError?: boolean) {
 
 function getTokenSwapUrl(chainId: number, tokenAddress: string) {
     const token =
-        tokenAddress.toLowerCase() === "0x0000000000000000000000000000000000000000"
+        tokenAddress.toLowerCase() === ZERO_ADDRESS
             ? "ETH"
             : tokenAddress
 

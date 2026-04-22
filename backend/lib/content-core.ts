@@ -1,6 +1,7 @@
 import { APIError } from "encore.dev/api";
 import { id as hashId } from "ethers";
 import { ObjectId } from "mongodb";
+import { ZERO_ADDRESS } from "../../shared/consts";
 import {
   ACCESS_POLICY_VERSION,
   type AccessPolicy,
@@ -89,7 +90,6 @@ import type {
   UserProfileResponse,
 } from "./content-types";
 
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const GIB = 1024 * 1024 * 1024;
 const PLATFORM_GRACE_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;
 

@@ -1,15 +1,15 @@
 import { api } from "encore.dev/api";
-import { requestNonce, authenticate } from "./auth.service";
 import type {
-  GetNonceRequest,
-  GetNonceResponse,
-  VerifySignatureRequest,
-  VerifySignatureResponse,
-} from "./types";
+  GetNonceDto,
+  GetNonceInput,
+  VerifySignatureDto,
+  VerifySignatureInput,
+} from "../../shared/types/auth";
+import { requestNonce, authenticate } from "./auth.service";
 
 export const getNonce = api(
   { method: "GET", path: "/auth/nonce", expose: true },
-  async ({ address }: GetNonceRequest): Promise<GetNonceResponse> => {
+  async ({ address }: GetNonceInput): Promise<GetNonceDto> => {
     const message = await requestNonce(address);
     return { message };
   }
@@ -17,7 +17,7 @@ export const getNonce = api(
 
 export const verifySignature = api(
   { method: "POST", path: "/auth/verify", expose: true },
-  async ({ address, signature }: VerifySignatureRequest): Promise<VerifySignatureResponse> => {
+  async ({ address, signature }: VerifySignatureInput): Promise<VerifySignatureDto> => {
     const token = await authenticate(address, signature);
     return { token };
   }

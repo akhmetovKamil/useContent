@@ -1,7 +1,12 @@
 import type { AccessPolicy, PolicyMode } from "./access";
+import type {
+  ContentStatus,
+  SubscriptionPaymentAsset,
+  WalletAddress,
+} from "../../shared/types/content";
 
 export interface UserWallet {
-  address: string;
+  address: WalletAddress;
   kind: "primary" | "secondary";
   addedAt: Date;
 }
@@ -12,7 +17,7 @@ export interface User {
   displayName: string;
   bio: string;
   avatarFileId: string | null;
-  primaryWallet: string;
+  primaryWallet: WalletAddress;
   wallets: UserWallet[];
   role: "user" | "admin";
   createdAt: Date;
@@ -50,7 +55,7 @@ export interface Post {
   authorId: string;
   title: string;
   content: string;
-  status: "draft" | "published" | "archived";
+  status: ContentStatus;
   policyMode: PolicyMode;
   policy: AccessPolicy | null;
   accessPolicyId: string | null;
@@ -66,7 +71,7 @@ export interface Project {
   authorId: string;
   title: string;
   description: string;
-  status: "draft" | "published" | "archived";
+  status: ContentStatus;
   policyMode: PolicyMode;
   policy: AccessPolicy | null;
   accessPolicyId: string | null;
@@ -96,7 +101,7 @@ export interface SubscriptionPlan {
   authorId: string;
   code: string;
   title: string;
-  paymentAsset: "erc20" | "native";
+  paymentAsset: SubscriptionPaymentAsset;
   chainId: number;
   tokenAddress: string;
   price: string;
@@ -112,7 +117,7 @@ export interface SubscriptionPlan {
 export interface SubscriptionEntitlement {
   id: string;
   authorId: string;
-  subscriberWallet: string;
+  subscriberWallet: WalletAddress;
   planId: string;
   status: "active" | "expired";
   validUntil: Date;
@@ -124,11 +129,11 @@ export interface SubscriptionEntitlement {
 export interface SubscriptionPaymentIntent {
   id: string;
   authorId: string;
-  subscriberWallet: string;
+  subscriberWallet: WalletAddress;
   planId: string;
   planCode: string;
   planKey: string;
-  paymentAsset: "erc20" | "native";
+  paymentAsset: SubscriptionPaymentAsset;
   chainId: number;
   tokenAddress: string;
   contractAddress: string;

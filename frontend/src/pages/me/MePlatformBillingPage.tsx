@@ -1,4 +1,5 @@
 import { platformSubscriptionManagerAbi } from "@shared/abi/platform-subscription-manager.abi"
+import { ZERO_ADDRESS } from "@shared/consts"
 import type {
     AuthorPlatformBillingDto,
     AuthorPlatformCleanupPreviewDto,
@@ -68,7 +69,7 @@ export function MePlatformBillingPage() {
         const firstToken = getTokenPresets(defaultSubscriptionChain.id).find(
             (preset) => preset.kind === "erc20"
         )
-        return firstToken?.address ?? "0x0000000000000000000000000000000000000000"
+        return firstToken?.address ?? ZERO_ADDRESS
     })
     const plans = plansQuery.data ?? []
     const basicPlan = plans.find((plan) => plan.code === "basic")
@@ -757,7 +758,7 @@ function CheckoutPreview({
 function getDefaultTokenAddress(chainId: number): `0x${string}` {
     return (
         getTokenPresets(chainId).find((preset) => preset.kind === "erc20")?.address ??
-        "0x0000000000000000000000000000000000000000"
+        ZERO_ADDRESS
     )
 }
 

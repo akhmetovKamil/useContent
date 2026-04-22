@@ -1,9 +1,9 @@
-import type { GetNonceResponse, VerifySignatureInput, VerifySignatureResponse } from "@/types/auth"
+import type { GetNonceDto, VerifySignatureDto, VerifySignatureInput } from "@shared/types/auth"
 import { http } from "@/utils/api/http"
 
 class AuthApi {
     async getNonce(address: string) {
-        const response = await http.get<GetNonceResponse>("/auth/nonce", {
+        const response = await http.get<GetNonceDto>("/auth/nonce", {
             params: { address },
         })
 
@@ -11,7 +11,7 @@ class AuthApi {
     }
 
     async verifySignature(input: VerifySignatureInput) {
-        const response = await http.post<VerifySignatureResponse>("/auth/verify", input)
+        const response = await http.post<VerifySignatureDto>("/auth/verify", input)
         return response.data
     }
 }

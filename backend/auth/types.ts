@@ -1,27 +1,12 @@
-export interface GetNonceRequest {
-  address: string;
-}
-
-export interface GetNonceResponse {
-  message: string;
-}
-
-export interface VerifySignatureRequest {
-  address: string;
-  signature: string;
-}
-
-export interface VerifySignatureResponse {
-  token: string;
-}
+import type { WalletAddress } from "../../shared/types/content";
 
 export interface NonceDoc {
-  address: string;
+  address: WalletAddress;
   nonce: string;
   expiresAt: Date;
 }
 
 export interface AuthUser {
   userID: string;
-  walletAddress: string;
+  walletAddress: WalletAddress;
 }

@@ -27,5 +27,11 @@
         "erasableSyntaxOnly": true,
         "noFallthroughCasesInSwitch": true
     },
-    "include": ["src", "../shared/types/**/*.ts", "../shared/abi/**/*.ts"]
+    "include": [
+        "src",
+        "../shared/types/**/*.ts",
+        "../shared/abi/**/*.ts",
+        "../shared/consts/**/*.ts",
+        "../shared/utils/**/*.ts"
+    ]
 }
