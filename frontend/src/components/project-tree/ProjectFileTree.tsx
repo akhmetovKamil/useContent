@@ -31,6 +31,7 @@ import {
     useUploadMyProjectFileMutation,
 } from "@/queries/projects"
 import { queryKeys } from "@/queries/queryKeys"
+import { formatFileSize } from "@/utils/format"
 
 type ProjectTreeMode = "author" | "reader"
 
@@ -549,14 +550,4 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
             </Modal>
         </Card>
     )
-}
-
-function formatFileSize(size: number) {
-    if (size < 1024) {
-        return `${size} B`
-    }
-    if (size < 1024 * 1024) {
-        return `${(size / 1024).toFixed(1)} KB`
-    }
-    return `${(size / 1024 / 1024).toFixed(1)} MB`
 }

@@ -46,7 +46,7 @@ const authorNavItems: NavItemConfig[] = [
     { to: "/me/subscribers", label: "Subscribers", icon: UsersRound },
     { to: "/me/posts", label: "Posts", icon: FileText },
     { to: "/me/projects", label: "Projects", icon: FolderKanban },
-    { to: "/me/subscription-plan", label: "Access", icon: ShieldCheck },
+    { to: "/me/access", label: "Access", icon: ShieldCheck },
     { to: "/me/platform-billing", label: "Billing", icon: Landmark },
 ]
 

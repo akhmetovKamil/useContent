@@ -22,13 +22,8 @@ class SubscriptionPlansApi {
         return response.data.plans
     }
 
-    async getMySubscriptionPlan() {
-        const response = await http.get<SubscriptionPlanDto>("/me/subscription-plan")
-        return response.data
-    }
-
     async upsertMySubscriptionPlan(input: UpsertSubscriptionPlanInput) {
-        const response = await http.put<SubscriptionPlanDto>("/me/subscription-plan", input)
+        const response = await http.put<SubscriptionPlanDto>("/me/subscription-plans", input)
         return response.data
     }
 

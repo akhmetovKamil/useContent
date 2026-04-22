@@ -6,13 +6,6 @@ import type { AccessPolicy, AccessPolicyNode } from "../domain/access";
 
 const managerInterface = new Interface(subscriptionManagerAbi);
 const platformManagerInterface = new Interface(platformSubscriptionManagerAbi);
-const legacyManagerAbi = [
-  "event PlanRegistered(bytes32 indexed planKey,address indexed author,address indexed token,uint256 price,uint64 periodSeconds,bytes32 externalId)",
-  "event PlanUpdated(bytes32 indexed planKey,address indexed author,address indexed token,uint256 price,uint64 periodSeconds,bool active,bytes32 externalId)",
-  "event SubscriptionPaid(bytes32 indexed planKey,address indexed subscriber,address indexed author,address token,uint256 amount,uint256 platformFee,uint256 paidUntil)",
-  "function plans(bytes32 planKey) view returns (address author,address token,uint256 price,uint64 periodSeconds,bool active,bytes32 externalId)",
-] as const;
-const legacyManagerInterface = new Interface(legacyManagerAbi);
 const erc20ReadAbi = [
   "function balanceOf(address account) view returns (uint256)",
 ] as const;
@@ -157,15 +150,7 @@ export async function verifyPlanRegistration(
       "on-chain plan author does not match wallet",
     );
   }
-  if (plan.isLegacy && input.paymentAsset === "native") {
-    throw APIError.failedPrecondition(
-      "deployed subscription manager does not support native payments",
-    );
-  }
-  if (
-    !plan.isLegacy &&
-    Number(plan.paymentAsset) !== PAYMENT_ASSET_CODE[input.paymentAsset]
-  ) {
+  if (Number(plan.paymentAsset) !== PAYMENT_ASSET_CODE[input.paymentAsset]) {
     throw APIError.failedPrecondition(
       "on-chain plan payment asset does not match input",
     );
@@ -225,8 +210,7 @@ export async function verifySubscriptionPayment(
       "subscription event subscriber does not match wallet",
     );
   }
-  const eventPaymentAsset =
-    "paymentAsset" in event.args ? Number(event.args.paymentAsset) : 0;
+  const eventPaymentAsset = Number(event.args.paymentAsset);
   if (eventPaymentAsset !== PAYMENT_ASSET_CODE[input.paymentAsset]) {
     throw APIError.failedPrecondition(
       "subscription event payment asset does not match plan",
@@ -493,38 +477,15 @@ async function readPlan(
     subscriptionManagerAbi,
     provider,
   );
-  try {
-    const plan = await manager.plans(planKey);
-    return {
-      isLegacy: false,
-      author: plan.author,
-      paymentAsset: plan.paymentAsset,
-      token: plan.token,
-      price: plan.price,
-      periodSeconds: plan.periodSeconds,
-      active: plan.active,
-    };
-  } catch (error) {
-    if (!isOutOfBoundsDecodeError(error)) {
-      throw error;
-    }
-
-    const legacyManager = new Contract(
-      contractAddress,
-      legacyManagerAbi,
-      provider,
-    );
-    const plan = await legacyManager.plans(planKey);
-    return {
-      isLegacy: true,
-      author: plan.author,
-      paymentAsset: 0,
-      token: plan.token,
-      price: plan.price,
-      periodSeconds: plan.periodSeconds,
-      active: plan.active,
-    };
-  }
+  const plan = await manager.plans(planKey);
+  return {
+    author: plan.author,
+    paymentAsset: plan.paymentAsset,
+    token: plan.token,
+    price: plan.price,
+    periodSeconds: plan.periodSeconds,
+    active: plan.active,
+  };
 }
 
 function tryParseManagerLog(log: { topics: readonly string[]; data: string }) {
@@ -534,14 +495,7 @@ function tryParseManagerLog(log: { topics: readonly string[]; data: string }) {
       data: log.data,
     });
   } catch {
-    try {
-      return legacyManagerInterface.parseLog({
-        topics: [...log.topics],
-        data: log.data,
-      });
-    } catch {
-      return null;
-    }
+    return null;
   }
 }
 
@@ -557,10 +511,6 @@ function tryParsePlatformManagerLog(log: {
   } catch {
     return null;
   }
-}
-
-function isOutOfBoundsDecodeError(error: unknown): boolean {
-  return error instanceof Error && error.message.includes("out of bounds");
 }
 
 function normalizeAddress(address: string): string {

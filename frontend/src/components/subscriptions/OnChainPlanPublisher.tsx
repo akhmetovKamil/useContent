@@ -13,49 +13,6 @@ import {
 } from "@/utils/web3/subscriptions"
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
-const legacySubscriptionManagerAbi = [
-    {
-        type: "function",
-        name: "plans",
-        stateMutability: "view",
-        inputs: [{ name: "planKey", type: "bytes32" }],
-        outputs: [
-            { name: "author", type: "address" },
-            { name: "token", type: "address" },
-            { name: "price", type: "uint256" },
-            { name: "periodSeconds", type: "uint64" },
-            { name: "active", type: "bool" },
-            { name: "externalId", type: "bytes32" },
-        ],
-    },
-    {
-        type: "function",
-        name: "registerPlan",
-        stateMutability: "nonpayable",
-        inputs: [
-            { name: "planKey", type: "bytes32" },
-            { name: "token", type: "address" },
-            { name: "price", type: "uint256" },
-            { name: "periodSeconds", type: "uint64" },
-            { name: "externalId", type: "bytes32" },
-        ],
-        outputs: [],
-    },
-    {
-        type: "function",
-        name: "updatePlan",
-        stateMutability: "nonpayable",
-        inputs: [
-            { name: "planKey", type: "bytes32" },
-            { name: "token", type: "address" },
-            { name: "price", type: "uint256" },
-            { name: "periodSeconds", type: "uint64" },
-            { name: "active", type: "bool" },
-            { name: "externalId", type: "bytes32" },
-        ],
-        outputs: [],
-    },
-] as const
 
 interface OnChainPlanPublisherProps {
     active: boolean
@@ -109,34 +66,21 @@ export function OnChainPlanPublisher({
         setStatus(existingPlanKey ? "Updating plan on-chain..." : "Publishing plan on-chain...")
 
         try {
-            const { isLegacy, plan: onChainPlan } = await readPlan(contractAddress, currentPlanKey)
+            const onChainPlan = await readPlan(contractAddress, currentPlanKey)
             const onChainAuthor = String(onChainPlan[0]).toLowerCase()
             const planExists = onChainAuthor !== ZERO_ADDRESS
             if (planExists && onChainAuthor !== address?.toLowerCase()) {
                 throw new Error("This on-chain plan key is already owned by another wallet.")
             }
-            if (isLegacy && paymentAsset === "native") {
-                throw new Error(
-                    "This manager was deployed before native token support. Deploy the current SubscriptionManager for this network first."
-                )
-            }
             const shouldUpdate = Boolean(existingPlanKey || planExists)
 
-            const txHash = isLegacy
-                ? await writeContractAsync({
-                      address: toAddress(contractAddress),
-                      abi: legacySubscriptionManagerAbi,
-                      functionName: shouldUpdate ? "updatePlan" : "registerPlan",
-                      chainId,
-                      args: buildLegacyPublishArgs(currentPlanKey, shouldUpdate),
-                  })
-                : await writeContractAsync({
-                      address: toAddress(contractAddress),
-                      abi: subscriptionManagerAbi,
-                      functionName: shouldUpdate ? "updatePlan" : "registerPlan",
-                      chainId,
-                      args: buildCurrentPublishArgs(currentPlanKey, shouldUpdate),
-                  })
+            const txHash = await writeContractAsync({
+                address: toAddress(contractAddress),
+                abi: subscriptionManagerAbi,
+                functionName: shouldUpdate ? "updatePlan" : "registerPlan",
+                chainId,
+                args: buildPublishArgs(currentPlanKey, shouldUpdate),
+            })
 
             setStatus("Waiting for transaction confirmation...")
             await publicClient.waitForTransactionReceipt({ hash: txHash })
@@ -153,42 +97,15 @@ export function OnChainPlanPublisher({
             throw new Error("Wallet network client is not ready.")
         }
 
-        try {
-            const plan = await publicClient.readContract({
-                address: toAddress(contract),
-                abi: subscriptionManagerAbi,
-                functionName: "plans",
-                args: [key],
-            })
-            return { isLegacy: false, plan }
-        } catch (caught) {
-            const message = caught instanceof Error ? caught.message : ""
-            if (!message.includes("out of bounds") && !message.includes("Position")) {
-                throw caught
-            }
-
-            const plan = await publicClient.readContract({
-                address: toAddress(contract),
-                abi: legacySubscriptionManagerAbi,
-                functionName: "plans",
-                args: [key],
-            })
-            return { isLegacy: true, plan }
-        }
+        return publicClient.readContract({
+            address: toAddress(contract),
+            abi: subscriptionManagerAbi,
+            functionName: "plans",
+            args: [key],
+        })
     }
 
-    function buildLegacyPublishArgs(currentPlanKey: `0x${string}`, shouldUpdate: boolean) {
-        const token = toAddress(tokenAddress)
-        const amount = BigInt(price)
-        const period = billingDaysToSeconds(billingPeriodDays)
-        const externalId = buildPlanExternalId(code)
-
-        return shouldUpdate
-            ? ([currentPlanKey, token, amount, period, active, externalId] as const)
-            : ([currentPlanKey, token, amount, period, externalId] as const)
-    }
-
-    function buildCurrentPublishArgs(currentPlanKey: `0x${string}`, shouldUpdate: boolean) {
+    function buildPublishArgs(currentPlanKey: `0x${string}`, shouldUpdate: boolean) {
         const token = toAddress(tokenAddress)
         const amount = BigInt(price)
         const period = billingDaysToSeconds(billingPeriodDays)

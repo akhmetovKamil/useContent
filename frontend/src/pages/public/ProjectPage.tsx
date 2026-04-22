@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom"
 import { ProjectFileTree } from "@/components/project-tree/ProjectFileTree"
 import { Badge } from "@/components/ui/badge"
 import { useAuthorProjectQuery } from "@/queries/projects"
+import { formatFileSize } from "@/utils/format"
 
 export function ProjectPage() {
     const { slug, projectId } = useParams()
@@ -48,14 +49,4 @@ export function ProjectPage() {
             ) : null}
         </section>
     )
-}
-
-function formatFileSize(size: number) {
-    if (size < 1024) {
-        return `${size} B`
-    }
-    if (size < 1024 * 1024) {
-        return `${(size / 1024).toFixed(1)} KB`
-    }
-    return `${(size / 1024 / 1024).toFixed(1)} MB`
 }

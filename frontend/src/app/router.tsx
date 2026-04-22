@@ -47,7 +47,7 @@ export const router = createBrowserRouter([
                     { path: "me/subscribers", element: <MeSubscribersPage /> },
                     { path: "me/posts", element: <MePostsPage /> },
                     { path: "me/projects", element: <MeProjectsPage /> },
-                    { path: "me/subscription-plan", element: <MeSubscriptionPlanPage /> },
+                    { path: "me/access", element: <MeSubscriptionPlanPage /> },
                     { path: "me/platform-billing", element: <MePlatformBillingPage /> },
                 ],
             },

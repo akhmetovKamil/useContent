@@ -13,7 +13,6 @@ export const queryKeys = {
     platformSubscriptionManagerDeployment: (chainId: number) =>
         ["contract-deployments", "platform-subscription-manager", chainId] as const,
     myAccessPolicies: ["me", "access-policies"] as const,
-    mySubscriptionPlan: ["me", "subscription-plan"] as const,
     mySubscriptionPlans: ["me", "subscription-plans"] as const,
     authors: (search = "") => ["authors", search] as const,
     subscriptionManagerDeployment: (chainId: number) =>
@@ -31,6 +30,5 @@ export const queryKeys = {
         ["authors", slug, "projects", projectId, "nodes", parentId ?? "root"] as const,
     myProjectNodes: (projectId: string, parentId?: string | null) =>
         ["me", "projects", projectId, "nodes", parentId ?? "root"] as const,
-    authorSubscriptionPlan: (slug: string) => ["authors", slug, "subscription-plan"] as const,
     authorSubscriptionPlans: (slug: string) => ["authors", slug, "subscription-plans"] as const,
 } as const

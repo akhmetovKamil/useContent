@@ -29,11 +29,6 @@ class AuthorsApi {
         return response.data.policies
     }
 
-    async getAuthorSubscriptionPlan(slug: string) {
-        const response = await http.get<SubscriptionPlanDto>(`/authors/${slug}/subscription-plan`)
-        return response.data
-    }
-
     async listAuthorSubscriptionPlans(slug: string) {
         const response = await http.get<{ plans: SubscriptionPlanDto[] }>(
             `/authors/${slug}/subscription-plans`

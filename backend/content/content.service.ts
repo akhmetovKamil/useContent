@@ -1176,33 +1176,11 @@ export async function upsertContractDeployment(
   );
 }
 
-export async function getMySubscriptionPlan(
-  walletAddress: string,
-): Promise<SubscriptionPlanDoc> {
-  const author = await getMyAuthorProfile(walletAddress);
-  const plan = await getAuthorMainSubscriptionPlan(author);
-  if (!plan) {
-    throw APIError.notFound("subscription plan not found");
-  }
-  return plan;
-}
-
 export async function listMySubscriptionPlans(
   walletAddress: string,
 ): Promise<SubscriptionPlanDoc[]> {
   const author = await getMyAuthorProfile(walletAddress);
   return repo.listSubscriptionPlansByAuthorId(author._id);
-}
-
-export async function getAuthorSubscriptionPlanBySlug(
-  slug: string,
-): Promise<SubscriptionPlanDoc> {
-  const author = await getAuthorProfileBySlug(slug);
-  const plan = await getAuthorMainSubscriptionPlan(author);
-  if (!plan || !plan.active) {
-    throw APIError.notFound("subscription plan not found");
-  }
-  return plan;
 }
 
 export async function listAuthorSubscriptionPlansBySlug(
@@ -3710,19 +3688,6 @@ function shortenWallet(walletAddress: string): string {
   }
 
   return `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
-}
-
-async function getAuthorMainSubscriptionPlan(
-  author: AuthorProfileDoc,
-): Promise<SubscriptionPlanDoc | null> {
-  if (author.subscriptionPlanId) {
-    const byId = await repo.findSubscriptionPlanById(author.subscriptionPlanId);
-    if (byId) {
-      return byId;
-    }
-  }
-
-  return repo.findSubscriptionPlanByAuthorIdAndCode(author._id, "main");
 }
 
 export async function buildAccessPolicyFromInput(

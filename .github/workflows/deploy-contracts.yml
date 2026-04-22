@@ -3,14 +3,6 @@ name: Deploy Contracts
 on:
   workflow_dispatch:
     inputs:
-      action:
-        description: Deploy a new manager or only sync an existing one
-        required: true
-        default: deploy
-        type: choice
-        options:
-          - deploy
-          - sync-existing
       network:
         description: Hardhat network
         required: true
@@ -24,22 +16,6 @@ on:
           - base
           - optimism
           - arbitrum
-      chainId:
-        description: Chain ID for sync-existing
-        required: false
-        type: string
-      subscriptionManagerAddress:
-        description: Existing SubscriptionManager address for sync-existing
-        required: false
-        type: string
-      deployedBy:
-        description: Deployer wallet address for sync-existing
-        required: false
-        type: string
-      deploymentTxHash:
-        description: Deployment tx hash for sync-existing
-        required: false
-        type: string
 
 jobs:
   deploy-subscription-manager:
@@ -61,7 +37,6 @@ jobs:
         run: npm ci
 
       - name: Deploy SubscriptionManager
-        if: ${{ inputs.action == 'deploy' }}
         working-directory: ./solidity
         env:
           DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
@@ -77,21 +52,7 @@ jobs:
           RPC_URL_42161: ${{ secrets.RPC_URL_42161 }}
         run: npx hardhat run scripts/deploy-subscription-manager.ts --network ${{ inputs.network }}
 
-      - name: Sync existing SubscriptionManager
-        if: ${{ inputs.action == 'sync-existing' }}
-        working-directory: ./solidity
-        env:
-          API_BASE_URL: ${{ secrets.API_BASE_URL }}
-          DEPLOYMENT_REGISTRY_TOKEN: ${{ secrets.DEPLOYMENT_REGISTRY_TOKEN }}
-          PLATFORM_TREASURY: ${{ secrets.PLATFORM_TREASURY }}
-          CHAIN_ID: ${{ inputs.chainId }}
-          SUBSCRIPTION_MANAGER_ADDRESS: ${{ inputs.subscriptionManagerAddress }}
-          DEPLOYED_BY: ${{ inputs.deployedBy }}
-          DEPLOYMENT_TX_HASH: ${{ inputs.deploymentTxHash }}
-        run: npx hardhat run scripts/sync-subscription-manager-deployment.ts
-
       - uses: actions/upload-artifact@v4
-        if: ${{ inputs.action == 'deploy' }}
         with:
           name: subscription-manager-deployment-${{ inputs.network }}
           path: contracts/deployments/*.json
