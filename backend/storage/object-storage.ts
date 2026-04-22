@@ -11,7 +11,9 @@ export async function putObject(
   body: Buffer,
   contentType: string
 ): Promise<void> {
-  await userContent.upload(key, body, { contentType });
+  await userContent.upload(key, body, {
+    contentType: normalizeObjectContentType(contentType),
+  });
 }
 
 export async function getObject(key: string): Promise<StoredObject> {
@@ -35,18 +37,6 @@ export async function deleteObject(key: string): Promise<void> {
   }
 }
 
-export async function* listObjects(prefix: string): AsyncIterable<{
-  name: string;
-  size: number;
-}> {
-  for await (const entry of userContent.list({ prefix })) {
-    yield {
-      name: entry.name,
-      size: entry.size,
-    };
-  }
-}
-
 export function createProjectObjectKey(input: {
   authorId: string;
   projectId: string;
@@ -56,11 +46,11 @@ export function createProjectObjectKey(input: {
   return [
     "authors",
     input.authorId,
-    "Projects",
+    "projects",
     input.projectId,
     "nodes",
     input.nodeId,
-    encodeURIComponent(input.fileName),
+    encodeStorageFileName(input.fileName),
   ].join("/");
 }
 
@@ -73,12 +63,21 @@ export function createPostAttachmentObjectKey(input: {
   return [
     "authors",
     input.authorId,
-    "Posts",
+    "posts",
     input.postId,
     "attachments",
     input.attachmentId,
-    encodeURIComponent(input.fileName),
+    encodeStorageFileName(input.fileName),
   ].join("/");
+}
+
+export function normalizeObjectContentType(contentType: string | null | undefined): string {
+  return contentType?.trim() || "application/octet-stream";
+}
+
+function encodeStorageFileName(fileName: string): string {
+  const normalizedName = fileName.trim() || "file";
+  return encodeURIComponent(normalizedName);
 }
 
 function isObjectNotFoundError(error: unknown): boolean {
