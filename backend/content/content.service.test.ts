@@ -2,6 +2,21 @@ import { ObjectId } from "mongodb";
 import { ZERO_ADDRESS } from "../../shared/consts";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
+const repositoryMocks = vi.hoisted(() => ({
+  findSubscriptionPlanByAuthorIdAndCode: vi.fn(),
+  findUserByPrimaryWallet: vi.fn(),
+  findAuthorProfileByUserId: vi.fn(),
+  findContractDeployment: vi.fn(),
+  findAuthorPlatformSubscriptionByAuthorId: vi.fn(),
+  createPlatformSubscriptionPaymentIntent: vi.fn(),
+  findPlatformSubscriptionPaymentIntentByIdAndWallet: vi.fn(),
+  findPlatformSubscriptionPaymentIntentByTxHash: vi.fn(),
+  updatePlatformSubscriptionPaymentIntent: vi.fn(),
+  upsertAuthorPlatformSubscription: vi.fn(),
+  sumPostAttachmentBytesByAuthorId: vi.fn(),
+  sumProjectFileBytesByAuthorId: vi.fn(),
+}));
+
 vi.mock("encore.dev/api", () => {
   class MockAPIError extends Error {
     static invalidArgument(message: string) {
@@ -38,10 +53,18 @@ vi.mock("./onchain", () => {
   };
 });
 
+vi.mock("../profiles/repository", () => repositoryMocks);
+vi.mock("../access/repository", () => repositoryMocks);
+vi.mock("../subscriptions/repository", () => repositoryMocks);
+vi.mock("../platform/repository", () => repositoryMocks);
+vi.mock("../posts/repository", () => repositoryMocks);
+vi.mock("../projects/repository", () => repositoryMocks);
+vi.mock("../lib/contract-deployments.repository", () => repositoryMocks);
+
 import { verifyPlatformSubscriptionPayment } from "./onchain";
-import * as repo from "../lib/content-repository";
+import { buildAccessPolicyFromInput } from "../access/service";
+import { toAuthorStorageUsageResponse } from "../profiles/service";
 import {
-  buildAccessPolicyFromInput,
   buildAuthorPlatformBilling,
   assertAuthorPlatformFeature,
   assertAuthorStorageQuota,
@@ -49,26 +72,10 @@ import {
   createPlatformSubscriptionPaymentIntent,
   listPlatformPlans,
   selectCleanupCandidates,
-  toAuthorStorageUsageResponse,
-} from "../lib/content-core";
+} from "../platform/service";
 import type { AuthorProfileDoc } from "../lib/content-types";
 
-vi.mock("../lib/content-repository", () => {
-  return {
-    findSubscriptionPlanByAuthorIdAndCode: vi.fn(),
-    findUserByPrimaryWallet: vi.fn(),
-    findAuthorProfileByUserId: vi.fn(),
-    findContractDeployment: vi.fn(),
-    findAuthorPlatformSubscriptionByAuthorId: vi.fn(),
-    createPlatformSubscriptionPaymentIntent: vi.fn(),
-    findPlatformSubscriptionPaymentIntentByIdAndWallet: vi.fn(),
-    findPlatformSubscriptionPaymentIntentByTxHash: vi.fn(),
-    updatePlatformSubscriptionPaymentIntent: vi.fn(),
-    upsertAuthorPlatformSubscription: vi.fn(),
-    sumPostAttachmentBytesByAuthorId: vi.fn(),
-    sumProjectFileBytesByAuthorId: vi.fn(),
-  };
-});
+const repo = repositoryMocks;
 
 describe("buildAccessPolicyFromInput", () => {
   afterEach(() => {
