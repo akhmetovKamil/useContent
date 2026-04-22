@@ -324,7 +324,7 @@ export interface SubscriptionPlanDto {
 export interface ContractDeploymentDto {
   id: string;
   chainId: number;
-  contractName: "SubscriptionManager";
+  contractName: "SubscriptionManager" | "PlatformSubscriptionManager";
   address: string;
   platformTreasury: string;
   deployedBy: string;
@@ -481,7 +481,7 @@ export interface ConfirmSubscriptionPaymentInput {
 
 export interface UpsertContractDeploymentInput {
   chainId: number;
-  contractName: "SubscriptionManager";
+  contractName: "SubscriptionManager" | "PlatformSubscriptionManager";
   address: string;
   platformTreasury: string;
   deployedBy: string;

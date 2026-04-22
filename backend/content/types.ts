@@ -264,7 +264,7 @@ export interface SubscriptionPaymentIntentDoc {
 export interface ContractDeploymentDoc {
   _id: ObjectId;
   chainId: number;
-  contractName: "SubscriptionManager";
+  contractName: "SubscriptionManager" | "PlatformSubscriptionManager";
   address: string;
   platformTreasury: string;
   deployedBy: string;

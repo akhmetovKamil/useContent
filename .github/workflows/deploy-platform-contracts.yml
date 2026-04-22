@@ -1,0 +1,60 @@
+name: Deploy Platform Contracts
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        description: Hardhat network
+        required: true
+        default: baseSepolia
+        type: choice
+        options:
+          - sepolia
+          - baseSepolia
+          - optimismSepolia
+          - arbitrumSepolia
+          - base
+          - optimism
+          - arbitrum
+
+jobs:
+  deploy-platform-subscription-manager:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: solidity/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./solidity
+        run: npm ci
+
+      - name: Deploy PlatformSubscriptionManager
+        working-directory: ./solidity
+        env:
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          PLATFORM_TREASURY: ${{ secrets.PLATFORM_TREASURY }}
+          PLATFORM_PAYMENT_TOKEN: ${{ secrets.PLATFORM_PAYMENT_TOKEN }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          DEPLOYMENT_REGISTRY_TOKEN: ${{ secrets.DEPLOYMENT_REGISTRY_TOKEN }}
+          RPC_URL_11155111: ${{ secrets.RPC_URL_11155111 }}
+          RPC_URL_84532: ${{ secrets.RPC_URL_84532 }}
+          RPC_URL_11155420: ${{ secrets.RPC_URL_11155420 }}
+          RPC_URL_421614: ${{ secrets.RPC_URL_421614 }}
+          RPC_URL_8453: ${{ secrets.RPC_URL_8453 }}
+          RPC_URL_10: ${{ secrets.RPC_URL_10 }}
+          RPC_URL_42161: ${{ secrets.RPC_URL_42161 }}
+        run: npx hardhat run scripts/deploy-platform-subscription-manager.ts --network ${{ inputs.network }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: platform-subscription-manager-deployment-${{ inputs.network }}
+          path: contracts/deployments/*.json
+          if-no-files-found: error

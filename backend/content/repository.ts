@@ -1086,7 +1086,7 @@ export async function getContractDeploymentsCollection(): Promise<
 
 export async function findContractDeployment(
   chainId: number,
-  contractName: "SubscriptionManager",
+  contractName: ContractDeploymentDoc["contractName"],
 ): Promise<ContractDeploymentDoc | null> {
   const deployments = await getContractDeploymentsCollection();
   return deployments.findOne({ chainId, contractName });

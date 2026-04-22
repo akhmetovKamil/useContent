@@ -5,7 +5,8 @@
   "scripts": {
     "build": "hardhat compile",
     "test": "hardhat test",
-    "deploy:sepolia": "hardhat run scripts/deploy-subscription-manager.ts --network sepolia"
+    "deploy:sepolia": "hardhat run scripts/deploy-subscription-manager.ts --network sepolia",
+    "deploy:platform:sepolia": "hardhat run scripts/deploy-platform-subscription-manager.ts --network sepolia"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^3.0.3",
