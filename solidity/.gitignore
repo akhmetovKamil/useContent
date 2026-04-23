@@ -2,6 +2,9 @@ artifacts/
 cache/
 coverage/
 types/
+.env
+.env.*
+.DS_Store
 .agents/
 .claude/
 .skills/
