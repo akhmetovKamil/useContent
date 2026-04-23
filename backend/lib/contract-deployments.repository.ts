@@ -1,5 +1,5 @@
 import { type Collection } from "mongodb";
-import { ensureIndexes, getCollection } from "./repository-base";
+import { ensureIndexes, getCollection } from "../storage/repository-base";
 import type { ContractDeploymentDoc } from "./content-types";
 
 export async function getContractDeploymentsCollection(): Promise<

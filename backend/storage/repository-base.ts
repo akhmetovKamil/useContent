@@ -1,6 +1,6 @@
 import { secret } from "encore.dev/config";
 import { type Collection, type Document } from "mongodb";
-import { getDb } from "./mongo";
+import { getDb } from "../lib/mongo";
 import type {
   AccessPolicyPresetDoc,
   AuthorPlatformCleanupLogDoc,
@@ -19,7 +19,7 @@ import type {
   SubscriptionPaymentIntentDoc,
   SubscriptionPlanDoc,
   UserDoc,
-} from "./content-types";
+} from "../lib/content-types";
 
 const mongoUri = secret("MongoUri");
 
@@ -206,7 +206,6 @@ function isMongoIndexNotFoundError(error: unknown): boolean {
     (error as { codeName?: unknown }).codeName === "IndexNotFound"
   );
 }
-
 
 export function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

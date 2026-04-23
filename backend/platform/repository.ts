@@ -1,5 +1,5 @@
 import { ObjectId, type Collection } from "mongodb";
-import { ensureIndexes, getCollection } from "../lib/repository-base";
+import { ensureIndexes, getCollection } from "../storage/repository-base";
 import type { AuthorPlatformCleanupLogDoc, AuthorPlatformSubscriptionDoc, PlatformSubscriptionPaymentIntentDoc } from "../lib/content-types";
 
 export async function getAuthorPlatformSubscriptionsCollection(): Promise<

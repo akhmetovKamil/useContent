@@ -1,4 +1,5 @@
 import { api, type Header } from "encore.dev/api";
+import { secret } from "encore.dev/config";
 import { getAuthData } from "~encore/auth";
 import { assertDeploymentRegistryToken } from "../lib/api-helpers";
 import * as service from "./service";
@@ -15,6 +16,8 @@ import type {
   UpsertContractDeploymentRequest,
   UpsertSubscriptionPlanRequest,
 } from "./types";
+
+const deploymentRegistryTokenSecret = secret("DeploymentRegistryToken");
 
 export const listMyEntitlements = api(
   { method: "GET", path: "/me/entitlements", expose: true, auth: true },
@@ -83,7 +86,10 @@ export const upsertContractDeployment = api(
   }: UpsertContractDeploymentRequest & {
     deploymentRegistryToken: Header<"X-Deployment-Registry-Token">;
   }): Promise<ContractDeploymentResponse> => {
-    assertDeploymentRegistryToken(deploymentRegistryToken);
+    assertDeploymentRegistryToken(
+      deploymentRegistryTokenSecret(),
+      deploymentRegistryToken,
+    );
     const deployment = await service.upsertContractDeployment(req);
     return service.toContractDeploymentResponse(deployment);
   },

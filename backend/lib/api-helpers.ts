@@ -1,8 +1,5 @@
 import { APIError, type Header } from "encore.dev/api";
-import { secret } from "encore.dev/config";
 import { validateToken } from "../auth/auth.service";
-
-const deploymentRegistryToken = secret("DeploymentRegistryToken");
 
 export async function getOptionalViewerWallet(
   authorization?: Header<"Authorization"> | string,
@@ -26,9 +23,9 @@ export async function getOptionalViewerWallet(
 }
 
 export function assertDeploymentRegistryToken(
+  expected: string,
   token: string | undefined,
 ): void {
-  const expected = getDeploymentRegistryToken();
   if (!expected || token !== expected) {
     throw APIError.permissionDenied("invalid deployment registry token");
   }
@@ -64,14 +61,6 @@ export function writeFileResponse(
     )}"`,
   });
   resp.end(file.body);
-}
-
-function getDeploymentRegistryToken(): string {
-  try {
-    return deploymentRegistryToken();
-  } catch {
-    return process.env.DEPLOYMENT_REGISTRY_TOKEN ?? "";
-  }
 }
 
 function toBuffer(chunk: string | Buffer | Uint8Array): Buffer {

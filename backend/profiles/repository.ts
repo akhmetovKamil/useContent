@@ -1,5 +1,9 @@
 import { ObjectId, type Collection } from "mongodb";
-import { ensureIndexes, escapeRegExp, getCollection } from "../lib/repository-base";
+import {
+  ensureIndexes,
+  escapeRegExp,
+  getCollection,
+} from "../storage/repository-base";
 import type { AuthorProfileDoc, UserDoc } from "../lib/content-types";
 
 export async function getUsersCollection(): Promise<Collection<UserDoc>> {
