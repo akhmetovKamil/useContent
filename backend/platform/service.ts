@@ -12,13 +12,7 @@ import {
   isAccessPolicy,
   resolveEntityPolicy,
 } from "../domain/access";
-import {
-  createPostAttachmentObjectKey,
-  createProjectObjectKey,
-  deleteObject,
-  getObject,
-  putObject,
-} from "../storage/object-storage";
+import { deleteObject } from "../storage/object-storage";
 import {
   readOnChainAccessGrants,
   verifyPlatformSubscriptionPayment,

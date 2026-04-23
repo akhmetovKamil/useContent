@@ -37,47 +37,8 @@ export async function deleteObject(key: string): Promise<void> {
   }
 }
 
-export function createProjectObjectKey(input: {
-  authorId: string;
-  projectId: string;
-  nodeId: string;
-  fileName: string;
-}): string {
-  return [
-    "authors",
-    input.authorId,
-    "projects",
-    input.projectId,
-    "nodes",
-    input.nodeId,
-    encodeStorageFileName(input.fileName),
-  ].join("/");
-}
-
-export function createPostAttachmentObjectKey(input: {
-  authorId: string;
-  postId: string;
-  attachmentId: string;
-  fileName: string;
-}): string {
-  return [
-    "authors",
-    input.authorId,
-    "posts",
-    input.postId,
-    "attachments",
-    input.attachmentId,
-    encodeStorageFileName(input.fileName),
-  ].join("/");
-}
-
 export function normalizeObjectContentType(contentType: string | null | undefined): string {
   return contentType?.trim() || "application/octet-stream";
-}
-
-function encodeStorageFileName(fileName: string): string {
-  const normalizedName = fileName.trim() || "file";
-  return encodeURIComponent(normalizedName);
 }
 
 function isObjectNotFoundError(error: unknown): boolean {

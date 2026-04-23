@@ -13,12 +13,10 @@ import {
   resolveEntityPolicy,
 } from "../domain/access";
 import {
-  createPostAttachmentObjectKey,
-  createProjectObjectKey,
-  deleteObject,
-  getObject,
-  putObject,
-} from "../storage/object-storage";
+  createPostAttachmentStorageKey,
+  deletePostAttachmentFile,
+  uploadPostAttachmentFile,
+} from "./file-storage";
 import {
   readOnChainAccessGrants,
   verifyPlatformSubscriptionPayment,
@@ -365,7 +363,7 @@ export async function deleteMyPost(
   }
   const attachments = await repo.deletePostAttachmentsByPostId(objectId);
   for (const attachment of attachments) {
-    await deleteObject(attachment.storageKey);
+    await deletePostAttachmentFile(attachment.storageKey);
   }
   await repo.deletePostCommentsByPostId(objectId);
 }
@@ -393,14 +391,14 @@ export async function uploadMyPostAttachment(
   const attachmentId = new ObjectId();
   const fileName = normalizeProjectNodeName(input.name);
   const mimeType = input.contentType || "application/octet-stream";
-  const storageKey = createPostAttachmentObjectKey({
+  const storageKey = createPostAttachmentStorageKey({
     authorId: author._id.toHexString(),
     postId: post._id.toHexString(),
     attachmentId: attachmentId.toHexString(),
     fileName,
   });
 
-  await putObject(storageKey, input.body, mimeType);
+  await uploadPostAttachmentFile(storageKey, input.body, mimeType);
 
   const attachment = await repo.createPostAttachment({
     _id: attachmentId,

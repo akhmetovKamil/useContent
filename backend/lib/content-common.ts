@@ -12,13 +12,8 @@ import {
   isAccessPolicy,
   resolveEntityPolicy,
 } from "../domain/access";
-import {
-  createPostAttachmentObjectKey,
-  createProjectObjectKey,
-  deleteObject,
-  getObject,
-  putObject,
-} from "../storage/object-storage";
+import { readPostAttachmentFile } from "../posts/file-storage";
+import { readProjectFile } from "../projects/file-storage";
 import {
   readOnChainAccessGrants,
   verifyPlatformSubscriptionPayment,
@@ -1076,13 +1071,7 @@ export async function readProjectFileObject(
   if (node.kind !== "file" || !node.storageKey) {
     throw APIError.invalidArgument("project node is not a file");
   }
-
-  const object = await getObject(node.storageKey);
-  return {
-    body: object.body,
-    contentType: object.contentType,
-    fileName: node.name,
-  };
+  return readProjectFile(node);
 }
 
 export async function normalizeRequestedAuthorDefaultPolicy(
@@ -1244,12 +1233,7 @@ export async function resolvePostAttachment(
 export async function readPostAttachmentObject(
   attachment: PostAttachmentDoc,
 ): Promise<{ body: Buffer; contentType: string; fileName: string }> {
-  const object = await getObject(attachment.storageKey);
-  return {
-    body: object.body,
-    contentType: object.contentType,
-    fileName: attachment.fileName,
-  };
+  return readPostAttachmentFile(attachment);
 }
 
 export function parseObjectId(value: string, field: string): ObjectId {

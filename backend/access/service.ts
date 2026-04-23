@@ -13,13 +13,6 @@ import {
   resolveEntityPolicy,
 } from "../domain/access";
 import {
-  createPostAttachmentObjectKey,
-  createProjectObjectKey,
-  deleteObject,
-  getObject,
-  putObject,
-} from "../storage/object-storage";
-import {
   readOnChainAccessGrants,
   verifyPlatformSubscriptionPayment,
   verifyPlanRegistration,

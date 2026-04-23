@@ -13,12 +13,10 @@ import {
   resolveEntityPolicy,
 } from "../domain/access";
 import {
-  createPostAttachmentObjectKey,
-  createProjectObjectKey,
-  deleteObject,
-  getObject,
-  putObject,
-} from "../storage/object-storage";
+  createProjectFileStorageKey,
+  deleteProjectFile,
+  uploadProjectFile,
+} from "./file-storage";
 import {
   readOnChainAccessGrants,
   verifyPlatformSubscriptionPayment,
@@ -346,7 +344,7 @@ export async function deleteMyProject(
   const nodes = await repo.listProjectNodesByProjectId(project._id);
   for (const node of nodes) {
     if (node.kind === "file" && node.storageKey) {
-      await deleteObject(node.storageKey);
+      await deleteProjectFile(node.storageKey);
     }
   }
 
@@ -550,14 +548,14 @@ export async function uploadMyProjectFile(
   const now = new Date();
   const nodeId = new ObjectId();
   const name = normalizeProjectNodeName(input.name);
-  const storageKey = createProjectObjectKey({
+  const storageKey = createProjectFileStorageKey({
     authorId: author._id.toHexString(),
     projectId: project._id.toHexString(),
     nodeId: nodeId.toHexString(),
     fileName: name,
   });
 
-  await putObject(
+  await uploadProjectFile(
     storageKey,
     input.body,
     input.contentType || "application/octet-stream",
@@ -638,7 +636,7 @@ export async function deleteMyProjectNode(
 
   for (const item of nodesToDelete) {
     if (item.kind === "file" && item.storageKey) {
-      await deleteObject(item.storageKey);
+      await deleteProjectFile(item.storageKey);
     }
   }
 
