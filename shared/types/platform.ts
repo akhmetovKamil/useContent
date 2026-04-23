@@ -4,14 +4,14 @@ import type {
   OnChainPaymentBaseDto,
   WalletAddress,
 } from "./common";
-import type { PLATFORM_FEATURES, PLATFORM_PLAN_CODES } from "../consts";
 
-export type PlatformFeature = (typeof PLATFORM_FEATURES)[number];
+export type PlatformFeature = "posts" | "projects" | "homepage_promo";
+export type PlatformPlanCode = "free" | "basic";
 
 export type PlatformBillingStatus = "free" | "active" | "grace" | "expired";
 
 export interface PlatformPlanDto {
-  code: (typeof PLATFORM_PLAN_CODES)[number];
+  code: PlatformPlanCode;
   title: string;
   description: string;
   priceUsdCents: number;
@@ -27,7 +27,7 @@ export interface PlatformPlanDto {
 export interface AuthorPlatformBillingDto {
   authorId: EntityId;
   plan: PlatformPlanDto;
-  planCode: PlatformPlanDto["code"];
+  planCode: PlatformPlanCode;
   status: PlatformBillingStatus;
   validUntil: NullableDateString;
   graceUntil: NullableDateString;
@@ -80,7 +80,7 @@ export interface AuthorPlatformCleanupRunDto {
 export interface PlatformSubscriptionPaymentIntentDto extends OnChainPaymentBaseDto {
   authorId: EntityId;
   walletAddress: WalletAddress;
-  planCode: PlatformPlanDto["code"];
+  planCode: PlatformPlanCode;
   tierKey: string;
   extraStorageGb: number;
   status: "pending" | "submitted" | "confirmed" | "expired" | "cancelled";
@@ -89,7 +89,7 @@ export interface PlatformSubscriptionPaymentIntentDto extends OnChainPaymentBase
 }
 
 export interface CreatePlatformSubscriptionPaymentIntentInput {
-  planCode: PlatformPlanDto["code"];
+  planCode: PlatformPlanCode;
   extraStorageGb: number;
   chainId: number;
   tokenAddress: WalletAddress;

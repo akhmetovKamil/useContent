@@ -6,9 +6,8 @@ import type {
   TxHash,
   WalletAddress,
 } from "./common";
-import type { PAYMENT_ASSETS } from "../consts";
 
-export type SubscriptionPaymentAsset = (typeof PAYMENT_ASSETS)[number];
+export type SubscriptionPaymentAsset = "erc20" | "native";
 
 export interface SubscriptionPlanDto extends BaseEntityDto {
   authorId: EntityId;

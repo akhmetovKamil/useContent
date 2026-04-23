@@ -1,4 +1,4 @@
-import type { AccessPolicy } from "./access";
+import type { AccessPolicy, AccessPolicyInput } from "./access";
 import type { BaseEntityDto, EntityId, Maybe, WalletAddress } from "./common";
 
 export interface UserWalletDto {
@@ -53,7 +53,7 @@ export interface CreateAuthorProfileInput {
   bio?: string;
   tags?: string[];
   defaultPolicy?: AccessPolicy;
-  defaultPolicyInput?: import("./access").AccessPolicyInput;
+  defaultPolicyInput?: AccessPolicyInput;
 }
 
 export interface UpdateAuthorProfileInput {
@@ -61,6 +61,6 @@ export interface UpdateAuthorProfileInput {
   bio?: string;
   tags?: string[];
   defaultPolicy?: AccessPolicy;
-  defaultPolicyInput?: import("./access").AccessPolicyInput;
+  defaultPolicyInput?: AccessPolicyInput;
   defaultPolicyId?: Maybe<EntityId>;
 }

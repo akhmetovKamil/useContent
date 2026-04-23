@@ -1,4 +1,4 @@
-import type { AccessPolicy, PolicyMode } from "./access";
+import type { AccessPolicy, AccessPolicyInput, PolicyMode } from "./access";
 import type {
   ContentBaseDto,
   EntityId,
@@ -68,7 +68,7 @@ export interface CreateProjectInput {
   status?: ContentStatus;
   policyMode?: PolicyMode;
   policy?: Maybe<AccessPolicy>;
-  policyInput?: import("./access").AccessPolicyInput;
+  policyInput?: AccessPolicyInput;
   accessPolicyId?: Maybe<EntityId>;
 }
 

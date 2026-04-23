@@ -1,4 +1,4 @@
-import type { AccessPolicy, PolicyMode } from "./access";
+import type { AccessPolicy, AccessPolicyInput, PolicyMode } from "./access";
 import type {
   AuthorOwnedDto,
   ContentBaseDto,
@@ -7,9 +7,8 @@ import type {
   StorageSizedDto,
   WalletAddress,
 } from "./common";
-import type { CONTENT_STATUSES } from "../consts";
 
-export type ContentStatus = (typeof CONTENT_STATUSES)[number];
+export type ContentStatus = "draft" | "published" | "archived";
 
 export interface PostCommentDto extends AuthorOwnedDto {
   id: EntityId;
@@ -64,7 +63,7 @@ export interface CreatePostInput {
   status?: ContentStatus;
   policyMode?: PolicyMode;
   policy?: Maybe<AccessPolicy>;
-  policyInput?: import("./access").AccessPolicyInput;
+  policyInput?: AccessPolicyInput;
   accessPolicyId?: Maybe<EntityId>;
   attachmentIds?: EntityId[];
   linkedProjectIds?: EntityId[];
