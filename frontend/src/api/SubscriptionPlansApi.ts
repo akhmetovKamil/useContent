@@ -7,47 +7,44 @@ import type {
     UpsertSubscriptionPlanInput,
 } from "@shared/types/content"
 
-import { http } from "@/utils/api/http"
+import { deleteData, getData, postData, putData } from "@/utils/api/http"
 
 class SubscriptionPlansApi {
     async getSubscriptionManagerDeployment(chainId: number) {
-        const response = await http.get<ContractDeploymentLookupDto>(
+        const response = await getData<ContractDeploymentLookupDto>(
             `/contract-deployments/subscription-manager/${chainId}`
         )
-        return response.data.deployment
+        return response.deployment
     }
 
     async listMySubscriptionPlans() {
-        const response = await http.get<{ plans: SubscriptionPlanDto[] }>("/me/subscription-plans")
-        return response.data.plans
+        const response = await getData<{ plans: SubscriptionPlanDto[] }>("/me/subscription-plans")
+        return response.plans
     }
 
     async upsertMySubscriptionPlan(input: UpsertSubscriptionPlanInput) {
-        const response = await http.put<SubscriptionPlanDto>("/me/subscription-plans", input)
-        return response.data
+        return putData<SubscriptionPlanDto>("/me/subscription-plans", input)
     }
 
     async deleteMySubscriptionPlan(planId: string) {
-        await http.delete(`/me/subscription-plans/${planId}`)
+        await deleteData(`/me/subscription-plans/${planId}`)
     }
 
     async createSubscriptionPaymentIntent(
         slug: string,
         input: CreateSubscriptionPaymentIntentInput
     ) {
-        const response = await http.post<SubscriptionPaymentIntentDto>(
+        return postData<SubscriptionPaymentIntentDto>(
             `/authors/${slug}/subscription-payment-intents`,
             input
         )
-        return response.data
     }
 
     async confirmSubscriptionPayment(intentId: string, input: ConfirmSubscriptionPaymentInput) {
-        const response = await http.post<SubscriptionPaymentIntentDto>(
+        return postData<SubscriptionPaymentIntentDto>(
             `/me/subscription-payment-intents/${intentId}/confirm`,
             input
         )
-        return response.data
     }
 }
 

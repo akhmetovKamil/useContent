@@ -1,6 +1,6 @@
 import type { AccessPolicyPresetDto, SubscriptionPlanDto } from "@shared/types/content"
 import { ZERO_ADDRESS } from "@shared/consts"
-import { ArrowUpRight, FileText, Layers3, Plus, ShieldCheck, Sparkles } from "lucide-react"
+import { ArrowUpRight, FileText, Plus, ShieldCheck, Sparkles } from "lucide-react"
 import type { ReactNode } from "react"
 import { useEffect, useState } from "react"
 import { usePublicClient } from "wagmi"
@@ -11,6 +11,7 @@ import { OnChainPlanPublisher } from "@/components/subscriptions/OnChainPlanPubl
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
 import {
     Drawer,
     DrawerContent,
@@ -22,6 +23,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Modal } from "@/components/ui/modal"
 import { Eyebrow, PageSection } from "@/components/ui/page"
+import { ErrorMessage, LoadingMessage } from "@/components/ui/query-state"
 import { Textarea } from "@/components/ui/textarea"
 import {
     ChainPicker,
@@ -356,11 +358,9 @@ export function MeSubscriptionPlanPage() {
                         </CardHeader>
                         <CardContent>
                             {policiesQuery.isLoading ? (
-                                <p className="text-sm text-[var(--muted)]">Loading policies...</p>
+                                <LoadingMessage>Loading policies...</LoadingMessage>
                             ) : policiesQuery.isError ? (
-                                <p className="text-sm text-rose-600">
-                                    {policiesQuery.error.message}
-                                </p>
+                                <ErrorMessage>{policiesQuery.error.message}</ErrorMessage>
                             ) : policiesQuery.data?.length ? (
                                 <div className="grid gap-4 lg:grid-cols-2">
                                     {policiesQuery.data.map((policy) => (
@@ -410,9 +410,9 @@ export function MeSubscriptionPlanPage() {
                         </CardHeader>
                         <CardContent>
                             {plansQuery.isLoading ? (
-                                <p className="text-sm text-[var(--muted)]">Loading plans...</p>
+                                <LoadingMessage>Loading plans...</LoadingMessage>
                             ) : plansQuery.isError ? (
-                                <p className="text-sm text-rose-600">{plansQuery.error.message}</p>
+                                <ErrorMessage>{plansQuery.error.message}</ErrorMessage>
                             ) : plansQuery.data?.length ? (
                                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                                     {plansQuery.data.map((plan) => (
@@ -435,9 +435,9 @@ export function MeSubscriptionPlanPage() {
                                 />
                             )}
                             {deletePlanMutation.isError ? (
-                                <p className="mt-3 text-sm text-rose-600">
-                                    {deletePlanMutation.error.message}
-                                </p>
+                                <div className="mt-3">
+                                    <ErrorMessage>{deletePlanMutation.error.message}</ErrorMessage>
+                                </div>
                             ) : null}
                         </CardContent>
                     </Card>
@@ -867,33 +867,6 @@ function PlanCard({
                     Delete
                 </Button>
             </div>
-        </div>
-    )
-}
-
-function EmptyState({
-    action,
-    description,
-    onAction,
-    title,
-}: {
-    action: string
-    description: string
-    onAction: () => void
-    title: string
-}) {
-    return (
-        <div className="rounded-[28px] border border-dashed border-[var(--line)] bg-[var(--surface-strong)] p-8 text-center">
-            <div className="mx-auto grid size-12 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
-                <Layers3 className="size-5" />
-            </div>
-            <h3 className="mt-4 font-medium text-[var(--foreground)]">{title}</h3>
-            <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-[var(--muted)]">
-                {description}
-            </p>
-            <Button className="mt-5 rounded-full" onClick={onAction} type="button">
-                {action}
-            </Button>
         </div>
     )
 }

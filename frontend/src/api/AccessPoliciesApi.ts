@@ -4,31 +4,24 @@ import type {
     UpdateAccessPolicyPresetInput,
 } from "@shared/types/content"
 
-import { http } from "@/utils/api/http"
+import { deleteData, getData, patchData, postData } from "@/utils/api/http"
 
 class AccessPoliciesApi {
     async listMyAccessPolicies() {
-        const response = await http.get<{ policies: AccessPolicyPresetDto[] }>(
-            "/me/access-policies"
-        )
-        return response.data.policies
+        const response = await getData<{ policies: AccessPolicyPresetDto[] }>("/me/access-policies")
+        return response.policies
     }
 
     async createMyAccessPolicy(input: CreateAccessPolicyPresetInput) {
-        const response = await http.post<AccessPolicyPresetDto>("/me/access-policies", input)
-        return response.data
+        return postData<AccessPolicyPresetDto>("/me/access-policies", input)
     }
 
     async updateMyAccessPolicy(policyId: string, input: UpdateAccessPolicyPresetInput) {
-        const response = await http.patch<AccessPolicyPresetDto>(
-            `/me/access-policies/${policyId}`,
-            input
-        )
-        return response.data
+        return patchData<AccessPolicyPresetDto>(`/me/access-policies/${policyId}`, input)
     }
 
     async deleteMyAccessPolicy(policyId: string) {
-        await http.delete(`/me/access-policies/${policyId}`)
+        await deleteData(`/me/access-policies/${policyId}`)
     }
 }
 

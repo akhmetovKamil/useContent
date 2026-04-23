@@ -8,33 +8,38 @@ import type {
     UpdatePostInput,
 } from "@shared/types/content"
 
-import { http } from "@/utils/api/http"
 import { downloadBlob } from "@/utils/download-blob"
+import {
+    deleteData,
+    downloadData,
+    getData,
+    patchData,
+    postData,
+    uploadData,
+} from "@/utils/api/http"
 
 class PostsApi {
     async createMyPost(input: CreatePostInput) {
-        const response = await http.post<PostDto>("/me/posts", input)
-        return response.data
+        return postData<PostDto>("/me/posts", input)
     }
 
     async listMyPosts(status?: PostDto["status"]) {
-        const response = await http.get<{ posts: PostDto[] }>("/me/posts", {
+        const response = await getData<{ posts: PostDto[] }>("/me/posts", {
             params: { status },
         })
-        return response.data.posts
+        return response.posts
     }
 
     async updateMyPost(postId: string, input: UpdatePostInput) {
-        const response = await http.patch<PostDto>(`/me/posts/${postId}`, input)
-        return response.data
+        return patchData<PostDto>(`/me/posts/${postId}`, input)
     }
 
     async deleteMyPost(postId: string) {
-        await http.delete(`/me/posts/${postId}`)
+        await deleteData(`/me/posts/${postId}`)
     }
 
     async uploadMyPostAttachment(postId: string, file: File) {
-        const response = await http.post<PostAttachmentDto>(
+        return uploadData<PostAttachmentDto>(
             `/me/post-files/upload/${postId}`,
             file,
             {
@@ -42,49 +47,42 @@ class PostsApi {
                 params: { name: file.name },
             }
         )
-        return response.data
     }
 
     async downloadMyPostAttachment(postId: string, attachmentId: string, fileName: string) {
-        const response = await http.get<Blob>(`/me/post-files/download/${postId}/${attachmentId}`, {
-            responseType: "blob",
-        })
-        downloadBlob(response.data, fileName)
+        const file = await downloadData(`/me/post-files/download/${postId}/${attachmentId}`)
+        downloadBlob(file, fileName)
     }
 
     async getAuthorPost(slug: string, postId: string) {
-        const response = await http.get<PostDto>(`/authors/${slug}/posts/${postId}`)
-        return response.data
+        return getData<PostDto>(`/authors/${slug}/posts/${postId}`)
     }
 
     async listPostComments(slug: string, postId: string) {
-        const response = await http.get<{ comments: PostCommentDto[] }>(
+        const response = await getData<{ comments: PostCommentDto[] }>(
             `/authors/${slug}/posts/${postId}/comments`
         )
-        return response.data.comments
+        return response.comments
     }
 
     async createPostComment(slug: string, postId: string, input: CreatePostCommentInput) {
-        const response = await http.post<PostCommentDto>(
+        return postData<PostCommentDto>(
             `/authors/${slug}/posts/${postId}/comments`,
             input
         )
-        return response.data
     }
 
     async togglePostLike(slug: string, postId: string) {
-        const response = await http.post<{ liked: boolean; likesCount: number }>(
+        return postData<{ liked: boolean; likesCount: number }>(
             `/authors/${slug}/posts/${postId}/like`
         )
-        return response.data
     }
 
     async recordPostView(slug: string, postId: string, input: RecordPostViewInput) {
-        const response = await http.post<{ viewsCount: number }>(
+        return postData<{ viewsCount: number }>(
             `/authors/${slug}/posts/${postId}/view`,
             input
         )
-        return response.data
     }
 
     async downloadAuthorPostAttachment(
@@ -93,13 +91,10 @@ class PostsApi {
         attachmentId: string,
         fileName: string
     ) {
-        const response = await http.get<Blob>(
-            `/post-files/download/${slug}/${postId}/${attachmentId}`,
-            {
-                responseType: "blob",
-            }
+        const file = await downloadData(
+            `/post-files/download/${slug}/${postId}/${attachmentId}`
         )
-        downloadBlob(response.data, fileName)
+        downloadBlob(file, fileName)
     }
 }
 

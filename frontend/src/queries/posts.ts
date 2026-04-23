@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { authorsApi } from "@/api/AuthorsApi"
 import { postsApi } from "@/api/PostsApi"
+import { invalidateMany } from "@/queries/invalidate"
 import { queryKeys } from "./queryKeys"
 
 export function useMyPostsQuery(enabled = true, status?: PostDto["status"]) {
@@ -48,8 +49,7 @@ export function useCreateMyPostMutation() {
     return useMutation({
         mutationFn: (input: CreatePostInput) => postsApi.createMyPost(input),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: ["me", "posts"] })
-            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+            void invalidateMany(queryClient, [queryKeys.myPosts(), queryKeys.authors()])
         },
     })
 }
@@ -108,8 +108,7 @@ export function useUpdateMyPostMutation() {
             queryClient.setQueryData(queryKeys.myPosts("archived"), context.previousArchive)
         },
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: ["me", "posts"] })
-            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+            void invalidateMany(queryClient, [queryKeys.myPosts(), queryKeys.authors()])
         },
     })
 }
@@ -120,8 +119,7 @@ export function useDeleteMyPostMutation() {
     return useMutation({
         mutationFn: (postId: string) => postsApi.deleteMyPost(postId),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: ["me", "posts"] })
-            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+            void invalidateMany(queryClient, [queryKeys.myPosts(), queryKeys.authors()])
         },
     })
 }
@@ -133,8 +131,7 @@ export function useUploadMyPostAttachmentMutation() {
         mutationFn: ({ postId, file }: { postId: string; file: File }) =>
             postsApi.uploadMyPostAttachment(postId, file),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: ["me", "posts"] })
-            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+            void invalidateMany(queryClient, [queryKeys.myPosts(), queryKeys.authors()])
         },
     })
 }
@@ -167,10 +164,12 @@ export function useCreatePostCommentMutation(slug: string, postId: string) {
         mutationFn: (input: CreatePostCommentInput) =>
             postsApi.createPostComment(slug, postId, input),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: queryKeys.postComments(slug, postId) })
-            void queryClient.invalidateQueries({ queryKey: queryKeys.authorPost(slug, postId) })
-            void queryClient.invalidateQueries({ queryKey: queryKeys.authorPosts(slug) })
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myFeedPosts })
+            void invalidateMany(queryClient, [
+                queryKeys.postComments(slug, postId),
+                queryKeys.authorPost(slug, postId),
+                queryKeys.authorPosts(slug),
+                queryKeys.myFeedPosts,
+            ])
         },
     })
 }
@@ -181,9 +180,11 @@ export function useTogglePostLikeMutation(slug: string, postId: string) {
     return useMutation({
         mutationFn: () => postsApi.togglePostLike(slug, postId),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: queryKeys.authorPost(slug, postId) })
-            void queryClient.invalidateQueries({ queryKey: queryKeys.authorPosts(slug) })
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myFeedPosts })
+            void invalidateMany(queryClient, [
+                queryKeys.authorPost(slug, postId),
+                queryKeys.authorPosts(slug),
+                queryKeys.myFeedPosts,
+            ])
         },
     })
 }
@@ -194,7 +195,7 @@ export function useRecordPostViewMutation(slug: string, postId: string) {
     return useMutation({
         mutationFn: (viewerKey: string) => postsApi.recordPostView(slug, postId, { viewerKey }),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: queryKeys.authorPost(slug, postId) })
+            void invalidateMany(queryClient, [queryKeys.authorPost(slug, postId)])
         },
     })
 }

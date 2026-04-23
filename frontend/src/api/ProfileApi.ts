@@ -9,82 +9,64 @@ import type {
     UpdateMyProfileInput,
     UserProfileDto,
 } from "@shared/types/content"
-import axios from "axios"
 
-import { http } from "@/utils/api/http"
+import {
+    deleteData,
+    getData,
+    patchData,
+    postData,
+} from "@/utils/api/http"
 
 class ProfileApi {
     async getMe() {
-        const response = await http.get<UserProfileDto>("/me")
-        return response.data
+        return getData<UserProfileDto>("/me")
     }
 
     async updateMe(input: UpdateMyProfileInput) {
-        const response = await http.patch<UserProfileDto>("/me", input)
-        return response.data
+        return patchData<UserProfileDto>("/me", input)
     }
 
     async getMyAuthorProfile() {
-        const response = await http.get<AuthorProfileDto>("/me/author")
-        return response.data
+        return getData<AuthorProfileDto>("/me/author")
     }
 
     async createMyAuthorProfile(input: CreateAuthorProfileInput) {
-        try {
-            const response = await http.post<AuthorProfileDto>("/authors", input)
-            return response.data
-        } catch (error) {
-            throw normalizeApiError(error)
-        }
+        return postData<AuthorProfileDto>("/authors", input)
     }
 
     async updateMyAuthorProfile(input: UpdateAuthorProfileInput) {
-        try {
-            const response = await http.patch<AuthorProfileDto>("/me/author", input)
-            return response.data
-        } catch (error) {
-            throw normalizeApiError(error)
-        }
+        return patchData<AuthorProfileDto>("/me/author", input)
     }
 
     async deleteMyAuthorProfile() {
-        await http.delete("/me/author")
+        await deleteData("/me/author")
     }
 
     async getMyEntitlements() {
-        const response = await http.get<{ entitlements: SubscriptionEntitlementDto[] }>(
+        const response = await getData<{ entitlements: SubscriptionEntitlementDto[] }>(
             "/me/entitlements"
         )
-        return response.data.entitlements
+        return response.entitlements
     }
 
     async getMyReaderSubscriptions() {
-        const response = await http.get<{ subscriptions: ReaderSubscriptionDto[] }>(
+        const response = await getData<{ subscriptions: ReaderSubscriptionDto[] }>(
             "/me/subscriptions"
         )
-        return response.data.subscriptions
+        return response.subscriptions
     }
 
     async getMyFeedPosts() {
-        const response = await http.get<{ posts: FeedPostDto[] }>("/me/feed")
-        return response.data.posts
+        const response = await getData<{ posts: FeedPostDto[] }>("/me/feed")
+        return response.posts
     }
 
     async getMyAuthorSubscribers() {
-        const response = await http.get<{ subscribers: AuthorSubscriberDto[] }>(
+        const response = await getData<{ subscribers: AuthorSubscriberDto[] }>(
             "/me/author/subscribers"
         )
-        return response.data.subscribers
+        return response.subscribers
     }
-}
-
-function normalizeApiError(error: unknown) {
-    if (axios.isAxiosError(error)) {
-        const data = error.response?.data as { code?: string; message?: string } | undefined
-        return new Error(data?.message ?? data?.code ?? error.message)
-    }
-
-    return error
 }
 
 export const profileApi = new ProfileApi()

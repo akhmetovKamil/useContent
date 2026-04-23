@@ -9,62 +9,64 @@ import type {
     UpdateProjectNodeInput,
 } from "@shared/types/content"
 
-import { http } from "@/utils/api/http"
 import { downloadBlob } from "@/utils/download-blob"
+import {
+    deleteData,
+    downloadData,
+    getData,
+    patchData,
+    postData,
+    uploadData,
+} from "@/utils/api/http"
 
 class ProjectsApi {
     async createMyProject(input: CreateProjectInput) {
-        const response = await http.post<ProjectDto>("/me/projects", input)
-        return response.data
+        return postData<ProjectDto>("/me/projects", input)
     }
 
     async listMyProjects(status?: ProjectDto["status"]) {
-        const response = await http.get<{ projects: ProjectDto[] }>("/me/projects", {
+        const response = await getData<{ projects: ProjectDto[] }>("/me/projects", {
             params: { status },
         })
-        return response.data.projects
+        return response.projects
     }
 
     async updateMyProject(projectId: string, input: UpdateProjectInput) {
-        const response = await http.patch<ProjectDto>(`/me/projects/${projectId}`, input)
-        return response.data
+        return patchData<ProjectDto>(`/me/projects/${projectId}`, input)
     }
 
     async deleteMyProject(projectId: string) {
-        await http.delete(`/me/projects/${projectId}`)
+        await deleteData(`/me/projects/${projectId}`)
     }
 
     async listMyProjectNodes(projectId: string, parentId?: string | null) {
-        const response = await http.get<ProjectNodeListDto>("/me/project-nodes", {
+        return getData<ProjectNodeListDto>("/me/project-nodes", {
             params: { parentId: parentId || undefined, projectId },
         })
-        return response.data
     }
 
     async createMyProjectFolder(projectId: string, input: CreateProjectFolderInput) {
-        const response = await http.post<ProjectNodeDto>("/me/project-folders", {
+        return postData<ProjectNodeDto>("/me/project-folders", {
             ...input,
             projectId,
         })
-        return response.data
     }
 
     async updateMyProjectNode(projectId: string, nodeId: string, input: UpdateProjectNodeInput) {
-        const response = await http.patch<ProjectNodeDto>(`/me/project-nodes/${nodeId}`, {
+        return patchData<ProjectNodeDto>(`/me/project-nodes/${nodeId}`, {
             ...input,
             projectId,
         })
-        return response.data
     }
 
     async deleteMyProjectNode(projectId: string, nodeId: string) {
-        await http.delete(`/me/project-nodes/${nodeId}`, {
+        await deleteData(`/me/project-nodes/${nodeId}`, {
             params: { projectId },
         })
     }
 
     async uploadMyProjectFile(projectId: string, file: File, parentId?: string | null) {
-        const response = await http.post<ProjectNodeDto>(
+        return uploadData<ProjectNodeDto>(
             `/me/project-files/upload/${projectId}`,
             file,
             {
@@ -75,33 +77,27 @@ class ProjectsApi {
                 },
             }
         )
-        return response.data
     }
 
     async downloadMyProjectFile(projectId: string, nodeId: string, fileName: string) {
-        const response = await http.get<Blob>(`/me/project-files/download/${projectId}/${nodeId}`, {
-            responseType: "blob",
-        })
-        downloadBlob(response.data, fileName)
+        const file = await downloadData(`/me/project-files/download/${projectId}/${nodeId}`)
+        downloadBlob(file, fileName)
     }
 
     async getMyProjectBundle(projectId: string, folderId?: string | null) {
-        const response = await http.get<ProjectBundleDto>("/me/project-bundle", {
+        return getData<ProjectBundleDto>("/me/project-bundle", {
             params: { folderId: folderId || undefined, projectId },
         })
-        return response.data
     }
 
     async getAuthorProject(slug: string, projectId: string) {
-        const response = await http.get<ProjectDto>(`/authors/${slug}/projects/${projectId}`)
-        return response.data
+        return getData<ProjectDto>(`/authors/${slug}/projects/${projectId}`)
     }
 
     async listAuthorProjectNodes(slug: string, projectId: string, parentId?: string | null) {
-        const response = await http.get<ProjectNodeListDto>("/author-project-nodes", {
+        return getData<ProjectNodeListDto>("/author-project-nodes", {
             params: { parentId: parentId || undefined, projectId, slug },
         })
-        return response.data
     }
 
     async downloadAuthorProjectFile(
@@ -110,20 +106,16 @@ class ProjectsApi {
         nodeId: string,
         fileName: string
     ) {
-        const response = await http.get<Blob>(
-            `/project-files/download/${slug}/${projectId}/${nodeId}`,
-            {
-                responseType: "blob",
-            }
+        const file = await downloadData(
+            `/project-files/download/${slug}/${projectId}/${nodeId}`
         )
-        downloadBlob(response.data, fileName)
+        downloadBlob(file, fileName)
     }
 
     async getAuthorProjectBundle(slug: string, projectId: string, folderId?: string | null) {
-        const response = await http.get<ProjectBundleDto>("/author-project-bundle", {
+        return getData<ProjectBundleDto>("/author-project-bundle", {
             params: { folderId: folderId || undefined, projectId, slug },
         })
-        return response.data
     }
 }
 

@@ -7,43 +7,44 @@ import type {
     SubscriptionPlanDto,
 } from "@shared/types/content"
 
-import { http } from "@/utils/api/http"
+import { getData } from "@/utils/api/http"
 
 class AuthorsApi {
     async listAuthors(search = "") {
-        const response = await http.get<{ authors: AuthorCatalogItemDto[] }>("/authors", {
+        const response = await getData<{ authors: AuthorCatalogItemDto[] }>("/authors", {
             params: search ? { q: search } : undefined,
         })
-        return response.data.authors
+        return response.authors
     }
 
     async getAuthorProfile(slug: string) {
-        const response = await http.get<AuthorProfileDto>(`/authors/${slug}`)
-        return response.data
+        return getData<AuthorProfileDto>(`/authors/${slug}`)
     }
 
     async listAuthorAccessPolicies(slug: string) {
-        const response = await http.get<{ policies: AuthorAccessPolicyDto[] }>(
+        const response = await getData<{ policies: AuthorAccessPolicyDto[] }>(
             `/authors/${slug}/access-policies`
         )
-        return response.data.policies
+        return response.policies
     }
 
     async listAuthorSubscriptionPlans(slug: string) {
-        const response = await http.get<{ plans: SubscriptionPlanDto[] }>(
+        const response = await getData<{ plans: SubscriptionPlanDto[] }>(
             `/authors/${slug}/subscription-plans`
         )
-        return response.data.plans
+        return response.plans
     }
 
     async listAuthorPosts(slug: string) {
-        const response = await http.get<{ posts: FeedPostDto[] }>(`/authors/${slug}/posts`)
-        return response.data.posts
+        const response = await getData<{ posts: FeedPostDto[] }>(`/authors/${slug}/posts`)
+        return response.posts
     }
 
     async listAuthorProjects(slug: string) {
-        const response = await http.get<{ projects: FeedProjectDto[] }>(`/authors/${slug}/projects`)
-        return response.data.projects
+        const response = await getData<{ projects: FeedProjectDto[] }>(
+            `/authors/${slug}/projects`
+        )
+        return response.projects
     }
 }
 

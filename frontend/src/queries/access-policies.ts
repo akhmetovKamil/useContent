@@ -5,6 +5,7 @@ import type {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { accessPoliciesApi } from "@/api/AccessPoliciesApi"
+import { invalidateMany } from "@/queries/invalidate"
 import { queryKeys } from "./queryKeys"
 
 export function useMyAccessPoliciesQuery(enabled = true) {
@@ -22,8 +23,7 @@ export function useCreateMyAccessPolicyMutation() {
         mutationFn: (input: CreateAccessPolicyPresetInput) =>
             accessPoliciesApi.createMyAccessPolicy(input),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myAccessPolicies })
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myAuthor })
+            void invalidateMany(queryClient, [queryKeys.myAccessPolicies, queryKeys.myAuthor])
         },
     })
 }
@@ -40,8 +40,7 @@ export function useUpdateMyAccessPolicyMutation() {
             policyId: string
         }) => accessPoliciesApi.updateMyAccessPolicy(policyId, input),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myAccessPolicies })
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myAuthor })
+            void invalidateMany(queryClient, [queryKeys.myAccessPolicies, queryKeys.myAuthor])
         },
     })
 }
@@ -52,7 +51,7 @@ export function useDeleteMyAccessPolicyMutation() {
     return useMutation({
         mutationFn: (policyId: string) => accessPoliciesApi.deleteMyAccessPolicy(policyId),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myAccessPolicies })
+            void invalidateMany(queryClient, [queryKeys.myAccessPolicies])
         },
     })
 }

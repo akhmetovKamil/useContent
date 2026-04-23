@@ -5,6 +5,7 @@ import type {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { platformApi } from "@/api/PlatformApi"
+import { invalidateMany } from "@/queries/invalidate"
 import { queryKeys } from "./queryKeys"
 
 export function usePlatformPlansQuery() {
@@ -57,9 +58,11 @@ export function useConfirmPlatformSubscriptionPaymentMutation() {
             intentId: string
         }) => platformApi.confirmPlatformSubscriptionPayment(intentId, input),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myAuthorPlatformBilling })
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myProjects() })
-            void queryClient.invalidateQueries({ queryKey: queryKeys.platformPlans })
+            void invalidateMany(queryClient, [
+                queryKeys.myAuthorPlatformBilling,
+                queryKeys.myProjects(),
+                queryKeys.platformPlans,
+            ])
         },
     })
 }
@@ -70,11 +73,11 @@ export function useRunMyAuthorPlatformCleanupMutation() {
     return useMutation({
         mutationFn: () => platformApi.runMyAuthorPlatformCleanup(),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myAuthorPlatformBilling })
-            void queryClient.invalidateQueries({
-                queryKey: queryKeys.myAuthorPlatformCleanupPreview,
-            })
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myProjects() })
+            void invalidateMany(queryClient, [
+                queryKeys.myAuthorPlatformBilling,
+                queryKeys.myAuthorPlatformCleanupPreview,
+                queryKeys.myProjects(),
+            ])
         },
     })
 }

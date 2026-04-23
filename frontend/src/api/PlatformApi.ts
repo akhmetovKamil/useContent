@@ -9,57 +9,52 @@ import type {
     PlatformSubscriptionPaymentIntentDto,
 } from "@shared/types/content"
 
-import { http } from "@/utils/api/http"
+import { getData, postData } from "@/utils/api/http"
 
 class PlatformApi {
     async listPlatformPlans() {
-        const response = await http.get<{ plans: PlatformPlanDto[] }>("/platform/plans")
-        return response.data.plans
+        const response = await getData<{ plans: PlatformPlanDto[] }>("/platform/plans")
+        return response.plans
     }
 
     async getMyAuthorPlatformBilling() {
-        const response = await http.get<AuthorPlatformBillingDto>("/me/author/platform-billing")
-        return response.data
+        return getData<AuthorPlatformBillingDto>("/me/author/platform-billing")
     }
 
     async previewMyAuthorPlatformCleanup() {
-        const response = await http.get<AuthorPlatformCleanupPreviewDto>(
+        return getData<AuthorPlatformCleanupPreviewDto>(
             "/me/author/platform-cleanup-preview"
         )
-        return response.data
     }
 
     async runMyAuthorPlatformCleanup() {
-        const response = await http.post<AuthorPlatformCleanupRunDto>("/me/author/platform-cleanup")
-        return response.data
+        return postData<AuthorPlatformCleanupRunDto>("/me/author/platform-cleanup")
     }
 
     async getPlatformSubscriptionManagerDeployment(chainId: number) {
-        const response = await http.get<ContractDeploymentLookupDto>(
+        const response = await getData<ContractDeploymentLookupDto>(
             `/contract-deployments/platform-subscription-manager/${chainId}`
         )
-        return response.data.deployment
+        return response.deployment
     }
 
     async createPlatformSubscriptionPaymentIntent(
         input: CreatePlatformSubscriptionPaymentIntentInput
     ) {
-        const response = await http.post<PlatformSubscriptionPaymentIntentDto>(
+        return postData<PlatformSubscriptionPaymentIntentDto>(
             "/me/author/platform-payment-intents",
             input
         )
-        return response.data
     }
 
     async confirmPlatformSubscriptionPayment(
         intentId: string,
         input: ConfirmSubscriptionPaymentInput
     ) {
-        const response = await http.post<PlatformSubscriptionPaymentIntentDto>(
+        return postData<PlatformSubscriptionPaymentIntentDto>(
             `/me/author/platform-payment-intents/${intentId}/confirm`,
             input
         )
-        return response.data
     }
 }
 

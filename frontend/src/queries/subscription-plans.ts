@@ -6,6 +6,7 @@ import type {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { authorsApi } from "@/api/AuthorsApi"
+import { invalidateMany } from "@/queries/invalidate"
 import { subscriptionPlansApi } from "@/api/SubscriptionPlansApi"
 import { queryKeys } from "./queryKeys"
 
@@ -40,8 +41,10 @@ export function useUpsertMySubscriptionPlanMutation() {
         mutationFn: (input: UpsertSubscriptionPlanInput) =>
             subscriptionPlansApi.upsertMySubscriptionPlan(input),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: queryKeys.mySubscriptionPlans })
-            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+            void invalidateMany(queryClient, [
+                queryKeys.mySubscriptionPlans,
+                queryKeys.authors(),
+            ])
         },
     })
 }
@@ -52,8 +55,10 @@ export function useDeleteMySubscriptionPlanMutation() {
     return useMutation({
         mutationFn: (planId: string) => subscriptionPlansApi.deleteMySubscriptionPlan(planId),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: queryKeys.mySubscriptionPlans })
-            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+            void invalidateMany(queryClient, [
+                queryKeys.mySubscriptionPlans,
+                queryKeys.authors(),
+            ])
         },
     })
 }
@@ -77,10 +82,12 @@ export function useConfirmSubscriptionPaymentMutation() {
             input: ConfirmSubscriptionPaymentInput
         }) => subscriptionPlansApi.confirmSubscriptionPayment(intentId, input),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myEntitlements })
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myReaderSubscriptions })
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myFeedPosts })
-            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+            void invalidateMany(queryClient, [
+                queryKeys.myEntitlements,
+                queryKeys.myReaderSubscriptions,
+                queryKeys.myFeedPosts,
+                queryKeys.authors(),
+            ])
         },
     })
 }

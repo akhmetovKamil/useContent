@@ -6,6 +6,7 @@ import type {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { profileApi } from "@/api/ProfileApi"
+import { invalidateMany } from "@/queries/invalidate"
 import { useWorkspaceStore } from "@/stores/workspace-store"
 import { isApiNotFoundError } from "@/utils/api/errors"
 import { queryKeys } from "./queryKeys"
@@ -76,9 +77,11 @@ export function useCreateMyAuthorProfileMutation() {
         onSuccess: (author) => {
             useWorkspaceStore.getState().setHasAuthorProfileHint(true)
             queryClient.setQueryData(queryKeys.myAuthor, author)
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myAuthor })
-            void queryClient.invalidateQueries({ queryKey: queryKeys.me })
-            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+            void invalidateMany(queryClient, [
+                queryKeys.myAuthor,
+                queryKeys.me,
+                queryKeys.authors(),
+            ])
         },
     })
 }
@@ -89,7 +92,7 @@ export function useUpdateMeMutation() {
     return useMutation({
         mutationFn: (input: UpdateMyProfileInput) => profileApi.updateMe(input),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: queryKeys.me })
+            void invalidateMany(queryClient, [queryKeys.me])
         },
     })
 }
@@ -100,8 +103,7 @@ export function useUpdateMyAuthorProfileMutation() {
     return useMutation({
         mutationFn: (input: UpdateAuthorProfileInput) => profileApi.updateMyAuthorProfile(input),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myAuthor })
-            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+            void invalidateMany(queryClient, [queryKeys.myAuthor, queryKeys.authors()])
         },
     })
 }
@@ -114,9 +116,11 @@ export function useDeleteMyAuthorProfileMutation() {
         onSuccess: () => {
             useWorkspaceStore.getState().setHasAuthorProfileHint(false)
             queryClient.setQueryData(queryKeys.myAuthor, null)
-            void queryClient.invalidateQueries({ queryKey: queryKeys.myAuthor })
-            void queryClient.invalidateQueries({ queryKey: queryKeys.me })
-            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+            void invalidateMany(queryClient, [
+                queryKeys.myAuthor,
+                queryKeys.me,
+                queryKeys.authors(),
+            ])
         },
     })
 }

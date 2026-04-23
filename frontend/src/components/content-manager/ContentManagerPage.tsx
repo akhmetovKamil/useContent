@@ -5,10 +5,12 @@ import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Modal } from "@/components/ui/modal"
 import { Eyebrow, PageSection } from "@/components/ui/page"
+import { ErrorMessage, LoadingMessage } from "@/components/ui/query-state"
 import {
     Select,
     SelectContent,
@@ -101,7 +103,9 @@ export function ContentManagerPage({
             {!token ? (
                 <p className="mt-3 text-[var(--muted)]">{missingSessionLabel}</p>
             ) : isError ? (
-                <p className="mt-3 text-rose-600">Failed to load data: {loadError?.message}</p>
+                <div className="mt-3">
+                    <ErrorMessage>{`Failed to load data: ${loadError?.message}`}</ErrorMessage>
+                </div>
             ) : (
                 <div className="mt-6 grid gap-6">
                     {hideCreate ? null : (
@@ -220,7 +224,7 @@ export function ContentManagerPage({
                     )}
 
                     <div className="grid gap-4">
-                        {isLoading ? <p className="text-[var(--muted)]">{loadingLabel}</p> : null}
+                        {isLoading ? <LoadingMessage>{loadingLabel}</LoadingMessage> : null}
 
                         {items?.length ? (
                             items.map((item) => (
@@ -235,7 +239,7 @@ export function ContentManagerPage({
                                 />
                             ))
                         ) : !isLoading ? (
-                            <p className="text-[var(--muted)]">{emptyLabel}</p>
+                            <EmptyState description={emptyLabel} title={`No ${kind}s yet`} />
                         ) : null}
                     </div>
                 </div>

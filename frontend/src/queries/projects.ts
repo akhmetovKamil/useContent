@@ -9,6 +9,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { authorsApi } from "@/api/AuthorsApi"
 import { projectsApi } from "@/api/ProjectsApi"
+import { invalidateMany } from "@/queries/invalidate"
 import { queryKeys } from "./queryKeys"
 
 export function useMyProjectsQuery(enabled = true, status?: ProjectDto["status"]) {
@@ -66,8 +67,7 @@ export function useCreateMyProjectMutation() {
     return useMutation({
         mutationFn: (input: CreateProjectInput) => projectsApi.createMyProject(input),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: ["me", "projects"] })
-            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+            void invalidateMany(queryClient, [queryKeys.myProjects(), queryKeys.authors()])
         },
     })
 }
@@ -79,11 +79,11 @@ export function useCreateMyProjectFolderMutation(projectId: string, parentId?: s
         mutationFn: (input: CreateProjectFolderInput) =>
             projectsApi.createMyProjectFolder(projectId, input),
         onSuccess: () => {
-            void queryClient.invalidateQueries({
-                queryKey: queryKeys.myProjectNodes(projectId, parentId),
-            })
-            void queryClient.invalidateQueries({ queryKey: ["me", "projects"] })
-            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+            void invalidateMany(queryClient, [
+                queryKeys.myProjectNodes(projectId, parentId),
+                queryKeys.myProjects(),
+                queryKeys.authors(),
+            ])
         },
     })
 }
@@ -94,11 +94,11 @@ export function useUploadMyProjectFileMutation(projectId: string, parentId?: str
     return useMutation({
         mutationFn: (file: File) => projectsApi.uploadMyProjectFile(projectId, file, parentId),
         onSuccess: () => {
-            void queryClient.invalidateQueries({
-                queryKey: queryKeys.myProjectNodes(projectId, parentId),
-            })
-            void queryClient.invalidateQueries({ queryKey: ["me", "projects"] })
-            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+            void invalidateMany(queryClient, [
+                queryKeys.myProjectNodes(projectId, parentId),
+                queryKeys.myProjects(),
+                queryKeys.authors(),
+            ])
         },
     })
 }
@@ -110,11 +110,11 @@ export function useUpdateMyProjectNodeMutation(projectId: string, parentId?: str
         mutationFn: ({ nodeId, input }: { nodeId: string; input: UpdateProjectNodeInput }) =>
             projectsApi.updateMyProjectNode(projectId, nodeId, input),
         onSuccess: () => {
-            void queryClient.invalidateQueries({
-                queryKey: queryKeys.myProjectNodes(projectId, parentId),
-            })
-            void queryClient.invalidateQueries({ queryKey: ["me", "projects"] })
-            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+            void invalidateMany(queryClient, [
+                queryKeys.myProjectNodes(projectId, parentId),
+                queryKeys.myProjects(),
+                queryKeys.authors(),
+            ])
         },
     })
 }
@@ -125,9 +125,7 @@ export function useDeleteMyProjectNodeMutation(projectId: string, parentId?: str
     return useMutation({
         mutationFn: (nodeId: string) => projectsApi.deleteMyProjectNode(projectId, nodeId),
         onSuccess: () => {
-            void queryClient.invalidateQueries({
-                queryKey: queryKeys.myProjectNodes(projectId, parentId),
-            })
+            void invalidateMany(queryClient, [queryKeys.myProjectNodes(projectId, parentId)])
         },
     })
 }
@@ -153,8 +151,7 @@ export function useUpdateMyProjectMutation() {
         mutationFn: ({ projectId, input }: { projectId: string; input: UpdateProjectInput }) =>
             projectsApi.updateMyProject(projectId, input),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: ["me", "projects"] })
-            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+            void invalidateMany(queryClient, [queryKeys.myProjects(), queryKeys.authors()])
         },
     })
 }
@@ -165,8 +162,7 @@ export function useDeleteMyProjectMutation() {
     return useMutation({
         mutationFn: (projectId: string) => projectsApi.deleteMyProject(projectId),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: ["me", "projects"] })
-            void queryClient.invalidateQueries({ queryKey: ["authors"] })
+            void invalidateMany(queryClient, [queryKeys.myProjects(), queryKeys.authors()])
         },
     })
 }

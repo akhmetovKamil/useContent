@@ -17,6 +17,7 @@ import { SubscribeButton } from "@/components/subscriptions/SubscribeButton"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
 import {
     Drawer,
     DrawerContent,
@@ -24,6 +25,7 @@ import {
     DrawerHeader,
     DrawerTitle,
 } from "@/components/ui/drawer"
+import { ErrorMessage, LoadingMessage } from "@/components/ui/query-state"
 import {
     NftConditionAssetCard,
     TokenConditionAssetCard,
@@ -47,14 +49,14 @@ export function AuthorPage() {
         <section className="grid gap-6">
             {authorQuery.isLoading ? (
                 <Card className="rounded-[28px]">
-                    <CardContent className="pt-6 text-[var(--muted)]">
-                        Loading public profile...
+                    <CardContent className="pt-6">
+                        <LoadingMessage>Loading public profile...</LoadingMessage>
                     </CardContent>
                 </Card>
             ) : authorQuery.isError ? (
                 <Card className="rounded-[28px]">
-                    <CardContent className="pt-6 text-rose-600">
-                        Author profile was not found: {authorQuery.error.message}
+                    <CardContent className="pt-6">
+                        <ErrorMessage>{`Author profile was not found: ${authorQuery.error.message}`}</ErrorMessage>
                     </CardContent>
                 </Card>
             ) : authorQuery.data ? (
@@ -100,7 +102,12 @@ export function AuthorPage() {
                         </CardHeader>
                         <CardContent className="bg-[linear-gradient(135deg,var(--surface)_0%,var(--surface-strong)_100%)]">
                             {policiesQuery.isLoading ? (
-                                <p className="text-sm text-[var(--muted)]">Loading tiers...</p>
+                                <LoadingMessage>Loading tiers...</LoadingMessage>
+                            ) : !policiesQuery.data?.length ? (
+                                <EmptyState
+                                    description="This author has not published custom tiers yet."
+                                    title="No access tiers yet"
+                                />
                             ) : (
                                 <div className="grid gap-4 lg:grid-cols-3">
                                     <PublicTierCard />
@@ -127,9 +134,9 @@ export function AuthorPage() {
                         </CardHeader>
                         <CardContent>
                             {postsQuery.isLoading ? (
-                                <p className="text-sm text-[var(--muted)]">Loading posts...</p>
+                                <LoadingMessage>Loading posts...</LoadingMessage>
                             ) : postsQuery.isError ? (
-                                <p className="text-sm text-rose-600">{postsQuery.error.message}</p>
+                                <ErrorMessage>{postsQuery.error.message}</ErrorMessage>
                             ) : (
                                 <PostFeed emptyLabel="No posts yet." posts={postsQuery.data} />
                             )}
@@ -145,11 +152,9 @@ export function AuthorPage() {
                         </CardHeader>
                         <CardContent>
                             {projectsQuery.isLoading ? (
-                                <p className="text-sm text-[var(--muted)]">Loading projects...</p>
+                                <LoadingMessage>Loading projects...</LoadingMessage>
                             ) : projectsQuery.isError ? (
-                                <p className="text-sm text-rose-600">
-                                    {projectsQuery.error.message}
-                                </p>
+                                <ErrorMessage>{projectsQuery.error.message}</ErrorMessage>
                             ) : (
                                 <ProjectList
                                     emptyLabel="No projects yet."
