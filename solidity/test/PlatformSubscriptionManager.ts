@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { network } from "hardhat";
+import { deployMockErc20 } from "./helpers/mock-erc20";
 
 describe("PlatformSubscriptionManager", async () => {
   const { ethers } = await network.connect();
 
   async function deployFixture() {
     const [owner, treasury, author, stranger] = await ethers.getSigners();
-    const token = await ethers.deployContract("MockERC20");
+    const token = await deployMockErc20(ethers);
     const manager = await ethers.deployContract("PlatformSubscriptionManager", [
       owner.address,
       treasury.address,
@@ -136,7 +137,7 @@ describe("PlatformSubscriptionManager", async () => {
 
   it("lets owner update treasury and payment token", async () => {
     const { owner, stranger, token, manager } = await deployFixture();
-    const nextToken = await ethers.deployContract("MockERC20");
+    const nextToken = await deployMockErc20(ethers);
 
     await manager.connect(owner).setPlatformTreasury(stranger.address);
     await manager.connect(owner).setPaymentToken(nextToken.target);
