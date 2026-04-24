@@ -1,13 +1,16 @@
 import { ArrowUpRight, Search, UsersRound } from "lucide-react"
-import { useDeferredValue, useState } from "react"
+import { useCallback, useDeferredValue, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 
 import { HomeHero } from "@/components/home-page/HomeHero"
 import { PostFeed } from "@/components/posts/PostFeed"
+import { PostFeedSkeleton } from "@/components/posts/PostFeedSkeleton"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Input } from "@/components/ui/input"
+import { useInfiniteScrollSentinel } from "@/hooks/useInfiniteScrollSentinel"
 import { useAuthorsQuery } from "@/queries/authors"
 import { flattenFeedPages, useExploreFeedPostsQuery } from "@/queries/posts"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
@@ -21,22 +24,54 @@ export function HomePage() {
     const authorsQuery = useAuthorsQuery(Boolean(token), deferredAuthorSearch.trim())
     const feedQuery = useExploreFeedPostsQuery(true)
     const feedPosts = flattenFeedPages(feedQuery.data)
+    const feedSentinelRef = useRef<HTMLDivElement | null>(null)
+    const loadMoreFeed = useCallback(() => {
+        void feedQuery.fetchNextPage()
+    }, [feedQuery])
+
+    useInfiniteScrollSentinel({
+        enabled: !feedQuery.isLoading && !feedQuery.isError,
+        hasNextPage: Boolean(feedQuery.hasNextPage),
+        isFetchingNextPage: feedQuery.isFetchingNextPage,
+        onLoadMore: loadMoreFeed,
+        sentinelRef: feedSentinelRef,
+    })
 
     return (
         <div className="grid gap-6">
             <HomeHero authorSlug={authorQuery.data?.slug} isSignedIn={Boolean(token)} />
             <Card className="rounded-[32px]">
-                <CardHeader>
-                    <div className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-                        live feed
+                <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <div className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
+                            live feed
+                        </div>
+                        <CardTitle className="mt-3">Latest posts</CardTitle>
                     </div>
-                    <CardTitle className="mt-3">Latest posts</CardTitle>
+                    <Badge className="w-fit rounded-full" variant={token ? "success" : "default"}>
+                        {token ? "Public + subscriptions" : "Public posts"}
+                    </Badge>
                 </CardHeader>
                 <CardContent>
                     {feedQuery.isLoading ? (
-                        <p className="text-sm text-[var(--muted)]">Loading feed...</p>
+                        <PostFeedSkeleton />
                     ) : feedQuery.isError ? (
-                        <p className="text-sm text-rose-600">{feedQuery.error.message}</p>
+                        <div className="mx-auto max-w-3xl rounded-2xl border border-rose-200 bg-rose-50/60 p-5">
+                            <p className="text-sm text-rose-700">{feedQuery.error.message}</p>
+                            <Button
+                                className="mt-4 rounded-full"
+                                onClick={() => void feedQuery.refetch()}
+                                type="button"
+                                variant="outline"
+                            >
+                                Retry
+                            </Button>
+                        </div>
+                    ) : !feedPosts.length ? (
+                        <EmptyState
+                            description="Published posts will appear here once authors start sharing content."
+                            title="No posts yet"
+                        />
                     ) : (
                         <PostFeed
                             emptyLabel="No public posts yet."
@@ -44,16 +79,11 @@ export function HomePage() {
                             showAuthor
                         />
                     )}
-                    {feedQuery.hasNextPage ? (
-                        <Button
-                            className="mt-5 rounded-full"
-                            disabled={feedQuery.isFetchingNextPage}
-                            onClick={() => void feedQuery.fetchNextPage()}
-                            type="button"
-                            variant="outline"
-                        >
-                            {feedQuery.isFetchingNextPage ? "Loading..." : "Load more"}
-                        </Button>
+                    <div ref={feedSentinelRef} />
+                    {feedQuery.isFetchingNextPage ? (
+                        <div className="mt-5">
+                            <PostFeedSkeleton count={1} />
+                        </div>
                     ) : null}
                 </CardContent>
             </Card>

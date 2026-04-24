@@ -257,14 +257,32 @@ export async function listExploreFeedPosts(
   pagination: FeedPaginationRequest = {},
 ): Promise<PaginatedResponse<FeedPostResponse>> {
   const page = normalizeFeedPagination(pagination);
-  const posts = await repo.listPublishedPostsPage({
+  const normalizedWallet = viewerWallet ? normalizeWallet(viewerWallet) : undefined;
+  const subscribedAuthorIds = normalizedWallet
+    ? await getActiveSubscribedAuthorIds(normalizedWallet)
+    : [];
+  const publicPosts = await repo.listPublishedPostsPage({
     cursor: page.cursor,
-    limit: page.limit + 1,
+    limit: page.limit + 8,
   });
+  const subscribedPosts = subscribedAuthorIds.length
+    ? await repo.listPublishedPostsPage({
+        authorIds: subscribedAuthorIds,
+        cursor: page.cursor,
+        limit: page.limit + 8,
+      })
+    : [];
+  const posts = rankHybridFeedPosts(publicPosts, subscribedPosts, subscribedAuthorIds).slice(
+    0,
+    page.limit + 1,
+  );
   const authorIds = uniqueObjectIds(posts.map((post) => post.authorId));
   const authors = await repo.findAuthorProfilesByIds(authorIds);
   const authorById = new Map(
     authors.map((author) => [author._id.toHexString(), author]),
+  );
+  const subscribedAuthorIdSet = new Set(
+    subscribedAuthorIds.map((authorId) => authorId.toHexString()),
   );
 
   const feedPosts = await Promise.all(
@@ -277,8 +295,10 @@ export async function listExploreFeedPosts(
       return buildFeedPostResponse(
         post,
         author,
-        viewerWallet ? normalizeWallet(viewerWallet) : undefined,
-        { reason: "Published on useContent", source: "public" },
+        normalizedWallet,
+        subscribedAuthorIdSet.has(post.authorId.toHexString())
+          ? { reason: "From your active subscriptions", source: "subscribed" }
+          : { reason: "Published on useContent", source: "public" },
       );
     }),
   );
@@ -288,6 +308,53 @@ export async function listExploreFeedPosts(
     page.limit,
     encodeFeedCursorFromFeedPost,
   );
+}
+
+async function getActiveSubscribedAuthorIds(walletAddress: string): Promise<ObjectId[]> {
+  const entitlements = await listMyEntitlements(walletAddress);
+  return uniqueObjectIds(
+    entitlements
+      .filter(
+        (entitlement) =>
+          entitlement.status === "active" &&
+          entitlement.validUntil.getTime() > Date.now(),
+      )
+      .map((entitlement) => entitlement.authorId),
+  );
+}
+
+function rankHybridFeedPosts(
+  publicPosts: PostDoc[],
+  subscribedPosts: PostDoc[],
+  subscribedAuthorIds: ObjectId[],
+): PostDoc[] {
+  const subscribedAuthorIdSet = new Set(
+    subscribedAuthorIds.map((authorId) => authorId.toHexString()),
+  );
+  const postById = new Map<string, PostDoc>();
+  for (const post of [...subscribedPosts, ...publicPosts]) {
+    postById.set(post._id.toHexString(), post);
+  }
+
+  return [...postById.values()].sort((left, right) => {
+    const leftScore = getHybridFeedScore(left, subscribedAuthorIdSet);
+    const rightScore = getHybridFeedScore(right, subscribedAuthorIdSet);
+    if (leftScore !== rightScore) {
+      return rightScore - leftScore;
+    }
+    return right._id.toHexString().localeCompare(left._id.toHexString());
+  });
+}
+
+function getHybridFeedScore(
+  post: PostDoc,
+  subscribedAuthorIdSet: Set<string>,
+): number {
+  const publishedAt = post.publishedAt?.getTime() ?? post.createdAt.getTime();
+  const subscribedBoost = subscribedAuthorIdSet.has(post.authorId.toHexString())
+    ? 10 * 60 * 1000
+    : 0;
+  return publishedAt + subscribedBoost;
 }
 
 export async function createMyPost(
