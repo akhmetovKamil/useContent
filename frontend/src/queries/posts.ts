@@ -1,10 +1,11 @@
 import type {
     CreatePostCommentInput,
     CreatePostInput,
+    FeedPostDto,
     PostDto,
     UpdatePostInput,
 } from "@shared/types/content"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { authorsApi } from "@/api/AuthorsApi"
 import { postsApi } from "@/api/PostsApi"
@@ -20,11 +21,27 @@ export function useMyPostsQuery(enabled = true, status?: PostDto["status"]) {
 }
 
 export function useAuthorPostsQuery(slug: string) {
-    return useQuery({
+    return useInfiniteQuery({
         queryKey: queryKeys.authorPosts(slug),
-        queryFn: () => authorsApi.listAuthorPosts(slug),
+        queryFn: ({ pageParam }) => authorsApi.listAuthorPosts(slug, pageParam),
         enabled: Boolean(slug),
+        initialPageParam: null as string | null,
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
     })
+}
+
+export function useExploreFeedPostsQuery(enabled = true) {
+    return useInfiniteQuery({
+        queryKey: queryKeys.exploreFeedPosts,
+        queryFn: ({ pageParam }) => authorsApi.listExploreFeedPosts(pageParam),
+        enabled,
+        initialPageParam: null as string | null,
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
+    })
+}
+
+export function flattenFeedPages(data?: { pages: Array<{ items: FeedPostDto[] }> }) {
+    return data?.pages.flatMap((page) => page.items) ?? []
 }
 
 export function useAuthorPostQuery(slug: string, postId: string) {

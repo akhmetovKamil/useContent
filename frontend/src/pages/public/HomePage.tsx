@@ -3,11 +3,13 @@ import { useDeferredValue, useState } from "react"
 import { Link } from "react-router-dom"
 
 import { HomeHero } from "@/components/home-page/HomeHero"
+import { PostFeed } from "@/components/posts/PostFeed"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useAuthorsQuery } from "@/queries/authors"
+import { flattenFeedPages, useExploreFeedPostsQuery } from "@/queries/posts"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 
@@ -17,10 +19,44 @@ export function HomePage() {
     const deferredAuthorSearch = useDeferredValue(authorSearch)
     const authorQuery = useMyAuthorProfileQuery(Boolean(token))
     const authorsQuery = useAuthorsQuery(Boolean(token), deferredAuthorSearch.trim())
+    const feedQuery = useExploreFeedPostsQuery(true)
+    const feedPosts = flattenFeedPages(feedQuery.data)
 
     return (
         <div className="grid gap-6">
             <HomeHero authorSlug={authorQuery.data?.slug} isSignedIn={Boolean(token)} />
+            <Card className="rounded-[32px]">
+                <CardHeader>
+                    <div className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
+                        live feed
+                    </div>
+                    <CardTitle className="mt-3">Latest posts</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {feedQuery.isLoading ? (
+                        <p className="text-sm text-[var(--muted)]">Loading feed...</p>
+                    ) : feedQuery.isError ? (
+                        <p className="text-sm text-rose-600">{feedQuery.error.message}</p>
+                    ) : (
+                        <PostFeed
+                            emptyLabel="No public posts yet."
+                            posts={feedPosts}
+                            showAuthor
+                        />
+                    )}
+                    {feedQuery.hasNextPage ? (
+                        <Button
+                            className="mt-5 rounded-full"
+                            disabled={feedQuery.isFetchingNextPage}
+                            onClick={() => void feedQuery.fetchNextPage()}
+                            type="button"
+                            variant="outline"
+                        >
+                            {feedQuery.isFetchingNextPage ? "Loading..." : "Load more"}
+                        </Button>
+                    ) : null}
+                </CardContent>
+            </Card>
             {token ? (
                 <Card className="rounded-[32px]">
                     <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

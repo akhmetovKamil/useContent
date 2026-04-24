@@ -27,6 +27,7 @@ import * as accessRepo from "../access/repository";
 import * as contractDeploymentsRepo from "../lib/contract-deployments.repository";
 import * as platformRepo from "../platform/repository";
 import * as postsRepo from "../posts/repository";
+import type { PublishedPostCursor } from "../posts/repository";
 import * as profilesRepo from "../profiles/repository";
 import * as projectsRepo from "../projects/repository";
 import * as subscriptionsRepo from "../subscriptions/repository";
@@ -103,6 +104,7 @@ import type {
   UserDoc,
   UserProfileResponse,
 } from "../lib/content-types";
+import type { PaginatedResponse } from "../../shared/types/common";
 import {
   toUserProfileResponse,
   toAuthorProfileResponse,
@@ -121,6 +123,7 @@ import {
   buildPostResponse,
   toFeedPostResponse,
   buildFeedPostResponse,
+  toPaginatedResponse,
   describeAccessPolicy,
   describeAccessPolicyNode,
   toProjectResponse,
@@ -198,7 +201,8 @@ import { assertAuthorPlatformFeature, assertAuthorStorageQuota } from "../platfo
 import { listMyEntitlements } from "../subscriptions/service";
 export async function listMyFeedPosts(
   walletAddress: string,
-): Promise<FeedPostResponse[]> {
+  pagination: FeedPaginationRequest = {},
+): Promise<PaginatedResponse<FeedPostResponse>> {
   const normalizedWallet = normalizeWallet(walletAddress);
   const entitlements = await listMyEntitlements(normalizedWallet);
   const activeAuthorIds = uniqueObjectIds(
@@ -211,12 +215,17 @@ export async function listMyFeedPosts(
       .map((entitlement) => entitlement.authorId),
   );
   if (!activeAuthorIds.length) {
-    return [];
+    return { items: [], nextCursor: null, hasMore: false };
   }
+  const page = normalizeFeedPagination(pagination);
 
   const [authors, posts] = await Promise.all([
     repo.findAuthorProfilesByIds(activeAuthorIds),
-    repo.listPublishedPostsByAuthorIds(activeAuthorIds),
+    repo.listPublishedPostsPage({
+      authorIds: activeAuthorIds,
+      cursor: page.cursor,
+      limit: page.limit + 1,
+    }),
   ]);
   const authorById = new Map(
     authors.map((author) => [author._id.toHexString(), author]),
@@ -229,11 +238,56 @@ export async function listMyFeedPosts(
         return null;
       }
 
-      return buildFeedPostResponse(post, author, normalizedWallet);
+      return buildFeedPostResponse(post, author, normalizedWallet, {
+        reason: "From your active subscriptions",
+        source: "subscribed",
+      });
     }),
   );
 
-  return feedPosts.filter((post): post is FeedPostResponse => Boolean(post));
+  return toPaginatedResponse(
+    feedPosts.filter((post): post is FeedPostResponse => Boolean(post)),
+    page.limit,
+    encodeFeedCursorFromFeedPost,
+  );
+}
+
+export async function listExploreFeedPosts(
+  viewerWallet?: string,
+  pagination: FeedPaginationRequest = {},
+): Promise<PaginatedResponse<FeedPostResponse>> {
+  const page = normalizeFeedPagination(pagination);
+  const posts = await repo.listPublishedPostsPage({
+    cursor: page.cursor,
+    limit: page.limit + 1,
+  });
+  const authorIds = uniqueObjectIds(posts.map((post) => post.authorId));
+  const authors = await repo.findAuthorProfilesByIds(authorIds);
+  const authorById = new Map(
+    authors.map((author) => [author._id.toHexString(), author]),
+  );
+
+  const feedPosts = await Promise.all(
+    posts.map(async (post) => {
+      const author = authorById.get(post.authorId.toHexString());
+      if (!author) {
+        return null;
+      }
+
+      return buildFeedPostResponse(
+        post,
+        author,
+        viewerWallet ? normalizeWallet(viewerWallet) : undefined,
+        { reason: "Published on useContent", source: "public" },
+      );
+    }),
+  );
+
+  return toPaginatedResponse(
+    feedPosts.filter((post): post is FeedPostResponse => Boolean(post)),
+    page.limit,
+    encodeFeedCursorFromFeedPost,
+  );
 }
 
 export async function createMyPost(
@@ -518,18 +572,26 @@ export async function recordPostViewBySlug(
 export async function listAuthorPostsBySlug(
   slug: string,
   viewerWallet?: string,
-): Promise<FeedPostResponse[]> {
+  pagination: FeedPaginationRequest = {},
+): Promise<PaginatedResponse<FeedPostResponse>> {
   const author = await getAuthorProfileBySlug(slug);
-  const posts = await repo.listPublishedPostsByAuthorId(author._id);
-  return Promise.all(
+  const page = normalizeFeedPagination(pagination);
+  const posts = await repo.listPublishedPostsPage({
+    authorId: author._id,
+    cursor: page.cursor,
+    limit: page.limit + 1,
+  });
+  const feedPosts = await Promise.all(
     posts.map((post) =>
       buildFeedPostResponse(
         post,
         author,
         viewerWallet ? normalizeWallet(viewerWallet) : undefined,
+        { reason: `From @${author.slug}`, source: "author" },
       ),
     ),
   );
+  return toPaginatedResponse(feedPosts, page.limit, encodeFeedCursorFromFeedPost);
 }
 
 export async function getAuthorPostBySlugAndId(
@@ -578,4 +640,55 @@ export async function getAuthorPostAttachmentBySlug(
   const { post } = await getReadablePostContext(slug, postId, viewerWallet);
   const attachment = await resolvePostAttachment(post, attachmentId);
   return readPostAttachmentObject(attachment);
+}
+
+export interface FeedPaginationRequest {
+  cursor?: string;
+  limit?: number;
+}
+
+function normalizeFeedPagination(input: FeedPaginationRequest): {
+  cursor: PublishedPostCursor | null;
+  limit: number;
+} {
+  return {
+    cursor: input.cursor ? decodeFeedCursor(input.cursor) : null,
+    limit: Math.min(Math.max(Math.trunc(input.limit ?? 12), 1), 30),
+  };
+}
+
+function encodeFeedCursorFromFeedPost(post: FeedPostResponse): string | null {
+  return post.publishedAt ? encodeFeedCursor(post.publishedAt, post.id) : null;
+}
+
+function encodeFeedCursor(publishedAt: string, id: string): string {
+  return Buffer.from(JSON.stringify({ id, publishedAt }), "utf8").toString(
+    "base64url",
+  );
+}
+
+function decodeFeedCursor(cursor: string): PublishedPostCursor {
+  try {
+    const value = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"));
+    if (
+      typeof value !== "object" ||
+      value === null ||
+      typeof value.id !== "string" ||
+      typeof value.publishedAt !== "string"
+    ) {
+      throw new Error("invalid cursor payload");
+    }
+
+    const publishedAt = new Date(value.publishedAt);
+    if (Number.isNaN(publishedAt.getTime())) {
+      throw new Error("invalid cursor date");
+    }
+
+    return {
+      id: parseObjectId(value.id, "cursor"),
+      publishedAt,
+    };
+  } catch {
+    throw APIError.invalidArgument("cursor is invalid");
+  }
 }

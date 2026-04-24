@@ -35,3 +35,14 @@ export interface OnChainPaymentBaseDto extends BaseEntityDto {
   amount: string;
   txHash: Maybe<TxHash>;
 }
+
+export interface CursorPaginationInput {
+  cursor?: string;
+  limit?: number;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  nextCursor: Maybe<string>;
+  hasMore: boolean;
+}

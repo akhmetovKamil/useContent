@@ -3,7 +3,7 @@ import type {
     UpdateAuthorProfileInput,
     UpdateMyProfileInput,
 } from "@shared/types/content"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { profileApi } from "@/api/ProfileApi"
 import { invalidateMany } from "@/queries/invalidate"
@@ -54,10 +54,12 @@ export function useMyReaderSubscriptionsQuery(enabled = true) {
 }
 
 export function useMyFeedPostsQuery(enabled = true) {
-    return useQuery({
+    return useInfiniteQuery({
         queryKey: queryKeys.myFeedPosts,
-        queryFn: () => profileApi.getMyFeedPosts(),
+        queryFn: ({ pageParam }) => profileApi.getMyFeedPosts(pageParam),
         enabled,
+        initialPageParam: null as string | null,
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
     })
 }
 

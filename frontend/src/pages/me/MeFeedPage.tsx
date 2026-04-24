@@ -1,12 +1,15 @@
 import { PostFeed } from "@/components/posts/PostFeed"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
+import { flattenFeedPages } from "@/queries/posts"
 import { useMyFeedPostsQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 
 export function MeFeedPage() {
     const token = useAuthStore((state) => state.token)
     const feedQuery = useMyFeedPostsQuery(Boolean(token))
+    const posts = flattenFeedPages(feedQuery.data)
 
     return (
         <section className="grid gap-6">
@@ -30,10 +33,21 @@ export function MeFeedPage() {
                     ) : (
                         <PostFeed
                             emptyLabel="No posts from your subscriptions yet."
-                            posts={feedQuery.data}
+                            posts={posts}
                             showAuthor
                         />
                     )}
+                    {feedQuery.hasNextPage ? (
+                        <Button
+                            className="mt-5 rounded-full"
+                            disabled={feedQuery.isFetchingNextPage}
+                            onClick={() => void feedQuery.fetchNextPage()}
+                            type="button"
+                            variant="outline"
+                        >
+                            {feedQuery.isFetchingNextPage ? "Loading..." : "Load more"}
+                        </Button>
+                    ) : null}
                 </CardContent>
             </Card>
         </section>

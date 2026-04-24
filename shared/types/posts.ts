@@ -4,6 +4,7 @@ import type {
   ContentBaseDto,
   EntityId,
   Maybe,
+  NullableDateString,
   StorageSizedDto,
   WalletAddress,
 } from "./common";
@@ -51,6 +52,13 @@ export interface FeedPostDto extends PostDto {
   authorDisplayName: string;
   accessLabel: Maybe<string>;
   hasAccess: boolean;
+  feedSource: "public" | "subscribed" | "promoted" | "author";
+  feedReason: Maybe<string>;
+  promotion: Maybe<{
+    active: boolean;
+    promotedAt: NullableDateString;
+  }>;
+  commentsPreview: PostCommentDto[];
 }
 
 export interface RecordPostViewInput {

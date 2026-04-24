@@ -36,6 +36,52 @@ export async function listPublishedPostsByAuthorId(
     .toArray();
 }
 
+export interface PublishedPostCursor {
+  publishedAt: Date;
+  id: ObjectId;
+}
+
+export interface PublishedPostPageOptions {
+  authorId?: ObjectId;
+  authorIds?: ObjectId[];
+  cursor?: PublishedPostCursor | null;
+  limit: number;
+}
+
+export async function listPublishedPostsPage({
+  authorId,
+  authorIds,
+  cursor,
+  limit,
+}: PublishedPostPageOptions): Promise<PostDoc[]> {
+  const posts = await getPostsCollection();
+  const authorFilter =
+    authorId !== undefined
+      ? { authorId }
+      : authorIds !== undefined
+        ? { authorId: { $in: authorIds } }
+        : {};
+  const cursorFilter = cursor
+    ? {
+        $or: [
+          { publishedAt: { $lt: cursor.publishedAt } },
+          { publishedAt: cursor.publishedAt, _id: { $lt: cursor.id } },
+        ],
+      }
+    : {};
+
+  return posts
+    .find({
+      ...authorFilter,
+      ...cursorFilter,
+      status: "published",
+      publishedAt: { $ne: null },
+    })
+    .sort({ publishedAt: -1, _id: -1 })
+    .limit(limit)
+    .toArray();
+}
+
 export async function countPublishedPostsByAuthorId(
   authorId: ObjectId,
 ): Promise<number> {
@@ -206,6 +252,19 @@ export async function listPostComments(
 ): Promise<PostCommentDoc[]> {
   const comments = await getPostCommentsCollection();
   return comments.find({ postId }).sort({ createdAt: 1 }).toArray();
+}
+
+export async function listPostCommentsPreview(
+  postId: ObjectId,
+  limit: number,
+): Promise<PostCommentDoc[]> {
+  const comments = await getPostCommentsCollection();
+  const recent = await comments
+    .find({ postId })
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .toArray();
+  return recent.reverse();
 }
 
 export async function createPostComment(

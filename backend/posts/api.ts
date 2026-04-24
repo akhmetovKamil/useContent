@@ -16,13 +16,40 @@ import type {
   RecordPostViewRequest,
   UpdatePostRequest,
 } from "./types";
+import type {
+  CursorPaginationInput,
+} from "../../shared/types/content";
+
+interface FeedPostPageResponse {
+  items: FeedPostResponse[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
 
 export const listMyFeedPosts = api(
   { method: "GET", path: "/me/feed", expose: true, auth: true },
-  async (): Promise<{ posts: FeedPostResponse[] }> => {
+  async ({
+    cursor,
+    limit,
+  }: CursorPaginationInput): Promise<FeedPostPageResponse> => {
     const auth = getAuthData()!;
-    const posts = await service.listMyFeedPosts(auth.walletAddress);
-    return { posts };
+    return service.listMyFeedPosts(auth.walletAddress, { cursor, limit });
+  },
+);
+
+interface ListExploreFeedRequest extends CursorPaginationInput {
+  authorization?: Header<"Authorization">;
+}
+
+export const listExploreFeedPosts = api(
+  { method: "GET", path: "/feed", expose: true },
+  async ({
+    authorization,
+    cursor,
+    limit,
+  }: ListExploreFeedRequest): Promise<FeedPostPageResponse> => {
+    const viewerWallet = await getOptionalViewerWallet(authorization);
+    return service.listExploreFeedPosts(viewerWallet, { cursor, limit });
   },
 );
 
@@ -81,6 +108,8 @@ export const deleteMyPost = api(
 
 interface ListAuthorPostsRequest {
   slug: string;
+  cursor?: string;
+  limit?: number;
   authorization?: Header<"Authorization">;
 }
 
@@ -89,10 +118,11 @@ export const listAuthorPosts = api(
   async ({
     slug,
     authorization,
-  }: ListAuthorPostsRequest): Promise<{ posts: FeedPostResponse[] }> => {
+    cursor,
+    limit,
+  }: ListAuthorPostsRequest): Promise<FeedPostPageResponse> => {
     const viewerWallet = await getOptionalViewerWallet(authorization);
-    const posts = await service.listAuthorPostsBySlug(slug, viewerWallet);
-    return { posts };
+    return service.listAuthorPostsBySlug(slug, viewerWallet, { cursor, limit });
   },
 );
 

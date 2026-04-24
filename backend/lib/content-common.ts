@@ -100,6 +100,7 @@ import type {
   UserDoc,
   UserProfileResponse,
 } from "../lib/content-types";
+import type { PaginatedResponse } from "../../shared/types/common";
 import { getAuthorProfileBySlug, getMyAuthorProfile } from "../profiles/service";
 
 export function toUserProfileResponse(user: UserDoc): UserProfileResponse {
@@ -390,6 +391,9 @@ export function toFeedPostResponse(
   author: AuthorProfileDoc,
   access?: {
     accessLabel: string | null;
+    commentsPreview?: PostCommentDoc[];
+    feedReason?: string | null;
+    feedSource?: FeedPostResponse["feedSource"];
     hasAccess: boolean;
     stats?: {
       likesCount?: number;
@@ -406,6 +410,10 @@ export function toFeedPostResponse(
     authorDisplayName: author.displayName,
     accessLabel: access?.accessLabel ?? null,
     hasAccess: access?.hasAccess ?? true,
+    feedSource: access?.feedSource ?? "author",
+    feedReason: access?.feedReason ?? null,
+    promotion: null,
+    commentsPreview: (access?.commentsPreview ?? []).map(toPostCommentResponse),
   };
 }
 
@@ -413,6 +421,10 @@ export async function buildFeedPostResponse(
   post: PostDoc,
   author: AuthorProfileDoc,
   viewerWallet?: string,
+  feed?: {
+    reason?: string | null;
+    source?: FeedPostResponse["feedSource"];
+  },
 ): Promise<FeedPostResponse> {
   const resolvedPolicy = resolveEntityPolicy(
     post.policyMode,
@@ -426,7 +438,10 @@ export async function buildFeedPostResponse(
   const evaluation = evaluateAccessPolicy(resolvedPolicy, accessContext);
   const hasAccess = evaluation.allowed;
 
-  const stats = await buildPostStats(post, viewerWallet);
+  const [stats, commentsPreview] = await Promise.all([
+    buildPostStats(post, viewerWallet),
+    repo.listPostCommentsPreview(post._id, 3),
+  ]);
   const visibleStats = hasAccess ? stats : { ...stats, attachments: [] };
 
   return toFeedPostResponse(
@@ -437,10 +452,29 @@ export async function buildFeedPostResponse(
     author,
     {
       accessLabel: describeAccessPolicy(resolvedPolicy.root, plans),
+      commentsPreview: hasAccess ? commentsPreview : [],
+      feedReason: feed?.reason ?? null,
+      feedSource: feed?.source ?? "author",
       hasAccess,
       stats: visibleStats,
     },
   );
+}
+
+export function toPaginatedResponse<T>(
+  items: T[],
+  requestedLimit: number,
+  getCursor: (item: T) => string | null,
+): PaginatedResponse<T> {
+  const hasMore = items.length > requestedLimit;
+  const pageItems = hasMore ? items.slice(0, requestedLimit) : items;
+  const lastItem = pageItems.at(-1);
+
+  return {
+    items: pageItems,
+    nextCursor: lastItem ? getCursor(lastItem) : null,
+    hasMore,
+  };
 }
 
 export function describeAccessPolicy(

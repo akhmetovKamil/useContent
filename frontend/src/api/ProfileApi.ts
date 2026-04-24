@@ -3,6 +3,7 @@ import type {
     AuthorSubscriberDto,
     CreateAuthorProfileInput,
     FeedPostDto,
+    PaginatedResponse,
     ReaderSubscriptionDto,
     SubscriptionEntitlementDto,
     UpdateAuthorProfileInput,
@@ -56,9 +57,10 @@ class ProfileApi {
         return response.subscriptions
     }
 
-    async getMyFeedPosts() {
-        const response = await getData<{ posts: FeedPostDto[] }>("/me/feed")
-        return response.posts
+    async getMyFeedPosts(cursor?: string | null, limit = 12) {
+        return getData<PaginatedResponse<FeedPostDto>>("/me/feed", {
+            params: { cursor: cursor ?? undefined, limit },
+        })
     }
 
     async getMyAuthorSubscribers() {

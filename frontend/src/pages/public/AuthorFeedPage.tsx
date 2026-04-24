@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
 import { useAuthorProfileQuery } from "@/queries/authors"
-import { useAuthorPostsQuery } from "@/queries/posts"
+import { flattenFeedPages, useAuthorPostsQuery } from "@/queries/posts"
 
 export function AuthorFeedPage() {
     const { slug } = useParams()
     const authorSlug = slug ?? ""
     const authorQuery = useAuthorProfileQuery(authorSlug)
     const postsQuery = useAuthorPostsQuery(authorSlug)
+    const posts = flattenFeedPages(postsQuery.data)
 
     return (
         <section className="grid gap-6">
@@ -43,8 +44,19 @@ export function AuthorFeedPage() {
                     ) : postsQuery.isError ? (
                         <p className="text-rose-600">{postsQuery.error.message}</p>
                     ) : (
-                        <PostFeed emptyLabel="No posts yet." posts={postsQuery.data} />
+                        <PostFeed emptyLabel="No posts yet." posts={posts} />
                     )}
+                    {postsQuery.hasNextPage ? (
+                        <Button
+                            className="mt-5 rounded-full"
+                            disabled={postsQuery.isFetchingNextPage}
+                            onClick={() => void postsQuery.fetchNextPage()}
+                            type="button"
+                            variant="outline"
+                        >
+                            {postsQuery.isFetchingNextPage ? "Loading..." : "Load more"}
+                        </Button>
+                    ) : null}
                 </CardContent>
             </Card>
         </section>

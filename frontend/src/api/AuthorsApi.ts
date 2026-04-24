@@ -4,6 +4,7 @@ import type {
     AuthorProfileDto,
     FeedPostDto,
     FeedProjectDto,
+    PaginatedResponse,
     SubscriptionPlanDto,
 } from "@shared/types/content"
 
@@ -35,9 +36,16 @@ class AuthorsApi {
         return response.plans
     }
 
-    async listAuthorPosts(slug: string) {
-        const response = await getData<{ posts: FeedPostDto[] }>(`/authors/${slug}/posts`)
-        return response.posts
+    async listAuthorPosts(slug: string, cursor?: string | null, limit = 12) {
+        return getData<PaginatedResponse<FeedPostDto>>(`/authors/${slug}/posts`, {
+            params: { cursor: cursor ?? undefined, limit },
+        })
+    }
+
+    async listExploreFeedPosts(cursor?: string | null, limit = 12) {
+        return getData<PaginatedResponse<FeedPostDto>>("/feed", {
+            params: { cursor: cursor ?? undefined, limit },
+        })
     }
 
     async listAuthorProjects(slug: string) {

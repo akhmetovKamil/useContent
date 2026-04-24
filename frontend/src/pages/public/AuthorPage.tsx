@@ -31,7 +31,7 @@ import {
     TokenConditionAssetCard,
 } from "@/components/web3/AssetConditionCards"
 import { useAuthorAccessPoliciesQuery, useAuthorProfileQuery } from "@/queries/authors"
-import { useAuthorPostsQuery } from "@/queries/posts"
+import { flattenFeedPages, useAuthorPostsQuery } from "@/queries/posts"
 import { useAuthorProjectsQuery } from "@/queries/projects"
 import { formatTokenUnits, resolveTokenAssetMetadata } from "@/utils/web3/assets"
 
@@ -44,6 +44,7 @@ export function AuthorPage() {
     const policiesQuery = useAuthorAccessPoliciesQuery(authorSlug)
     const [selectedTierId, setSelectedTierId] = useState<string | null>(null)
     const selectedTier = policiesQuery.data?.find((policy) => policy.id === selectedTierId) ?? null
+    const posts = flattenFeedPages(postsQuery.data)
 
     return (
         <section className="grid gap-6">
@@ -138,8 +139,19 @@ export function AuthorPage() {
                             ) : postsQuery.isError ? (
                                 <ErrorMessage>{postsQuery.error.message}</ErrorMessage>
                             ) : (
-                                <PostFeed emptyLabel="No posts yet." posts={postsQuery.data} />
+                                <PostFeed emptyLabel="No posts yet." posts={posts} />
                             )}
+                            {postsQuery.hasNextPage ? (
+                                <Button
+                                    className="mt-5 rounded-full"
+                                    disabled={postsQuery.isFetchingNextPage}
+                                    onClick={() => void postsQuery.fetchNextPage()}
+                                    type="button"
+                                    variant="outline"
+                                >
+                                    {postsQuery.isFetchingNextPage ? "Loading..." : "Load more"}
+                                </Button>
+                            ) : null}
                         </CardContent>
                     </Card>
 
