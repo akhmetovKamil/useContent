@@ -65,7 +65,7 @@ export function MeSubscriptionsPage() {
                                                 "Subscription"}
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex flex-wrap items-center gap-2">
                                         <Badge
                                             className="rounded-full"
                                             variant={
@@ -79,6 +79,16 @@ export function MeSubscriptionsPage() {
                                         <span className="text-sm text-[var(--muted)]">
                                             until {formatDate(subscription.validUntil)}
                                         </span>
+                                        <Button asChild className="rounded-full" size="sm" variant="outline">
+                                            <Link to={`/me/feed?author=${subscription.authorSlug}`}>
+                                                Feed
+                                            </Link>
+                                        </Button>
+                                        <Button asChild className="rounded-full" size="sm" variant="outline">
+                                            <Link to={`/authors/${subscription.authorSlug}`}>
+                                                Author
+                                            </Link>
+                                        </Button>
                                     </div>
                                 </article>
                             ))}
