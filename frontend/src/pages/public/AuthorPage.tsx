@@ -8,10 +8,11 @@ import {
     UsersRound,
     WalletCards,
 } from "lucide-react"
-import { useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 
 import { PostFeed } from "@/components/posts/PostFeed"
+import { PostFeedSkeleton } from "@/components/posts/PostFeedSkeleton"
 import { ProjectList } from "@/components/projects/ProjectList"
 import { SubscribeButton } from "@/components/subscriptions/SubscribeButton"
 import { Badge } from "@/components/ui/badge"
@@ -26,6 +27,7 @@ import {
     DrawerTitle,
 } from "@/components/ui/drawer"
 import { ErrorMessage, LoadingMessage } from "@/components/ui/query-state"
+import { useInfiniteScrollSentinel } from "@/hooks/useInfiniteScrollSentinel"
 import {
     NftConditionAssetCard,
     TokenConditionAssetCard,
@@ -45,6 +47,18 @@ export function AuthorPage() {
     const [selectedTierId, setSelectedTierId] = useState<string | null>(null)
     const selectedTier = policiesQuery.data?.find((policy) => policy.id === selectedTierId) ?? null
     const posts = flattenFeedPages(postsQuery.data)
+    const postSentinelRef = useRef<HTMLDivElement | null>(null)
+    const loadMorePosts = useCallback(() => {
+        void postsQuery.fetchNextPage()
+    }, [postsQuery])
+
+    useInfiniteScrollSentinel({
+        enabled: !postsQuery.isLoading && !postsQuery.isError,
+        hasNextPage: Boolean(postsQuery.hasNextPage),
+        isFetchingNextPage: postsQuery.isFetchingNextPage,
+        onLoadMore: loadMorePosts,
+        sentinelRef: postSentinelRef,
+    })
 
     return (
         <section className="grid gap-6">
@@ -135,22 +149,17 @@ export function AuthorPage() {
                         </CardHeader>
                         <CardContent>
                             {postsQuery.isLoading ? (
-                                <LoadingMessage>Loading posts...</LoadingMessage>
+                                <PostFeedSkeleton />
                             ) : postsQuery.isError ? (
                                 <ErrorMessage>{postsQuery.error.message}</ErrorMessage>
                             ) : (
                                 <PostFeed emptyLabel="No posts yet." posts={posts} />
                             )}
-                            {postsQuery.hasNextPage ? (
-                                <Button
-                                    className="mt-5 rounded-full"
-                                    disabled={postsQuery.isFetchingNextPage}
-                                    onClick={() => void postsQuery.fetchNextPage()}
-                                    type="button"
-                                    variant="outline"
-                                >
-                                    {postsQuery.isFetchingNextPage ? "Loading..." : "Load more"}
-                                </Button>
+                            <div ref={postSentinelRef} />
+                            {postsQuery.isFetchingNextPage ? (
+                                <div className="mt-5">
+                                    <PostFeedSkeleton count={1} />
+                                </div>
                             ) : null}
                         </CardContent>
                     </Card>

@@ -32,3 +32,7 @@ export function normalizeApiError(error: unknown) {
 export function isApiNotFoundError(error: unknown) {
     return axios.isAxiosError(error) && error.response?.status === 404
 }
+
+export function isApiPermissionError(error: unknown) {
+    return axios.isAxiosError(error) && error.response?.status === 403
+}

@@ -26,12 +26,14 @@ import { useAuthStore } from "@/stores/auth-store"
 import { cn } from "@/utils/cn"
 
 interface PostCardProps extends AuthorPostActions {
+    commentsMode?: "inline" | "hidden"
     isAuthorView?: boolean
     post: FeedPost
     showAuthor?: boolean
 }
 
 export function PostCard({
+    commentsMode = "inline",
     isAuthorView = false,
     onArchive,
     onDelete,
@@ -184,7 +186,7 @@ export function PostCard({
                             onLike={() => void handleLike()}
                             viewsCount={post.viewsCount}
                         />
-                        {author && (commentsOpen || commentsPreview.length) ? (
+                        {commentsMode === "inline" && author && (commentsOpen || commentsPreview.length) ? (
                             <InlineComments
                                 authorId={post.authorId}
                                 comments={commentsOpen ? commentsQuery.data : undefined}
