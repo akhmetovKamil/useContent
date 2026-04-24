@@ -20,6 +20,7 @@ const profileMocks = vi.hoisted(() => ({
 }));
 
 const platformMocks = vi.hoisted(() => ({
+  assertAuthorPlatformFeature: vi.fn(),
   assertAuthorStorageQuota: vi.fn(),
 }));
 
@@ -77,6 +78,8 @@ vi.mock("../projects/file-storage", () => ({
 import {
   createMyPost,
   deleteMyPost,
+  promoteMyPost,
+  stopPromotingMyPost,
   updateMyPost,
   uploadMyPostAttachment,
 } from "./service";
@@ -201,5 +204,102 @@ describe("posts/service", () => {
     expect(attachment.storageKey).toBe(
       "authors/a/posts/p/attachments/att/image.png",
     );
+  });
+
+  test("promotes published post through platform feature gate", async () => {
+    const author = createAuthorProfileDoc();
+    const postId = new ObjectId("65f505050505050505050505");
+    const existing = {
+      _id: postId,
+      authorId: author._id,
+      title: "Published",
+      content: "Text",
+      status: "published" as const,
+      policyMode: "public" as const,
+      policy: null,
+      accessPolicyId: null,
+      attachmentIds: [],
+      linkedProjectIds: [],
+      promoted: false,
+      promotedAt: null,
+      promotionStatus: null,
+      publishedAt: new Date("2026-04-01T00:00:00.000Z"),
+      createdAt: new Date("2026-04-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-04-01T00:00:00.000Z"),
+    };
+    vi.mocked(profileMocks.getMyAuthorProfile).mockResolvedValue(author);
+    vi.mocked(repositoryMocks.findPostByIdAndAuthorId).mockResolvedValue(existing);
+    vi.mocked(repositoryMocks.updatePost).mockImplementation(async (_id, _authorId, update) => ({
+      ...existing,
+      ...update,
+    }));
+
+    const post = await promoteMyPost(author.slug, postId.toHexString());
+
+    expect(platformMocks.assertAuthorPlatformFeature).toHaveBeenCalledWith(
+      author,
+      "homepage_promo",
+    );
+    expect(post.promoted).toBe(true);
+    expect(post.promotionStatus).toBe("active");
+  });
+
+  test("does not promote draft posts", async () => {
+    const author = createAuthorProfileDoc();
+    const postId = new ObjectId("65f606060606060606060606");
+    vi.mocked(profileMocks.getMyAuthorProfile).mockResolvedValue(author);
+    vi.mocked(repositoryMocks.findPostByIdAndAuthorId).mockResolvedValue({
+      _id: postId,
+      authorId: author._id,
+      title: "Draft",
+      content: "Text",
+      status: "draft",
+      policyMode: "public",
+      policy: null,
+      accessPolicyId: null,
+      attachmentIds: [],
+      linkedProjectIds: [],
+      publishedAt: null,
+      createdAt: new Date("2026-04-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-04-01T00:00:00.000Z"),
+    });
+
+    await expect(promoteMyPost(author.slug, postId.toHexString())).rejects.toThrow(
+      "only published posts can be promoted",
+    );
+  });
+
+  test("pauses post promotion", async () => {
+    const author = createAuthorProfileDoc();
+    const postId = new ObjectId("65f707070707070707070707");
+    const existing = {
+      _id: postId,
+      authorId: author._id,
+      title: "Promoted",
+      content: "Text",
+      status: "published" as const,
+      policyMode: "public" as const,
+      policy: null,
+      accessPolicyId: null,
+      attachmentIds: [],
+      linkedProjectIds: [],
+      promoted: true,
+      promotedAt: new Date("2026-04-01T00:00:00.000Z"),
+      promotionStatus: "active" as const,
+      publishedAt: new Date("2026-04-01T00:00:00.000Z"),
+      createdAt: new Date("2026-04-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-04-01T00:00:00.000Z"),
+    };
+    vi.mocked(profileMocks.getMyAuthorProfile).mockResolvedValue(author);
+    vi.mocked(repositoryMocks.findPostByIdAndAuthorId).mockResolvedValue(existing);
+    vi.mocked(repositoryMocks.updatePost).mockImplementation(async (_id, _authorId, update) => ({
+      ...existing,
+      ...update,
+    }));
+
+    const post = await stopPromotingMyPost(author.slug, postId.toHexString());
+
+    expect(post.promoted).toBe(false);
+    expect(post.promotionStatus).toBe("paused");
   });
 });

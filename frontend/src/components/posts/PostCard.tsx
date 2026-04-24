@@ -1,5 +1,5 @@
 import type { PostAttachmentDto, PostDto } from "@shared/types/content"
-import { Archive, ExternalLink, Pencil, RotateCcw, Send, Trash2 } from "lucide-react"
+import { Archive, ExternalLink, Megaphone, Pencil, RotateCcw, Send, Trash2 } from "lucide-react"
 import type { ComponentType } from "react"
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
@@ -39,7 +39,9 @@ export function PostCard({
     onDelete,
     onEdit,
     onPublish,
+    onPromote,
     onRestoreDraft,
+    onStopPromotion,
     onUnarchive,
     post,
     showAuthor = false,
@@ -142,7 +144,9 @@ export function PostCard({
                             onDelete={onDelete}
                             onEdit={onEdit}
                             onPublish={onPublish}
+                            onPromote={onPromote}
                             onRestoreDraft={onRestoreDraft}
+                            onStopPromotion={onStopPromotion}
                             onUnarchive={onUnarchive}
                             post={post}
                         />
@@ -286,11 +290,14 @@ function AuthorActions({
     onDelete,
     onEdit,
     onPublish,
+    onPromote,
     onRestoreDraft,
+    onStopPromotion,
     onUnarchive,
     post,
 }: AuthorPostActions & { post: FeedPost }) {
     const editablePost = post as PostDto
+    const isPromoted = post.promotion?.active === true
 
     return (
         <div className="flex flex-wrap justify-end gap-2">
@@ -312,6 +319,21 @@ function AuthorActions({
                 </>
             ) : null}
             <IconAction icon={Pencil} label="Edit" onClick={() => onEdit?.(editablePost)} />
+            {post.status === "published" && (onPromote || onStopPromotion) ? (
+                isPromoted && onStopPromotion ? (
+                    <IconAction
+                        icon={Megaphone}
+                        label="Pause promo"
+                        onClick={() => onStopPromotion?.(editablePost)}
+                    />
+                ) : onPromote ? (
+                    <IconAction
+                        icon={Megaphone}
+                        label="Promote"
+                        onClick={() => onPromote(editablePost)}
+                    />
+                ) : null
+            ) : null}
             {post.status !== "archived" ? (
                 <IconAction
                     icon={Archive}

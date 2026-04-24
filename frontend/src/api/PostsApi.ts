@@ -38,6 +38,14 @@ class PostsApi {
         await deleteData(`/me/posts/${postId}`)
     }
 
+    async promoteMyPost(postId: string) {
+        return postData<PostDto>(`/me/posts/${postId}/promotion`)
+    }
+
+    async stopPromotingMyPost(postId: string) {
+        return deleteData<PostDto>(`/me/posts/${postId}/promotion`)
+    }
+
     async uploadMyPostAttachment(postId: string, file: File) {
         return uploadData<PostAttachmentDto>(
             `/me/post-files/upload/${postId}`,

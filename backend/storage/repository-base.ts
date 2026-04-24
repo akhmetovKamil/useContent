@@ -107,6 +107,7 @@ export async function ensureIndexes(): Promise<void> {
     accessPolicyPresets.createIndex({ authorId: 1, createdAt: -1 }),
     posts.createIndex({ authorId: 1, status: 1, publishedAt: -1 }),
     posts.createIndex({ status: 1, publishedAt: -1, _id: -1 }),
+    posts.createIndex({ status: 1, promoted: 1, promotionStatus: 1, publishedAt: -1 }),
     posts.createIndex({ authorId: 1, accessPolicyId: 1 }),
     posts.createIndex({ authorId: 1, createdAt: -1 }),
     postAttachments.createIndex({ postId: 1, createdAt: 1 }),

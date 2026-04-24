@@ -138,6 +138,9 @@ export interface PostDoc {
   accessPolicyId: ObjectId | null;
   attachmentIds: ObjectId[];
   linkedProjectIds: ObjectId[];
+  promoted?: boolean;
+  promotedAt?: Date | null;
+  promotionStatus?: "active" | "paused" | "expired" | null;
   publishedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;

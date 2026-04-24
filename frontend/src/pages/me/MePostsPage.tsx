@@ -15,6 +15,8 @@ import {
     useCreateMyPostMutation,
     useDeleteMyPostMutation,
     useMyPostsQuery,
+    usePromoteMyPostMutation,
+    useStopPromotingMyPostMutation,
     useUpdateMyPostMutation,
     useUploadMyPostAttachmentMutation,
 } from "@/queries/posts"
@@ -41,6 +43,8 @@ export function MePostsPage() {
     const createPostMutation = useCreateMyPostMutation()
     const updatePostMutation = useUpdateMyPostMutation()
     const deletePostMutation = useDeleteMyPostMutation()
+    const promotePostMutation = usePromoteMyPostMutation()
+    const stopPromotionMutation = useStopPromotingMyPostMutation()
     const uploadAttachmentMutation = useUploadMyPostAttachmentMutation()
     const [showEditor, setShowEditor] = useState(false)
     const [activeTab, setActiveTab] = useState<AuthorPostsTab>("published")
@@ -71,7 +75,7 @@ export function MePostsPage() {
     const publishedPosts = activePosts?.filter((post) => post.status === "published") ?? []
     const draftPosts = activePosts?.filter((post) => post.status === "draft") ?? []
     const promotedPosts =
-        activePosts?.filter((post) => isPromotedPost(post) && post.status === "published") ?? []
+        activePosts?.filter((post) => post.promotion?.active && post.status === "published") ?? []
     const visiblePosts =
         activeTab === "published"
             ? publishedPosts
@@ -186,8 +190,12 @@ export function MePostsPage() {
                                 setEditTitle(post.title)
                                 setEditContent(post.content)
                             }}
+                            onPromote={(post) => void promotePostMutation.mutateAsync(post.id)}
                             onPublish={(post) => updatePostStatus(post, "published")}
                             onRestoreDraft={(post) => updatePostStatus(post, "draft")}
+                            onStopPromotion={(post) =>
+                                void stopPromotionMutation.mutateAsync(post.id)
+                            }
                             onUnarchive={(post) => updatePostStatus(post, "published")}
                             posts={visiblePosts}
                         />
@@ -263,8 +271,4 @@ function getEmptyLabel(tab: AuthorPostsTab) {
         return "No promoted posts yet."
     }
     return "No published posts yet."
-}
-
-function isPromotedPost(post: PostDto) {
-    return Boolean((post as PostDto & { promotion?: { active?: boolean } | null }).promotion?.active)
 }

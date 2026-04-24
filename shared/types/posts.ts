@@ -32,6 +32,11 @@ export interface PostAttachmentDto extends AuthorOwnedDto, StorageSizedDto {
   createdAt: string;
 }
 
+export interface PostPromotionDto {
+  active: boolean;
+  promotedAt: NullableDateString;
+}
+
 export interface PostDto extends ContentBaseDto {
   content: string;
   status: ContentStatus;
@@ -45,6 +50,7 @@ export interface PostDto extends ContentBaseDto {
   commentsCount: number;
   viewsCount: number;
   likedByMe: boolean;
+  promotion: Maybe<PostPromotionDto>;
 }
 
 export interface FeedPostDto extends PostDto {
@@ -54,10 +60,6 @@ export interface FeedPostDto extends PostDto {
   hasAccess: boolean;
   feedSource: "public" | "subscribed" | "promoted" | "author";
   feedReason: Maybe<string>;
-  promotion: Maybe<{
-    active: boolean;
-    promotedAt: NullableDateString;
-  }>;
   commentsPreview: PostCommentDto[];
 }
 

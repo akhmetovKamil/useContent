@@ -343,6 +343,13 @@ export function toPostResponse(
     commentsCount: stats?.commentsCount ?? 0,
     viewsCount: stats?.viewsCount ?? 0,
     likedByMe: stats?.likedByMe ?? false,
+    promotion:
+      post.promoted && post.promotionStatus === "active"
+        ? {
+            active: true,
+            promotedAt: post.promotedAt?.toISOString() ?? null,
+          }
+        : null,
     publishedAt: post.publishedAt?.toISOString() ?? null,
     createdAt: post.createdAt.toISOString(),
     updatedAt: post.updatedAt.toISOString(),
@@ -412,7 +419,6 @@ export function toFeedPostResponse(
     hasAccess: access?.hasAccess ?? true,
     feedSource: access?.feedSource ?? "author",
     feedReason: access?.feedReason ?? null,
-    promotion: null,
     commentsPreview: (access?.commentsPreview ?? []).map(toPostCommentResponse),
   };
 }

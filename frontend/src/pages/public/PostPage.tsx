@@ -144,7 +144,6 @@ function toFeedPost(
         feedReason: `From @${authorSlug}`,
         feedSource: "author",
         hasAccess: true,
-        promotion: null,
     }
 }
 

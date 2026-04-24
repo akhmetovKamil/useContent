@@ -106,6 +106,34 @@ export const deleteMyPost = api(
   },
 );
 
+export const promoteMyPost = api(
+  {
+    method: "POST",
+    path: "/me/posts/:postId/promotion",
+    expose: true,
+    auth: true,
+  },
+  async ({ postId }: { postId: string }): Promise<PostResponse> => {
+    const auth = getAuthData()!;
+    const post = await service.promoteMyPost(auth.walletAddress, postId);
+    return service.buildPostResponse(post, auth.walletAddress);
+  },
+);
+
+export const stopPromotingMyPost = api(
+  {
+    method: "DELETE",
+    path: "/me/posts/:postId/promotion",
+    expose: true,
+    auth: true,
+  },
+  async ({ postId }: { postId: string }): Promise<PostResponse> => {
+    const auth = getAuthData()!;
+    const post = await service.stopPromotingMyPost(auth.walletAddress, postId);
+    return service.buildPostResponse(post, auth.walletAddress);
+  },
+);
+
 interface ListAuthorPostsRequest {
   slug: string;
   cursor?: string;

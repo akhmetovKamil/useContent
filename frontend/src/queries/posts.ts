@@ -162,6 +162,28 @@ export function useDeleteMyPostMutation() {
     })
 }
 
+export function usePromoteMyPostMutation() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (postId: string) => postsApi.promoteMyPost(postId),
+        onSuccess: () => {
+            void invalidatePostLists(queryClient)
+        },
+    })
+}
+
+export function useStopPromotingMyPostMutation() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (postId: string) => postsApi.stopPromotingMyPost(postId),
+        onSuccess: () => {
+            void invalidatePostLists(queryClient)
+        },
+    })
+}
+
 export function useUploadMyPostAttachmentMutation() {
     const queryClient = useQueryClient()
 
@@ -172,6 +194,16 @@ export function useUploadMyPostAttachmentMutation() {
             void invalidateMany(queryClient, [queryKeys.myPosts(), queryKeys.authors()])
         },
     })
+}
+
+function invalidatePostLists(queryClient: ReturnType<typeof useQueryClient>) {
+    return invalidateMany(queryClient, [
+        queryKeys.myPosts(),
+        queryKeys.myPosts("archived"),
+        queryKeys.exploreFeedPosts,
+        queryKeys.myFeedPosts,
+        queryKeys.authors(),
+    ])
 }
 
 export function useDownloadMyPostAttachmentMutation() {

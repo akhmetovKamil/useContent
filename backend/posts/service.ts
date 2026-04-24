@@ -298,7 +298,9 @@ export async function listExploreFeedPosts(
         normalizedWallet,
         subscribedAuthorIdSet.has(post.authorId.toHexString())
           ? { reason: "From your active subscriptions", source: "subscribed" }
-          : { reason: "Published on useContent", source: "public" },
+          : isPostPromotionActive(post)
+            ? { reason: "Promoted by author", source: "promoted" }
+            : { reason: "Published on useContent", source: "public" },
       );
     }),
   );
@@ -354,7 +356,12 @@ function getHybridFeedScore(
   const subscribedBoost = subscribedAuthorIdSet.has(post.authorId.toHexString())
     ? 10 * 60 * 1000
     : 0;
-  return publishedAt + subscribedBoost;
+  const promotedBoost = isPostPromotionActive(post) ? 20 * 60 * 1000 : 0;
+  return publishedAt + subscribedBoost + promotedBoost;
+}
+
+function isPostPromotionActive(post: PostDoc): boolean {
+  return post.promoted === true && post.promotionStatus === "active";
 }
 
 export async function createMyPost(
@@ -390,6 +397,9 @@ export async function createMyPost(
     accessPolicyId: policySelection.accessPolicyId,
     attachmentIds,
     linkedProjectIds,
+    promoted: false,
+    promotedAt: null,
+    promotionStatus: null,
     publishedAt: status === "published" ? now : null,
     createdAt: now,
     updatedAt: now,
@@ -436,6 +446,7 @@ export async function updateMyPost(
     nextPolicySelection.policy,
   );
 
+  const shouldPausePromotion = nextStatus !== "published";
   const updated = await repo.updatePost(objectId, author._id, {
     title:
       input.title === undefined
@@ -457,6 +468,11 @@ export async function updateMyPost(
       input.linkedProjectIds === undefined
         ? (existing.linkedProjectIds ?? [])
         : await normalizeLinkedProjectIds(author, input.linkedProjectIds),
+    promoted: shouldPausePromotion ? false : (existing.promoted ?? false),
+    promotedAt: existing.promotedAt ?? null,
+    promotionStatus: shouldPausePromotion
+      ? "paused"
+      : (existing.promotionStatus ?? null),
     publishedAt: resolvePublishedAt(
       existing.publishedAt,
       existing.status,
@@ -469,6 +485,56 @@ export async function updateMyPost(
     throw APIError.notFound("post not found");
   }
 
+  return updated;
+}
+
+export async function promoteMyPost(
+  walletAddress: string,
+  postId: string,
+): Promise<PostDoc> {
+  const author = await getMyAuthorProfile(walletAddress);
+  await assertAuthorPlatformFeature(author, "homepage_promo");
+  const objectId = parseObjectId(postId, "postId");
+  const existing = await repo.findPostByIdAndAuthorId(objectId, author._id);
+  if (!existing) {
+    throw APIError.notFound("post not found");
+  }
+  if (existing.status !== "published") {
+    throw APIError.failedPrecondition("only published posts can be promoted");
+  }
+
+  const now = new Date();
+  const updated = await repo.updatePost(objectId, author._id, {
+    promoted: true,
+    promotedAt: existing.promotedAt ?? now,
+    promotionStatus: "active",
+    updatedAt: now,
+  });
+  if (!updated) {
+    throw APIError.notFound("post not found");
+  }
+  return updated;
+}
+
+export async function stopPromotingMyPost(
+  walletAddress: string,
+  postId: string,
+): Promise<PostDoc> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const objectId = parseObjectId(postId, "postId");
+  const existing = await repo.findPostByIdAndAuthorId(objectId, author._id);
+  if (!existing) {
+    throw APIError.notFound("post not found");
+  }
+
+  const updated = await repo.updatePost(objectId, author._id, {
+    promoted: false,
+    promotionStatus: "paused",
+    updatedAt: new Date(),
+  });
+  if (!updated) {
+    throw APIError.notFound("post not found");
+  }
   return updated;
 }
 
