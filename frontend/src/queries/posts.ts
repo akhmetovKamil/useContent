@@ -135,7 +135,28 @@ export function useDeleteMyPostMutation() {
 
     return useMutation({
         mutationFn: (postId: string) => postsApi.deleteMyPost(postId),
-        onSuccess: () => {
+        onMutate: async (postId) => {
+            const activeKey = queryKeys.myPosts()
+            const archiveKey = queryKeys.myPosts("archived")
+            await Promise.all([
+                queryClient.cancelQueries({ queryKey: activeKey }),
+                queryClient.cancelQueries({ queryKey: archiveKey }),
+            ])
+            const previousActive = queryClient.getQueryData<PostDto[]>(activeKey)
+            const previousArchive = queryClient.getQueryData<PostDto[]>(archiveKey)
+            const removePost = (posts?: PostDto[]) => posts?.filter((post) => post.id !== postId)
+            queryClient.setQueryData<PostDto[]>(activeKey, (posts) => removePost(posts) ?? [])
+            queryClient.setQueryData<PostDto[]>(archiveKey, (posts) => removePost(posts) ?? [])
+            return { previousActive, previousArchive }
+        },
+        onError: (_error, _postId, context) => {
+            if (!context) {
+                return
+            }
+            queryClient.setQueryData(queryKeys.myPosts(), context.previousActive)
+            queryClient.setQueryData(queryKeys.myPosts("archived"), context.previousArchive)
+        },
+        onSettled: () => {
             void invalidateMany(queryClient, [queryKeys.myPosts(), queryKeys.authors()])
         },
     })

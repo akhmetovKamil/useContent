@@ -7,6 +7,7 @@ export interface AuthorPostActions {
     onDelete?: (post: PostDto) => void
     onEdit?: (post: PostDto) => void
     onPublish?: (post: PostDto) => void
+    onRestoreDraft?: (post: PostDto) => void
     onUnarchive?: (post: PostDto) => void
 }
 

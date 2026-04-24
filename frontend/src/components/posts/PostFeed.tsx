@@ -15,6 +15,7 @@ export function PostFeed({
     onDelete,
     onEdit,
     onPublish,
+    onRestoreDraft,
     onUnarchive,
     posts = [],
     showAuthor = false,
@@ -33,6 +34,7 @@ export function PostFeed({
                     onDelete={onDelete}
                     onEdit={onEdit}
                     onPublish={onPublish}
+                    onRestoreDraft={onRestoreDraft}
                     onUnarchive={onUnarchive}
                     post={post}
                     showAuthor={showAuthor}

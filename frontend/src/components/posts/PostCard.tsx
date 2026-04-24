@@ -39,6 +39,7 @@ export function PostCard({
     onDelete,
     onEdit,
     onPublish,
+    onRestoreDraft,
     onUnarchive,
     post,
     showAuthor = false,
@@ -141,6 +142,7 @@ export function PostCard({
                             onDelete={onDelete}
                             onEdit={onEdit}
                             onPublish={onPublish}
+                            onRestoreDraft={onRestoreDraft}
                             onUnarchive={onUnarchive}
                             post={post}
                         />
@@ -284,6 +286,7 @@ function AuthorActions({
     onDelete,
     onEdit,
     onPublish,
+    onRestoreDraft,
     onUnarchive,
     post,
 }: AuthorPostActions & { post: FeedPost }) {
@@ -295,11 +298,18 @@ function AuthorActions({
                 <IconAction icon={Send} label="Publish" onClick={() => onPublish?.(editablePost)} />
             ) : null}
             {post.status === "archived" ? (
-                <IconAction
-                    icon={RotateCcw}
-                    label="Unarchive"
-                    onClick={() => onUnarchive?.(editablePost)}
-                />
+                <>
+                    <IconAction
+                        icon={RotateCcw}
+                        label="Restore draft"
+                        onClick={() => onRestoreDraft?.(editablePost)}
+                    />
+                    <IconAction
+                        icon={Send}
+                        label="Publish"
+                        onClick={() => onUnarchive?.(editablePost)}
+                    />
+                </>
             ) : null}
             <IconAction icon={Pencil} label="Edit" onClick={() => onEdit?.(editablePost)} />
             {post.status !== "archived" ? (

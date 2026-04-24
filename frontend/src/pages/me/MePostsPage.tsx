@@ -21,6 +21,16 @@ import {
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useMyProjectsQuery } from "@/queries/projects"
 import { useAuthStore } from "@/stores/auth-store"
+import { cn } from "@/utils/cn"
+
+type AuthorPostsTab = "published" | "drafts" | "archived" | "promoted"
+
+const postTabs: Array<{ id: AuthorPostsTab; label: string }> = [
+    { id: "published", label: "Published" },
+    { id: "drafts", label: "Drafts" },
+    { id: "archived", label: "Archived" },
+    { id: "promoted", label: "Promoted" },
+]
 
 export function MePostsPage() {
     const token = useAuthStore((state) => state.token)
@@ -33,14 +43,14 @@ export function MePostsPage() {
     const deletePostMutation = useDeleteMyPostMutation()
     const uploadAttachmentMutation = useUploadMyPostAttachmentMutation()
     const [showEditor, setShowEditor] = useState(false)
-    const [showArchive, setShowArchive] = useState(false)
+    const [activeTab, setActiveTab] = useState<AuthorPostsTab>("published")
     const [editingPost, setEditingPost] = useState<PostDto | null>(null)
     const [editContent, setEditContent] = useState("")
     const [editTitle, setEditTitle] = useState("")
-    const archivedPostsQuery = useMyPostsQuery(Boolean(token) && showArchive, "archived")
+    const archivedPostsQuery = useMyPostsQuery(Boolean(token) && activeTab === "archived", "archived")
     const authorSlug = authorQuery.data?.slug ?? ""
     const authorDisplayName = authorQuery.data?.displayName ?? "Author"
-    const posts = authorSlug
+    const activePosts = authorSlug
         ? postsQuery.data?.map((post) => ({
               ...post,
               authorDisplayName,
@@ -58,6 +68,31 @@ export function MePostsPage() {
               hasAccess: true,
           }))
         : archivedPostsQuery.data
+    const publishedPosts = activePosts?.filter((post) => post.status === "published") ?? []
+    const draftPosts = activePosts?.filter((post) => post.status === "draft") ?? []
+    const promotedPosts =
+        activePosts?.filter((post) => isPromotedPost(post) && post.status === "published") ?? []
+    const visiblePosts =
+        activeTab === "published"
+            ? publishedPosts
+            : activeTab === "drafts"
+              ? draftPosts
+              : activeTab === "promoted"
+                ? promotedPosts
+                : archivedPosts
+    const isActiveListLoading =
+        activeTab === "archived" ? archivedPostsQuery.isLoading : postsQuery.isLoading
+    const activeListError =
+        activeTab === "archived" ? archivedPostsQuery.error : postsQuery.error
+    const isActiveListError =
+        activeTab === "archived" ? archivedPostsQuery.isError : postsQuery.isError
+
+    function updatePostStatus(post: PostDto, status: PostDto["status"]) {
+        void updatePostMutation.mutateAsync({
+            postId: post.id,
+            input: { status },
+        })
+    }
 
     return (
         <section className="grid gap-6">
@@ -94,83 +129,71 @@ export function MePostsPage() {
                 />
             ) : null}
 
-            <Card className="rounded-[28px]">
+            <Card className="overflow-hidden rounded-[28px]">
                 <CardHeader>
-                    <CardTitle>Posts</CardTitle>
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                            <CardTitle>Publishing workspace</CardTitle>
+                            <p className="mt-2 text-sm text-[var(--muted)]">
+                                Manage drafts, published posts, archived content and promoted updates
+                                from one place.
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {postTabs.map((tab) => {
+                                const count =
+                                    tab.id === "published"
+                                        ? publishedPosts.length
+                                        : tab.id === "drafts"
+                                          ? draftPosts.length
+                                          : tab.id === "promoted"
+                                            ? promotedPosts.length
+                                            : archivedPosts?.length ?? 0
+
+                                return (
+                                    <button
+                                        className={cn(
+                                            "rounded-full border border-[var(--line)] px-4 py-2 text-sm font-medium transition",
+                                            activeTab === tab.id
+                                                ? "bg-[var(--foreground)] text-[var(--background)]"
+                                                : "bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--foreground)]",
+                                        )}
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        type="button"
+                                    >
+                                        {tab.label}
+                                        <span className="ml-2 opacity-70">{count}</span>
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent>
-                    {postsQuery.isLoading ? (
+                    {isActiveListLoading ? (
                         <p className="text-[var(--muted)]">Loading posts...</p>
-                    ) : postsQuery.isError ? (
-                        <p className="text-rose-600">{postsQuery.error.message}</p>
+                    ) : isActiveListError ? (
+                        <p className="text-rose-600">{activeListError?.message}</p>
                     ) : (
                         <PostFeed
-                            emptyLabel="No posts yet."
+                            emptyLabel={getEmptyLabel(activeTab)}
                             isAuthorView
-                            onArchive={(post) =>
-                                void updatePostMutation.mutateAsync({
-                                    postId: post.id,
-                                    input: { status: "archived" },
-                                })
-                            }
+                            onArchive={(post) => updatePostStatus(post, "archived")}
                             onDelete={(post) => void deletePostMutation.mutateAsync(post.id)}
                             onEdit={(post) => {
                                 setEditingPost(post)
                                 setEditTitle(post.title)
                                 setEditContent(post.content)
                             }}
-                            onPublish={(post) =>
-                                void updatePostMutation.mutateAsync({
-                                    postId: post.id,
-                                    input: { status: "published" },
-                                })
-                            }
-                            posts={posts}
+                            onPublish={(post) => updatePostStatus(post, "published")}
+                            onRestoreDraft={(post) => updatePostStatus(post, "draft")}
+                            onUnarchive={(post) => updatePostStatus(post, "published")}
+                            posts={visiblePosts}
                         />
                     )}
-                    <button
-                        className="mt-5 text-sm text-[var(--muted)] underline underline-offset-4"
-                        onClick={() => setShowArchive((value) => !value)}
-                        type="button"
-                    >
-                        {showArchive ? "Hide archive" : "Open archive"}
-                    </button>
                 </CardContent>
             </Card>
-
-            {showArchive ? (
-                <Card className="rounded-[28px]">
-                    <CardHeader>
-                        <CardTitle>Archived posts</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {archivedPostsQuery.isLoading ? (
-                            <p className="text-[var(--muted)]">Loading archive...</p>
-                        ) : archivedPostsQuery.isError ? (
-                            <p className="text-rose-600">{archivedPostsQuery.error.message}</p>
-                        ) : (
-                            <PostFeed
-                                emptyLabel="Archive is empty."
-                                isAuthorView
-                                onDelete={(post) => void deletePostMutation.mutateAsync(post.id)}
-                                onPublish={(post) =>
-                                    void updatePostMutation.mutateAsync({
-                                        postId: post.id,
-                                        input: { status: "published" },
-                                    })
-                                }
-                                onUnarchive={(post) =>
-                                    void updatePostMutation.mutateAsync({
-                                        postId: post.id,
-                                        input: { status: "published" },
-                                    })
-                                }
-                                posts={archivedPosts}
-                            />
-                        )}
-                    </CardContent>
-                </Card>
-            ) : null}
 
             <Modal
                 description="Update the post copy without changing its access policy or attachments."
@@ -227,4 +250,21 @@ export function MePostsPage() {
             </Modal>
         </section>
     )
+}
+
+function getEmptyLabel(tab: AuthorPostsTab) {
+    if (tab === "drafts") {
+        return "No drafts yet."
+    }
+    if (tab === "archived") {
+        return "Archive is empty."
+    }
+    if (tab === "promoted") {
+        return "No promoted posts yet."
+    }
+    return "No published posts yet."
+}
+
+function isPromotedPost(post: PostDto) {
+    return Boolean((post as PostDto & { promotion?: { active?: boolean } | null }).promotion?.active)
 }
