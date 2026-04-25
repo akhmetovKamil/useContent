@@ -42,9 +42,24 @@ class AuthorsApi {
         })
     }
 
-    async listExploreFeedPosts(cursor?: string | null, limit = 12) {
+    async listExploreFeedPosts({
+        cursor,
+        limit = 12,
+        search,
+        source = "all",
+    }: {
+        cursor?: string | null
+        limit?: number
+        search?: string
+        source?: "all" | "public" | "subscribed" | "promoted"
+    } = {}) {
         return getData<PaginatedResponse<FeedPostDto>>("/feed", {
-            params: { cursor: cursor ?? undefined, limit },
+            params: {
+                cursor: cursor ?? undefined,
+                limit,
+                q: search || undefined,
+                source: source === "all" ? undefined : source,
+            },
         })
     }
 

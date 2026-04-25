@@ -262,9 +262,10 @@ export async function listMyFeedPosts(
 
 export async function listExploreFeedPosts(
   viewerWallet?: string,
-  pagination: FeedPaginationRequest = {},
+  pagination: FeedPaginationRequest & ExploreFeedFilterRequest = {},
 ): Promise<PaginatedResponse<FeedPostResponse>> {
   const page = normalizeFeedPagination(pagination);
+  const filters = normalizeExploreFeedFilters(pagination);
   const normalizedWallet = viewerWallet ? normalizeWallet(viewerWallet) : undefined;
   const subscribedAuthorIds = normalizedWallet
     ? await getActiveSubscribedAuthorIds(normalizedWallet)
@@ -272,18 +273,19 @@ export async function listExploreFeedPosts(
   const publicPosts = await repo.listPublishedPostsPage({
     cursor: page.cursor,
     limit: page.limit + 8,
+    search: filters.search,
   });
   const subscribedPosts = subscribedAuthorIds.length
     ? await repo.listPublishedPostsPage({
         authorIds: subscribedAuthorIds,
         cursor: page.cursor,
         limit: page.limit + 8,
+        search: filters.search,
       })
     : [];
-  const posts = rankHybridFeedPosts(publicPosts, subscribedPosts, subscribedAuthorIds).slice(
-    0,
-    page.limit + 1,
-  );
+  const posts = rankHybridFeedPosts(publicPosts, subscribedPosts, subscribedAuthorIds)
+    .filter((post) => matchesExploreFeedSource(post, subscribedAuthorIds, filters.source))
+    .slice(0, page.limit + 1);
   const authorIds = uniqueObjectIds(posts.map((post) => post.authorId));
   const authors = await repo.findAuthorProfilesByIds(authorIds);
   const authorById = new Map(
@@ -318,6 +320,48 @@ export async function listExploreFeedPosts(
     page.limit,
     encodeFeedCursorFromFeedPost,
   );
+}
+
+interface ExploreFeedFilterRequest {
+  q?: string;
+  source?: "all" | "public" | "subscribed" | "promoted";
+}
+
+function normalizeExploreFeedFilters(input: ExploreFeedFilterRequest): {
+  search?: string;
+  source: "all" | "public" | "subscribed" | "promoted";
+} {
+  const source =
+    input.source === "public" ||
+    input.source === "subscribed" ||
+    input.source === "promoted"
+      ? input.source
+      : "all";
+  const search = input.q?.trim();
+  return {
+    search: search || undefined,
+    source,
+  };
+}
+
+function matchesExploreFeedSource(
+  post: PostDoc,
+  subscribedAuthorIds: ObjectId[],
+  source: "all" | "public" | "subscribed" | "promoted",
+): boolean {
+  if (source === "all") {
+    return true;
+  }
+  const isSubscribed = subscribedAuthorIds.some((authorId) =>
+    authorId.equals(post.authorId),
+  );
+  if (source === "subscribed") {
+    return isSubscribed;
+  }
+  if (source === "promoted") {
+    return isPostPromotionActive(post);
+  }
+  return !isSubscribed && !isPostPromotionActive(post);
 }
 
 async function getActiveSubscribedAuthorIds(walletAddress: string): Promise<ObjectId[]> {

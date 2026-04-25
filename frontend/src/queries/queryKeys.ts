@@ -7,7 +7,10 @@ export const queryKeys = {
     myReaderSubscriptions: ["me", "subscriptions"] as const,
     myFeedPosts: ["me", "feed"] as const,
     myActivity: ["me", "activity"] as const,
-    exploreFeedPosts: ["feed"] as const,
+    exploreFeedPosts: (search?: string, source?: string) =>
+        search === undefined && source === undefined
+            ? (["feed"] as const)
+            : (["feed", search ?? "", source ?? "all"] as const),
     myAuthorSubscribers: ["me", "author", "subscribers"] as const,
     platformPlans: ["platform", "plans"] as const,
     myAuthorPlatformBilling: ["me", "author", "platform-billing"] as const,

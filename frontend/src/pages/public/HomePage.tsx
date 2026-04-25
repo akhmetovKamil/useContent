@@ -15,14 +15,30 @@ import { useAuthorsQuery } from "@/queries/authors"
 import { flattenFeedPages, useExploreFeedPostsQuery } from "@/queries/posts"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
+import { cn } from "@/utils/cn"
+
+type FeedSourceFilter = "all" | "public" | "subscribed" | "promoted"
+
+const feedSourceFilters: Array<{ id: FeedSourceFilter; label: string }> = [
+    { id: "all", label: "All" },
+    { id: "public", label: "Public" },
+    { id: "subscribed", label: "Subscribed" },
+    { id: "promoted", label: "Promoted" },
+]
 
 export function HomePage() {
     const token = useAuthStore((state) => state.token)
     const [authorSearch, setAuthorSearch] = useState("")
+    const [feedSearch, setFeedSearch] = useState("")
+    const [feedSource, setFeedSource] = useState<FeedSourceFilter>("all")
     const deferredAuthorSearch = useDeferredValue(authorSearch)
+    const deferredFeedSearch = useDeferredValue(feedSearch)
     const authorQuery = useMyAuthorProfileQuery(Boolean(token))
     const authorsQuery = useAuthorsQuery(Boolean(token), deferredAuthorSearch.trim())
-    const feedQuery = useExploreFeedPostsQuery(true)
+    const feedQuery = useExploreFeedPostsQuery(true, {
+        search: deferredFeedSearch.trim(),
+        source: feedSource,
+    })
     const feedPosts = flattenFeedPages(feedQuery.data)
     const feedSentinelRef = useRef<HTMLDivElement | null>(null)
     const loadMoreFeed = useCallback(() => {
@@ -41,16 +57,55 @@ export function HomePage() {
         <div className="grid gap-6">
             <HomeHero authorSlug={authorQuery.data?.slug} isSignedIn={Boolean(token)} />
             <Card className="rounded-[32px]">
-                <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                        <div className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-                            live feed
+                <CardHeader className="grid gap-5">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <div className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
+                                discovery feed
+                            </div>
+                            <CardTitle className="mt-3">Latest posts</CardTitle>
                         </div>
-                        <CardTitle className="mt-3">Latest posts</CardTitle>
+                        <Badge className="w-fit rounded-full" variant={token ? "success" : "default"}>
+                            {token ? "Public + subscriptions" : "Public posts"}
+                        </Badge>
                     </div>
-                    <Badge className="w-fit rounded-full" variant={token ? "success" : "default"}>
-                        {token ? "Public + subscriptions" : "Public posts"}
-                    </Badge>
+                    <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
+                        <label className="relative">
+                            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[var(--muted)]" />
+                            <Input
+                                className="rounded-full pl-10"
+                                onChange={(event) => setFeedSearch(event.target.value)}
+                                placeholder="Search posts by title or content"
+                                value={feedSearch}
+                            />
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                            {feedSourceFilters.map((filter) => (
+                                <button
+                                    className={cn(
+                                        "rounded-full border border-[var(--line)] px-4 py-2 text-sm font-medium transition",
+                                        feedSource === filter.id
+                                            ? "bg-[var(--foreground)] text-[var(--background)]"
+                                            : "bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--foreground)]",
+                                    )}
+                                    key={filter.id}
+                                    onClick={() => setFeedSource(filter.id)}
+                                    type="button"
+                                >
+                                    {filter.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    {deferredFeedSearch.trim() || feedSource !== "all" ? (
+                        <p className="text-sm text-[var(--muted)]">
+                            Showing {feedSource === "all" ? "all sources" : feedSource} posts
+                            {deferredFeedSearch.trim()
+                                ? ` matching "${deferredFeedSearch.trim()}"`
+                                : ""}
+                            .
+                        </p>
+                    ) : null}
                 </CardHeader>
                 <CardContent>
                     {feedQuery.isLoading ? (
@@ -69,8 +124,16 @@ export function HomePage() {
                         </div>
                     ) : !feedPosts.length ? (
                         <EmptyState
-                            description="Published posts will appear here once authors start sharing content."
-                            title="No posts yet"
+                            description={
+                                deferredFeedSearch.trim() || feedSource !== "all"
+                                    ? "Try another search phrase or switch the feed source filter."
+                                    : "Published posts will appear here once authors start sharing content."
+                            }
+                            title={
+                                deferredFeedSearch.trim() || feedSource !== "all"
+                                    ? "No posts match this discovery filter"
+                                    : "No posts yet"
+                            }
                         />
                     ) : (
                         <PostFeed

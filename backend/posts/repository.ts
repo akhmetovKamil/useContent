@@ -1,5 +1,5 @@
 import { ObjectId, type Collection } from "mongodb";
-import { ensureIndexes, getCollection } from "../storage/repository-base";
+import { ensureIndexes, escapeRegExp, getCollection } from "../storage/repository-base";
 import type {
   PostAttachmentDoc,
   PostCommentDoc,
@@ -53,6 +53,7 @@ export interface PublishedPostPageOptions {
   authorIds?: ObjectId[];
   cursor?: PublishedPostCursor | null;
   limit: number;
+  search?: string;
 }
 
 export async function listPublishedPostsPage({
@@ -60,6 +61,7 @@ export async function listPublishedPostsPage({
   authorIds,
   cursor,
   limit,
+  search,
 }: PublishedPostPageOptions): Promise<PostDoc[]> {
   const posts = await getPostsCollection();
   const authorFilter =
@@ -76,11 +78,21 @@ export async function listPublishedPostsPage({
         ],
       }
     : {};
+  const normalizedSearch = search?.trim();
+  const searchFilter = normalizedSearch
+    ? {
+        $or: [
+          { title: new RegExp(escapeRegExp(normalizedSearch), "i") },
+          { content: new RegExp(escapeRegExp(normalizedSearch), "i") },
+        ],
+      }
+    : {};
 
   return posts
     .find({
       ...authorFilter,
       ...cursorFilter,
+      ...searchFilter,
       status: "published",
       publishedAt: { $ne: null },
     })

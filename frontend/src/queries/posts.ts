@@ -31,10 +31,19 @@ export function useAuthorPostsQuery(slug: string) {
     })
 }
 
-export function useExploreFeedPostsQuery(enabled = true) {
+export function useExploreFeedPostsQuery(
+    enabled = true,
+    filters: {
+        search?: string
+        source?: "all" | "public" | "subscribed" | "promoted"
+    } = {}
+) {
+    const search = filters.search?.trim() ?? ""
+    const source = filters.source ?? "all"
     return useInfiniteQuery({
-        queryKey: queryKeys.exploreFeedPosts,
-        queryFn: ({ pageParam }) => authorsApi.listExploreFeedPosts(pageParam),
+        queryKey: queryKeys.exploreFeedPosts(search, source),
+        queryFn: ({ pageParam }) =>
+            authorsApi.listExploreFeedPosts({ cursor: pageParam, search, source }),
         enabled,
         initialPageParam: null as string | null,
         getNextPageParam: (lastPage) => lastPage.nextCursor,
@@ -201,7 +210,7 @@ function invalidatePostLists(queryClient: ReturnType<typeof useQueryClient>) {
     return invalidateMany(queryClient, [
         queryKeys.myPosts(),
         queryKeys.myPosts("archived"),
-        queryKeys.exploreFeedPosts,
+        queryKeys.exploreFeedPosts(),
         queryKeys.myFeedPosts,
         queryKeys.authors(),
     ])

@@ -41,6 +41,8 @@ export const listMyFeedPosts = api(
 
 interface ListExploreFeedRequest extends CursorPaginationInput {
   authorization?: Header<"Authorization">;
+  q?: string;
+  source?: "all" | "public" | "subscribed" | "promoted";
 }
 
 export const listExploreFeedPosts = api(
@@ -49,9 +51,11 @@ export const listExploreFeedPosts = api(
     authorization,
     cursor,
     limit,
+    q,
+    source,
   }: ListExploreFeedRequest): Promise<FeedPostPageResponse> => {
     const viewerWallet = await getOptionalViewerWallet(authorization);
-    return service.listExploreFeedPosts(viewerWallet, { cursor, limit });
+    return service.listExploreFeedPosts(viewerWallet, { cursor, limit, q, source });
   },
 );
 
