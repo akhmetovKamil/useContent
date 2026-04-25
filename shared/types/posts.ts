@@ -23,6 +23,27 @@ export interface PostCommentDto extends AuthorOwnedDto {
 
 export type PostReportReason = "spam" | "scam" | "illegal_content" | "abuse" | "other";
 
+export type ActivityType =
+  | "post_liked"
+  | "post_commented"
+  | "new_subscription"
+  | "new_post";
+
+export interface ActivityDto {
+  id: EntityId;
+  type: ActivityType;
+  targetWallet: WalletAddress;
+  actorWallet: Maybe<WalletAddress>;
+  authorId: Maybe<EntityId>;
+  authorSlug: Maybe<string>;
+  authorDisplayName: Maybe<string>;
+  postId: Maybe<EntityId>;
+  postTitle: Maybe<string>;
+  message: string;
+  createdAt: string;
+  readAt: NullableDateString;
+}
+
 export interface PostReportDto extends AuthorOwnedDto {
   id: EntityId;
   postId: EntityId;

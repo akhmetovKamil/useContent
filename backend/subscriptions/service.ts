@@ -189,6 +189,7 @@ import {
 
 export * from "../lib/content-common";
 import { getAuthorProfileBySlug, getMyAuthorProfile, getOrCreateUserByWallet } from "../profiles/service";
+import { recordNewSubscriptionActivity } from "../activity/events";
 export async function listMyEntitlements(
   walletAddress: string,
 ): Promise<SubscriptionEntitlementDoc[]> {
@@ -603,6 +604,11 @@ export async function confirmSubscriptionPayment(
     planId: intent.planId,
     validUntil: payment.paidUntil,
     now,
+  });
+  await recordNewSubscriptionActivity({
+    authorId: intent.authorId,
+    planCode: intent.planCode,
+    subscriberWallet,
   });
 
   const updated = await repo.updateSubscriptionPaymentIntent(intent._id, {

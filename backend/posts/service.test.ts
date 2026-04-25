@@ -67,6 +67,11 @@ vi.mock("../platform/service", () => platformMocks);
 vi.mock("../subscriptions/service", () => ({
   listMyEntitlements: vi.fn(),
 }));
+vi.mock("../activity/events", () => ({
+  recordNewPostActivity: vi.fn(),
+  recordPostCommentedActivity: vi.fn(),
+  recordPostLikedActivity: vi.fn(),
+}));
 vi.mock("../content/onchain", () => ({
   readOnChainAccessGrants: vi.fn(),
   verifyPlatformSubscriptionPayment: vi.fn(),

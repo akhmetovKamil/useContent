@@ -6,6 +6,7 @@ export const queryKeys = {
     myEntitlements: ["me", "entitlements"] as const,
     myReaderSubscriptions: ["me", "subscriptions"] as const,
     myFeedPosts: ["me", "feed"] as const,
+    myActivity: ["me", "activity"] as const,
     exploreFeedPosts: ["feed"] as const,
     myAuthorSubscribers: ["me", "author", "subscribers"] as const,
     platformPlans: ["platform", "plans"] as const,

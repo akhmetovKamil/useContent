@@ -5,6 +5,8 @@ import type {
   AccessPolicyConditionDto,
   AuthorAccessPolicyDto,
   AuthorCatalogItemDto,
+  ActivityDto,
+  ActivityType,
   AuthorSubscriberDto,
   AuthorProfileDto,
   AuthorStorageUsageDto,
@@ -76,6 +78,22 @@ export interface UserDoc {
   role: "user" | "admin";
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ActivityDoc {
+  _id: ObjectId;
+  type: ActivityType;
+  targetWallet: string;
+  actorWallet: string | null;
+  authorId: ObjectId | null;
+  authorSlug: string | null;
+  authorDisplayName: string | null;
+  postId: ObjectId | null;
+  postTitle: string | null;
+  message: string;
+  dedupeKey: string | null;
+  createdAt: Date;
+  readAt: Date | null;
 }
 
 export interface AuthorProfileDoc {
@@ -325,6 +343,7 @@ export interface ContractDeploymentDoc {
 }
 
 export type UserProfileResponse = UserProfileDto;
+export type ActivityResponse = ActivityDto;
 export type AuthorProfileResponse = AuthorProfileDto;
 export type AuthorStorageUsageResponse = AuthorStorageUsageDto;
 export type AuthorPlatformBillingResponse = AuthorPlatformBillingDto;

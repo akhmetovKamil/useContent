@@ -3,6 +3,7 @@ import { type Collection, type Document } from "mongodb";
 import { getDb } from "../lib/mongo";
 import type {
   AccessPolicyPresetDoc,
+  ActivityDoc,
   AuthorPlatformCleanupLogDoc,
   AuthorPlatformSubscriptionDoc,
   AuthorProfileDoc,
@@ -47,6 +48,7 @@ export async function ensureIndexes(): Promise<void> {
 
   const [
     users,
+    activities,
     authorProfiles,
     authorPlatformCleanupLogs,
     accessPolicyPresets,
@@ -66,6 +68,7 @@ export async function ensureIndexes(): Promise<void> {
     contractDeployments,
   ] = await Promise.all([
     getRawCollection<UserDoc>("users"),
+    getRawCollection<ActivityDoc>("activities"),
     getRawCollection<AuthorProfileDoc>("author_profiles"),
     getRawCollection<AuthorPlatformCleanupLogDoc>("author_platform_cleanup_logs"),
     getRawCollection<AccessPolicyPresetDoc>("access_policy_presets"),
@@ -96,6 +99,14 @@ export async function ensureIndexes(): Promise<void> {
 
   await Promise.all([
     users.createIndex({ primaryWallet: 1 }, { unique: true }),
+    activities.createIndex({ targetWallet: 1, createdAt: -1, _id: -1 }),
+    activities.createIndex(
+      { dedupeKey: 1 },
+      {
+        unique: true,
+        partialFilterExpression: { dedupeKey: { $type: "string" } },
+      },
+    ),
     users.createIndex(
       { username: 1 },
       {

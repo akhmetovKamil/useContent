@@ -52,6 +52,9 @@ vi.mock("../projects/repository", () => repositoryMocks);
 vi.mock("../profiles/repository", () => repositoryMocks);
 vi.mock("../lib/contract-deployments.repository", () => repositoryMocks);
 vi.mock("../profiles/service", () => profileMocks);
+vi.mock("../activity/events", () => ({
+  recordNewSubscriptionActivity: vi.fn(),
+}));
 vi.mock("../content/onchain", () => ({
   readOnChainAccessGrants: vi.fn(),
   verifyPlatformSubscriptionPayment: vi.fn(),

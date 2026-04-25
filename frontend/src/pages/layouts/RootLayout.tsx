@@ -5,6 +5,7 @@ import {
     Info,
     Landmark,
     LayoutDashboard,
+    Bell,
     ReceiptText,
     Settings,
     ShieldCheck,
@@ -36,6 +37,7 @@ const readerNavItems: NavItemConfig[] = [
     { to: "/", label: "Home", icon: Home, end: true, separatorAfter: true },
     { to: "/me/profile", label: "Profile", icon: UserRound },
     { to: "/me/subscriptions", label: "Subscriptions", icon: ReceiptText },
+    { to: "/me/activity", label: "Activity", icon: Bell },
     { to: "/me/settings", label: "Settings", icon: Settings },
 ]
 
@@ -47,6 +49,7 @@ const authorNavItems: NavItemConfig[] = [
     { to: "/me/posts", label: "Posts", icon: FileText },
     { to: "/me/projects", label: "Projects", icon: FolderKanban },
     { to: "/me/access", label: "Access", icon: ShieldCheck },
+    { to: "/me/activity", label: "Activity", icon: Bell },
     { to: "/me/platform-billing", label: "Billing", icon: Landmark },
 ]
 

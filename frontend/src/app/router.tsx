@@ -5,6 +5,7 @@ import { AuthorAboutPage } from "../pages/author/AuthorAboutPage"
 import { AuthorOnboardingPage } from "../pages/author/AuthorOnboardingPage"
 import { AuthorWorkspacePage } from "../pages/author/AuthorWorkspacePage"
 import { RootLayout } from "../pages/layouts/RootLayout"
+import { MeActivityPage } from "../pages/me/MeActivityPage"
 import { MeAuthorPage } from "../pages/me/MeAuthorPage"
 import { MeFeedPage } from "../pages/me/MeFeedPage"
 import { MePage } from "../pages/me/MePage"
@@ -34,6 +35,7 @@ export const router = createBrowserRouter([
                     { path: "me/settings", element: <MePage /> },
                     { path: "me/profile", element: <MeProfilePage /> },
                     { path: "me/feed", element: <MeFeedPage /> },
+                    { path: "me/activity", element: <MeActivityPage /> },
                     { path: "me/subscriptions", element: <MeSubscriptionsPage /> },
                     { path: "author/about", element: <AuthorAboutPage /> },
                     { path: "author/onboarding", element: <AuthorOnboardingPage /> },

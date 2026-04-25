@@ -202,6 +202,11 @@ export * from "../lib/content-common";
 import { getAuthorProfileBySlug, getMyAuthorProfile, getOrCreateUserByWallet } from "../profiles/service";
 import { assertAuthorPlatformFeature, assertAuthorStorageQuota } from "../platform/service";
 import { listMyEntitlements } from "../subscriptions/service";
+import {
+  recordNewPostActivity,
+  recordPostCommentedActivity,
+  recordPostLikedActivity,
+} from "../activity/events";
 export async function listMyFeedPosts(
   walletAddress: string,
   pagination: FeedPaginationRequest = {},
@@ -390,7 +395,7 @@ export async function createMyPost(
 
   resolveEntityPolicy(policyMode, author.defaultPolicy, policySelection.policy);
 
-  return repo.createPost({
+  const post = await repo.createPost({
     authorId: author._id,
     title,
     content,
@@ -407,6 +412,10 @@ export async function createMyPost(
     createdAt: now,
     updatedAt: now,
   });
+  if (post.status === "published") {
+    await recordNewPostActivity(post);
+  }
+  return post;
 }
 
 export async function listMyPosts(walletAddress: string): Promise<PostDoc[]> {
@@ -450,6 +459,7 @@ export async function updateMyPost(
   );
 
   const shouldPausePromotion = nextStatus !== "published";
+  const wasPublished = existing.status === "published";
   const updated = await repo.updatePost(objectId, author._id, {
     title:
       input.title === undefined
@@ -488,6 +498,9 @@ export async function updateMyPost(
     throw APIError.notFound("post not found");
   }
 
+  if (!wasPublished && updated.status === "published") {
+    await recordNewPostActivity(updated);
+  }
   return updated;
 }
 
@@ -645,7 +658,7 @@ export async function createPostCommentBySlug(
   const user = await getOrCreateUserByWallet(viewerWallet);
   const now = new Date();
 
-  return repo.createPostComment({
+  const comment = await repo.createPostComment({
     _id: new ObjectId(),
     postId: post._id,
     authorId: post.authorId,
@@ -655,6 +668,8 @@ export async function createPostCommentBySlug(
     createdAt: now,
     updatedAt: now,
   });
+  await recordPostCommentedActivity(post, viewerWallet);
+  return comment;
 }
 
 export async function createPostReportBySlug(
@@ -742,6 +757,7 @@ export async function togglePostLikeBySlug(
     walletAddress: viewerWallet,
     createdAt: new Date(),
   });
+  await recordPostLikedActivity(post, viewerWallet);
 
   return {
     liked: true,
