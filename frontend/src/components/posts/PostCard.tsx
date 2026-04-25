@@ -1,5 +1,5 @@
-import type { PostAttachmentDto, PostDto } from "@shared/types/content"
-import { Archive, ExternalLink, Megaphone, Pencil, RotateCcw, Send, Trash2 } from "lucide-react"
+import type { PostAttachmentDto, PostDto, PostReportReason } from "@shared/types/content"
+import { Archive, ExternalLink, Flag, Megaphone, Pencil, RotateCcw, Send, Trash2 } from "lucide-react"
 import type { ComponentType } from "react"
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
@@ -15,8 +15,18 @@ import { getFeedAuthor, getPostAccess } from "@/components/posts/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Modal } from "@/components/ui/modal"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 import {
     useCreatePostCommentMutation,
+    useCreatePostReportMutation,
     useDownloadAuthorPostAttachmentMutation,
     useDownloadMyPostAttachmentMutation,
     usePostCommentsQuery,
@@ -49,6 +59,10 @@ export function PostCard({
     const token = useAuthStore((state) => state.token)
     const [commentsOpen, setCommentsOpen] = useState(false)
     const [expanded, setExpanded] = useState(false)
+    const [reportOpen, setReportOpen] = useState(false)
+    const [reportReason, setReportReason] = useState<PostReportReason>("spam")
+    const [reportComment, setReportComment] = useState("")
+    const [reportSubmitted, setReportSubmitted] = useState(false)
     const [optimisticLiked, setOptimisticLiked] = useState(post.likedByMe)
     const [optimisticLikesCount, setOptimisticLikesCount] = useState(post.likesCount)
     const author = getFeedAuthor(post)
@@ -62,6 +76,7 @@ export function PostCard({
     )
     const likeMutation = useTogglePostLikeMutation(author?.authorSlug ?? "", post.id)
     const commentMutation = useCreatePostCommentMutation(author?.authorSlug ?? "", post.id)
+    const reportMutation = useCreatePostReportMutation(author?.authorSlug ?? "", post.id)
     const downloadMyAttachmentMutation = useDownloadMyPostAttachmentMutation()
     const downloadAuthorAttachmentMutation = useDownloadAuthorPostAttachmentMutation(
         author?.authorSlug ?? "",
@@ -150,6 +165,17 @@ export function PostCard({
                             onUnarchive={onUnarchive}
                             post={post}
                         />
+                    ) : author && token ? (
+                        <Button
+                            className="rounded-full"
+                            onClick={() => setReportOpen(true)}
+                            size="sm"
+                            type="button"
+                            variant="outline"
+                        >
+                            <Flag className="size-4" />
+                            Report
+                        </Button>
                     ) : null}
                 </div>
             </CardHeader>
@@ -211,7 +237,120 @@ export function PostCard({
                     <LockedPostPreview post={post} />
                 )}
             </CardContent>
+            {author ? (
+                <ReportPostModal
+                    comment={reportComment}
+                    error={reportMutation.error}
+                    isPending={reportMutation.isPending}
+                    onCommentChange={setReportComment}
+                    onOpenChange={(open) => {
+                        setReportOpen(open)
+                        if (!open) {
+                            setReportSubmitted(false)
+                        }
+                    }}
+                    onReasonChange={setReportReason}
+                    onSubmit={() =>
+                        void reportMutation
+                            .mutateAsync({
+                                comment: reportComment,
+                                reason: reportReason,
+                            })
+                            .then(() => {
+                                setReportSubmitted(true)
+                                setReportComment("")
+                            })
+                    }
+                    open={reportOpen}
+                    reason={reportReason}
+                    submitted={reportSubmitted}
+                />
+            ) : null}
         </Card>
+    )
+}
+
+function ReportPostModal({
+    comment,
+    error,
+    isPending,
+    onCommentChange,
+    onOpenChange,
+    onReasonChange,
+    onSubmit,
+    open,
+    reason,
+    submitted,
+}: {
+    comment: string
+    error: Error | null
+    isPending: boolean
+    onCommentChange: (value: string) => void
+    onOpenChange: (open: boolean) => void
+    onReasonChange: (value: PostReportReason) => void
+    onSubmit: () => void
+    open: boolean
+    reason: PostReportReason
+    submitted: boolean
+}) {
+    return (
+        <Modal
+            description="Reports help keep promoted and public posts safe. The post will not be hidden automatically."
+            onOpenChange={onOpenChange}
+            open={open}
+            title="Report post"
+        >
+            {submitted ? (
+                <div className="grid gap-4">
+                    <p className="text-sm leading-6 text-[var(--muted)]">
+                        Thanks. The report was saved for future moderation review.
+                    </p>
+                    <Button className="w-fit rounded-full" onClick={() => onOpenChange(false)}>
+                        Close
+                    </Button>
+                </div>
+            ) : (
+                <form
+                    className="grid gap-4"
+                    onSubmit={(event) => {
+                        event.preventDefault()
+                        onSubmit()
+                    }}
+                >
+                    <Select
+                        onValueChange={(value) => onReasonChange(value as PostReportReason)}
+                        value={reason}
+                    >
+                        <SelectTrigger>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="spam">Spam</SelectItem>
+                            <SelectItem value="scam">Scam or fraud</SelectItem>
+                            <SelectItem value="illegal_content">Illegal content</SelectItem>
+                            <SelectItem value="abuse">Abuse or harassment</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Textarea
+                        className="min-h-28"
+                        maxLength={1000}
+                        onChange={(event) => onCommentChange(event.target.value)}
+                        placeholder="Optional context for moderation..."
+                        value={comment}
+                    />
+                    {error ? <p className="text-sm text-rose-600">{error.message}</p> : null}
+                    <div className="flex justify-end gap-2">
+                        <Button onClick={() => onOpenChange(false)} type="button" variant="outline">
+                            Cancel
+                        </Button>
+                        <Button disabled={isPending} type="submit">
+                            {isPending ? "Saving..." : "Submit report"}
+                        </Button>
+                    </div>
+                </form>
+            )}
+        </Modal>
     )
 }
 

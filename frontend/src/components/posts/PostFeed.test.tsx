@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest"
 
 const queryMocks = vi.hoisted(() => ({
     useCreatePostCommentMutation: vi.fn(),
+    useCreatePostReportMutation: vi.fn(),
     useDownloadAuthorPostAttachmentMutation: vi.fn(),
     useDownloadMyPostAttachmentMutation: vi.fn(),
     usePostCommentsQuery: vi.fn(),
@@ -22,6 +23,11 @@ describe("PostFeed", () => {
     beforeEach(() => {
         vi.clearAllMocks()
         queryMocks.useCreatePostCommentMutation.mockReturnValue({
+            isPending: false,
+            mutateAsync: vi.fn(),
+        })
+        queryMocks.useCreatePostReportMutation.mockReturnValue({
+            error: null,
             isPending: false,
             mutateAsync: vi.fn(),
         })

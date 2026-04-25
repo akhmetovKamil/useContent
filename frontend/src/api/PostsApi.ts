@@ -1,8 +1,10 @@
 import type {
     CreatePostCommentInput,
+    CreatePostReportInput,
     CreatePostInput,
     PostAttachmentDto,
     PostCommentDto,
+    PostReportDto,
     PostDto,
     RecordPostViewInput,
     UpdatePostInput,
@@ -78,6 +80,10 @@ class PostsApi {
             `/authors/${slug}/posts/${postId}/comments`,
             input
         )
+    }
+
+    async createPostReport(slug: string, postId: string, input: CreatePostReportInput) {
+        return postData<PostReportDto>(`/authors/${slug}/posts/${postId}/report`, input)
     }
 
     async togglePostLike(slug: string, postId: string) {

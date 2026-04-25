@@ -1,5 +1,6 @@
 import type {
     CreatePostCommentInput,
+    CreatePostReportInput,
     CreatePostInput,
     FeedPostDto,
     PostDto,
@@ -241,6 +242,13 @@ export function useCreatePostCommentMutation(slug: string, postId: string) {
                 queryKeys.myFeedPosts,
             ])
         },
+    })
+}
+
+export function useCreatePostReportMutation(slug: string, postId: string) {
+    return useMutation({
+        mutationFn: (input: CreatePostReportInput) =>
+            postsApi.createPostReport(slug, postId, input),
     })
 }
 

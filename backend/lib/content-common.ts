@@ -68,6 +68,8 @@ import type {
   PostDoc,
   PostCommentDoc,
   PostCommentResponse,
+  PostReportDoc,
+  PostReportResponse,
   PostAttachmentDoc,
   PostAttachmentResponse,
   PostResponse,
@@ -383,6 +385,20 @@ export function toPostCommentResponse(
     content: comment.content,
     createdAt: comment.createdAt.toISOString(),
     updatedAt: comment.updatedAt.toISOString(),
+  };
+}
+
+export function toPostReportResponse(report: PostReportDoc): PostReportResponse {
+  return {
+    id: report._id.toHexString(),
+    postId: report.postId.toHexString(),
+    authorId: report.authorId.toHexString(),
+    reporterWallet: report.reporterWallet,
+    reason: report.reason,
+    comment: report.comment,
+    status: report.status,
+    createdAt: report.createdAt.toISOString(),
+    updatedAt: report.updatedAt.toISOString(),
   };
 }
 

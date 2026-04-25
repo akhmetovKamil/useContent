@@ -66,12 +66,15 @@ import type {
   CreateProjectFolderRequest,
   CreateProjectRequest,
   CreatePostCommentRequest,
+  CreatePostReportRequest,
   CreateSubscriptionPaymentIntentRequest,
   FeedPostResponse,
   FeedProjectResponse,
   PostDoc,
   PostCommentDoc,
   PostCommentResponse,
+  PostReportDoc,
+  PostReportResponse,
   PostAttachmentDoc,
   PostAttachmentResponse,
   PostResponse,
@@ -652,6 +655,67 @@ export async function createPostCommentBySlug(
     createdAt: now,
     updatedAt: now,
   });
+}
+
+export async function createPostReportBySlug(
+  slug: string,
+  postId: string,
+  walletAddress: string,
+  input: CreatePostReportRequest,
+): Promise<PostReportDoc> {
+  const reporterWallet = normalizeWallet(walletAddress);
+  const author = await getAuthorProfileBySlug(slug);
+  const post = await repo.findPublishedPostByIdAndAuthorId(
+    parseObjectId(postId, "postId"),
+    author._id,
+  );
+  if (!post) {
+    throw APIError.notFound("post not found");
+  }
+  if (post.policyMode !== "public" && !isPostPromotionActive(post)) {
+    throw APIError.failedPrecondition("only public or promoted posts can be reported");
+  }
+  const existing = await repo.findPostReport(post._id, reporterWallet);
+  if (existing) {
+    throw APIError.failedPrecondition("post already reported");
+  }
+  const now = new Date();
+
+  return repo.createPostReport({
+    _id: new ObjectId(),
+    postId: post._id,
+    authorId: post.authorId,
+    reporterWallet,
+    reason: normalizePostReportReason(input.reason),
+    comment: normalizePostReportComment(input.comment),
+    status: "open",
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
+function normalizePostReportReason(value: string): PostReportDoc["reason"] {
+  if (
+    value === "spam" ||
+    value === "scam" ||
+    value === "illegal_content" ||
+    value === "abuse" ||
+    value === "other"
+  ) {
+    return value;
+  }
+  throw APIError.invalidArgument("report reason is invalid");
+}
+
+function normalizePostReportComment(value: string | null | undefined): string | null {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) {
+    return null;
+  }
+  if (normalized.length > 1000) {
+    throw APIError.invalidArgument("report comment is too long");
+  }
+  return normalized;
 }
 
 export async function togglePostLikeBySlug(

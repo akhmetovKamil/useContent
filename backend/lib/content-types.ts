@@ -27,10 +27,13 @@ import type {
   FeedProjectDto,
   PostDto,
   PostCommentDto,
+  PostReportDto,
+  PostReportReason,
   PostAttachmentDto,
   PostAttachmentKind,
   RecordPostViewInput,
   CreatePostCommentInput,
+  CreatePostReportInput,
   ProjectBundleDto,
   ProjectDto,
   ProjectNodeListDto,
@@ -176,6 +179,18 @@ export interface PostCommentDoc {
   walletAddress: string;
   displayName: string;
   content: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PostReportDoc {
+  _id: ObjectId;
+  postId: ObjectId;
+  authorId: ObjectId;
+  reporterWallet: string;
+  reason: PostReportReason;
+  comment: string | null;
+  status: "open" | "reviewed" | "dismissed";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -327,6 +342,7 @@ export type SubscriptionEntitlementResponse = SubscriptionEntitlementDto;
 export type ReaderSubscriptionResponse = ReaderSubscriptionDto;
 export type FeedPostResponse = FeedPostDto;
 export type PostCommentResponse = PostCommentDto;
+export type PostReportResponse = PostReportDto;
 export type PostAttachmentResponse = PostAttachmentDto;
 export type FeedProjectResponse = FeedProjectDto;
 export type ContractDeploymentResponse = ContractDeploymentDto;
@@ -349,6 +365,7 @@ export type UpsertSubscriptionPlanRequest = UpsertSubscriptionPlanInput;
 export type CreatePostRequest = CreatePostInput;
 export type UpdatePostRequest = UpdatePostInput;
 export type CreatePostCommentRequest = CreatePostCommentInput;
+export type CreatePostReportRequest = CreatePostReportInput;
 export type RecordPostViewRequest = RecordPostViewInput;
 export type CreateProjectRequest = CreateProjectInput;
 export type UpdateProjectRequest = UpdateProjectInput;

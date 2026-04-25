@@ -10,8 +10,10 @@ import * as service from "./service";
 import type {
   CreatePostCommentRequest,
   CreatePostRequest,
+  CreatePostReportRequest,
   FeedPostResponse,
   PostCommentResponse,
+  PostReportResponse,
   PostResponse,
   RecordPostViewRequest,
   UpdatePostRequest,
@@ -221,6 +223,32 @@ export const createPostComment = api(
       req,
     );
     return service.toPostCommentResponse(comment);
+  },
+);
+
+export const createPostReport = api(
+  {
+    method: "POST",
+    path: "/authors/:slug/posts/:postId/report",
+    expose: true,
+    auth: true,
+  },
+  async ({
+    slug,
+    postId,
+    ...req
+  }: CreatePostReportRequest & {
+    slug: string;
+    postId: string;
+  }): Promise<PostReportResponse> => {
+    const auth = getAuthData()!;
+    const report = await service.createPostReportBySlug(
+      slug,
+      postId,
+      auth.walletAddress,
+      req,
+    );
+    return service.toPostReportResponse(report);
   },
 );
 

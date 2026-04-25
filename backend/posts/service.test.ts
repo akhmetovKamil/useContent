@@ -5,7 +5,10 @@ import { createAuthorProfileDoc } from "../test-helpers/fixtures";
 const repositoryMocks = vi.hoisted(() => ({
   createPost: vi.fn(),
   findPostByIdAndAuthorId: vi.fn(),
+  findPublishedPostByIdAndAuthorId: vi.fn(),
+  findPostReport: vi.fn(),
   updatePost: vi.fn(),
+  createPostReport: vi.fn(),
   deletePost: vi.fn(),
   deletePostAttachmentsByPostId: vi.fn(),
   deletePostCommentsByPostId: vi.fn(),
@@ -77,6 +80,7 @@ vi.mock("../projects/file-storage", () => ({
 
 import {
   createMyPost,
+  createPostReportBySlug,
   deleteMyPost,
   promoteMyPost,
   stopPromotingMyPost,
@@ -301,5 +305,75 @@ describe("posts/service", () => {
 
     expect(post.promoted).toBe(false);
     expect(post.promotionStatus).toBe("paused");
+  });
+
+  test("creates one report per wallet and post", async () => {
+    const author = createAuthorProfileDoc();
+    const postId = new ObjectId("65f808080808080808080808");
+    vi.mocked(profileMocks.getAuthorProfileBySlug).mockResolvedValue(author);
+    vi.mocked(repositoryMocks.findPublishedPostByIdAndAuthorId).mockResolvedValue({
+      _id: postId,
+      authorId: author._id,
+      title: "Public",
+      content: "Text",
+      status: "published",
+      policyMode: "public",
+      policy: null,
+      accessPolicyId: null,
+      attachmentIds: [],
+      linkedProjectIds: [],
+      publishedAt: new Date("2026-04-01T00:00:00.000Z"),
+      createdAt: new Date("2026-04-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-04-01T00:00:00.000Z"),
+    });
+    vi.mocked(repositoryMocks.findPostReport).mockResolvedValue(null);
+    vi.mocked(repositoryMocks.createPostReport).mockImplementation(async (doc) => doc);
+
+    const report = await createPostReportBySlug(author.slug, postId.toHexString(), "0xabc", {
+      comment: "Looks suspicious",
+      reason: "scam",
+    });
+
+    expect(report.reason).toBe("scam");
+    expect(report.comment).toBe("Looks suspicious");
+    expect(report.status).toBe("open");
+  });
+
+  test("rejects duplicate post reports", async () => {
+    const author = createAuthorProfileDoc();
+    const postId = new ObjectId("65f909090909090909090909");
+    vi.mocked(profileMocks.getAuthorProfileBySlug).mockResolvedValue(author);
+    vi.mocked(repositoryMocks.findPublishedPostByIdAndAuthorId).mockResolvedValue({
+      _id: postId,
+      authorId: author._id,
+      title: "Public",
+      content: "Text",
+      status: "published",
+      policyMode: "public",
+      policy: null,
+      accessPolicyId: null,
+      attachmentIds: [],
+      linkedProjectIds: [],
+      publishedAt: new Date("2026-04-01T00:00:00.000Z"),
+      createdAt: new Date("2026-04-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-04-01T00:00:00.000Z"),
+    });
+    vi.mocked(repositoryMocks.findPostReport).mockResolvedValue({
+      _id: new ObjectId("65f999999999999999999999"),
+      postId,
+      authorId: author._id,
+      reporterWallet: "0xabc",
+      reason: "spam",
+      comment: null,
+      status: "open",
+      createdAt: new Date("2026-04-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-04-01T00:00:00.000Z"),
+    });
+
+    await expect(
+      createPostReportBySlug(author.slug, postId.toHexString(), "0xabc", {
+        reason: "spam",
+      }),
+    ).rejects.toThrow("post already reported");
   });
 });

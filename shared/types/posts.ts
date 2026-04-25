@@ -21,6 +21,19 @@ export interface PostCommentDto extends AuthorOwnedDto {
   updatedAt: string;
 }
 
+export type PostReportReason = "spam" | "scam" | "illegal_content" | "abuse" | "other";
+
+export interface PostReportDto extends AuthorOwnedDto {
+  id: EntityId;
+  postId: EntityId;
+  reporterWallet: WalletAddress;
+  reason: PostReportReason;
+  comment: Maybe<string>;
+  status: "open" | "reviewed" | "dismissed";
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type PostAttachmentKind = "image" | "video" | "audio" | "file";
 
 export interface PostAttachmentDto extends AuthorOwnedDto, StorageSizedDto {
@@ -83,4 +96,9 @@ export type UpdatePostInput = Partial<CreatePostInput>;
 
 export interface CreatePostCommentInput {
   content: string;
+}
+
+export interface CreatePostReportInput {
+  reason: PostReportReason;
+  comment?: Maybe<string>;
 }

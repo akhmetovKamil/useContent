@@ -1,6 +1,13 @@
 import { ObjectId, type Collection } from "mongodb";
 import { ensureIndexes, getCollection } from "../storage/repository-base";
-import type { PostAttachmentDoc, PostCommentDoc, PostDoc, PostLikeDoc, PostViewDoc } from "../lib/content-types";
+import type {
+  PostAttachmentDoc,
+  PostCommentDoc,
+  PostDoc,
+  PostLikeDoc,
+  PostReportDoc,
+  PostViewDoc,
+} from "../lib/content-types";
 
 export async function getPostsCollection(): Promise<Collection<PostDoc>> {
   await ensureIndexes();
@@ -170,6 +177,13 @@ export async function getPostCommentsCollection(): Promise<
   return getCollection<PostCommentDoc>("post_comments");
 }
 
+export async function getPostReportsCollection(): Promise<
+  Collection<PostReportDoc>
+> {
+  await ensureIndexes();
+  return getCollection<PostReportDoc>("post_reports");
+}
+
 export async function getPostAttachmentsCollection(): Promise<
   Collection<PostAttachmentDoc>
 > {
@@ -275,11 +289,29 @@ export async function createPostComment(
   return doc;
 }
 
+export async function findPostReport(
+  postId: ObjectId,
+  reporterWallet: string,
+): Promise<PostReportDoc | null> {
+  const reports = await getPostReportsCollection();
+  return reports.findOne({ postId, reporterWallet });
+}
+
+export async function createPostReport(
+  doc: PostReportDoc,
+): Promise<PostReportDoc> {
+  const reports = await getPostReportsCollection();
+  await reports.insertOne(doc);
+  return doc;
+}
+
 export async function deletePostCommentsByPostId(
   postId: ObjectId,
 ): Promise<void> {
   const comments = await getPostCommentsCollection();
   await comments.deleteMany({ postId });
+  const reports = await getPostReportsCollection();
+  await reports.deleteMany({ postId });
   const likes = await getPostLikesCollection();
   await likes.deleteMany({ postId });
   const views = await getPostViewsCollection();
