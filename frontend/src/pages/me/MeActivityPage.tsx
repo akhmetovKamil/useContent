@@ -93,7 +93,11 @@ function ActivityItem({ activity }: { activity: ActivityDto }) {
                             {activity.authorDisplayName}
                         </Link>
                     ) : null}
-                    {activity.actorWallet ? <span>{activity.actorWallet}</span> : null}
+                    {activity.actorWallet ? (
+                        <span title={activity.actorWallet}>
+                            {shortenWalletAddress(activity.actorWallet)}
+                        </span>
+                    ) : null}
                 </div>
                 {postHref && activity.postTitle ? (
                     <Button asChild className="mt-3 rounded-full" size="sm" variant="outline">
@@ -107,6 +111,14 @@ function ActivityItem({ activity }: { activity: ActivityDto }) {
             </div>
         </article>
     )
+}
+
+function shortenWalletAddress(wallet: string) {
+    if (wallet.length <= 12) {
+        return wallet
+    }
+
+    return `${wallet.slice(0, 6)}...${wallet.slice(-4)}`
 }
 
 function getActivityIcon(type: ActivityDto["type"]) {

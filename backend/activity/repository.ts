@@ -25,6 +25,13 @@ export async function createActivity(
     { $setOnInsert: insertDoc },
     { upsert: true },
   );
+  if (!result.upsertedId && doc.dedupeKey) {
+    const existingDoc = await activities.findOne({ dedupeKey: doc.dedupeKey });
+    if (existingDoc) {
+      return existingDoc;
+    }
+  }
+
   const insertedId = result.upsertedId ?? new ObjectId();
   return { _id: insertedId, ...doc };
 }

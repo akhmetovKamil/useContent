@@ -210,7 +210,7 @@ function invalidatePostLists(queryClient: ReturnType<typeof useQueryClient>) {
     return invalidateMany(queryClient, [
         queryKeys.myPosts(),
         queryKeys.myPosts("archived"),
-        queryKeys.exploreFeedPosts(),
+        queryKeys.exploreFeedPostsRoot,
         queryKeys.myFeedPosts,
         queryKeys.authors(),
     ])
