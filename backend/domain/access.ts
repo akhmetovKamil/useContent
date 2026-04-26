@@ -10,6 +10,7 @@ export {
   type SubscriptionPolicyNode,
   type TokenBalancePolicyNode,
 } from "../../shared/types/access";
+import { normalizeAddressLike } from "../../shared/utils";
 
 import {
   ACCESS_POLICY_VERSION,
@@ -243,8 +244,8 @@ function hasRequiredTokenBalance(
   const grant = context.tokenBalances?.find(
     (entry) =>
       entry.chainId === node.chainId &&
-      normalizeAddress(entry.contractAddress) ===
-        normalizeAddress(node.contractAddress),
+      normalizeAddressLike(entry.contractAddress) ===
+        normalizeAddressLike(node.contractAddress),
   );
 
   if (!grant) {
@@ -262,8 +263,8 @@ function hasRequiredNftOwnership(
     context.nftOwnerships?.some((grant) => {
       if (
         grant.chainId !== node.chainId ||
-        normalizeAddress(grant.contractAddress) !==
-          normalizeAddress(node.contractAddress) ||
+        normalizeAddressLike(grant.contractAddress) !==
+          normalizeAddressLike(node.contractAddress) ||
         grant.standard !== node.standard
       ) {
         return false;
@@ -280,8 +281,4 @@ function hasRequiredNftOwnership(
       return BigInt(grant.balance ?? "0") >= BigInt(node.minBalance);
     }) ?? false
   );
-}
-
-function normalizeAddress(address: string): string {
-  return address.toLowerCase();
 }

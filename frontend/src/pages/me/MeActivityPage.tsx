@@ -1,4 +1,5 @@
 import type { ActivityDto } from "@shared/types/content"
+import { shortenWalletAddress } from "@shared/utils"
 import { Bell, Heart, MessageCircle, ReceiptText, Send } from "lucide-react"
 import { Link } from "react-router-dom"
 
@@ -111,14 +112,6 @@ function ActivityItem({ activity }: { activity: ActivityDto }) {
             </div>
         </article>
     )
-}
-
-function shortenWalletAddress(wallet: string) {
-    if (wallet.length <= 12) {
-        return wallet
-    }
-
-    return `${wallet.slice(0, 6)}...${wallet.slice(-4)}`
 }
 
 function getActivityIcon(type: ActivityDto["type"]) {

@@ -1,7 +1,8 @@
 import { ZERO_ADDRESS } from "@shared/consts"
+import { buildExplorerAddressUrl, buildOpenSeaAssetUrl } from "@shared/utils"
 import { formatUnits } from "viem"
 
-import { getChainDisplayConfig, supportedChainOptions } from "@/utils/config/chains"
+import { supportedChainOptions } from "@/utils/config/chains"
 import { getTokenPresets, type TokenPreset } from "@/utils/config/tokens"
 
 export interface TokenAssetMetadata {
@@ -56,12 +57,7 @@ export function findTokenPreset(chainId: number, tokenAddress: string): TokenPre
 }
 
 export function getExplorerAddressUrl(chainId: number, address?: string | null) {
-    const chain = getChainDisplayConfig(chainId)
-    if (!address || address.toLowerCase() === ZERO_ADDRESS) {
-        return chain.explorerUrl
-    }
-
-    return `${chain.explorerUrl}/address/${address}`
+    return buildExplorerAddressUrl({ address, chainId })
 }
 
 export function getOpenSeaAssetUrl({
@@ -73,16 +69,7 @@ export function getOpenSeaAssetUrl({
     contractAddress: string
     tokenId?: string
 }) {
-    const chain = getChainDisplayConfig(chainId)
-    const slug = chain.testnetOpenSeaSlug ?? chain.openSeaSlug
-    if (!slug) {
-        return null
-    }
-
-    const host = chain.testnetOpenSeaSlug ? "https://testnets.opensea.io" : "https://opensea.io"
-    const assetPath = tokenId ? `${contractAddress}/${tokenId}` : contractAddress
-
-    return `${host}/assets/${slug}/${assetPath}`
+    return buildOpenSeaAssetUrl({ chainId, contractAddress, tokenId })
 }
 
 export function formatTokenUnits(value: string | null | undefined, decimals: number) {

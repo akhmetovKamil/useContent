@@ -2,6 +2,7 @@ import { APIError } from "encore.dev/api";
 import { Contract, Interface, JsonRpcProvider, isAddress } from "ethers";
 import { platformSubscriptionManagerAbi } from "../../shared/abi/platform-subscription-manager.abi";
 import { subscriptionManagerAbi } from "../../shared/abi/subscription-manager.abi";
+import { PAYMENT_ASSET_CODE } from "../../shared/consts";
 import type { AccessPolicy, AccessPolicyNode } from "../domain/access";
 
 const managerInterface = new Interface(subscriptionManagerAbi);
@@ -16,11 +17,6 @@ const erc721ReadAbi = [
 const erc1155ReadAbi = [
   "function balanceOf(address account,uint256 id) view returns (uint256)",
 ] as const;
-const PAYMENT_ASSET_CODE = {
-  erc20: 0,
-  native: 1,
-} as const;
-
 interface VerifyPlanRegistrationInput {
   authorWallet: string;
   chainId: number;

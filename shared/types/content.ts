@@ -8,3 +8,4 @@ export * from "./contracts";
 export * from "./posts";
 export * from "./projects";
 export * from "./responses";
+export * from "./web3";

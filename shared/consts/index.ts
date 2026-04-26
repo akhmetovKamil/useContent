@@ -9,6 +9,11 @@ export const PAYMENT_ASSET = {
   NATIVE: "native",
 } as const satisfies Record<string, PaymentAsset>;
 
+export const PAYMENT_ASSET_CODE = {
+  [PAYMENT_ASSET.ERC20]: 0,
+  [PAYMENT_ASSET.NATIVE]: 1,
+} as const satisfies Record<PaymentAsset, number>;
+
 export const PAYMENT_ASSETS: readonly PaymentAsset[] = [
   PAYMENT_ASSET.ERC20,
   PAYMENT_ASSET.NATIVE,
@@ -255,3 +260,103 @@ export const CONTRACT_NAME = {
   SUBSCRIPTION_MANAGER: "SubscriptionManager",
   PLATFORM_SUBSCRIPTION_MANAGER: "PlatformSubscriptionManager",
 } as const satisfies Record<string, ContractName>;
+
+export type SupportedEvmChainId =
+  | 11155111
+  | 84532
+  | 11155420
+  | 421614
+  | 8453
+  | 10
+  | 42161;
+
+export const SUPPORTED_EVM_CHAIN_ID = {
+  SEPOLIA: 11155111,
+  BASE_SEPOLIA: 84532,
+  OPTIMISM_SEPOLIA: 11155420,
+  ARBITRUM_SEPOLIA: 421614,
+  BASE: 8453,
+  OPTIMISM: 10,
+  ARBITRUM: 42161,
+} as const satisfies Record<string, SupportedEvmChainId>;
+
+export interface EvmChainMetadata {
+  id: SupportedEvmChainId;
+  explorerName: string;
+  explorerUrl: string;
+  name: string;
+  openSeaSlug?: string;
+  testnet: boolean;
+  testnetOpenSeaSlug?: string;
+}
+
+export const SUPPORTED_EVM_CHAIN_METADATA: readonly EvmChainMetadata[] = [
+  {
+    id: SUPPORTED_EVM_CHAIN_ID.SEPOLIA,
+    explorerName: "Etherscan",
+    explorerUrl: "https://sepolia.etherscan.io",
+    name: "Sepolia",
+    openSeaSlug: "ethereum",
+    testnet: true,
+    testnetOpenSeaSlug: "sepolia",
+  },
+  {
+    id: SUPPORTED_EVM_CHAIN_ID.BASE_SEPOLIA,
+    explorerName: "BaseScan",
+    explorerUrl: "https://sepolia.basescan.org",
+    name: "Base Sepolia",
+    openSeaSlug: "base",
+    testnet: true,
+    testnetOpenSeaSlug: "base-sepolia",
+  },
+  {
+    id: SUPPORTED_EVM_CHAIN_ID.OPTIMISM_SEPOLIA,
+    explorerName: "OP Etherscan",
+    explorerUrl: "https://sepolia-optimism.etherscan.io",
+    name: "OP Sepolia",
+    openSeaSlug: "optimism",
+    testnet: true,
+    testnetOpenSeaSlug: "optimism-sepolia",
+  },
+  {
+    id: SUPPORTED_EVM_CHAIN_ID.ARBITRUM_SEPOLIA,
+    explorerName: "Arbiscan",
+    explorerUrl: "https://sepolia.arbiscan.io",
+    name: "Arbitrum Sepolia",
+    openSeaSlug: "arbitrum",
+    testnet: true,
+    testnetOpenSeaSlug: "arbitrum-sepolia",
+  },
+  {
+    id: SUPPORTED_EVM_CHAIN_ID.BASE,
+    explorerName: "BaseScan",
+    explorerUrl: "https://basescan.org",
+    name: "Base",
+    openSeaSlug: "base",
+    testnet: false,
+  },
+  {
+    id: SUPPORTED_EVM_CHAIN_ID.OPTIMISM,
+    explorerName: "OP Etherscan",
+    explorerUrl: "https://optimistic.etherscan.io",
+    name: "OP Mainnet",
+    openSeaSlug: "optimism",
+    testnet: false,
+  },
+  {
+    id: SUPPORTED_EVM_CHAIN_ID.ARBITRUM,
+    explorerName: "Arbiscan",
+    explorerUrl: "https://arbiscan.io",
+    name: "Arbitrum One",
+    openSeaSlug: "arbitrum",
+    testnet: false,
+  },
+];
+
+export const FALLBACK_EVM_CHAIN_METADATA: EvmChainMetadata = {
+  id: SUPPORTED_EVM_CHAIN_ID.SEPOLIA,
+  explorerName: "Explorer",
+  explorerUrl: "https://etherscan.io",
+  name: "EVM",
+  testnet: false,
+};

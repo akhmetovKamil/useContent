@@ -7,6 +7,7 @@ import {
     optimismSepolia,
     sepolia,
 } from "wagmi/chains"
+import { getEvmChainMetadata } from "@shared/utils"
 
 export interface ChainDisplayConfig {
     accent: string
@@ -38,79 +39,80 @@ export const supportedChainOptions = supportedChains.map((chain) => ({
 }))
 
 export function getChainDisplayConfig(chainId: number): ChainDisplayConfig {
+    const shared = getEvmChainMetadata(chainId)
     switch (chainId) {
         case sepolia.id:
             return {
                 accent: "from-slate-400 to-indigo-500",
-                explorerName: "Etherscan",
-                explorerUrl: "https://sepolia.etherscan.io",
+                explorerName: shared.explorerName,
+                explorerUrl: shared.explorerUrl,
                 icon: "Ξ",
-                openSeaSlug: "ethereum",
+                openSeaSlug: shared.openSeaSlug,
                 shortName: "ETH",
-                testnetOpenSeaSlug: "sepolia",
+                testnetOpenSeaSlug: shared.testnetOpenSeaSlug,
             }
         case baseSepolia.id:
             return {
                 accent: "from-blue-500 to-cyan-400",
-                explorerName: "BaseScan",
-                explorerUrl: "https://sepolia.basescan.org",
+                explorerName: shared.explorerName,
+                explorerUrl: shared.explorerUrl,
                 icon: "B",
-                openSeaSlug: "base",
+                openSeaSlug: shared.openSeaSlug,
                 shortName: "Base",
-                testnetOpenSeaSlug: "base-sepolia",
+                testnetOpenSeaSlug: shared.testnetOpenSeaSlug,
             }
         case base.id:
             return {
                 accent: "from-blue-500 to-cyan-400",
-                explorerName: "BaseScan",
-                explorerUrl: "https://basescan.org",
+                explorerName: shared.explorerName,
+                explorerUrl: shared.explorerUrl,
                 icon: "B",
-                openSeaSlug: "base",
+                openSeaSlug: shared.openSeaSlug,
                 shortName: "Base",
             }
         case optimismSepolia.id:
             return {
                 accent: "from-red-500 to-orange-400",
-                explorerName: "OP Etherscan",
-                explorerUrl: "https://sepolia-optimism.etherscan.io",
+                explorerName: shared.explorerName,
+                explorerUrl: shared.explorerUrl,
                 icon: "OP",
-                openSeaSlug: "optimism",
+                openSeaSlug: shared.openSeaSlug,
                 shortName: "OP",
-                testnetOpenSeaSlug: "optimism-sepolia",
+                testnetOpenSeaSlug: shared.testnetOpenSeaSlug,
             }
         case optimism.id:
             return {
                 accent: "from-red-500 to-orange-400",
-                explorerName: "OP Etherscan",
-                explorerUrl: "https://optimistic.etherscan.io",
+                explorerName: shared.explorerName,
+                explorerUrl: shared.explorerUrl,
                 icon: "OP",
-                openSeaSlug: "optimism",
+                openSeaSlug: shared.openSeaSlug,
                 shortName: "OP",
             }
         case arbitrumSepolia.id:
             return {
                 accent: "from-sky-500 to-blue-700",
-                explorerName: "Arbiscan",
-                explorerUrl: "https://sepolia.arbiscan.io",
+                explorerName: shared.explorerName,
+                explorerUrl: shared.explorerUrl,
                 icon: "A",
-                openSeaSlug: "arbitrum",
+                openSeaSlug: shared.openSeaSlug,
                 shortName: "Arb",
-                testnetOpenSeaSlug: "arbitrum-sepolia",
+                testnetOpenSeaSlug: shared.testnetOpenSeaSlug,
             }
         case arbitrum.id:
             return {
                 accent: "from-sky-500 to-blue-700",
-                explorerName: "Arbiscan",
-                explorerUrl: "https://arbiscan.io",
+                explorerName: shared.explorerName,
+                explorerUrl: shared.explorerUrl,
                 icon: "A",
-                openSeaSlug: "arbitrum",
+                openSeaSlug: shared.openSeaSlug,
                 shortName: "Arb",
             }
         default:
             return {
                 accent: "from-neutral-400 to-neutral-600",
-                explorerName: "Explorer",
-                explorerUrl: "https://etherscan.io",
+                explorerName: shared.explorerName,
+                explorerUrl: shared.explorerUrl,
                 icon: "EVM",
                 shortName: "EVM",
             }
