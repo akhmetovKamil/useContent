@@ -15,7 +15,7 @@ export type ApiQueryParams = Record<
     ApiQueryPrimitive | readonly ApiQueryPrimitive[]
 >
 
-export interface ApiRequestConfig<TParams extends ApiQueryParams = ApiQueryParams>
+export interface ApiRequestConfig<TParams extends object = ApiQueryParams>
     extends Omit<AxiosRequestConfig, "params"> {
     params?: TParams
 }
@@ -30,7 +30,7 @@ http.interceptors.request.use((config) => {
     return config
 })
 
-export async function request<TResponse, TParams extends ApiQueryParams = ApiQueryParams>(
+export async function request<TResponse, TParams extends object = ApiQueryParams>(
     config: ApiRequestConfig<TParams>
 ) {
     try {
@@ -44,7 +44,7 @@ export async function request<TResponse, TParams extends ApiQueryParams = ApiQue
     }
 }
 
-export function getData<TResponse, TParams extends ApiQueryParams = ApiQueryParams>(
+export function getData<TResponse, TParams extends object = ApiQueryParams>(
     url: string,
     config?: ApiRequestConfig<TParams>
 ) {
@@ -54,7 +54,7 @@ export function getData<TResponse, TParams extends ApiQueryParams = ApiQueryPara
 export function postData<
     TResponse,
     TBody = unknown,
-    TParams extends ApiQueryParams = ApiQueryParams,
+    TParams extends object = ApiQueryParams,
 >(url: string, data?: TBody, config?: ApiRequestConfig<TParams>) {
     return request<TResponse, TParams>({ ...config, data, method: "POST", url })
 }
@@ -62,7 +62,7 @@ export function postData<
 export function putData<
     TResponse,
     TBody = unknown,
-    TParams extends ApiQueryParams = ApiQueryParams,
+    TParams extends object = ApiQueryParams,
 >(url: string, data?: TBody, config?: ApiRequestConfig<TParams>) {
     return request<TResponse, TParams>({ ...config, data, method: "PUT", url })
 }
@@ -70,19 +70,19 @@ export function putData<
 export function patchData<
     TResponse,
     TBody = unknown,
-    TParams extends ApiQueryParams = ApiQueryParams,
+    TParams extends object = ApiQueryParams,
 >(url: string, data?: TBody, config?: ApiRequestConfig<TParams>) {
     return request<TResponse, TParams>({ ...config, data, method: "PATCH", url })
 }
 
 export function deleteData<
     TResponse = void,
-    TParams extends ApiQueryParams = ApiQueryParams,
+    TParams extends object = ApiQueryParams,
 >(url: string, config?: ApiRequestConfig<TParams>) {
     return request<TResponse, TParams>({ ...config, method: "DELETE", url })
 }
 
-export function uploadData<TResponse, TParams extends ApiQueryParams = ApiQueryParams>(
+export function uploadData<TResponse, TParams extends object = ApiQueryParams>(
     url: string,
     file: File | Blob,
     config?: ApiRequestConfig<TParams>
@@ -107,11 +107,13 @@ export function downloadData(
     })
 }
 
-export function toQueryParams<TParams extends ApiQueryParams>(params: TParams) {
+export function toQueryParams<TParams extends object>(params: TParams) {
     const nextParams: Record<string, string | number | boolean | Array<string | number | boolean>> =
         {}
 
-    for (const [key, value] of Object.entries(params)) {
+    for (const [key, value] of Object.entries(params) as Array<
+        [string, ApiQueryPrimitive | readonly ApiQueryPrimitive[]]
+    >) {
         if (isQueryArray(value)) {
             const values = value.filter(isSerializableQueryValue)
             if (values.length) {

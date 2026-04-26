@@ -9,18 +9,19 @@ import type {
 } from "@shared/types/content"
 
 import { deleteData, getData, postData, putData } from "@/utils/api/http"
+import { unwrapResponseKey } from "@/utils/api/response"
 
 class SubscriptionPlansApi {
     async getSubscriptionManagerDeployment(chainId: number) {
         const response = await getData<ContractDeploymentLookupDto>(
             `/contract-deployments/subscription-manager/${chainId}`
         )
-        return response.deployment
+        return unwrapResponseKey(response, "deployment")
     }
 
     async listMySubscriptionPlans() {
         const response = await getData<ListSubscriptionPlansResponseDto>("/me/subscription-plans")
-        return response.plans
+        return unwrapResponseKey(response, "plans")
     }
 
     async upsertMySubscriptionPlan(input: UpsertSubscriptionPlanInput) {

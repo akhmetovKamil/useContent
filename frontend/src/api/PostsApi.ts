@@ -23,6 +23,8 @@ import {
     postData,
     uploadData,
 } from "@/utils/api/http"
+import { unwrapResponseKey } from "@/utils/api/response"
+import type { ListContentInput } from "@/types/api"
 
 class PostsApi {
     async createMyPost(input: CreatePostInput) {
@@ -30,10 +32,10 @@ class PostsApi {
     }
 
     async listMyPosts(status?: PostDto["status"]) {
-        const response = await getData<ListPostsResponseDto>("/me/posts", {
+        const response = await getData<ListPostsResponseDto, ListContentInput>("/me/posts", {
             params: { status },
         })
-        return response.posts
+        return unwrapResponseKey(response, "posts")
     }
 
     async updateMyPost(postId: string, input: UpdatePostInput) {
@@ -76,7 +78,7 @@ class PostsApi {
         const response = await getData<ListPostCommentsResponseDto>(
             `/authors/${slug}/posts/${postId}/comments`
         )
-        return response.comments
+        return unwrapResponseKey(response, "comments")
     }
 
     async createPostComment(slug: string, postId: string, input: CreatePostCommentInput) {

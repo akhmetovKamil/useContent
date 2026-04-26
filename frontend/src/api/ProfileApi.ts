@@ -17,6 +17,8 @@ import {
     patchData,
     postData,
 } from "@/utils/api/http"
+import { unwrapResponseKey } from "@/utils/api/response"
+import type { CursorPageInput } from "@/types/api"
 
 class ProfileApi {
     async getMe() {
@@ -47,19 +49,19 @@ class ProfileApi {
         const response = await getData<ListEntitlementsResponseDto>(
             "/me/entitlements"
         )
-        return response.entitlements
+        return unwrapResponseKey(response, "entitlements")
     }
 
     async getMyReaderSubscriptions() {
         const response = await getData<ListReaderSubscriptionsResponseDto>(
             "/me/subscriptions"
         )
-        return response.subscriptions
+        return unwrapResponseKey(response, "subscriptions")
     }
 
     async getMyFeedPosts(cursor?: string | null, limit = 12) {
-        return getData<PaginatedResponse<FeedPostDto>>("/me/feed", {
-            params: { cursor: cursor ?? undefined, limit },
+        return getData<PaginatedResponse<FeedPostDto>, CursorPageInput>("/me/feed", {
+            params: { cursor, limit },
         })
     }
 
@@ -67,7 +69,7 @@ class ProfileApi {
         const response = await getData<ListAuthorSubscribersResponseDto>(
             "/me/author/subscribers"
         )
-        return response.subscribers
+        return unwrapResponseKey(response, "subscribers")
     }
 }
 

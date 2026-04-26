@@ -10,11 +10,12 @@ import type {
 } from "@shared/types/content"
 
 import { getData, postData } from "@/utils/api/http"
+import { unwrapResponseKey } from "@/utils/api/response"
 
 class PlatformApi {
     async listPlatformPlans() {
         const response = await getData<ListPlatformPlansResponseDto>("/platform/plans")
-        return response.plans
+        return unwrapResponseKey(response, "plans")
     }
 
     async getMyAuthorPlatformBilling() {
@@ -35,7 +36,7 @@ class PlatformApi {
         const response = await getData<ContractDeploymentLookupDto>(
             `/contract-deployments/platform-subscription-manager/${chainId}`
         )
-        return response.deployment
+        return unwrapResponseKey(response, "deployment")
     }
 
     async createPlatformSubscriptionPaymentIntent(

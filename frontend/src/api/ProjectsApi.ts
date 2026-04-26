@@ -19,6 +19,15 @@ import {
     postData,
     uploadData,
 } from "@/utils/api/http"
+import { unwrapResponseKey } from "@/utils/api/response"
+import type {
+    AuthorProjectBundleInput,
+    AuthorProjectNodeListInput,
+    FileUploadParams,
+    ListContentInput,
+    ProjectBundleInput,
+    ProjectNodeListInput,
+} from "@/types/api"
 
 class ProjectsApi {
     async createMyProject(input: CreateProjectInput) {
@@ -26,10 +35,10 @@ class ProjectsApi {
     }
 
     async listMyProjects(status?: ProjectDto["status"]) {
-        const response = await getData<ListProjectsResponseDto>("/me/projects", {
+        const response = await getData<ListProjectsResponseDto, ListContentInput>("/me/projects", {
             params: { status },
         })
-        return response.projects
+        return unwrapResponseKey(response, "projects")
     }
 
     async updateMyProject(projectId: string, input: UpdateProjectInput) {
@@ -41,8 +50,8 @@ class ProjectsApi {
     }
 
     async listMyProjectNodes(projectId: string, parentId?: string | null) {
-        return getData<ProjectNodeListDto>("/me/project-nodes", {
-            params: { parentId: parentId || undefined, projectId },
+        return getData<ProjectNodeListDto, ProjectNodeListInput>("/me/project-nodes", {
+            params: { parentId, projectId },
         })
     }
 
@@ -67,14 +76,14 @@ class ProjectsApi {
     }
 
     async uploadMyProjectFile(projectId: string, file: File, parentId?: string | null) {
-        return uploadData<ProjectNodeDto>(
+        return uploadData<ProjectNodeDto, FileUploadParams>(
             `/me/project-files/upload/${projectId}`,
             file,
             {
                 headers: { "Content-Type": file.type || "application/octet-stream" },
                 params: {
                     name: file.name,
-                    parentId: parentId || undefined,
+                    parentId,
                 },
             }
         )
@@ -86,8 +95,8 @@ class ProjectsApi {
     }
 
     async getMyProjectBundle(projectId: string, folderId?: string | null) {
-        return getData<ProjectBundleDto>("/me/project-bundle", {
-            params: { folderId: folderId || undefined, projectId },
+        return getData<ProjectBundleDto, ProjectBundleInput>("/me/project-bundle", {
+            params: { folderId, projectId },
         })
     }
 
@@ -96,8 +105,8 @@ class ProjectsApi {
     }
 
     async listAuthorProjectNodes(slug: string, projectId: string, parentId?: string | null) {
-        return getData<ProjectNodeListDto>("/author-project-nodes", {
-            params: { parentId: parentId || undefined, projectId, slug },
+        return getData<ProjectNodeListDto, AuthorProjectNodeListInput>("/author-project-nodes", {
+            params: { parentId, projectId, slug },
         })
     }
 
@@ -114,8 +123,8 @@ class ProjectsApi {
     }
 
     async getAuthorProjectBundle(slug: string, projectId: string, folderId?: string | null) {
-        return getData<ProjectBundleDto>("/author-project-bundle", {
-            params: { folderId: folderId || undefined, projectId, slug },
+        return getData<ProjectBundleDto, AuthorProjectBundleInput>("/author-project-bundle", {
+            params: { folderId, projectId, slug },
         })
     }
 }

@@ -43,7 +43,7 @@ export function useExploreFeedPostsQuery(
     return useInfiniteQuery({
         queryKey: queryKeys.exploreFeedPosts(search, source),
         queryFn: ({ pageParam }) =>
-            authorsApi.listExploreFeedPosts({ cursor: pageParam, search, source }),
+            authorsApi.listExploreFeedPosts({ cursor: pageParam, q: search, source }),
         enabled,
         initialPageParam: null as string | null,
         getNextPageParam: (lastPage) => lastPage.nextCursor,
