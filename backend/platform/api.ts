@@ -11,10 +11,11 @@ import type {
   PlatformPlanResponse,
   PlatformSubscriptionPaymentIntentResponse,
 } from "./types";
+import type { ListPlatformPlansResponseDto } from "../../shared/types/content";
 
 export const listPlatformPlans = api(
   { method: "GET", path: "/platform/plans", expose: true },
-  async (): Promise<{ plans: PlatformPlanResponse[] }> => {
+  async (): Promise<ListPlatformPlansResponseDto> => {
     return { plans: service.listPlatformPlans() };
   },
 );

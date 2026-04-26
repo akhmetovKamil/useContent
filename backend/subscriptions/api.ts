@@ -16,12 +16,19 @@ import type {
   UpsertContractDeploymentRequest,
   UpsertSubscriptionPlanRequest,
 } from "./types";
+import type {
+  ListAuthorSubscribersResponseDto,
+  ListEntitlementsResponseDto,
+  ListReaderSubscriptionsResponseDto,
+  ListSubscriptionPaymentIntentsResponseDto,
+  ListSubscriptionPlansResponseDto,
+} from "../../shared/types/content";
 
 const deploymentRegistryTokenSecret = secret("DeploymentRegistryToken");
 
 export const listMyEntitlements = api(
   { method: "GET", path: "/me/entitlements", expose: true, auth: true },
-  async (): Promise<{ entitlements: SubscriptionEntitlementResponse[] }> => {
+  async (): Promise<ListEntitlementsResponseDto> => {
     const auth = getAuthData()!;
     const entitlements = await service.listMyEntitlements(auth.walletAddress);
     return {
@@ -32,7 +39,7 @@ export const listMyEntitlements = api(
 
 export const listMyReaderSubscriptions = api(
   { method: "GET", path: "/me/subscriptions", expose: true, auth: true },
-  async (): Promise<{ subscriptions: ReaderSubscriptionResponse[] }> => {
+  async (): Promise<ListReaderSubscriptionsResponseDto> => {
     const auth = getAuthData()!;
     const subscriptions = await service.listMyReaderSubscriptions(
       auth.walletAddress,
@@ -43,7 +50,7 @@ export const listMyReaderSubscriptions = api(
 
 export const listMyAuthorSubscribers = api(
   { method: "GET", path: "/me/author/subscribers", expose: true, auth: true },
-  async (): Promise<{ subscribers: AuthorSubscriberResponse[] }> => {
+  async (): Promise<ListAuthorSubscribersResponseDto> => {
     const auth = getAuthData()!;
     const subscribers = await service.listMyAuthorSubscribers(
       auth.walletAddress,
@@ -102,7 +109,7 @@ export const listMySubscriptionPaymentIntents = api(
     expose: true,
     auth: true,
   },
-  async (): Promise<{ intents: SubscriptionPaymentIntentResponse[] }> => {
+  async (): Promise<ListSubscriptionPaymentIntentsResponseDto> => {
     const auth = getAuthData()!;
     const intents = await service.listMySubscriptionPaymentIntents(
       auth.walletAddress,
@@ -115,7 +122,7 @@ export const listMySubscriptionPaymentIntents = api(
 
 export const listMySubscriptionPlans = api(
   { method: "GET", path: "/me/subscription-plans", expose: true, auth: true },
-  async (): Promise<{ plans: SubscriptionPlanResponse[] }> => {
+  async (): Promise<ListSubscriptionPlansResponseDto> => {
     const auth = getAuthData()!;
     const plans = await service.listMySubscriptionPlans(auth.walletAddress);
     return {
@@ -159,7 +166,7 @@ export const listAuthorSubscriptionPlans = api(
     slug,
   }: {
     slug: string;
-  }): Promise<{ plans: SubscriptionPlanResponse[] }> => {
+  }): Promise<ListSubscriptionPlansResponseDto> => {
     const plans = await service.listAuthorSubscriptionPlansBySlug(slug);
     return {
       plans: await Promise.all(

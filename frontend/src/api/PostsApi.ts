@@ -2,11 +2,15 @@ import type {
     CreatePostCommentInput,
     CreatePostReportInput,
     CreatePostInput,
+    ListPostCommentsResponseDto,
+    ListPostsResponseDto,
     PostAttachmentDto,
     PostCommentDto,
     PostReportDto,
     PostDto,
+    RecordPostViewResponseDto,
     RecordPostViewInput,
+    TogglePostLikeResponseDto,
     UpdatePostInput,
 } from "@shared/types/content"
 
@@ -26,7 +30,7 @@ class PostsApi {
     }
 
     async listMyPosts(status?: PostDto["status"]) {
-        const response = await getData<{ posts: PostDto[] }>("/me/posts", {
+        const response = await getData<ListPostsResponseDto>("/me/posts", {
             params: { status },
         })
         return response.posts
@@ -69,7 +73,7 @@ class PostsApi {
     }
 
     async listPostComments(slug: string, postId: string) {
-        const response = await getData<{ comments: PostCommentDto[] }>(
+        const response = await getData<ListPostCommentsResponseDto>(
             `/authors/${slug}/posts/${postId}/comments`
         )
         return response.comments
@@ -87,13 +91,13 @@ class PostsApi {
     }
 
     async togglePostLike(slug: string, postId: string) {
-        return postData<{ liked: boolean; likesCount: number }>(
+        return postData<TogglePostLikeResponseDto>(
             `/authors/${slug}/posts/${postId}/like`
         )
     }
 
     async recordPostView(slug: string, postId: string, input: RecordPostViewInput) {
-        return postData<{ viewsCount: number }>(
+        return postData<RecordPostViewResponseDto>(
             `/authors/${slug}/posts/${postId}/view`,
             input
         )

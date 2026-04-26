@@ -4,14 +4,17 @@ import { getOptionalViewerWallet } from "../lib/api-helpers";
 import * as service from "./service";
 import type {
   AccessPolicyPresetResponse,
-  AuthorAccessPolicyResponse,
   CreateAccessPolicyPresetRequest,
   UpdateAccessPolicyPresetRequest,
 } from "./types";
+import type {
+  ListAccessPolicyPresetsResponseDto,
+  ListAuthorAccessPoliciesResponseDto,
+} from "../../shared/types/content";
 
 export const listMyAccessPolicyPresets = api(
   { method: "GET", path: "/me/access-policies", expose: true, auth: true },
-  async (): Promise<{ policies: AccessPolicyPresetResponse[] }> => {
+  async (): Promise<ListAccessPolicyPresetsResponseDto> => {
     const auth = getAuthData()!;
     const policies = await service.listMyAccessPolicyPresetResponses(
       auth.walletAddress,
@@ -80,9 +83,7 @@ export const listAuthorAccessPolicies = api(
   async ({
     slug,
     authorization,
-  }: ListAuthorAccessPoliciesRequest): Promise<{
-    policies: AuthorAccessPolicyResponse[];
-  }> => {
+  }: ListAuthorAccessPoliciesRequest): Promise<ListAuthorAccessPoliciesResponseDto> => {
     const viewerWallet = await getOptionalViewerWallet(authorization);
     const policies = await service.listAuthorAccessPoliciesBySlug(
       slug,

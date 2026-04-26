@@ -5,7 +5,7 @@ import type {
     ConfirmSubscriptionPaymentInput,
     ContractDeploymentLookupDto,
     CreatePlatformSubscriptionPaymentIntentInput,
-    PlatformPlanDto,
+    ListPlatformPlansResponseDto,
     PlatformSubscriptionPaymentIntentDto,
 } from "@shared/types/content"
 
@@ -13,7 +13,7 @@ import { getData, postData } from "@/utils/api/http"
 
 class PlatformApi {
     async listPlatformPlans() {
-        const response = await getData<{ plans: PlatformPlanDto[] }>("/platform/plans")
+        const response = await getData<ListPlatformPlansResponseDto>("/platform/plans")
         return response.plans
     }
 

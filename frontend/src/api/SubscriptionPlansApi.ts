@@ -2,6 +2,7 @@ import type {
     ConfirmSubscriptionPaymentInput,
     ContractDeploymentLookupDto,
     CreateSubscriptionPaymentIntentInput,
+    ListSubscriptionPlansResponseDto,
     SubscriptionPaymentIntentDto,
     SubscriptionPlanDto,
     UpsertSubscriptionPlanInput,
@@ -18,7 +19,7 @@ class SubscriptionPlansApi {
     }
 
     async listMySubscriptionPlans() {
-        const response = await getData<{ plans: SubscriptionPlanDto[] }>("/me/subscription-plans")
+        const response = await getData<ListSubscriptionPlansResponseDto>("/me/subscription-plans")
         return response.plans
     }
 

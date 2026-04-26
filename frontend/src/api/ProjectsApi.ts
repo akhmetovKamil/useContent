@@ -1,6 +1,7 @@
 import type {
     CreateProjectFolderInput,
     CreateProjectInput,
+    ListProjectsResponseDto,
     ProjectBundleDto,
     ProjectDto,
     ProjectNodeDto,
@@ -25,7 +26,7 @@ class ProjectsApi {
     }
 
     async listMyProjects(status?: ProjectDto["status"]) {
-        const response = await getData<{ projects: ProjectDto[] }>("/me/projects", {
+        const response = await getData<ListProjectsResponseDto>("/me/projects", {
             params: { status },
         })
         return response.projects

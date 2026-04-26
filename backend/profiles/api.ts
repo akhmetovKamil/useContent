@@ -10,6 +10,7 @@ import type {
   UpdateMyProfileRequest,
   UserProfileResponse,
 } from "./types";
+import type { ListAuthorsResponseDto } from "../../shared/types/content";
 
 export const getMe = api(
   { method: "GET", path: "/me", expose: true, auth: true },
@@ -44,7 +45,7 @@ export const listAuthors = api(
     q,
   }: {
     q?: string;
-  }): Promise<{ authors: AuthorCatalogItemResponse[] }> => {
+  }): Promise<ListAuthorsResponseDto> => {
     const authors = await service.listAuthors(q);
     return { authors };
   },

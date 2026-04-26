@@ -18,6 +18,10 @@ import type {
   UpdateProjectNodeRequest,
   UpdateProjectRequest,
 } from "./types";
+import type {
+  ListAuthorProjectsResponseDto,
+  ListProjectsResponseDto,
+} from "../../shared/types/content";
 
 interface ListMyProjectsRequest {
   status?: "draft" | "published" | "archived";
@@ -36,7 +40,7 @@ export const listMyProjects = api(
   { method: "GET", path: "/me/projects", expose: true, auth: true },
   async ({
     status,
-  }: ListMyProjectsRequest): Promise<{ projects: ProjectResponse[] }> => {
+  }: ListMyProjectsRequest): Promise<ListProjectsResponseDto> => {
     const auth = getAuthData()!;
     const projects =
       status === "archived"
@@ -257,9 +261,7 @@ export const listAuthorProjects = api(
   async ({
     slug,
     authorization,
-  }: ListAuthorProjectsRequest): Promise<{
-    projects: FeedProjectResponse[];
-  }> => {
+  }: ListAuthorProjectsRequest): Promise<ListAuthorProjectsResponseDto> => {
     const viewerWallet = await getOptionalViewerWallet(authorization);
     const projects = await service.listAuthorProjectsBySlug(slug, viewerWallet);
     return { projects };

@@ -1,6 +1,7 @@
 import type {
     AccessPolicyPresetDto,
     CreateAccessPolicyPresetInput,
+    ListAccessPolicyPresetsResponseDto,
     UpdateAccessPolicyPresetInput,
 } from "@shared/types/content"
 
@@ -8,7 +9,7 @@ import { deleteData, getData, patchData, postData } from "@/utils/api/http"
 
 class AccessPoliciesApi {
     async listMyAccessPolicies() {
-        const response = await getData<{ policies: AccessPolicyPresetDto[] }>("/me/access-policies")
+        const response = await getData<ListAccessPolicyPresetsResponseDto>("/me/access-policies")
         return response.policies
     }
 

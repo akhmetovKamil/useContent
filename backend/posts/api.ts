@@ -11,7 +11,6 @@ import type {
   CreatePostCommentRequest,
   CreatePostRequest,
   CreatePostReportRequest,
-  FeedPostResponse,
   PostCommentResponse,
   PostReportResponse,
   PostResponse,
@@ -20,20 +19,19 @@ import type {
 } from "./types";
 import type {
   CursorPaginationInput,
+  FeedPostPageResponseDto,
+  ListPostCommentsResponseDto,
+  ListPostsResponseDto,
+  RecordPostViewResponseDto,
+  TogglePostLikeResponseDto,
 } from "../../shared/types/content";
-
-interface FeedPostPageResponse {
-  items: FeedPostResponse[];
-  nextCursor: string | null;
-  hasMore: boolean;
-}
 
 export const listMyFeedPosts = api(
   { method: "GET", path: "/me/feed", expose: true, auth: true },
   async ({
     cursor,
     limit,
-  }: CursorPaginationInput): Promise<FeedPostPageResponse> => {
+  }: CursorPaginationInput): Promise<FeedPostPageResponseDto> => {
     const auth = getAuthData()!;
     return service.listMyFeedPosts(auth.walletAddress, { cursor, limit });
   },
@@ -53,7 +51,7 @@ export const listExploreFeedPosts = api(
     limit,
     q,
     source,
-  }: ListExploreFeedRequest): Promise<FeedPostPageResponse> => {
+  }: ListExploreFeedRequest): Promise<FeedPostPageResponseDto> => {
     const viewerWallet = await getOptionalViewerWallet(authorization);
     return service.listExploreFeedPosts(viewerWallet, { cursor, limit, q, source });
   },
@@ -76,7 +74,7 @@ export const listMyPosts = api(
   { method: "GET", path: "/me/posts", expose: true, auth: true },
   async ({
     status,
-  }: ListMyPostsRequest): Promise<{ posts: PostResponse[] }> => {
+  }: ListMyPostsRequest): Promise<ListPostsResponseDto> => {
     const auth = getAuthData()!;
     const posts =
       status === "archived"
@@ -154,7 +152,7 @@ export const listAuthorPosts = api(
     authorization,
     cursor,
     limit,
-  }: ListAuthorPostsRequest): Promise<FeedPostPageResponse> => {
+  }: ListAuthorPostsRequest): Promise<FeedPostPageResponseDto> => {
     const viewerWallet = await getOptionalViewerWallet(authorization);
     return service.listAuthorPostsBySlug(slug, viewerWallet, { cursor, limit });
   },
@@ -193,7 +191,7 @@ export const listPostComments = api(
     slug,
     postId,
     authorization,
-  }: GetAuthorPostRequest): Promise<{ comments: PostCommentResponse[] }> => {
+  }: GetAuthorPostRequest): Promise<ListPostCommentsResponseDto> => {
     const viewerWallet = await getOptionalViewerWallet(authorization);
     const comments = await service.listPostCommentsBySlug(
       slug,
@@ -269,7 +267,7 @@ export const togglePostLike = api(
   }: {
     slug: string;
     postId: string;
-  }): Promise<{ liked: boolean; likesCount: number }> => {
+  }): Promise<TogglePostLikeResponseDto> => {
     const auth = getAuthData()!;
     return service.togglePostLikeBySlug(slug, postId, auth.walletAddress);
   },
@@ -290,7 +288,7 @@ export const recordPostView = api(
     slug: string;
     postId: string;
     authorization?: Header<"Authorization">;
-  }): Promise<{ viewsCount: number }> => {
+  }): Promise<RecordPostViewResponseDto> => {
     const viewerWallet = await getOptionalViewerWallet(authorization);
     return service.recordPostViewBySlug(
       slug,

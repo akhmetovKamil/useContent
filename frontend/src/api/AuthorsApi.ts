@@ -1,18 +1,18 @@
 import type {
-    AuthorAccessPolicyDto,
-    AuthorCatalogItemDto,
     AuthorProfileDto,
     FeedPostDto,
-    FeedProjectDto,
+    ListAuthorAccessPoliciesResponseDto,
+    ListAuthorProjectsResponseDto,
+    ListAuthorsResponseDto,
+    ListSubscriptionPlansResponseDto,
     PaginatedResponse,
-    SubscriptionPlanDto,
 } from "@shared/types/content"
 
 import { getData } from "@/utils/api/http"
 
 class AuthorsApi {
     async listAuthors(search = "") {
-        const response = await getData<{ authors: AuthorCatalogItemDto[] }>("/authors", {
+        const response = await getData<ListAuthorsResponseDto>("/authors", {
             params: search ? { q: search } : undefined,
         })
         return response.authors
@@ -23,14 +23,14 @@ class AuthorsApi {
     }
 
     async listAuthorAccessPolicies(slug: string) {
-        const response = await getData<{ policies: AuthorAccessPolicyDto[] }>(
+        const response = await getData<ListAuthorAccessPoliciesResponseDto>(
             `/authors/${slug}/access-policies`
         )
         return response.policies
     }
 
     async listAuthorSubscriptionPlans(slug: string) {
-        const response = await getData<{ plans: SubscriptionPlanDto[] }>(
+        const response = await getData<ListSubscriptionPlansResponseDto>(
             `/authors/${slug}/subscription-plans`
         )
         return response.plans
@@ -64,7 +64,7 @@ class AuthorsApi {
     }
 
     async listAuthorProjects(slug: string) {
-        const response = await getData<{ projects: FeedProjectDto[] }>(
+        const response = await getData<ListAuthorProjectsResponseDto>(
             `/authors/${slug}/projects`
         )
         return response.projects
