@@ -1,11 +1,15 @@
 import type { AccessPolicy, AccessPolicyInput, PolicyMode } from "./access";
 import type {
+  ContentStatus,
+  ContentVisibility,
+  ProjectNodeKind,
+} from "../consts";
+import type {
   ContentBaseDto,
   EntityId,
   Maybe,
   StorageSizedDto,
 } from "./common";
-import type { ContentStatus } from "./posts";
 
 export interface ProjectDto extends ContentBaseDto {
   description: string;
@@ -31,12 +35,12 @@ export interface ProjectNodeDto {
   authorId: EntityId;
   projectId: EntityId;
   parentId: Maybe<EntityId>;
-  kind: "file" | "folder";
+  kind: ProjectNodeKind;
   name: string;
   storageKey: Maybe<string>;
   mimeType: Maybe<string>;
   size: Maybe<number>;
-  visibility: "author" | "published";
+  visibility: ContentVisibility;
   createdAt: string;
   updatedAt: string;
 }
@@ -77,11 +81,11 @@ export type UpdateProjectInput = Partial<CreateProjectInput>;
 export interface CreateProjectFolderInput {
   name: string;
   parentId?: Maybe<EntityId>;
-  visibility?: "author" | "published";
+  visibility?: ContentVisibility;
 }
 
 export interface UpdateProjectNodeInput {
   name?: string;
   parentId?: Maybe<EntityId>;
-  visibility?: "author" | "published";
+  visibility?: ContentVisibility;
 }

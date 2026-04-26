@@ -1,20 +1,27 @@
 import type {
   BaseEntityDto,
+  ChainId,
   EntityId,
   Maybe,
   NullableDateString,
   TxHash,
   WalletAddress,
 } from "./common";
+import type {
+  PaymentAsset,
+  PaymentIntentStatus,
+  SubscriptionEntitlementSource,
+  SubscriptionEntitlementStatus,
+} from "../consts";
 
-export type SubscriptionPaymentAsset = "erc20" | "native";
+export type SubscriptionPaymentAsset = PaymentAsset;
 
 export interface SubscriptionPlanDto extends BaseEntityDto {
   authorId: EntityId;
   code: string;
   title: string;
   paymentAsset: SubscriptionPaymentAsset;
-  chainId: number;
+  chainId: ChainId;
   tokenAddress: WalletAddress;
   price: string;
   billingPeriodDays: number;
@@ -29,9 +36,9 @@ export interface SubscriptionEntitlementDto extends BaseEntityDto {
   authorId: EntityId;
   subscriberWallet: WalletAddress;
   planId: EntityId;
-  status: "active" | "expired";
+  status: SubscriptionEntitlementStatus;
   validUntil: string;
-  source: "onchain";
+  source: SubscriptionEntitlementSource;
 }
 
 export interface ReaderSubscriptionDto extends SubscriptionEntitlementDto {
@@ -49,7 +56,7 @@ export interface AuthorSubscriberDto extends BaseEntityDto {
   planCode: Maybe<string>;
   planTitle: Maybe<string>;
   accessPolicyNames: string[];
-  status: "active" | "expired";
+  status: SubscriptionEntitlementStatus;
   validUntil: string;
 }
 
@@ -60,12 +67,12 @@ export interface SubscriptionPaymentIntentDto extends BaseEntityDto {
   planCode: string;
   planKey: string;
   paymentAsset: SubscriptionPaymentAsset;
-  chainId: number;
+  chainId: ChainId;
   tokenAddress: WalletAddress;
   contractAddress: WalletAddress;
   price: string;
   billingPeriodDays: number;
-  status: "pending" | "submitted" | "confirmed" | "expired" | "cancelled";
+  status: PaymentIntentStatus;
   txHash: Maybe<TxHash>;
   entitlementId: Maybe<EntityId>;
   paidUntil: NullableDateString;
@@ -76,7 +83,7 @@ export interface UpsertSubscriptionPlanInput {
   code?: string;
   title: string;
   paymentAsset?: SubscriptionPaymentAsset;
-  chainId: number;
+  chainId: ChainId;
   tokenAddress: WalletAddress;
   price: string;
   billingPeriodDays: number;

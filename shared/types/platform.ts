@@ -1,14 +1,18 @@
 import type {
+  CleanupItemKind,
+  CleanupRunStatus,
+  PaymentIntentStatus,
+  PlatformBillingStatus,
+  PlatformFeature,
+  PlatformPlanCode,
+} from "../consts";
+import type {
+  ChainId,
   EntityId,
   NullableDateString,
   OnChainPaymentBaseDto,
   WalletAddress,
 } from "./common";
-
-export type PlatformFeature = "posts" | "projects" | "homepage_promo";
-export type PlatformPlanCode = "free" | "basic";
-
-export type PlatformBillingStatus = "free" | "active" | "grace" | "expired";
 
 export interface PlatformPlanDto {
   code: PlatformPlanCode;
@@ -45,7 +49,15 @@ export interface AuthorPlatformBillingDto {
   isUploadAllowed: boolean;
 }
 
-export type AuthorPlatformCleanupItemKind = "post_attachment" | "project_file";
+export type AuthorPlatformCleanupItemKind = CleanupItemKind;
+export type {
+  CleanupItemKind,
+  CleanupRunStatus,
+  PaymentIntentStatus,
+  PlatformBillingStatus,
+  PlatformFeature,
+  PlatformPlanCode,
+} from "../consts";
 
 export interface AuthorPlatformCleanupItemDto {
   id: EntityId;
@@ -70,7 +82,7 @@ export interface AuthorPlatformCleanupPreviewDto {
 export interface AuthorPlatformCleanupRunDto {
   id: EntityId;
   authorId: EntityId;
-  status: "skipped" | "completed";
+  status: CleanupRunStatus;
   deletedBytes: number;
   deletedItems: AuthorPlatformCleanupItemDto[];
   previewAfter: AuthorPlatformCleanupPreviewDto;
@@ -83,7 +95,7 @@ export interface PlatformSubscriptionPaymentIntentDto extends OnChainPaymentBase
   planCode: PlatformPlanCode;
   tierKey: string;
   extraStorageGb: number;
-  status: "pending" | "submitted" | "confirmed" | "expired" | "cancelled";
+  status: PaymentIntentStatus;
   validUntil: NullableDateString;
   expiresAt: string;
 }
@@ -91,6 +103,6 @@ export interface PlatformSubscriptionPaymentIntentDto extends OnChainPaymentBase
 export interface CreatePlatformSubscriptionPaymentIntentInput {
   planCode: PlatformPlanCode;
   extraStorageGb: number;
-  chainId: number;
+  chainId: ChainId;
   tokenAddress: WalletAddress;
 }

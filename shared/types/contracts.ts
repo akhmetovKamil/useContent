@@ -1,8 +1,9 @@
-import type { BaseEntityDto, Maybe, WalletAddress } from "./common";
+import type { ChainId, BaseEntityDto, Maybe, WalletAddress } from "./common";
+import type { ContractName } from "../consts";
 
 export interface ContractDeploymentDto extends BaseEntityDto {
-  chainId: number;
-  contractName: "SubscriptionManager" | "PlatformSubscriptionManager";
+  chainId: ChainId;
+  contractName: ContractName;
   address: WalletAddress;
   platformTreasury: WalletAddress;
   deployedBy: WalletAddress;
@@ -14,8 +15,8 @@ export interface ContractDeploymentLookupDto {
 }
 
 export interface UpsertContractDeploymentInput {
-  chainId: number;
-  contractName: "SubscriptionManager" | "PlatformSubscriptionManager";
+  chainId: ChainId;
+  contractName: ContractName;
   address: WalletAddress;
   platformTreasury: WalletAddress;
   deployedBy: WalletAddress;

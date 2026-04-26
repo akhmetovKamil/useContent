@@ -1,3 +1,5 @@
+import type { ContentStatus } from "../consts";
+
 export type Maybe<T> = T | null;
 
 export type NullableDateString = Maybe<string>;
@@ -7,6 +9,8 @@ export type EntityId = string;
 export type WalletAddress = string;
 
 export type TxHash = string;
+
+export type ChainId = number;
 
 export interface BaseEntityDto {
   id: EntityId;
@@ -24,12 +28,12 @@ export interface StorageSizedDto {
 
 export interface ContentBaseDto extends BaseEntityDto, AuthorOwnedDto {
   title: string;
-  status: "draft" | "published" | "archived";
+  status: ContentStatus;
   publishedAt: NullableDateString;
 }
 
 export interface OnChainPaymentBaseDto extends BaseEntityDto {
-  chainId: number;
+  chainId: ChainId;
   tokenAddress: WalletAddress;
   contractAddress: WalletAddress;
   amount: string;

@@ -1,9 +1,10 @@
 import type { AccessPolicy, AccessPolicyInput } from "./access";
 import type { BaseEntityDto, EntityId, Maybe, WalletAddress } from "./common";
+import type { UserRole, UserWalletKind } from "../consts";
 
 export interface UserWalletDto {
   address: WalletAddress;
-  kind: "primary" | "secondary";
+  kind: UserWalletKind;
   addedAt: string;
 }
 
@@ -14,7 +15,7 @@ export interface UserProfileDto extends BaseEntityDto {
   avatarFileId: Maybe<EntityId>;
   primaryWallet: WalletAddress;
   wallets: UserWalletDto[];
-  role: "user" | "admin";
+  role: UserRole;
 }
 
 export interface AuthorProfileDto extends BaseEntityDto {

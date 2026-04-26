@@ -1,14 +1,18 @@
 import type {
+  AccessConditionMode,
+  NftStandard,
+} from "../consts";
+import type {
   AuthorOwnedDto,
   BaseEntityDto,
+  ChainId,
   Maybe,
   NullableDateString,
 } from "./common";
 import type { SubscriptionPlanDto } from "./subscriptions";
 
 export const ACCESS_POLICY_VERSION = 1;
-
-export type PolicyMode = "public" | "inherited" | "custom";
+export type { AccessConditionMode, NftStandard, PolicyMode } from "../consts";
 
 export interface PublicPolicyNode {
   type: "public";
@@ -22,7 +26,7 @@ export interface SubscriptionPolicyNode {
 
 export interface TokenBalancePolicyNode {
   type: "token_balance";
-  chainId: number;
+  chainId: ChainId;
   contractAddress: string;
   minAmount: string;
   decimals: number;
@@ -30,9 +34,9 @@ export interface TokenBalancePolicyNode {
 
 export interface NftOwnershipPolicyNode {
   type: "nft_ownership";
-  chainId: number;
+  chainId: ChainId;
   contractAddress: string;
-  standard: "erc721" | "erc1155";
+  standard: NftStandard;
   tokenId?: string;
   minBalance?: string;
 }
@@ -71,7 +75,7 @@ export interface AccessPolicyInputSubscriptionNode {
 
 export interface AccessPolicyInputTokenBalanceNode {
   type: "token_balance";
-  chainId: number;
+  chainId: ChainId;
   contractAddress: string;
   minAmount: string;
   decimals: number;
@@ -79,9 +83,9 @@ export interface AccessPolicyInputTokenBalanceNode {
 
 export interface AccessPolicyInputNftOwnershipNode {
   type: "nft_ownership";
-  chainId: number;
+  chainId: ChainId;
   contractAddress: string;
-  standard: "erc721" | "erc1155";
+  standard: NftStandard;
   tokenId?: string;
   minBalance?: string;
 }
@@ -122,36 +126,42 @@ export interface AuthorAccessPolicyDto extends AccessPolicyPresetDto {
   accessLabel: Maybe<string>;
   hasAccess: boolean;
   paidSubscribersCount: number;
-  conditionMode: "single" | "and" | "or";
+  conditionMode: AccessConditionMode;
   conditions: AccessPolicyConditionDto[];
 }
 
+export interface SubscriptionAccessConditionDto {
+  type: "subscription";
+  plan: SubscriptionPlanDto;
+  satisfied: boolean;
+  validUntil: NullableDateString;
+}
+
+export interface TokenBalanceAccessConditionDto {
+  type: "token_balance";
+  chainId: ChainId;
+  contractAddress: string;
+  minAmount: string;
+  decimals: number;
+  satisfied: boolean;
+  currentBalance: Maybe<string>;
+}
+
+export interface NftOwnershipAccessConditionDto {
+  type: "nft_ownership";
+  chainId: ChainId;
+  contractAddress: string;
+  standard: NftStandard;
+  tokenId?: string;
+  minBalance?: string;
+  satisfied: boolean;
+  currentBalance: Maybe<string>;
+}
+
 export type AccessPolicyConditionDto =
-  | {
-      type: "subscription";
-      plan: SubscriptionPlanDto;
-      satisfied: boolean;
-      validUntil: NullableDateString;
-    }
-  | {
-      type: "token_balance";
-      chainId: number;
-      contractAddress: string;
-      minAmount: string;
-      decimals: number;
-      satisfied: boolean;
-      currentBalance: Maybe<string>;
-    }
-  | {
-      type: "nft_ownership";
-      chainId: number;
-      contractAddress: string;
-      standard: "erc721" | "erc1155";
-      tokenId?: string;
-      minBalance?: string;
-      satisfied: boolean;
-      currentBalance: Maybe<string>;
-    };
+  | SubscriptionAccessConditionDto
+  | TokenBalanceAccessConditionDto
+  | NftOwnershipAccessConditionDto;
 
 export interface CreateAccessPolicyPresetInput {
   name: string;

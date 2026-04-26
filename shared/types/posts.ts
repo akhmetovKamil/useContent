@@ -1,5 +1,13 @@
 import type { AccessPolicy, AccessPolicyInput, PolicyMode } from "./access";
 import type {
+  ActivityType,
+  ContentStatus,
+  FeedSource,
+  PostAttachmentKind,
+  PostReportReason,
+  PostReportStatus,
+} from "../consts";
+import type {
   AuthorOwnedDto,
   ContentBaseDto,
   EntityId,
@@ -8,8 +16,14 @@ import type {
   StorageSizedDto,
   WalletAddress,
 } from "./common";
-
-export type ContentStatus = "draft" | "published" | "archived";
+export type {
+  ActivityType,
+  ContentStatus,
+  FeedSource,
+  PostAttachmentKind,
+  PostReportReason,
+  PostReportStatus,
+} from "../consts";
 
 export interface PostCommentDto extends AuthorOwnedDto {
   id: EntityId;
@@ -20,14 +34,6 @@ export interface PostCommentDto extends AuthorOwnedDto {
   createdAt: string;
   updatedAt: string;
 }
-
-export type PostReportReason = "spam" | "scam" | "illegal_content" | "abuse" | "other";
-
-export type ActivityType =
-  | "post_liked"
-  | "post_commented"
-  | "new_subscription"
-  | "new_post";
 
 export interface ActivityDto {
   id: EntityId;
@@ -50,12 +56,10 @@ export interface PostReportDto extends AuthorOwnedDto {
   reporterWallet: WalletAddress;
   reason: PostReportReason;
   comment: Maybe<string>;
-  status: "open" | "reviewed" | "dismissed";
+  status: PostReportStatus;
   createdAt: string;
   updatedAt: string;
 }
-
-export type PostAttachmentKind = "image" | "video" | "audio" | "file";
 
 export interface PostAttachmentDto extends AuthorOwnedDto, StorageSizedDto {
   id: EntityId;
@@ -92,7 +96,7 @@ export interface FeedPostDto extends PostDto {
   authorDisplayName: string;
   accessLabel: Maybe<string>;
   hasAccess: boolean;
-  feedSource: "public" | "subscribed" | "promoted" | "author";
+  feedSource: FeedSource;
   feedReason: Maybe<string>;
   commentsPreview: PostCommentDto[];
 }
