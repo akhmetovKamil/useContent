@@ -8,6 +8,18 @@ export const http = axios.create({
     baseURL: env.apiBaseUrl,
 })
 
+export type ApiQueryPrimitive = string | number | boolean | null | undefined
+
+export type ApiQueryParams = Record<
+    string,
+    ApiQueryPrimitive | readonly ApiQueryPrimitive[]
+>
+
+export interface ApiRequestConfig<TParams extends ApiQueryParams = ApiQueryParams>
+    extends Omit<AxiosRequestConfig, "params"> {
+    params?: TParams
+}
+
 http.interceptors.request.use((config) => {
     const token = useAuthStore.getState().token
 
@@ -18,41 +30,64 @@ http.interceptors.request.use((config) => {
     return config
 })
 
-export async function request<T>(config: AxiosRequestConfig) {
+export async function request<TResponse, TParams extends ApiQueryParams = ApiQueryParams>(
+    config: ApiRequestConfig<TParams>
+) {
     try {
-        const response = await http.request<T>(config)
+        const response = await http.request<TResponse>({
+            ...config,
+            params: config.params ? toQueryParams(config.params) : undefined,
+        })
         return response.data
     } catch (error) {
         throw normalizeApiError(error)
     }
 }
 
-export function getData<T>(url: string, config?: AxiosRequestConfig) {
-    return request<T>({ ...config, method: "GET", url })
+export function getData<TResponse, TParams extends ApiQueryParams = ApiQueryParams>(
+    url: string,
+    config?: ApiRequestConfig<TParams>
+) {
+    return request<TResponse, TParams>({ ...config, method: "GET", url })
 }
 
-export function postData<T>(url: string, data?: unknown, config?: AxiosRequestConfig) {
-    return request<T>({ ...config, data, method: "POST", url })
+export function postData<
+    TResponse,
+    TBody = unknown,
+    TParams extends ApiQueryParams = ApiQueryParams,
+>(url: string, data?: TBody, config?: ApiRequestConfig<TParams>) {
+    return request<TResponse, TParams>({ ...config, data, method: "POST", url })
 }
 
-export function putData<T>(url: string, data?: unknown, config?: AxiosRequestConfig) {
-    return request<T>({ ...config, data, method: "PUT", url })
+export function putData<
+    TResponse,
+    TBody = unknown,
+    TParams extends ApiQueryParams = ApiQueryParams,
+>(url: string, data?: TBody, config?: ApiRequestConfig<TParams>) {
+    return request<TResponse, TParams>({ ...config, data, method: "PUT", url })
 }
 
-export function patchData<T>(url: string, data?: unknown, config?: AxiosRequestConfig) {
-    return request<T>({ ...config, data, method: "PATCH", url })
+export function patchData<
+    TResponse,
+    TBody = unknown,
+    TParams extends ApiQueryParams = ApiQueryParams,
+>(url: string, data?: TBody, config?: ApiRequestConfig<TParams>) {
+    return request<TResponse, TParams>({ ...config, data, method: "PATCH", url })
 }
 
-export function deleteData<T = void>(url: string, config?: AxiosRequestConfig) {
-    return request<T>({ ...config, method: "DELETE", url })
+export function deleteData<
+    TResponse = void,
+    TParams extends ApiQueryParams = ApiQueryParams,
+>(url: string, config?: ApiRequestConfig<TParams>) {
+    return request<TResponse, TParams>({ ...config, method: "DELETE", url })
 }
 
-export function uploadData<T>(
+export function uploadData<TResponse, TParams extends ApiQueryParams = ApiQueryParams>(
     url: string,
     file: File | Blob,
-    config?: AxiosRequestConfig
+    config?: ApiRequestConfig<TParams>
 ) {
-    return request<T>({
+    return request<TResponse, TParams>({
         ...config,
         data: file,
         method: "POST",
@@ -62,7 +97,7 @@ export function uploadData<T>(
 
 export function downloadData(
     url: string,
-    config?: AxiosRequestConfig
+    config?: ApiRequestConfig
 ) {
     return request<Blob>({
         ...config,
@@ -70,4 +105,37 @@ export function downloadData(
         responseType: "blob",
         url,
     })
+}
+
+export function toQueryParams<TParams extends ApiQueryParams>(params: TParams) {
+    const nextParams: Record<string, string | number | boolean | Array<string | number | boolean>> =
+        {}
+
+    for (const [key, value] of Object.entries(params)) {
+        if (isQueryArray(value)) {
+            const values = value.filter(isSerializableQueryValue)
+            if (values.length) {
+                nextParams[key] = values
+            }
+            continue
+        }
+
+        if (isSerializableQueryValue(value)) {
+            nextParams[key] = value
+        }
+    }
+
+    return nextParams
+}
+
+function isQueryArray(
+    value: ApiQueryPrimitive | readonly ApiQueryPrimitive[]
+): value is readonly ApiQueryPrimitive[] {
+    return Array.isArray(value)
+}
+
+function isSerializableQueryValue(
+    value: ApiQueryPrimitive
+): value is string | number | boolean {
+    return value !== null && value !== undefined && value !== ""
 }
