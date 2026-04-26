@@ -23,11 +23,10 @@ import {
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useMyProjectsQuery } from "@/queries/projects"
 import { useAuthStore } from "@/stores/auth-store"
+import type { AuthorPostsTab, AuthorPostsTabOption } from "@/types/navigation"
 import { cn } from "@/utils/cn"
 
-type AuthorPostsTab = "published" | "drafts" | "archived" | "promoted"
-
-const postTabs: Array<{ id: AuthorPostsTab; label: string }> = [
+const postTabs: AuthorPostsTabOption[] = [
     { id: "published", label: "Published" },
     { id: "drafts", label: "Drafts" },
     { id: "archived", label: "Archived" },

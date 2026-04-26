@@ -31,16 +31,8 @@ import {
     useUploadMyProjectFileMutation,
 } from "@/queries/projects"
 import { queryKeys } from "@/queries/queryKeys"
+import type { ProjectFileTreeProps } from "@/types/projects"
 import { formatFileSize } from "@/utils/format"
-
-type ProjectTreeMode = "author" | "reader"
-
-interface ProjectFileTreeProps {
-    mode: ProjectTreeMode
-    projectId: string
-    rootNodeId: string
-    slug?: string
-}
 
 export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: ProjectFileTreeProps) {
     const [currentFolderId, setCurrentFolderId] = useState<string | null>(rootNodeId)

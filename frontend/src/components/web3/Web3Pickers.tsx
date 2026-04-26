@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label"
 import { Modal } from "@/components/ui/modal"
 import { cn } from "@/utils/cn"
 import { getChainDisplayConfig, supportedChainOptions } from "@/utils/config/chains"
-import { getTokenPresets, type TokenPreset } from "@/utils/config/tokens"
+import { getTokenPresets } from "@/utils/config/tokens"
+import type { TokenLookupState, TokenPreset } from "@/types/web3"
 
 interface ChainPickerProps {
     className?: string
@@ -87,12 +88,7 @@ interface TokenPickerProps {
     selectedTokenId: string
     tokenAddress: string
     customDecimals: string
-    lookup?: {
-        error?: string
-        name?: string
-        state: "idle" | "loading" | "success" | "error"
-        symbol?: string
-    }
+    lookup?: TokenLookupState
 }
 
 export function TokenPicker({

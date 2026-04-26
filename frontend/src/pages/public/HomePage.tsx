@@ -15,11 +15,10 @@ import { useAuthorsQuery } from "@/queries/authors"
 import { flattenFeedPages, useExploreFeedPostsQuery } from "@/queries/posts"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
+import type { FeedSourceFilter, FeedSourceFilterOption } from "@/types/navigation"
 import { cn } from "@/utils/cn"
 
-type FeedSourceFilter = "all" | "public" | "subscribed" | "promoted"
-
-const feedSourceFilters: Array<{ id: FeedSourceFilter; label: string }> = [
+const feedSourceFilters: FeedSourceFilterOption[] = [
     { id: "all", label: "All" },
     { id: "public", label: "Public" },
     { id: "subscribed", label: "Subscribed" },

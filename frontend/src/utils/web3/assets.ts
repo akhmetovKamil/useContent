@@ -3,7 +3,8 @@ import { buildExplorerAddressUrl, buildOpenSeaAssetUrl } from "@shared/utils"
 import { formatUnits } from "viem"
 
 import { supportedChainOptions } from "@/utils/config/chains"
-import { getTokenPresets, type TokenPreset } from "@/utils/config/tokens"
+import { getTokenPresets } from "@/utils/config/tokens"
+import type { TokenPreset } from "@/types/web3"
 
 export interface TokenAssetMetadata {
     address: string

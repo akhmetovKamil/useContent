@@ -8,16 +8,7 @@ import {
     sepolia,
 } from "wagmi/chains"
 import { getEvmChainMetadata } from "@shared/utils"
-
-export interface ChainDisplayConfig {
-    accent: string
-    explorerName: string
-    explorerUrl: string
-    icon: string
-    openSeaSlug?: string
-    testnetOpenSeaSlug?: string
-    shortName: string
-}
+import type { ChainDisplayConfig } from "@/types/web3"
 
 export const supportedChains = [
     sepolia,

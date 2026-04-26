@@ -1,4 +1,5 @@
-import type { ContentStatus, FeedSource } from "@shared/types/content"
+import type { ContentStatus } from "@shared/types/content"
+import type { ExploreFeedSource } from "@/types/navigation"
 
 export interface CursorPageInput {
     cursor?: string | null
@@ -11,7 +12,7 @@ export interface SearchAuthorsInput {
 
 export interface ExploreFeedInput extends CursorPageInput {
     q?: string
-    source?: FeedSource | "all"
+    source?: ExploreFeedSource | "all"
 }
 
 export interface ListContentInput {

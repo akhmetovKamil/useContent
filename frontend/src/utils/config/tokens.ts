@@ -7,19 +7,7 @@ import {
     optimismSepolia,
     sepolia,
 } from "wagmi/chains"
-
-export interface TokenPreset {
-    address: `0x${string}` | null
-    coingeckoId?: string
-    decimals: number
-    disabled?: boolean
-    helper: string
-    kind: "erc20" | "native" | "custom"
-    logoUrl?: string
-    name: string
-    symbol: string
-    testnet?: boolean
-}
+import type { TokenPreset } from "@/types/web3"
 
 const nativeToken: TokenPreset = {
     address: null,
