@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, test, vi } from "vitest"
 
 const activityMocks = vi.hoisted(() => ({
     useMyActivityQuery: vi.fn(),
-    flattenActivityPages: vi.fn(),
 }))
 
 vi.mock("@/queries/activity", () => activityMocks)
@@ -24,13 +23,13 @@ describe("MeActivityPage", () => {
         activityMocks.useMyActivityQuery.mockReturnValue({
             data: { pages: [] },
             error: null,
-            fetchNextPage: vi.fn(),
-            hasNextPage: false,
+            hasMore: false,
+            isLoadingMore: false,
+            items: [],
             isError: false,
-            isFetchingNextPage: false,
             isLoading: false,
+            loadMore: vi.fn(),
         })
-        activityMocks.flattenActivityPages.mockReturnValue([])
 
         render(<MeActivityPage />, { wrapper: MemoryRouter })
 
@@ -55,13 +54,13 @@ describe("MeActivityPage", () => {
         activityMocks.useMyActivityQuery.mockReturnValue({
             data: { pages: [{ items: [activity] }] },
             error: null,
-            fetchNextPage: vi.fn(),
-            hasNextPage: false,
+            hasMore: false,
+            isLoadingMore: false,
+            items: [activity],
             isError: false,
-            isFetchingNextPage: false,
             isLoading: false,
+            loadMore: vi.fn(),
         })
-        activityMocks.flattenActivityPages.mockReturnValue([activity])
 
         render(<MeActivityPage />, { wrapper: MemoryRouter })
 

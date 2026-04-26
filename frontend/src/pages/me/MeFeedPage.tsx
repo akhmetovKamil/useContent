@@ -15,7 +15,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { flattenFeedPages } from "@/queries/posts"
 import { useMyFeedPostsQuery, useMyReaderSubscriptionsQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 
@@ -35,7 +34,7 @@ export function MeFeedPage() {
         window.localStorage.setItem(LAST_OPENED_KEY, new Date().toISOString())
         return stored ? new Date(stored).getTime() : 0
     }, [])
-    const allPosts = flattenFeedPages(feedQuery.data)
+    const allPosts = feedQuery.items
     const subscriptions = subscriptionsQuery.data ?? []
     const authorOptions = useMemo(() => {
         const bySlug = new Map<string, string>()
@@ -156,15 +155,15 @@ export function MeFeedPage() {
                             showAuthor
                         />
                     )}
-                    {feedQuery.hasNextPage ? (
+                    {feedQuery.hasMore ? (
                         <Button
                             className="mt-5 rounded-full"
-                            disabled={feedQuery.isFetchingNextPage}
-                            onClick={() => void feedQuery.fetchNextPage()}
+                            disabled={feedQuery.isLoadingMore}
+                            onClick={feedQuery.loadMore}
                             type="button"
                             variant="outline"
                         >
-                            {feedQuery.isFetchingNextPage ? "Loading..." : "Load more"}
+                            {feedQuery.isLoadingMore ? "Loading..." : "Load more"}
                         </Button>
                     ) : null}
                 </CardContent>

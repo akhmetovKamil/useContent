@@ -12,7 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { Input } from "@/components/ui/input"
 import { useInfiniteScrollSentinel } from "@/hooks/useInfiniteScrollSentinel"
 import { useAuthorsQuery } from "@/queries/authors"
-import { flattenFeedPages, useExploreFeedPostsQuery } from "@/queries/posts"
+import { useExploreFeedPostsQuery } from "@/queries/posts"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 import type { FeedSourceFilter, FeedSourceFilterOption } from "@/types/navigation"
@@ -38,16 +38,16 @@ export function HomePage() {
         search: deferredFeedSearch.trim(),
         source: feedSource,
     })
-    const feedPosts = flattenFeedPages(feedQuery.data)
+    const feedPosts = feedQuery.items
     const feedSentinelRef = useRef<HTMLDivElement | null>(null)
     const loadMoreFeed = useCallback(() => {
-        void feedQuery.fetchNextPage()
+        feedQuery.loadMore()
     }, [feedQuery])
 
     useInfiniteScrollSentinel({
         enabled: !feedQuery.isLoading && !feedQuery.isError,
-        hasNextPage: Boolean(feedQuery.hasNextPage),
-        isFetchingNextPage: feedQuery.isFetchingNextPage,
+        hasNextPage: feedQuery.hasMore,
+        isFetchingNextPage: feedQuery.isLoadingMore,
         onLoadMore: loadMoreFeed,
         sentinelRef: feedSentinelRef,
     })
@@ -142,7 +142,7 @@ export function HomePage() {
                         />
                     )}
                     <div ref={feedSentinelRef} />
-                    {feedQuery.isFetchingNextPage ? (
+                    {feedQuery.isLoadingMore ? (
                         <div className="mt-5">
                             <PostFeedSkeleton count={1} />
                         </div>

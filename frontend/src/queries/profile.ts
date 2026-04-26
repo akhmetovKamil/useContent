@@ -7,6 +7,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 
 import { profileApi } from "@/api/ProfileApi"
 import { invalidateMany } from "@/queries/invalidate"
+import { withInfiniteItems } from "@/queries/infinite"
 import { useWorkspaceStore } from "@/stores/workspace-store"
 import { isApiNotFoundError } from "@/utils/api/errors"
 import { queryKeys } from "./queryKeys"
@@ -54,13 +55,15 @@ export function useMyReaderSubscriptionsQuery(enabled = true) {
 }
 
 export function useMyFeedPostsQuery(enabled = true) {
-    return useInfiniteQuery({
+    const query = useInfiniteQuery({
         queryKey: queryKeys.myFeedPosts,
         queryFn: ({ pageParam }) => profileApi.getMyFeedPosts(pageParam),
         enabled,
         initialPageParam: null as string | null,
         getNextPageParam: (lastPage) => lastPage.nextCursor,
     })
+
+    return withInfiniteItems(query)
 }
 
 export function useMyAuthorSubscribersQuery(enabled = true) {

@@ -33,7 +33,7 @@ import {
     TokenConditionAssetCard,
 } from "@/components/web3/AssetConditionCards"
 import { useAuthorAccessPoliciesQuery, useAuthorProfileQuery } from "@/queries/authors"
-import { flattenFeedPages, useAuthorPostsQuery } from "@/queries/posts"
+import { useAuthorPostsQuery } from "@/queries/posts"
 import { useAuthorProjectsQuery } from "@/queries/projects"
 import { formatTokenUnits, resolveTokenAssetMetadata } from "@/utils/web3/assets"
 
@@ -46,16 +46,16 @@ export function AuthorPage() {
     const policiesQuery = useAuthorAccessPoliciesQuery(authorSlug)
     const [selectedTierId, setSelectedTierId] = useState<string | null>(null)
     const selectedTier = policiesQuery.data?.find((policy) => policy.id === selectedTierId) ?? null
-    const posts = flattenFeedPages(postsQuery.data)
+    const posts = postsQuery.items
     const postSentinelRef = useRef<HTMLDivElement | null>(null)
     const loadMorePosts = useCallback(() => {
-        void postsQuery.fetchNextPage()
+        postsQuery.loadMore()
     }, [postsQuery])
 
     useInfiniteScrollSentinel({
         enabled: !postsQuery.isLoading && !postsQuery.isError,
-        hasNextPage: Boolean(postsQuery.hasNextPage),
-        isFetchingNextPage: postsQuery.isFetchingNextPage,
+        hasNextPage: postsQuery.hasMore,
+        isFetchingNextPage: postsQuery.isLoadingMore,
         onLoadMore: loadMorePosts,
         sentinelRef: postSentinelRef,
     })
@@ -156,7 +156,7 @@ export function AuthorPage() {
                                 <PostFeed emptyLabel="No posts yet." posts={posts} />
                             )}
                             <div ref={postSentinelRef} />
-                            {postsQuery.isFetchingNextPage ? (
+                            {postsQuery.isLoadingMore ? (
                                 <div className="mt-5">
                                     <PostFeedSkeleton count={1} />
                                 </div>

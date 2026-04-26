@@ -9,23 +9,23 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
 import { useInfiniteScrollSentinel } from "@/hooks/useInfiniteScrollSentinel"
 import { useAuthorProfileQuery } from "@/queries/authors"
-import { flattenFeedPages, useAuthorPostsQuery } from "@/queries/posts"
+import { useAuthorPostsQuery } from "@/queries/posts"
 
 export function AuthorFeedPage() {
     const { slug } = useParams()
     const authorSlug = slug ?? ""
     const authorQuery = useAuthorProfileQuery(authorSlug)
     const postsQuery = useAuthorPostsQuery(authorSlug)
-    const posts = flattenFeedPages(postsQuery.data)
+    const posts = postsQuery.items
     const sentinelRef = useRef<HTMLDivElement | null>(null)
     const loadMore = useCallback(() => {
-        void postsQuery.fetchNextPage()
+        postsQuery.loadMore()
     }, [postsQuery])
 
     useInfiniteScrollSentinel({
         enabled: !postsQuery.isLoading && !postsQuery.isError,
-        hasNextPage: Boolean(postsQuery.hasNextPage),
-        isFetchingNextPage: postsQuery.isFetchingNextPage,
+        hasNextPage: postsQuery.hasMore,
+        isFetchingNextPage: postsQuery.isLoadingMore,
         onLoadMore: loadMore,
         sentinelRef,
     })
@@ -68,7 +68,7 @@ export function AuthorFeedPage() {
                         <PostFeed emptyLabel="No posts yet." posts={posts} />
                     )}
                     <div ref={sentinelRef} />
-                    {postsQuery.isFetchingNextPage ? <PostFeedSkeleton count={1} /> : null}
+                    {postsQuery.isLoadingMore ? <PostFeedSkeleton count={1} /> : null}
                 </CardContent>
             </Card>
         </section>

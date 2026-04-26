@@ -2,7 +2,6 @@ import type {
     CreatePostCommentInput,
     CreatePostReportInput,
     CreatePostInput,
-    FeedPostDto,
     PostDto,
     UpdatePostInput,
 } from "@shared/types/content"
@@ -11,6 +10,12 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import { authorsApi } from "@/api/AuthorsApi"
 import { postsApi } from "@/api/PostsApi"
 import { invalidateMany } from "@/queries/invalidate"
+import { withInfiniteItems } from "@/queries/infinite"
+import {
+    invalidatePostCollections,
+    moveMyPostBetweenStatusLists,
+    removeEntityById,
+} from "@/queries/post-cache"
 import { queryKeys } from "./queryKeys"
 
 export function useMyPostsQuery(enabled = true, status?: PostDto["status"]) {
@@ -22,13 +27,15 @@ export function useMyPostsQuery(enabled = true, status?: PostDto["status"]) {
 }
 
 export function useAuthorPostsQuery(slug: string) {
-    return useInfiniteQuery({
+    const query = useInfiniteQuery({
         queryKey: queryKeys.authorPosts(slug),
         queryFn: ({ pageParam }) => authorsApi.listAuthorPosts(slug, pageParam),
         enabled: Boolean(slug),
         initialPageParam: null as string | null,
         getNextPageParam: (lastPage) => lastPage.nextCursor,
     })
+
+    return withInfiniteItems(query)
 }
 
 export function useExploreFeedPostsQuery(
@@ -40,7 +47,7 @@ export function useExploreFeedPostsQuery(
 ) {
     const search = filters.search?.trim() ?? ""
     const source = filters.source ?? "all"
-    return useInfiniteQuery({
+    const query = useInfiniteQuery({
         queryKey: queryKeys.exploreFeedPosts(search, source),
         queryFn: ({ pageParam }) =>
             authorsApi.listExploreFeedPosts({ cursor: pageParam, q: search, source }),
@@ -48,10 +55,8 @@ export function useExploreFeedPostsQuery(
         initialPageParam: null as string | null,
         getNextPageParam: (lastPage) => lastPage.nextCursor,
     })
-}
 
-export function flattenFeedPages(data?: { pages: Array<{ items: FeedPostDto[] }> }) {
-    return data?.pages.flatMap((page) => page.items) ?? []
+    return withInfiniteItems(query)
 }
 
 export function useAuthorPostQuery(slug: string, postId: string) {
@@ -109,21 +114,7 @@ export function useUpdateMyPostMutation() {
                 return { previousActive, previousArchive }
             }
 
-            const nextPost = { ...existing, ...input, status: input.status }
-            const removePost = (posts?: PostDto[]) => posts?.filter((post) => post.id !== postId)
-            const addPost = (posts: PostDto[] | undefined, post: PostDto) => [
-                post,
-                ...(posts ?? []).filter((item) => item.id !== post.id),
-            ]
-
-            queryClient.setQueryData<PostDto[]>(activeKey, (posts) => removePost(posts) ?? [])
-            queryClient.setQueryData<PostDto[]>(archiveKey, (posts) => removePost(posts) ?? [])
-
-            if (input.status === "archived") {
-                queryClient.setQueryData<PostDto[]>(archiveKey, (posts) => addPost(posts, nextPost))
-            } else {
-                queryClient.setQueryData<PostDto[]>(activeKey, (posts) => addPost(posts, nextPost))
-            }
+            moveMyPostBetweenStatusLists(queryClient, { ...existing, ...input }, input.status)
 
             return { previousActive, previousArchive }
         },
@@ -154,9 +145,12 @@ export function useDeleteMyPostMutation() {
             ])
             const previousActive = queryClient.getQueryData<PostDto[]>(activeKey)
             const previousArchive = queryClient.getQueryData<PostDto[]>(archiveKey)
-            const removePost = (posts?: PostDto[]) => posts?.filter((post) => post.id !== postId)
-            queryClient.setQueryData<PostDto[]>(activeKey, (posts) => removePost(posts) ?? [])
-            queryClient.setQueryData<PostDto[]>(archiveKey, (posts) => removePost(posts) ?? [])
+            queryClient.setQueryData<PostDto[]>(activeKey, (posts) =>
+                removeEntityById(posts, postId)
+            )
+            queryClient.setQueryData<PostDto[]>(archiveKey, (posts) =>
+                removeEntityById(posts, postId)
+            )
             return { previousActive, previousArchive }
         },
         onError: (_error, _postId, context) => {
@@ -178,7 +172,7 @@ export function usePromoteMyPostMutation() {
     return useMutation({
         mutationFn: (postId: string) => postsApi.promoteMyPost(postId),
         onSuccess: () => {
-            void invalidatePostLists(queryClient)
+            void invalidatePostCollections(queryClient)
         },
     })
 }
@@ -189,7 +183,7 @@ export function useStopPromotingMyPostMutation() {
     return useMutation({
         mutationFn: (postId: string) => postsApi.stopPromotingMyPost(postId),
         onSuccess: () => {
-            void invalidatePostLists(queryClient)
+            void invalidatePostCollections(queryClient)
         },
     })
 }
@@ -204,16 +198,6 @@ export function useUploadMyPostAttachmentMutation() {
             void invalidateMany(queryClient, [queryKeys.myPosts(), queryKeys.authors()])
         },
     })
-}
-
-function invalidatePostLists(queryClient: ReturnType<typeof useQueryClient>) {
-    return invalidateMany(queryClient, [
-        queryKeys.myPosts(),
-        queryKeys.myPosts("archived"),
-        queryKeys.exploreFeedPostsRoot,
-        queryKeys.myFeedPosts,
-        queryKeys.authors(),
-    ])
 }
 
 export function useDownloadMyPostAttachmentMutation() {

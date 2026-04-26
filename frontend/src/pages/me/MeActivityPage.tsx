@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
 import { PageSection, PageTitle } from "@/components/ui/page"
-import { flattenActivityPages, useMyActivityQuery } from "@/queries/activity"
+import { useMyActivityQuery } from "@/queries/activity"
 import { useAuthStore } from "@/stores/auth-store"
 
 export function MeActivityPage() {
     const token = useAuthStore((state) => state.token)
     const activityQuery = useMyActivityQuery(Boolean(token))
-    const activities = flattenActivityPages(activityQuery.data)
+    const activities = activityQuery.items
 
     return (
         <section className="grid gap-6">
@@ -47,14 +47,14 @@ export function MeActivityPage() {
                             {activities.map((activity) => (
                                 <ActivityItem activity={activity} key={activity.id} />
                             ))}
-                            {activityQuery.hasNextPage ? (
+                            {activityQuery.hasMore ? (
                                 <Button
                                     className="mx-auto mt-2 rounded-full"
-                                    disabled={activityQuery.isFetchingNextPage}
-                                    onClick={() => void activityQuery.fetchNextPage()}
+                                    disabled={activityQuery.isLoadingMore}
+                                    onClick={activityQuery.loadMore}
                                     variant="outline"
                                 >
-                                    {activityQuery.isFetchingNextPage ? "Loading..." : "Load more"}
+                                    {activityQuery.isLoadingMore ? "Loading..." : "Load more"}
                                 </Button>
                             ) : null}
                         </div>

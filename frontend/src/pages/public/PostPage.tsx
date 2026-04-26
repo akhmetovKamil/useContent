@@ -13,7 +13,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
 import { useAuthorProfileQuery } from "@/queries/authors"
 import {
-    flattenFeedPages,
     useAuthorPostQuery,
     useAuthorPostsQuery,
     useCreatePostCommentMutation,
@@ -36,7 +35,7 @@ export function PostPage() {
     const author = authorQuery.data
     const post = postQuery.data
     const feedPost = post && author ? toFeedPost(post, author.displayName, author.slug) : null
-    const relatedPosts = flattenFeedPages(relatedPostsQuery.data)
+    const relatedPosts = relatedPostsQuery.items
         .filter((item) => item.id !== postId)
         .slice(0, 3)
     const isLocked = postQuery.isError && isApiPermissionError(postQuery.error)
