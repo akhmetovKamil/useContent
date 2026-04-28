@@ -2,7 +2,11 @@ import { APIError } from "encore.dev/api";
 import { Contract, type JsonRpcProvider } from "ethers";
 import { platformSubscriptionManagerAbi } from "../../shared/abi/platform-subscription-manager.abi";
 import { subscriptionManagerAbi } from "../../shared/abi/subscription-manager.abi";
-import { PAYMENT_ASSET_CODE } from "../../shared/consts";
+import {
+  ACCESS_POLICY_NODE_TYPE,
+  PAYMENT_ASSET_CODE,
+  type NftStandard,
+} from "../../shared/consts";
 import type { AccessPolicy, AccessPolicyNode } from "../domain/access";
 import {
   erc1155ReadAbi,
@@ -260,7 +264,7 @@ function collectOnChainRequirements(node: AccessPolicyNode): {
     {
       chainId: number;
       contractAddress: string;
-      standard: "erc721" | "erc1155";
+      standard: NftStandard;
       tokenId?: string;
     }
   >;
@@ -274,13 +278,13 @@ function collectOnChainRequirements(node: AccessPolicyNode): {
     {
       chainId: number;
       contractAddress: string;
-      standard: "erc721" | "erc1155";
+      standard: NftStandard;
       tokenId?: string;
     }
   >();
 
   function visit(current: AccessPolicyNode) {
-    if (current.type === "token_balance") {
+    if (current.type === ACCESS_POLICY_NODE_TYPE.TOKEN_BALANCE) {
       const contractAddress = tryNormalizeAddress(current.contractAddress);
       if (!contractAddress) {
         return;
@@ -292,7 +296,7 @@ function collectOnChainRequirements(node: AccessPolicyNode): {
       return;
     }
 
-    if (current.type === "nft_ownership") {
+    if (current.type === ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP) {
       const contractAddress = tryNormalizeAddress(current.contractAddress);
       if (!contractAddress) {
         return;

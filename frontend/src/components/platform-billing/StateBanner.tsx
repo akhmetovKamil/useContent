@@ -1,3 +1,4 @@
+import { PLATFORM_BILLING_STATUS } from "@shared/consts"
 import type { AuthorPlatformBillingDto } from "@shared/types/content"
 import { AlertTriangle, Clock } from "lucide-react"
 
@@ -5,11 +6,11 @@ import { Card, CardContent } from "@/components/ui/card"
 import { formatBillingDate } from "@/utils/platform-billing"
 
 export function StateBanner({ billing }: { billing: AuthorPlatformBillingDto }) {
-    if (billing.status === "active") {
+    if (billing.status === PLATFORM_BILLING_STATUS.ACTIVE) {
         return null
     }
 
-    const isGrace = billing.status === "grace"
+    const isGrace = billing.status === PLATFORM_BILLING_STATUS.GRACE
     const Icon = isGrace ? Clock : AlertTriangle
     const title = isGrace ? "Grace period is active" : "Free limits are active"
     const description = isGrace

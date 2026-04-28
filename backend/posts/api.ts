@@ -1,4 +1,5 @@
 import { api } from "encore.dev/api";
+import { CONTENT_STATUS } from "../../shared/consts";
 import {
   getOptionalViewerWallet,
   getRequiredWallet,
@@ -84,7 +85,7 @@ export const listMyPosts = api(
   async ({ status }: ListMyPostsRequest): Promise<ListPostsResponseDto> => {
     const walletAddress = getRequiredWallet();
     const posts =
-      status === "archived"
+      status === CONTENT_STATUS.ARCHIVED
         ? await service.listMyArchivedPosts(walletAddress)
         : await service.listMyPosts(walletAddress);
     return {

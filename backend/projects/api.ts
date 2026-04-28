@@ -1,4 +1,5 @@
 import { api } from "encore.dev/api";
+import { CONTENT_STATUS } from "../../shared/consts";
 import {
   getOptionalViewerWallet,
   getRequiredWallet,
@@ -53,7 +54,7 @@ export const listMyProjects = api(
   }: ListMyProjectsRequest): Promise<ListProjectsResponseDto> => {
     const walletAddress = getRequiredWallet();
     const projects =
-      status === "archived"
+      status === CONTENT_STATUS.ARCHIVED
         ? await service.listMyArchivedProjects(walletAddress)
         : await service.listMyProjects(walletAddress);
     return {

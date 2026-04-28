@@ -1,3 +1,4 @@
+import { CONTENT_VISIBILITY } from "@shared/consts"
 import type { ProjectNodeDto } from "@shared/types/content"
 import { PackageOpen } from "lucide-react"
 import { useRef, useState } from "react"
@@ -75,7 +76,7 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
         await createFolderMutation.mutateAsync({
             name,
             parentId: currentFolderId,
-            visibility: "published",
+            visibility: CONTENT_VISIBILITY.PUBLISHED,
         })
         setFolderName("")
         setFolderModalOpen(false)
@@ -94,7 +95,12 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
     async function toggleVisibility(node: ProjectNodeDto) {
         await updateNodeMutation.mutateAsync({
             nodeId: node.id,
-            input: { visibility: node.visibility === "published" ? "author" : "published" },
+            input: {
+                visibility:
+                    node.visibility === CONTENT_VISIBILITY.PUBLISHED
+                        ? CONTENT_VISIBILITY.AUTHOR
+                        : CONTENT_VISIBILITY.PUBLISHED,
+            },
         })
     }
 
@@ -156,7 +162,7 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                     const folder = await projectsApi.createMyProjectFolder(projectId, {
                         name: segment,
                         parentId,
-                        visibility: "published",
+                        visibility: CONTENT_VISIBILITY.PUBLISHED,
                     })
                     folderIds.set(pathKey, folder.id)
                 }

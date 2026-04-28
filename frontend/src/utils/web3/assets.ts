@@ -1,10 +1,16 @@
-import { ZERO_ADDRESS } from "@shared/consts"
-import { buildExplorerAddressUrl, buildOpenSeaAssetUrl } from "@shared/utils"
+import { PAYMENT_ASSET, ZERO_ADDRESS } from "@shared/consts"
+import {
+    buildExplorerAddressUrl,
+    buildOpenSeaAssetUrl,
+    isNativeTokenAddress,
+    isSameAddressLike,
+    normalizeAddressLike,
+} from "@shared/utils"
 import { formatUnits } from "viem"
 
+import type { TokenPreset } from "@/types/web3"
 import { supportedChainOptions } from "@/utils/config/chains"
 import { getTokenPresets } from "@/utils/config/tokens"
-import type { TokenPreset } from "@/types/web3"
 
 export interface TokenAssetMetadata {
     address: string
@@ -28,14 +34,16 @@ export function resolveTokenAssetMetadata({
     decimals?: number
     tokenAddress?: string
 }): TokenAssetMetadata {
-    const normalizedAddress = tokenAddress?.toLowerCase() ?? ZERO_ADDRESS
-    const isNative = normalizedAddress === ZERO_ADDRESS
+    const normalizedAddress = tokenAddress ? normalizeAddressLike(tokenAddress) : undefined
+    const isNative = isNativeTokenAddress(normalizedAddress)
     const chain = supportedChainOptions.find((option) => option.id === chainId)
     const preset = getTokenPresets(chainId).find((token) =>
-        isNative ? token.kind === "native" : token.address?.toLowerCase() === normalizedAddress
+        isNative
+            ? token.kind === PAYMENT_ASSET.NATIVE
+            : isSameAddressLike(token.address, normalizedAddress)
     )
     return {
-        address: isNative ? ZERO_ADDRESS : (tokenAddress ?? ZERO_ADDRESS),
+        address: isNative ? ZERO_ADDRESS : (preset?.address ?? normalizedAddress ?? ZERO_ADDRESS),
         chainId,
         coingeckoId: preset?.coingeckoId,
         decimals: decimals ?? preset?.decimals ?? 18,
@@ -49,11 +57,11 @@ export function resolveTokenAssetMetadata({
 }
 
 export function findTokenPreset(chainId: number, tokenAddress: string): TokenPreset | undefined {
-    const normalizedAddress = tokenAddress.toLowerCase()
+    const normalizedAddress = normalizeAddressLike(tokenAddress)
     return getTokenPresets(chainId).find((token) =>
-        normalizedAddress === ZERO_ADDRESS
-            ? token.kind === "native"
-            : token.address?.toLowerCase() === normalizedAddress
+        isNativeTokenAddress(normalizedAddress)
+            ? token.kind === PAYMENT_ASSET.NATIVE
+            : isSameAddressLike(token.address, normalizedAddress)
     )
 }
 

@@ -1,9 +1,10 @@
 import type { ObjectId } from "mongodb";
+import type { UserRole, UserWalletKind } from "../../shared/consts";
 import type { AccessPolicy } from "../domain/access";
 
 export interface UserWalletDoc {
   address: string;
-  kind: "primary" | "secondary";
+  kind: UserWalletKind;
   addedAt: Date;
 }
 
@@ -15,7 +16,7 @@ export interface UserDoc {
   avatarFileId: ObjectId | null;
   primaryWallet: string;
   wallets: UserWalletDoc[];
-  role: "user" | "admin";
+  role: UserRole;
   createdAt: Date;
   updatedAt: Date;
 }

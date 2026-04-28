@@ -1,10 +1,11 @@
+import { SUBSCRIPTION_ENTITLEMENT_STATUS } from "@shared/consts"
 import { Link } from "react-router-dom"
 
 import { ActionCard } from "@/components/ui/action-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { StatusPill } from "@/components/ui/status-pill"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
+import { StatusPill } from "@/components/ui/status-pill"
 import { useMyReaderSubscriptionsQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 import { formatDisplayDate } from "@/utils/date"
@@ -71,7 +72,8 @@ export function MeSubscriptionsPage() {
                                         <StatusPill
                                             label={subscription.status}
                                             variant={
-                                                subscription.status === "active"
+                                                subscription.status ===
+                                                SUBSCRIPTION_ENTITLEMENT_STATUS.ACTIVE
                                                     ? "success"
                                                     : "warning"
                                             }
@@ -79,12 +81,22 @@ export function MeSubscriptionsPage() {
                                         <span className="text-sm text-[var(--muted)]">
                                             until {formatDisplayDate(subscription.validUntil)}
                                         </span>
-                                        <Button asChild className="rounded-full" size="sm" variant="outline">
+                                        <Button
+                                            asChild
+                                            className="rounded-full"
+                                            size="sm"
+                                            variant="outline"
+                                        >
                                             <Link to={`/me/feed?author=${subscription.authorSlug}`}>
                                                 Feed
                                             </Link>
                                         </Button>
-                                        <Button asChild className="rounded-full" size="sm" variant="outline">
+                                        <Button
+                                            asChild
+                                            className="rounded-full"
+                                            size="sm"
+                                            variant="outline"
+                                        >
                                             <Link to={`/authors/${subscription.authorSlug}`}>
                                                 Author
                                             </Link>

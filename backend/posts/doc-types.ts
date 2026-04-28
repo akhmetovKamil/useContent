@@ -1,10 +1,12 @@
 import type { ObjectId } from "mongodb";
-import type { AccessPolicy, PolicyMode } from "../domain/access";
 import type {
   ContentStatus,
   PostAttachmentKind,
+  PostPromotionStatus,
   PostReportReason,
-} from "../../shared/types/content";
+  PostReportStatus,
+} from "../../shared/consts";
+import type { AccessPolicy, PolicyMode } from "../domain/access";
 
 export interface PostDoc {
   _id: ObjectId;
@@ -19,7 +21,7 @@ export interface PostDoc {
   linkedProjectIds: ObjectId[];
   promoted?: boolean;
   promotedAt?: Date | null;
-  promotionStatus?: "active" | "paused" | "expired" | null;
+  promotionStatus?: PostPromotionStatus | null;
   publishedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -51,7 +53,7 @@ export interface PostReportDoc {
   reporterWallet: string;
   reason: PostReportReason;
   comment: string | null;
-  status: "open" | "reviewed" | "dismissed";
+  status: PostReportStatus;
   createdAt: Date;
   updatedAt: Date;
 }

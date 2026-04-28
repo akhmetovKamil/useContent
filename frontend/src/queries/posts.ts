@@ -1,7 +1,8 @@
+import { CONTENT_STATUS } from "@shared/consts"
 import type {
     CreatePostCommentInput,
-    CreatePostReportInput,
     CreatePostInput,
+    CreatePostReportInput,
     PostDto,
     UpdatePostInput,
 } from "@shared/types/content"
@@ -9,8 +10,8 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 
 import { authorsApi } from "@/api/AuthorsApi"
 import { postsApi } from "@/api/PostsApi"
-import { invalidateMany } from "@/queries/invalidate"
 import { withInfiniteItems } from "@/queries/infinite"
+import { invalidateMany } from "@/queries/invalidate"
 import {
     invalidatePostCollections,
     moveMyPostBetweenStatusLists,
@@ -98,7 +99,7 @@ export function useUpdateMyPostMutation() {
             }
 
             const activeKey = queryKeys.myPosts()
-            const archiveKey = queryKeys.myPosts("archived")
+            const archiveKey = queryKeys.myPosts(CONTENT_STATUS.ARCHIVED)
             await Promise.all([
                 queryClient.cancelQueries({ queryKey: activeKey }),
                 queryClient.cancelQueries({ queryKey: archiveKey }),
@@ -123,7 +124,10 @@ export function useUpdateMyPostMutation() {
                 return
             }
             queryClient.setQueryData(queryKeys.myPosts(), context.previousActive)
-            queryClient.setQueryData(queryKeys.myPosts("archived"), context.previousArchive)
+            queryClient.setQueryData(
+                queryKeys.myPosts(CONTENT_STATUS.ARCHIVED),
+                context.previousArchive
+            )
         },
         onSuccess: () => {
             void invalidateMany(queryClient, [queryKeys.myPosts(), queryKeys.authors()])
@@ -138,7 +142,7 @@ export function useDeleteMyPostMutation() {
         mutationFn: (postId: string) => postsApi.deleteMyPost(postId),
         onMutate: async (postId) => {
             const activeKey = queryKeys.myPosts()
-            const archiveKey = queryKeys.myPosts("archived")
+            const archiveKey = queryKeys.myPosts(CONTENT_STATUS.ARCHIVED)
             await Promise.all([
                 queryClient.cancelQueries({ queryKey: activeKey }),
                 queryClient.cancelQueries({ queryKey: archiveKey }),
@@ -158,7 +162,10 @@ export function useDeleteMyPostMutation() {
                 return
             }
             queryClient.setQueryData(queryKeys.myPosts(), context.previousActive)
-            queryClient.setQueryData(queryKeys.myPosts("archived"), context.previousArchive)
+            queryClient.setQueryData(
+                queryKeys.myPosts(CONTENT_STATUS.ARCHIVED),
+                context.previousArchive
+            )
         },
         onSettled: () => {
             void invalidateMany(queryClient, [queryKeys.myPosts(), queryKeys.authors()])

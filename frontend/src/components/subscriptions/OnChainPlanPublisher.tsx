@@ -1,6 +1,7 @@
 import { subscriptionManagerAbi } from "@shared/abi/subscription-manager.abi"
-import { ZERO_ADDRESS } from "@shared/consts"
+import { PAYMENT_ASSET_CODE, type PaymentAsset } from "@shared/consts"
 import type { UpsertSubscriptionPlanInput } from "@shared/types/content"
+import { isSameAddressLike, isZeroAddress, normalizeAddressLike } from "@shared/utils"
 import { useState } from "react"
 import { useAccount, usePublicClient, useWriteContract } from "wagmi"
 
@@ -24,7 +25,7 @@ interface OnChainPlanPublisherProps {
     onPublished: (
         input: Pick<UpsertSubscriptionPlanInput, "planKey" | "registrationTxHash">
     ) => void
-    paymentAsset: "erc20" | "native"
+    paymentAsset: PaymentAsset
     price: string
     tokenAddress: string
 }
@@ -50,7 +51,7 @@ export function OnChainPlanPublisher({
     const [error, setError] = useState<string | null>(null)
     const authorId = authorQuery.data?.id
     const planKey = authorId ? buildPlanKey({ authorId, chainId, code }) : null
-    const paymentAssetCode = paymentAsset === "native" ? 1 : 0
+    const paymentAssetCode = PAYMENT_ASSET_CODE[paymentAsset]
     const canPublish = Boolean(
         address && publicClient && authorId && contractAddress && tokenAddress
     )
@@ -66,9 +67,9 @@ export function OnChainPlanPublisher({
 
         try {
             const onChainPlan = await readPlan(contractAddress, currentPlanKey)
-            const onChainAuthor = String(onChainPlan[0]).toLowerCase()
-            const planExists = onChainAuthor !== ZERO_ADDRESS
-            if (planExists && onChainAuthor !== address?.toLowerCase()) {
+            const onChainAuthor = normalizeAddressLike(String(onChainPlan[0]))
+            const planExists = !isZeroAddress(onChainAuthor)
+            if (planExists && !isSameAddressLike(onChainAuthor, address)) {
                 throw new Error("This on-chain plan key is already owned by another wallet.")
             }
             const shouldUpdate = Boolean(existingPlanKey || planExists)

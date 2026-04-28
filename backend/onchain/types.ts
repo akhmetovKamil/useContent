@@ -1,9 +1,11 @@
+import type { NftStandard, PaymentAsset } from "../../shared/consts";
+
 export interface VerifyPlanRegistrationInput {
   authorWallet: string;
   chainId: number;
   contractAddress: string;
   planKey: string;
-  paymentAsset: "erc20" | "native";
+  paymentAsset: PaymentAsset;
   tokenAddress: string;
   price: string;
   billingPeriodDays: number;
@@ -16,7 +18,7 @@ export interface VerifySubscriptionPaymentInput {
   chainId: number;
   contractAddress: string;
   planKey: string;
-  paymentAsset: "erc20" | "native";
+  paymentAsset: PaymentAsset;
   tokenAddress: string;
   price: string;
   txHash: string;
@@ -50,7 +52,7 @@ export interface OnChainAccessGrants {
   nftOwnerships: Array<{
     chainId: number;
     contractAddress: string;
-    standard: "erc721" | "erc1155";
+    standard: NftStandard;
     tokenId?: string;
     balance?: string;
   }>;

@@ -1,3 +1,4 @@
+import { CONTENT_STATUS } from "@shared/consts"
 import type { PostDto } from "@shared/types/content"
 import type { QueryClient } from "@tanstack/react-query"
 
@@ -25,7 +26,7 @@ export function prependUniqueEntity<TItem extends EntityWithId>(
 export function invalidatePostCollections(queryClient: QueryClient) {
     return invalidateMany(queryClient, [
         queryKeys.myPosts(),
-        queryKeys.myPosts("archived"),
+        queryKeys.myPosts(CONTENT_STATUS.ARCHIVED),
         queryKeys.exploreFeedPostsRoot,
         queryKeys.myFeedPosts,
         queryKeys.authors(),
@@ -38,13 +39,13 @@ export function moveMyPostBetweenStatusLists(
     nextStatus: PostDto["status"]
 ) {
     const activeKey = queryKeys.myPosts()
-    const archiveKey = queryKeys.myPosts("archived")
+    const archiveKey = queryKeys.myPosts(CONTENT_STATUS.ARCHIVED)
     const nextPost = { ...post, status: nextStatus }
 
     queryClient.setQueryData<PostDto[]>(activeKey, (posts) => removeEntityById(posts, post.id))
     queryClient.setQueryData<PostDto[]>(archiveKey, (posts) => removeEntityById(posts, post.id))
 
-    if (nextStatus === "archived") {
+    if (nextStatus === CONTENT_STATUS.ARCHIVED) {
         queryClient.setQueryData<PostDto[]>(archiveKey, (posts) =>
             prependUniqueEntity(posts, nextPost)
         )

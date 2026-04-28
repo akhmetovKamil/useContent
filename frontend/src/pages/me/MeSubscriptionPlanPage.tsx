@@ -1,16 +1,16 @@
+import { PAYMENT_ASSET, ZERO_ADDRESS } from "@shared/consts"
 import type { AccessPolicyPresetDto, SubscriptionPlanDto } from "@shared/types/content"
-import { ZERO_ADDRESS } from "@shared/consts"
 import { Plus } from "lucide-react"
 import { useEffect, useState } from "react"
 import { usePublicClient } from "wagmi"
 import { formatUnits, isAddress, type Address } from "viem"
 
-import { AccessPolicyEditor } from "@/components/access/AccessPolicyEditor"
 import {
     AccessCenterFlow,
     PolicyListSection,
     SubscriptionPlanListSection,
 } from "@/components/access-center/AccessCenterSections"
+import { AccessPolicyEditor } from "@/components/access/AccessPolicyEditor"
 import { OnChainPlanPublisher } from "@/components/subscriptions/OnChainPlanPublisher"
 import { Button } from "@/components/ui/button"
 import {
@@ -63,7 +63,7 @@ import {
 import { erc20Abi } from "@/utils/web3/erc20"
 
 const defaultToken = getTokenPresets(defaultSubscriptionChain.id).find(
-    (preset) => preset.kind === "erc20"
+    (preset) => preset.kind === PAYMENT_ASSET.ERC20
 )
 
 export function MeSubscriptionPlanPage() {
@@ -113,8 +113,9 @@ export function MeSubscriptionPlanPage() {
     const managerDeploymentQuery = useSubscriptionManagerDeploymentQuery(selectedChainId)
     const tokenPresets = getTokenPresets(selectedChainId)
     const selectedToken = tokenPresets.find((preset) => getTokenId(preset) === selectedTokenId)
-    const paymentAsset = selectedToken?.kind === "native" ? "native" : "erc20"
-    const planTokenAddress = paymentAsset === "native" ? ZERO_ADDRESS : tokenAddress
+    const paymentAsset =
+        selectedToken?.kind === PAYMENT_ASSET.NATIVE ? PAYMENT_ASSET.NATIVE : PAYMENT_ASSET.ERC20
+    const planTokenAddress = paymentAsset === PAYMENT_ASSET.NATIVE ? ZERO_ADDRESS : tokenAddress
     const tokenDecimals =
         selectedToken?.kind === "custom"
             ? Number(customTokenDecimals)
@@ -132,7 +133,7 @@ export function MeSubscriptionPlanPage() {
                 plan.chainId,
                 plan.tokenAddress,
                 plan.price,
-                plan.paymentAsset ?? "erc20"
+                plan.paymentAsset ?? PAYMENT_ASSET.ERC20
             ),
             title: plan.title,
         })) ?? []
@@ -207,7 +208,7 @@ export function MeSubscriptionPlanPage() {
 
     function resetPlanForm() {
         const nextToken = getTokenPresets(defaultSubscriptionChain.id).find(
-            (preset) => preset.kind === "erc20"
+            (preset) => preset.kind === PAYMENT_ASSET.ERC20
         )
         setCode("main")
         setTitle("Main subscription")
@@ -225,13 +226,15 @@ export function MeSubscriptionPlanPage() {
         const tokenPreset = getTokenPresetByAddress(
             plan.chainId,
             plan.tokenAddress,
-            plan.paymentAsset ?? "erc20"
+            plan.paymentAsset ?? PAYMENT_ASSET.ERC20
         )
         const decimals = tokenPreset?.decimals ?? 18
         setCode(plan.code)
         setTitle(plan.title)
         setChainId(String(plan.chainId))
-        setTokenAddress(plan.paymentAsset === "native" ? ZERO_ADDRESS : plan.tokenAddress)
+        setTokenAddress(
+            plan.paymentAsset === PAYMENT_ASSET.NATIVE ? ZERO_ADDRESS : plan.tokenAddress
+        )
         setSelectedTokenId(tokenPreset ? getTokenId(tokenPreset) : "custom")
         setCustomTokenDecimals(String(decimals))
         setAmount(formatUnits(BigInt(plan.price), decimals))
@@ -491,7 +494,7 @@ export function MeSubscriptionPlanPage() {
                             onChange={(nextChainId) => {
                                 setChainId(String(nextChainId))
                                 const nextToken = getTokenPresets(nextChainId).find(
-                                    (preset) => preset.kind === "erc20"
+                                    (preset) => preset.kind === PAYMENT_ASSET.ERC20
                                 )
                                 setSelectedTokenId(nextToken ? getTokenId(nextToken) : "custom")
                                 setTokenAddress(nextToken?.address ?? "")
@@ -520,7 +523,9 @@ export function MeSubscriptionPlanPage() {
                             onTokenChange={(nextTokenId, preset) => {
                                 setSelectedTokenId(nextTokenId)
                                 setTokenAddress(
-                                    preset.kind === "native" ? ZERO_ADDRESS : (preset.address ?? "")
+                                    preset.kind === PAYMENT_ASSET.NATIVE
+                                        ? ZERO_ADDRESS
+                                        : (preset.address ?? "")
                                 )
                                 setCustomTokenDecimals(String(preset.decimals))
                                 setCustomTokenName("")

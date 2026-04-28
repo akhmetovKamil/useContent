@@ -1,3 +1,4 @@
+import { CONTENT_STATUS } from "@shared/consts"
 import type { PostDto } from "@shared/types/content"
 import { useState } from "react"
 import { Link } from "react-router-dom"
@@ -27,9 +28,9 @@ import type { AuthorPostsTab, AuthorPostsTabOption } from "@/types/navigation"
 import { cn } from "@/utils/cn"
 
 const postTabs: AuthorPostsTabOption[] = [
-    { id: "published", label: "Published" },
+    { id: CONTENT_STATUS.PUBLISHED, label: "Published" },
     { id: "drafts", label: "Drafts" },
-    { id: "archived", label: "Archived" },
+    { id: CONTENT_STATUS.ARCHIVED, label: "Archived" },
     { id: "promoted", label: "Promoted" },
 ]
 
@@ -46,11 +47,14 @@ export function MePostsPage() {
     const stopPromotionMutation = useStopPromotingMyPostMutation()
     const uploadAttachmentMutation = useUploadMyPostAttachmentMutation()
     const [showEditor, setShowEditor] = useState(false)
-    const [activeTab, setActiveTab] = useState<AuthorPostsTab>("published")
+    const [activeTab, setActiveTab] = useState<AuthorPostsTab>(CONTENT_STATUS.PUBLISHED)
     const [editingPost, setEditingPost] = useState<PostDto | null>(null)
     const [editContent, setEditContent] = useState("")
     const [editTitle, setEditTitle] = useState("")
-    const archivedPostsQuery = useMyPostsQuery(Boolean(token) && activeTab === "archived", "archived")
+    const archivedPostsQuery = useMyPostsQuery(
+        Boolean(token) && activeTab === CONTENT_STATUS.ARCHIVED,
+        CONTENT_STATUS.ARCHIVED
+    )
     const authorSlug = authorQuery.data?.slug ?? ""
     const authorDisplayName = authorQuery.data?.displayName ?? "Author"
     const activePosts = authorSlug
@@ -71,12 +75,15 @@ export function MePostsPage() {
               hasAccess: true,
           }))
         : archivedPostsQuery.data
-    const publishedPosts = activePosts?.filter((post) => post.status === "published") ?? []
-    const draftPosts = activePosts?.filter((post) => post.status === "draft") ?? []
+    const publishedPosts =
+        activePosts?.filter((post) => post.status === CONTENT_STATUS.PUBLISHED) ?? []
+    const draftPosts = activePosts?.filter((post) => post.status === CONTENT_STATUS.DRAFT) ?? []
     const promotedPosts =
-        activePosts?.filter((post) => post.promotion?.active && post.status === "published") ?? []
+        activePosts?.filter(
+            (post) => post.promotion?.active && post.status === CONTENT_STATUS.PUBLISHED
+        ) ?? []
     const visiblePosts =
-        activeTab === "published"
+        activeTab === CONTENT_STATUS.PUBLISHED
             ? publishedPosts
             : activeTab === "drafts"
               ? draftPosts
@@ -84,11 +91,11 @@ export function MePostsPage() {
                 ? promotedPosts
                 : archivedPosts
     const isActiveListLoading =
-        activeTab === "archived" ? archivedPostsQuery.isLoading : postsQuery.isLoading
+        activeTab === CONTENT_STATUS.ARCHIVED ? archivedPostsQuery.isLoading : postsQuery.isLoading
     const activeListError =
-        activeTab === "archived" ? archivedPostsQuery.error : postsQuery.error
+        activeTab === CONTENT_STATUS.ARCHIVED ? archivedPostsQuery.error : postsQuery.error
     const isActiveListError =
-        activeTab === "archived" ? archivedPostsQuery.isError : postsQuery.isError
+        activeTab === CONTENT_STATUS.ARCHIVED ? archivedPostsQuery.isError : postsQuery.isError
 
     function updatePostStatus(post: PostDto, status: PostDto["status"]) {
         void updatePostMutation.mutateAsync({
@@ -138,20 +145,20 @@ export function MePostsPage() {
                         <div>
                             <CardTitle>Publishing workspace</CardTitle>
                             <p className="mt-2 text-sm text-[var(--muted)]">
-                                Manage drafts, published posts, archived content and promoted updates
-                                from one place.
+                                Manage drafts, published posts, archived content and promoted
+                                updates from one place.
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {postTabs.map((tab) => {
                                 const count =
-                                    tab.id === "published"
+                                    tab.id === CONTENT_STATUS.PUBLISHED
                                         ? publishedPosts.length
                                         : tab.id === "drafts"
                                           ? draftPosts.length
                                           : tab.id === "promoted"
                                             ? promotedPosts.length
-                                            : archivedPosts?.length ?? 0
+                                            : (archivedPosts?.length ?? 0)
 
                                 return (
                                     <button
@@ -159,7 +166,7 @@ export function MePostsPage() {
                                             "rounded-full border border-[var(--line)] px-4 py-2 text-sm font-medium transition",
                                             activeTab === tab.id
                                                 ? "bg-[var(--foreground)] text-[var(--background)]"
-                                                : "bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--foreground)]",
+                                                : "bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--foreground)]"
                                         )}
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}
@@ -182,7 +189,7 @@ export function MePostsPage() {
                         <PostFeed
                             emptyLabel={getEmptyLabel(activeTab)}
                             isAuthorView
-                            onArchive={(post) => updatePostStatus(post, "archived")}
+                            onArchive={(post) => updatePostStatus(post, CONTENT_STATUS.ARCHIVED)}
                             onDelete={(post) => void deletePostMutation.mutateAsync(post.id)}
                             onEdit={(post) => {
                                 setEditingPost(post)
@@ -190,12 +197,12 @@ export function MePostsPage() {
                                 setEditContent(post.content)
                             }}
                             onPromote={(post) => void promotePostMutation.mutateAsync(post.id)}
-                            onPublish={(post) => updatePostStatus(post, "published")}
-                            onRestoreDraft={(post) => updatePostStatus(post, "draft")}
+                            onPublish={(post) => updatePostStatus(post, CONTENT_STATUS.PUBLISHED)}
+                            onRestoreDraft={(post) => updatePostStatus(post, CONTENT_STATUS.DRAFT)}
                             onStopPromotion={(post) =>
                                 void stopPromotionMutation.mutateAsync(post.id)
                             }
-                            onUnarchive={(post) => updatePostStatus(post, "published")}
+                            onUnarchive={(post) => updatePostStatus(post, CONTENT_STATUS.PUBLISHED)}
                             posts={visiblePosts}
                         />
                     )}
@@ -263,7 +270,7 @@ function getEmptyLabel(tab: AuthorPostsTab) {
     if (tab === "drafts") {
         return "No drafts yet."
     }
-    if (tab === "archived") {
+    if (tab === CONTENT_STATUS.ARCHIVED) {
         return "Archive is empty."
     }
     if (tab === "promoted") {

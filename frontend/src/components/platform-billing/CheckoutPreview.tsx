@@ -1,6 +1,7 @@
 import { platformSubscriptionManagerAbi } from "@shared/abi/platform-subscription-manager.abi"
-import { shortenWalletAddress } from "@shared/utils"
+import { PAYMENT_ASSET } from "@shared/consts"
 import type { PlatformPlanDto } from "@shared/types/content"
+import { isSameAddressLike, shortenWalletAddress } from "@shared/utils"
 import { CreditCard } from "lucide-react"
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
@@ -27,9 +28,9 @@ import { queryKeys } from "@/queries/queryKeys"
 import { supportedChainOptions } from "@/utils/config/chains"
 import { getTokenPresets } from "@/utils/config/tokens"
 import { formatFileSize, formatUsd } from "@/utils/format"
+import { GIB } from "@/utils/platform-billing"
 import { erc20Abi } from "@/utils/web3/erc20"
 import { toAddress } from "@/utils/web3/subscriptions"
-import { GIB } from "@/utils/platform-billing"
 
 export function CheckoutPreview({
     chainId,
@@ -63,10 +64,10 @@ export function CheckoutPreview({
         (
             preset
         ): preset is ReturnType<typeof getTokenPresets>[number] & { address: `0x${string}` } =>
-            preset.kind === "erc20" && Boolean(preset.address)
+            preset.kind === PAYMENT_ASSET.ERC20 && Boolean(preset.address)
     )
-    const selectedToken = tokenOptions.find(
-        (token) => token.address.toLowerCase() === tokenAddress.toLowerCase()
+    const selectedToken = tokenOptions.find((token) =>
+        isSameAddressLike(token.address, tokenAddress)
     )
     const disabled =
         !address ||

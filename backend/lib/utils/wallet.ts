@@ -1,7 +1,11 @@
 import { APIError } from "encore.dev/api";
+import {
+  normalizeAddressLike,
+  shortenWalletAddress,
+} from "../../../shared/utils";
 
 export function normalizeWallet(walletAddress: string): string {
-  const value = walletAddress.trim().toLowerCase();
+  const value = normalizeAddressLike(walletAddress);
   if (!value) {
     throw APIError.invalidArgument("wallet address is required");
   }
@@ -9,9 +13,5 @@ export function normalizeWallet(walletAddress: string): string {
 }
 
 export function shortenWallet(walletAddress: string): string {
-  if (walletAddress.length <= 10) {
-    return walletAddress;
-  }
-
-  return `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+  return shortenWalletAddress(walletAddress);
 }

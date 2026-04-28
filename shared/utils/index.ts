@@ -7,7 +7,10 @@ export {
   buildOpenSeaAssetUrl,
   getEvmChainMetadata,
   isNativeTokenAddress,
+  isSameAddressLike,
   isZeroAddress,
   normalizeAddressLike,
+  normalizeHexString,
+  normalizeOptionalAddressLike,
   shortenWalletAddress,
 } from "./web3";

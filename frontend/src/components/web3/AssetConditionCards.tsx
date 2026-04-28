@@ -1,4 +1,4 @@
-import { ZERO_ADDRESS } from "@shared/consts"
+import { isNativeTokenAddress } from "@shared/utils"
 import { ExternalLink, Gem, ImageIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -292,10 +292,7 @@ function getPriceFallback(isTestnet?: boolean, isError?: boolean) {
 }
 
 function getTokenSwapUrl(chainId: number, tokenAddress: string) {
-    const token =
-        tokenAddress.toLowerCase() === ZERO_ADDRESS
-            ? "ETH"
-            : tokenAddress
+    const token = isNativeTokenAddress(tokenAddress) ? "ETH" : tokenAddress
 
     return `https://app.uniswap.org/swap?chain=${chainId}&outputCurrency=${token}`
 }

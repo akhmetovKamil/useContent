@@ -1,11 +1,17 @@
 import type { ObjectId } from "mongodb";
+import type {
+  PaymentAsset,
+  PaymentIntentStatus,
+  SubscriptionEntitlementSource,
+  SubscriptionEntitlementStatus,
+} from "../../shared/consts";
 
 export interface SubscriptionPlanDoc {
   _id: ObjectId;
   authorId: ObjectId;
   code: string;
   title: string;
-  paymentAsset: "erc20" | "native";
+  paymentAsset: PaymentAsset;
   chainId: number;
   tokenAddress: string;
   price: string;
@@ -23,9 +29,9 @@ export interface SubscriptionEntitlementDoc {
   authorId: ObjectId;
   subscriberWallet: string;
   planId: ObjectId;
-  status: "active" | "expired";
+  status: SubscriptionEntitlementStatus;
   validUntil: Date;
-  source: "onchain";
+  source: SubscriptionEntitlementSource;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -37,13 +43,13 @@ export interface SubscriptionPaymentIntentDoc {
   planId: ObjectId;
   planCode: string;
   planKey: string;
-  paymentAsset: "erc20" | "native";
+  paymentAsset: PaymentAsset;
   chainId: number;
   tokenAddress: string;
   contractAddress: string;
   price: string;
   billingPeriodDays: number;
-  status: "pending" | "submitted" | "confirmed" | "expired" | "cancelled";
+  status: PaymentIntentStatus;
   txHash: string | null;
   entitlementId: ObjectId | null;
   paidUntil: Date | null;

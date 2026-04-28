@@ -1,4 +1,13 @@
-import { ZERO_ADDRESS } from "@shared/consts"
+import {
+    ACCESS_COMPOSER,
+    ACCESS_POLICY_NODE_TYPE,
+    NFT_STANDARD,
+    POLICY_MODE,
+    ZERO_ADDRESS,
+    type AccessComposer,
+    type AccessPolicyNodeType,
+    type NftStandard,
+} from "@shared/consts"
 import type {
     AccessPolicy,
     NftOwnershipPolicyNode,
@@ -14,10 +23,15 @@ import type {
     AccessPolicyInputSubscriptionNode,
     AccessPolicyInputTokenBalanceNode,
 } from "@shared/types/content"
+import { normalizeAddressLike } from "@shared/utils"
 import { v4 as uuidv4 } from "uuid"
 
-export type AccessRuleType = "subscription" | "token_balance" | "nft_ownership"
-export type AccessComposer = "public" | "single" | "and" | "or"
+export type { AccessComposer } from "@shared/consts"
+
+export type AccessRuleType = Extract<
+    AccessPolicyNodeType,
+    "subscription" | "token_balance" | "nft_ownership"
+>
 
 export interface AccessRuleForm {
     id: string
@@ -27,7 +41,7 @@ export interface AccessRuleForm {
     contractAddress: string
     minAmount: string
     decimals: string
-    standard: "erc721" | "erc1155"
+    standard: NftStandard
     tokenId: string
     minBalance: string
 }
@@ -44,7 +58,7 @@ interface BuildContentPolicyInputOptions {
 
 export function createDefaultPolicyBuilderState(): AccessPolicyBuilderState {
     return {
-        composer: "single",
+        composer: ACCESS_COMPOSER.SINGLE,
         rules: [createDefaultRule()],
     }
 }
@@ -52,13 +66,13 @@ export function createDefaultPolicyBuilderState(): AccessPolicyBuilderState {
 export function createDefaultRule(): AccessRuleForm {
     return {
         id: uuidv4(),
-        type: "subscription",
+        type: ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION,
         planCode: "main",
         chainId: "11155111",
         contractAddress: ZERO_ADDRESS,
         minAmount: "100",
         decimals: "18",
-        standard: "erc721",
+        standard: NFT_STANDARD.ERC721,
         tokenId: "",
         minBalance: "1",
     }
@@ -68,7 +82,7 @@ export function buildContentPolicyInput({ policyMode, builder }: BuildContentPol
     policyMode: PolicyMode
     policyInput?: AccessPolicyInput
 } {
-    if (policyMode !== "custom") {
+    if (policyMode !== POLICY_MODE.CUSTOM) {
         return { policyMode }
     }
 
@@ -79,8 +93,8 @@ export function buildContentPolicyInput({ policyMode, builder }: BuildContentPol
 }
 
 export function buildPolicyInputFromBuilder(builder: AccessPolicyBuilderState): AccessPolicyInput {
-    if (builder.composer === "public") {
-        return { root: { type: "public" } }
+    if (builder.composer === ACCESS_COMPOSER.PUBLIC) {
+        return { root: { type: ACCESS_POLICY_NODE_TYPE.PUBLIC } }
     }
 
     const rules = builder.rules.filter(Boolean)
@@ -90,7 +104,7 @@ export function buildPolicyInputFromBuilder(builder: AccessPolicyBuilderState): 
 
     const nodes = rules.map((rule) => buildNodeFromRule(rule))
 
-    if (builder.composer === "single") {
+    if (builder.composer === ACCESS_COMPOSER.SINGLE) {
         if (nodes.length !== 1) {
             throw new Error("Single mode supports exactly one rule")
         }
@@ -103,9 +117,9 @@ export function buildPolicyInputFromBuilder(builder: AccessPolicyBuilderState): 
     }
 
     const compositeNode: AccessPolicyInputAndNode | AccessPolicyInputOrNode =
-        builder.composer === "and"
-            ? { type: "and", children: nodes }
-            : { type: "or", children: nodes }
+        builder.composer === ACCESS_COMPOSER.AND
+            ? { type: ACCESS_POLICY_NODE_TYPE.AND, children: nodes }
+            : { type: ACCESS_POLICY_NODE_TYPE.OR, children: nodes }
 
     return { root: compositeNode }
 }
@@ -116,47 +130,47 @@ export function summarizePolicyInput(builder: AccessPolicyBuilderState) {
         return "No rules"
     }
 
-    if (builder.composer === "public") {
+    if (builder.composer === ACCESS_COMPOSER.PUBLIC) {
         return "Public"
     }
 
-    if (builder.composer === "single") {
+    if (builder.composer === ACCESS_COMPOSER.SINGLE) {
         return labels[0]
     }
 
-    return labels.join(builder.composer === "and" ? " AND " : " OR ")
+    return labels.join(builder.composer === ACCESS_COMPOSER.AND ? " AND " : " OR ")
 }
 
 export function parsePolicyToBuilder(policy: AccessPolicy): AccessPolicyBuilderState {
     const root = policy.root
 
-    if (root.type === "and" || root.type === "or") {
+    if (root.type === ACCESS_POLICY_NODE_TYPE.AND || root.type === ACCESS_POLICY_NODE_TYPE.OR) {
         return {
             composer: root.type,
             rules: root.children.map((child) => parseAnyNodeToRule(child)),
         }
     }
 
-    if (root.type === "public") {
+    if (root.type === ACCESS_POLICY_NODE_TYPE.PUBLIC) {
         return {
-            composer: "public",
+            composer: ACCESS_COMPOSER.PUBLIC,
             rules: [createDefaultRule()],
         }
     }
 
     return {
-        composer: "single",
+        composer: ACCESS_COMPOSER.SINGLE,
         rules: [parseAnyNodeToRule(root)],
     }
 }
 
 function buildNodeFromRule(rule: AccessRuleForm): AccessPolicyInputNode {
     switch (rule.type) {
-        case "subscription":
+        case ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION:
             return buildSubscriptionNode(rule)
-        case "token_balance":
+        case ACCESS_POLICY_NODE_TYPE.TOKEN_BALANCE:
             return buildTokenNode(rule)
-        case "nft_ownership":
+        case ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP:
             return buildNftNode(rule)
         default:
             throw new Error("Unsupported rule type")
@@ -167,14 +181,14 @@ function buildSubscriptionNode(rule: AccessRuleForm): AccessPolicyInputSubscript
     const planCode = rule.planCode.trim().toLowerCase() || "main"
 
     return {
-        type: "subscription",
+        type: ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION,
         planCode,
     }
 }
 
 function buildTokenNode(rule: AccessRuleForm): AccessPolicyInputTokenBalanceNode {
     return {
-        type: "token_balance",
+        type: ACCESS_POLICY_NODE_TYPE.TOKEN_BALANCE,
         chainId: parsePositiveInteger(rule.chainId, "Chain ID"),
         contractAddress: parseAddress(rule.contractAddress),
         minAmount: parsePositiveIntegerString(rule.minAmount, "Minimum amount"),
@@ -187,7 +201,7 @@ function buildNftNode(rule: AccessRuleForm): AccessPolicyInputNftOwnershipNode {
     const minBalance = rule.minBalance.trim()
 
     return {
-        type: "nft_ownership",
+        type: ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP,
         chainId: parsePositiveInteger(rule.chainId, "Chain ID"),
         contractAddress: parseAddress(rule.contractAddress),
         standard: rule.standard,
@@ -200,11 +214,11 @@ function buildNftNode(rule: AccessRuleForm): AccessPolicyInputNftOwnershipNode {
 
 function summarizeRule(rule: AccessRuleForm) {
     switch (rule.type) {
-        case "subscription":
+        case ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION:
             return `Subscription(${rule.planCode || "main"})`
-        case "token_balance":
+        case ACCESS_POLICY_NODE_TYPE.TOKEN_BALANCE:
             return `Token(${rule.minAmount || "0"})`
-        case "nft_ownership":
+        case ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP:
             return `NFT(${rule.standard}${rule.tokenId ? ` #${rule.tokenId}` : ""})`
         default:
             return "Rule"
@@ -218,13 +232,13 @@ function parseNodeToRule(
     >
 ): AccessRuleForm {
     switch (node.type) {
-        case "public":
+        case ACCESS_POLICY_NODE_TYPE.PUBLIC:
             return createDefaultRule()
-        case "subscription":
+        case ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION:
             return createSubscriptionRule()
-        case "token_balance":
+        case ACCESS_POLICY_NODE_TYPE.TOKEN_BALANCE:
             return createTokenRule(node)
-        case "nft_ownership":
+        case ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP:
             return createNftRule(node)
         default:
             return createDefaultRule()
@@ -232,7 +246,7 @@ function parseNodeToRule(
 }
 
 function parseAnyNodeToRule(node: AccessPolicy["root"]): AccessRuleForm {
-    if (node.type === "and" || node.type === "or") {
+    if (node.type === ACCESS_POLICY_NODE_TYPE.AND || node.type === ACCESS_POLICY_NODE_TYPE.OR) {
         return createDefaultRule()
     }
 
@@ -242,7 +256,7 @@ function parseAnyNodeToRule(node: AccessPolicy["root"]): AccessRuleForm {
 function createSubscriptionRule(): AccessRuleForm {
     return {
         ...createDefaultRule(),
-        type: "subscription",
+        type: ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION,
         planCode: "main",
     }
 }
@@ -250,7 +264,7 @@ function createSubscriptionRule(): AccessRuleForm {
 function createTokenRule(node: TokenBalancePolicyNode): AccessRuleForm {
     return {
         ...createDefaultRule(),
-        type: "token_balance",
+        type: ACCESS_POLICY_NODE_TYPE.TOKEN_BALANCE,
         chainId: String(node.chainId),
         contractAddress: node.contractAddress,
         minAmount: node.minAmount,
@@ -261,7 +275,7 @@ function createTokenRule(node: TokenBalancePolicyNode): AccessRuleForm {
 function createNftRule(node: NftOwnershipPolicyNode): AccessRuleForm {
     return {
         ...createDefaultRule(),
-        type: "nft_ownership",
+        type: ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP,
         chainId: String(node.chainId),
         contractAddress: node.contractAddress,
         standard: node.standard,
@@ -271,7 +285,7 @@ function createNftRule(node: NftOwnershipPolicyNode): AccessRuleForm {
 }
 
 function parseAddress(value: string) {
-    const trimmed = value.trim().toLowerCase()
+    const trimmed = normalizeAddressLike(value)
     if (!/^0x[a-f0-9]{40}$/.test(trimmed)) {
         throw new Error("Contract address must be a 42-char hex address")
     }

@@ -1,3 +1,4 @@
+import { CONTENT_STATUS, POLICY_MODE } from "@shared/consts"
 import type { PolicyMode } from "@shared/types/access"
 import type { ContentStatus, CreatePostInput } from "@shared/types/content"
 import { FolderKanban, ImagePlus, X } from "lucide-react"
@@ -50,15 +51,15 @@ export function PostComposer({
     const fileInputRef = useRef<HTMLInputElement | null>(null)
     const [title, setTitle] = useState("")
     const [content, setContent] = useState("")
-    const [status, setStatus] = useState<ContentStatus>("draft")
-    const [policyMode, setPolicyMode] = useState<PolicyMode>("inherited")
+    const [status, setStatus] = useState<ContentStatus>(CONTENT_STATUS.DRAFT)
+    const [policyMode, setPolicyMode] = useState<PolicyMode>(POLICY_MODE.INHERITED)
     const [accessPolicyId, setAccessPolicyId] = useState("")
     const [linkedProjectIds, setLinkedProjectIds] = useState<string[]>([])
     const [files, setFiles] = useState<File[]>([])
     const [isDragging, setIsDragging] = useState(false)
     const selectedProjects = useMemo(
         () => projectOptions.filter((project) => linkedProjectIds.includes(project.id)),
-        [linkedProjectIds, projectOptions],
+        [linkedProjectIds, projectOptions]
     )
     const mediaPreviews = useMemo(
         () =>
@@ -69,21 +70,21 @@ export function PostComposer({
                 isVideo: file.type.startsWith("video/"),
                 url: URL.createObjectURL(file),
             })),
-        [files],
+        [files]
     )
 
     useEffect(
         () => () => {
             mediaPreviews.forEach((preview) => URL.revokeObjectURL(preview.url))
         },
-        [mediaPreviews],
+        [mediaPreviews]
     )
 
     function addFiles(nextFiles: File[]) {
         setFiles((current) => {
             const existingKeys = new Set(current.map((file) => `${file.name}:${file.size}`))
             const unique = nextFiles.filter(
-                (file) => !existingKeys.has(`${file.name}:${file.size}`),
+                (file) => !existingKeys.has(`${file.name}:${file.size}`)
             )
             return [...current, ...unique]
         })
@@ -110,19 +111,20 @@ export function PostComposer({
                         event.preventDefault()
                         void onSubmit(
                             {
-                                accessPolicyId: policyMode === "custom" ? accessPolicyId : null,
+                                accessPolicyId:
+                                    policyMode === POLICY_MODE.CUSTOM ? accessPolicyId : null,
                                 content,
                                 linkedProjectIds,
                                 policyMode,
                                 status,
                                 title,
                             },
-                            files,
+                            files
                         ).then(() => {
                             setTitle("")
                             setContent("")
-                            setStatus("draft")
-                            setPolicyMode("inherited")
+                            setStatus(CONTENT_STATUS.DRAFT)
+                            setPolicyMode(POLICY_MODE.INHERITED)
                             setAccessPolicyId("")
                             setLinkedProjectIds([])
                             setFiles([])
@@ -152,7 +154,7 @@ export function PostComposer({
                         <div
                             className={cn(
                                 "grid cursor-pointer place-items-center rounded-2xl border border-dashed border-[var(--line)] bg-[var(--surface-strong)] p-6 text-center transition",
-                                isDragging ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "",
+                                isDragging ? "border-[var(--accent)] bg-[var(--accent-soft)]" : ""
                             )}
                             onClick={() => fileInputRef.current?.click()}
                             onDragLeave={() => setIsDragging(false)}
@@ -173,9 +175,7 @@ export function PostComposer({
                                 accept="image/*,video/*,audio/*"
                                 className="hidden"
                                 multiple
-                                onChange={(event) =>
-                                    addFiles(Array.from(event.target.files ?? []))
-                                }
+                                onChange={(event) => addFiles(Array.from(event.target.files ?? []))}
                                 ref={fileInputRef}
                                 type="file"
                             />
@@ -219,7 +219,7 @@ export function PostComposer({
                                                 aria-label={`Remove ${file.name}`}
                                                 onClick={() =>
                                                     setFiles((current) =>
-                                                        current.filter((item) => item !== file),
+                                                        current.filter((item) => item !== file)
                                                     )
                                                 }
                                                 size="icon"
@@ -247,8 +247,10 @@ export function PostComposer({
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="draft">Draft</SelectItem>
-                                        <SelectItem value="published">Published</SelectItem>
+                                        <SelectItem value={CONTENT_STATUS.DRAFT}>Draft</SelectItem>
+                                        <SelectItem value={CONTENT_STATUS.PUBLISHED}>
+                                            Published
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </Label>
@@ -263,15 +265,19 @@ export function PostComposer({
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="inherited">Default policy</SelectItem>
-                                        <SelectItem value="public">Public</SelectItem>
-                                        <SelectItem value="custom">Saved policy</SelectItem>
+                                        <SelectItem value={POLICY_MODE.INHERITED}>
+                                            Default policy
+                                        </SelectItem>
+                                        <SelectItem value={POLICY_MODE.PUBLIC}>Public</SelectItem>
+                                        <SelectItem value={POLICY_MODE.CUSTOM}>
+                                            Saved policy
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </Label>
                         </div>
 
-                        {policyMode === "custom" ? (
+                        {policyMode === POLICY_MODE.CUSTOM ? (
                             <Label>
                                 Saved access policy
                                 <Select onValueChange={setAccessPolicyId} value={accessPolicyId}>
@@ -304,16 +310,16 @@ export function PostComposer({
                                                     "flex items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3 text-left transition",
                                                     selected
                                                         ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                                                        : "hover:border-[var(--accent)]",
+                                                        : "hover:border-[var(--accent)]"
                                                 )}
                                                 key={project.id}
                                                 onClick={() =>
                                                     setLinkedProjectIds((current) =>
                                                         selected
                                                             ? current.filter(
-                                                                  (item) => item !== project.id,
+                                                                  (item) => item !== project.id
                                                               )
-                                                            : [...current, project.id],
+                                                            : [...current, project.id]
                                                     )
                                                 }
                                                 type="button"
@@ -353,7 +359,11 @@ export function PostComposer({
                         ) : null}
 
                         <Button className="w-fit rounded-full" disabled={isPending} type="submit">
-                            {isPending ? "Publishing..." : status === "draft" ? "Save draft" : "Publish post"}
+                            {isPending
+                                ? "Publishing..."
+                                : status === CONTENT_STATUS.DRAFT
+                                  ? "Save draft"
+                                  : "Publish post"}
                         </Button>
                     </aside>
                 </form>

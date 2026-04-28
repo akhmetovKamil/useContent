@@ -1,4 +1,4 @@
-import { ZERO_ADDRESS } from "@shared/consts"
+import { PAYMENT_ASSET, ZERO_ADDRESS } from "@shared/consts"
 
 import { getTokenPresets } from "@/utils/config/tokens"
 
@@ -10,7 +10,7 @@ export function bytesToGb(bytes: number) {
 
 export function getDefaultTokenAddress(chainId: number): `0x${string}` {
     return (
-        getTokenPresets(chainId).find((preset) => preset.kind === "erc20")?.address ??
+        getTokenPresets(chainId).find((preset) => preset.kind === PAYMENT_ASSET.ERC20)?.address ??
         ZERO_ADDRESS
     )
 }

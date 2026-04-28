@@ -1,5 +1,10 @@
 import { ObjectId, type Collection } from "mongodb";
-import { ensureIndexes, escapeRegExp, getCollection } from "../storage/repository-base";
+import { CONTENT_STATUS } from "../../shared/consts";
+import {
+  ensureIndexes,
+  escapeRegExp,
+  getCollection,
+} from "../storage/repository-base";
 import type {
   PostAttachmentDoc,
   PostCommentDoc,
@@ -27,7 +32,9 @@ export async function listPostsByAuthorId(
   const posts = await getPostsCollection();
   return posts
     .find(
-      status ? { authorId, status } : { authorId, status: { $ne: "archived" } },
+      status
+        ? { authorId, status }
+        : { authorId, status: { $ne: CONTENT_STATUS.ARCHIVED } },
     )
     .sort({ createdAt: -1 })
     .toArray();
@@ -38,7 +45,7 @@ export async function listPublishedPostsByAuthorId(
 ): Promise<PostDoc[]> {
   const posts = await getPostsCollection();
   return posts
-    .find({ authorId, status: "published" })
+    .find({ authorId, status: CONTENT_STATUS.PUBLISHED })
     .sort({ publishedAt: -1, createdAt: -1 })
     .toArray();
 }
@@ -93,7 +100,7 @@ export async function listPublishedPostsPage({
       ...authorFilter,
       ...cursorFilter,
       ...searchFilter,
-      status: "published",
+      status: CONTENT_STATUS.PUBLISHED,
       publishedAt: { $ne: null },
     })
     .sort({ publishedAt: -1, _id: -1 })
@@ -105,7 +112,7 @@ export async function countPublishedPostsByAuthorId(
   authorId: ObjectId,
 ): Promise<number> {
   const posts = await getPostsCollection();
-  return posts.countDocuments({ authorId, status: "published" });
+  return posts.countDocuments({ authorId, status: CONTENT_STATUS.PUBLISHED });
 }
 
 export async function listPublishedPostsByAuthorIds(
@@ -113,7 +120,7 @@ export async function listPublishedPostsByAuthorIds(
 ): Promise<PostDoc[]> {
   const posts = await getPostsCollection();
   return posts
-    .find({ authorId: { $in: authorIds }, status: "published" })
+    .find({ authorId: { $in: authorIds }, status: CONTENT_STATUS.PUBLISHED })
     .sort({ publishedAt: -1, createdAt: -1 })
     .toArray();
 }
@@ -123,7 +130,7 @@ export async function findPublishedPostByIdAndAuthorId(
   authorId: ObjectId,
 ): Promise<PostDoc | null> {
   const posts = await getPostsCollection();
-  return posts.findOne({ _id: id, authorId, status: "published" });
+  return posts.findOne({ _id: id, authorId, status: CONTENT_STATUS.PUBLISHED });
 }
 
 export async function findPostByIdAndAuthorId(

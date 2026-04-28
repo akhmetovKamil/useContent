@@ -1,8 +1,11 @@
+import { CONTENT_STATUS } from "@shared/consts"
+
 export const queryKeys = {
     me: ["me"] as const,
     myAuthor: ["me", "author"] as const,
-    myPosts: (status?: string) => ["me", "posts", status ?? "active"] as const,
-    myProjects: (status?: string) => ["me", "projects", status ?? "active"] as const,
+    myPosts: (status?: string) => ["me", "posts", status ?? CONTENT_STATUS.PUBLISHED] as const,
+    myProjects: (status?: string) =>
+        ["me", "projects", status ?? CONTENT_STATUS.PUBLISHED] as const,
     myEntitlements: ["me", "entitlements"] as const,
     myReaderSubscriptions: ["me", "subscriptions"] as const,
     myFeedPosts: ["me", "feed"] as const,

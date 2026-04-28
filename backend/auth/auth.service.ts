@@ -3,6 +3,7 @@ import { secret } from "encore.dev/config";
 import { ethers } from "ethers";
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import { randomBytes } from "node:crypto";
+import { normalizeAddressLike } from "../../shared/utils";
 import { upsertNonce, findNonce, deleteNonce } from "./repository";
 import type { AuthUser } from "./types";
 
@@ -20,7 +21,7 @@ function buildSignMessage(address: string, nonce: string): string {
 }
 
 export async function requestNonce(rawAddress: string): Promise<string> {
-  const address = rawAddress.toLowerCase();
+  const address = normalizeAddressLike(rawAddress);
   const nonce = randomBytes(16).toString("hex");
   const expiresAt = new Date(Date.now() + NONCE_TTL_MS);
 
@@ -31,9 +32,9 @@ export async function requestNonce(rawAddress: string): Promise<string> {
 
 export async function authenticate(
   rawAddress: string,
-  signature: string
+  signature: string,
 ): Promise<{ token: string; expiresAt: Date }> {
-  const address = rawAddress.toLowerCase();
+  const address = normalizeAddressLike(rawAddress);
 
   const doc = await findNonce(address);
   if (!doc) {
@@ -47,7 +48,7 @@ export async function authenticate(
 
   let recovered: string;
   try {
-    recovered = ethers.verifyMessage(message, signature).toLowerCase();
+    recovered = normalizeAddressLike(ethers.verifyMessage(message, signature));
   } catch {
     throw APIError.unauthenticated("invalid signature format");
   }

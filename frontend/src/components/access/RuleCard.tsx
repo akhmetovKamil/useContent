@@ -1,15 +1,14 @@
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { ACCESS_POLICY_NODE_TYPE } from "@shared/consts"
+
+import { getRuleTypeLabel } from "@/components/access/helpers"
 import { NftOwnershipRuleForm } from "@/components/access/NftOwnershipRuleForm"
+import { ruleTypeOptions } from "@/components/access/options"
 import { SubscriptionRuleForm } from "@/components/access/SubscriptionRuleForm"
 import { TokenBalanceRuleForm } from "@/components/access/TokenBalanceRuleForm"
-import { getRuleTypeLabel } from "@/components/access/helpers"
-import { ruleTypeOptions } from "@/components/access/options"
 import type { SubscriptionPlanOption } from "@/components/access/types"
-import type {
-    AccessPolicyBuilderState,
-    AccessRuleForm,
-} from "@/utils/access-policy"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import type { AccessPolicyBuilderState, AccessRuleForm } from "@/utils/access-policy"
 import { cn } from "@/utils/cn"
 
 export function RuleCard({
@@ -115,7 +114,7 @@ export function RuleCard({
                 })}
             </div>
 
-            {rule.type === "subscription" ? (
+            {rule.type === ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION ? (
                 <SubscriptionRuleForm
                     disabled={disabled}
                     onCreatePlan={onCreatePlan}
@@ -125,11 +124,11 @@ export function RuleCard({
                 />
             ) : null}
 
-            {rule.type === "token_balance" ? (
+            {rule.type === ACCESS_POLICY_NODE_TYPE.TOKEN_BALANCE ? (
                 <TokenBalanceRuleForm disabled={disabled} onChange={updateRule} rule={rule} />
             ) : null}
 
-            {rule.type === "nft_ownership" ? (
+            {rule.type === ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP ? (
                 <NftOwnershipRuleForm disabled={disabled} onChange={updateRule} rule={rule} />
             ) : null}
         </div>

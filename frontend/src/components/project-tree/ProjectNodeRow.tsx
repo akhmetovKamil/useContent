@@ -1,3 +1,4 @@
+import { CONTENT_VISIBILITY } from "@shared/consts"
 import type { ProjectNodeDto } from "@shared/types/content"
 import { Download, Eye, FileText, Folder, PackageOpen, Pencil, Trash2 } from "lucide-react"
 
@@ -112,7 +113,9 @@ export function ProjectNodeRow({
                             type="button"
                             variant="outline"
                         >
-                            {node.visibility === "published" ? "Make private" : "Publish"}
+                            {node.visibility === CONTENT_VISIBILITY.PUBLISHED
+                                ? "Make private"
+                                : "Publish"}
                         </Button>
                         <Button
                             className="rounded-full"

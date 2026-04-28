@@ -1,4 +1,5 @@
 import { subscriptionManagerAbi } from "@shared/abi/subscription-manager.abi"
+import { PAYMENT_ASSET } from "@shared/consts"
 import type { SubscriptionPlanDto } from "@shared/types/content"
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
@@ -43,10 +44,10 @@ export function SubscribeButton({ authorSlug, label = "Subscribe", plan }: Subsc
         try {
             const intent = await createIntentMutation.mutateAsync({ planCode: plan.code })
             const managerAddress = toAddress(plan.contractAddress)
-            const paymentAsset = plan.paymentAsset ?? "erc20"
+            const paymentAsset = plan.paymentAsset ?? PAYMENT_ASSET.ERC20
             const price = BigInt(plan.price)
 
-            if (paymentAsset === "erc20") {
+            if (paymentAsset === PAYMENT_ASSET.ERC20) {
                 const tokenAddress = toAddress(plan.tokenAddress)
 
                 setStatus("Checking token allowance...")
@@ -77,7 +78,7 @@ export function SubscribeButton({ authorSlug, label = "Subscribe", plan }: Subsc
                 functionName: "subscribe",
                 chainId: plan.chainId,
                 args: [plan.planKey as `0x${string}`],
-                value: paymentAsset === "native" ? price : undefined,
+                value: paymentAsset === PAYMENT_ASSET.NATIVE ? price : undefined,
             })
 
             setStatus("Confirming subscription...")

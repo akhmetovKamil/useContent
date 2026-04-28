@@ -1,4 +1,5 @@
 import type { Header } from "encore.dev/api";
+import type { ContentStatus } from "../../shared/consts";
 import type { CursorPaginationInput } from "../../shared/types/content";
 import type {
   CreatePostCommentRequest,
@@ -33,7 +34,7 @@ export interface ListExploreFeedRequest extends CursorPaginationInput {
 export type MyFeedPostsRequest = CursorPaginationInput;
 
 export interface ListMyPostsRequest {
-  status?: "draft" | "published" | "archived";
+  status?: ContentStatus;
 }
 
 export type CreatePostCommentPathRequest = CreatePostCommentRequest &
@@ -45,6 +46,9 @@ export type CreatePostReportPathRequest = CreatePostReportRequest &
 export type RecordPostViewPathRequest = RecordPostViewRequest &
   GetAuthorPostRequest;
 
-export type TogglePostLikeRequest = Pick<GetAuthorPostRequest, "slug" | "postId">;
+export type TogglePostLikeRequest = Pick<
+  GetAuthorPostRequest,
+  "slug" | "postId"
+>;
 
 export type UpdatePostPathRequest = UpdatePostRequest & DeletePostRequest;

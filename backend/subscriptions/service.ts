@@ -1,4 +1,9 @@
 import { APIError } from "encore.dev/api";
+import {
+  PAYMENT_ASSET,
+  PAYMENT_INTENT_STATUS,
+  SUBSCRIPTION_ENTITLEMENT_STATUS,
+} from "../../shared/consts";
 import * as accessRepo from "../access/repository";
 import * as contractDeploymentsRepo from "../contracts/repository";
 import {
@@ -115,7 +120,7 @@ export async function listMyFeedPosts(
     entitlements
       .filter(
         (entitlement) =>
-          entitlement.status === "active" &&
+          entitlement.status === SUBSCRIPTION_ENTITLEMENT_STATUS.ACTIVE &&
           entitlement.validUntil.getTime() > Date.now(),
       )
       .map((entitlement) => entitlement.authorId),
@@ -183,10 +188,10 @@ export async function listMyAuthorSubscribers(
         planTitle: plan?.title ?? null,
         accessPolicyNames,
         status:
-          entitlement.status === "active" &&
+          entitlement.status === SUBSCRIPTION_ENTITLEMENT_STATUS.ACTIVE &&
           entitlement.validUntil.getTime() > Date.now()
-            ? "active"
-            : "expired",
+            ? SUBSCRIPTION_ENTITLEMENT_STATUS.ACTIVE
+            : SUBSCRIPTION_ENTITLEMENT_STATUS.EXPIRED,
         validUntil: entitlement.validUntil.toISOString(),
         createdAt: entitlement.createdAt.toISOString(),
         updatedAt: entitlement.updatedAt.toISOString(),
@@ -255,7 +260,9 @@ export async function upsertMySubscriptionPlan(
   const now = new Date();
   const code = normalizePlanCode(input.code ?? "main");
   const title = normalizePlanTitle(input.title);
-  const paymentAsset = normalizePaymentAsset(input.paymentAsset ?? "erc20");
+  const paymentAsset = normalizePaymentAsset(
+    input.paymentAsset ?? PAYMENT_ASSET.ERC20,
+  );
   const chainId = normalizeChainId(input.chainId);
   const tokenAddress = normalizePlanTokenAddress(
     paymentAsset,
@@ -396,13 +403,13 @@ export async function createSubscriptionPaymentIntent(
     planKey:
       plan.planKey ??
       buildPlanKey(plan.authorId.toHexString(), plan.code, plan.chainId),
-    paymentAsset: plan.paymentAsset ?? "erc20",
+    paymentAsset: plan.paymentAsset ?? PAYMENT_ASSET.ERC20,
     chainId: plan.chainId,
     tokenAddress: plan.tokenAddress,
     contractAddress: plan.contractAddress,
     price: plan.price,
     billingPeriodDays: plan.billingPeriodDays,
-    status: "pending",
+    status: PAYMENT_INTENT_STATUS.PENDING,
     txHash: null,
     entitlementId: null,
     paidUntil: null,
@@ -431,9 +438,12 @@ export async function confirmSubscriptionPayment(
       "subscription payment intent is cancelled",
     );
   }
-  if (intent.status === "expired" || intent.expiresAt.getTime() < Date.now()) {
+  if (
+    intent.status === PAYMENT_INTENT_STATUS.EXPIRED ||
+    intent.expiresAt.getTime() < Date.now()
+  ) {
     const expired = await repo.updateSubscriptionPaymentIntent(intent._id, {
-      status: "expired",
+      status: PAYMENT_INTENT_STATUS.EXPIRED,
       updatedAt: new Date(),
     });
     if (!expired) {
@@ -441,7 +451,7 @@ export async function confirmSubscriptionPayment(
     }
     return expired;
   }
-  if (intent.status === "confirmed") {
+  if (intent.status === PAYMENT_INTENT_STATUS.CONFIRMED) {
     return intent;
   }
 
@@ -457,7 +467,7 @@ export async function confirmSubscriptionPayment(
     chainId: intent.chainId,
     contractAddress: intent.contractAddress,
     planKey: intent.planKey,
-    paymentAsset: intent.paymentAsset ?? "erc20",
+    paymentAsset: intent.paymentAsset ?? PAYMENT_ASSET.ERC20,
     tokenAddress: intent.tokenAddress,
     price: intent.price,
     txHash,
@@ -477,7 +487,7 @@ export async function confirmSubscriptionPayment(
   });
 
   const updated = await repo.updateSubscriptionPaymentIntent(intent._id, {
-    status: "confirmed",
+    status: PAYMENT_INTENT_STATUS.CONFIRMED,
     txHash,
     entitlementId: entitlement._id,
     paidUntil: payment.paidUntil,

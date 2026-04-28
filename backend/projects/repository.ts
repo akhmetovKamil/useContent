@@ -1,4 +1,9 @@
 import { ObjectId, type Collection } from "mongodb";
+import {
+  CONTENT_STATUS,
+  CONTENT_VISIBILITY,
+  PROJECT_NODE_KIND,
+} from "../../shared/consts";
 import { ensureIndexes, getCollection } from "../storage/repository-base";
 import type { ProjectDoc, ProjectNodeDoc } from "./doc-types";
 
@@ -20,7 +25,9 @@ export async function listProjectsByAuthorId(
   const projects = await getProjectsCollection();
   return projects
     .find(
-      status ? { authorId, status } : { authorId, status: { $ne: "archived" } },
+      status
+        ? { authorId, status }
+        : { authorId, status: { $ne: CONTENT_STATUS.ARCHIVED } },
     )
     .sort({ createdAt: -1 })
     .toArray();
@@ -31,7 +38,7 @@ export async function listPublishedProjectsByAuthorId(
 ): Promise<ProjectDoc[]> {
   const projects = await getProjectsCollection();
   return projects
-    .find({ authorId, status: "published" })
+    .find({ authorId, status: CONTENT_STATUS.PUBLISHED })
     .sort({ publishedAt: -1, createdAt: -1 })
     .toArray();
 }
@@ -41,7 +48,11 @@ export async function findPublishedProjectByIdAndAuthorId(
   authorId: ObjectId,
 ): Promise<ProjectDoc | null> {
   const projects = await getProjectsCollection();
-  return projects.findOne({ _id: id, authorId, status: "published" });
+  return projects.findOne({
+    _id: id,
+    authorId,
+    status: CONTENT_STATUS.PUBLISHED,
+  });
 }
 
 export async function findProjectByIdAndAuthorId(
@@ -131,7 +142,7 @@ export async function listPublishedProjectNodesByParent(
 ): Promise<ProjectNodeDoc[]> {
   const projectNodes = await getProjectNodesCollection();
   return projectNodes
-    .find({ projectId, parentId, visibility: "published" })
+    .find({ projectId, parentId, visibility: CONTENT_VISIBILITY.PUBLISHED })
     .sort({ kind: 1, name: 1, createdAt: 1 })
     .toArray();
 }
@@ -148,7 +159,7 @@ export async function listProjectFileNodesByAuthorId(
 ): Promise<ProjectNodeDoc[]> {
   const projectNodes = await getProjectNodesCollection();
   return projectNodes
-    .find({ authorId, kind: "file" })
+    .find({ authorId, kind: PROJECT_NODE_KIND.FILE })
     .sort({ createdAt: 1 })
     .toArray();
 }
@@ -170,13 +181,17 @@ export async function getProjectNodeStats(projectId: ObjectId): Promise<{
         $group: {
           _id: null,
           fileCount: {
-            $sum: { $cond: [{ $eq: ["$kind", "file"] }, 1, 0] },
+            $sum: { $cond: [{ $eq: ["$kind", PROJECT_NODE_KIND.FILE] }, 1, 0] },
           },
           folderCount: {
-            $sum: { $cond: [{ $eq: ["$kind", "folder"] }, 1, 0] },
+            $sum: {
+              $cond: [{ $eq: ["$kind", PROJECT_NODE_KIND.FOLDER] }, 1, 0],
+            },
           },
           totalSize: {
-            $sum: { $cond: [{ $eq: ["$kind", "file"] }, "$size", 0] },
+            $sum: {
+              $cond: [{ $eq: ["$kind", PROJECT_NODE_KIND.FILE] }, "$size", 0],
+            },
           },
         },
       },
@@ -204,7 +219,7 @@ export async function sumProjectFileBytesByAuthorId(
   const projectNodes = await getProjectNodesCollection();
   const [stats] = await projectNodes
     .aggregate<{ totalSize: number }>([
-      { $match: { authorId, kind: "file" } },
+      { $match: { authorId, kind: PROJECT_NODE_KIND.FILE } },
       {
         $group: {
           _id: null,
@@ -227,7 +242,7 @@ export async function findProjectNodeChildrenRecursive(
   const all: ProjectNodeDoc[] = [...children];
 
   for (const child of children) {
-    if (child.kind === "folder") {
+    if (child.kind === PROJECT_NODE_KIND.FOLDER) {
       const nested = await findProjectNodeChildrenRecursive(
         projectId,
         child._id,

@@ -1,3 +1,4 @@
+import { ACCESS_POLICY_NODE_TYPE } from "@shared/consts"
 import type { AccessPolicyConditionDto } from "@shared/types/content"
 import { CheckCircle2, Gem, LockKeyhole, WalletCards } from "lucide-react"
 
@@ -6,11 +7,11 @@ export function ConditionIcon({ condition }: { condition: AccessPolicyConditionD
         return <CheckCircle2 className="size-4 text-emerald-600" />
     }
 
-    if (condition.type === "subscription") {
+    if (condition.type === ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION) {
         return <WalletCards className="size-4 text-amber-600" />
     }
 
-    if (condition.type === "nft_ownership") {
+    if (condition.type === ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP) {
         return <Gem className="size-4 text-amber-600" />
     }
 

@@ -1,5 +1,9 @@
 import { ObjectId } from "mongodb";
-import type { ActivityType } from "../../shared/types/content";
+import {
+  ACTIVITY_TYPE,
+  SUBSCRIPTION_ENTITLEMENT_STATUS,
+  type ActivityType,
+} from "../../shared/consts";
 import { normalizeWallet, shortenWallet } from "../lib/utils/wallet";
 import type { PostDoc } from "../posts/doc-types";
 import type { AuthorProfileDoc } from "../profiles/doc-types";
@@ -27,7 +31,7 @@ export async function recordPostLikedActivity(
     message: `${shortenWallet(actorWallet)} liked "${post.title}".`,
     post,
     targetWallet: context.ownerWallet,
-    type: "post_liked",
+    type: ACTIVITY_TYPE.POST_LIKED,
   });
 }
 
@@ -46,7 +50,7 @@ export async function recordPostCommentedActivity(
     message: `${shortenWallet(actorWallet)} commented on "${post.title}".`,
     post,
     targetWallet: context.ownerWallet,
-    type: "post_commented",
+    type: ACTIVITY_TYPE.POST_COMMENTED,
   });
 }
 
@@ -65,7 +69,7 @@ export async function recordNewPostActivity(post: PostDoc): Promise<void> {
       entitlements
         .filter(
           (entitlement) =>
-            entitlement.status === "active" &&
+            entitlement.status === SUBSCRIPTION_ENTITLEMENT_STATUS.ACTIVE &&
             entitlement.validUntil.getTime() > now,
         )
         .map((entitlement) => entitlement.subscriberWallet),
@@ -81,7 +85,7 @@ export async function recordNewPostActivity(post: PostDoc): Promise<void> {
         message: `${context.author.displayName} published "${post.title}".`,
         post,
         targetWallet,
-        type: "new_post",
+        type: ACTIVITY_TYPE.NEW_POST,
       }),
     ),
   );
@@ -107,7 +111,7 @@ export async function recordNewSubscriptionActivity({
     message: `${shortenWallet(subscriberWallet)} subscribed to ${planCode}.`,
     post: null,
     targetWallet: context.ownerWallet,
-    type: "new_subscription",
+    type: ACTIVITY_TYPE.NEW_SUBSCRIPTION,
   });
 }
 

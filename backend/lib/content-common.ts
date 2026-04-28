@@ -1,8 +1,25 @@
 import { APIError } from "encore.dev/api";
 import { id as hashId } from "ethers";
 import { ObjectId } from "mongodb";
-import { ZERO_ADDRESS } from "../../shared/consts";
+import {
+  ACCESS_CONDITION_MODE,
+  ACCESS_POLICY_NODE_TYPE,
+  CONTENT_STATUS,
+  CONTENT_VISIBILITY,
+  type ContentStatus,
+  NFT_STANDARD,
+  PAYMENT_ASSET,
+  POST_PROMOTION_STATUS,
+  SUBSCRIPTION_ENTITLEMENT_STATUS,
+  type PaymentAsset,
+  ZERO_ADDRESS,
+} from "../../shared/consts";
 import type { PaginatedResponse } from "../../shared/types/common";
+import {
+  isSameAddressLike,
+  isZeroAddress,
+  normalizeHexString,
+} from "../../shared/utils";
 import type { AccessPolicyPresetDoc } from "../access/doc-types";
 import * as accessRepo from "../access/repository";
 import type { ContractDeploymentDoc } from "../contracts/doc-types";
@@ -228,7 +245,7 @@ export function toSubscriptionPaymentIntentResponse(
     planId: intent.planId.toHexString(),
     planCode: intent.planCode,
     planKey: intent.planKey,
-    paymentAsset: intent.paymentAsset ?? "erc20",
+    paymentAsset: intent.paymentAsset ?? PAYMENT_ASSET.ERC20,
     chainId: intent.chainId,
     tokenAddress: intent.tokenAddress,
     contractAddress: intent.contractAddress,
@@ -276,7 +293,7 @@ export function toSubscriptionPlanResponse(
     authorId: plan.authorId.toHexString(),
     code: plan.code,
     title: plan.title,
-    paymentAsset: plan.paymentAsset ?? "erc20",
+    paymentAsset: plan.paymentAsset ?? PAYMENT_ASSET.ERC20,
     chainId: plan.chainId,
     tokenAddress: plan.tokenAddress,
     price: plan.price,
@@ -334,7 +351,7 @@ export function toPostResponse(
     viewsCount: stats?.viewsCount ?? 0,
     likedByMe: stats?.likedByMe ?? false,
     promotion:
-      post.promoted && post.promotionStatus === "active"
+      post.promoted && post.promotionStatus === POST_PROMOTION_STATUS.ACTIVE
         ? {
             active: true,
             promotedAt: post.promotedAt?.toISOString() ?? null,
@@ -505,19 +522,19 @@ export function describeAccessPolicyNode(
   planById: Map<string, string>,
 ): string {
   switch (node.type) {
-    case "public":
+    case ACCESS_POLICY_NODE_TYPE.PUBLIC:
       return "Public";
-    case "subscription":
+    case ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION:
       return planById.get(node.planId) ?? "Subscription";
-    case "token_balance":
+    case ACCESS_POLICY_NODE_TYPE.TOKEN_BALANCE:
       return "Token balance";
-    case "nft_ownership":
+    case ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP:
       return "NFT ownership";
-    case "and":
+    case ACCESS_POLICY_NODE_TYPE.AND:
       return `AND: ${node.children
         .map((child) => describeAccessPolicyNode(child, planById))
         .join(" + ")}`;
-    case "or":
+    case ACCESS_POLICY_NODE_TYPE.OR:
       return `OR: ${node.children
         .map((child) => describeAccessPolicyNode(child, planById))
         .join(" / ")}`;
@@ -627,8 +644,8 @@ export async function buildFeedProjectResponse(
   );
 }
 
-export function normalizePaymentAsset(value: string): "erc20" | "native" {
-  if (value === "erc20" || value === "native") {
+export function normalizePaymentAsset(value: string): PaymentAsset {
+  if (value === PAYMENT_ASSET.ERC20 || value === PAYMENT_ASSET.NATIVE) {
     return value;
   }
 
@@ -636,15 +653,15 @@ export function normalizePaymentAsset(value: string): "erc20" | "native" {
 }
 
 export function normalizePlanTokenAddress(
-  paymentAsset: "erc20" | "native",
+  paymentAsset: PaymentAsset,
   tokenAddress: string,
 ): string {
-  if (paymentAsset === "native") {
+  if (paymentAsset === PAYMENT_ASSET.NATIVE) {
     return ZERO_ADDRESS;
   }
 
   const normalized = normalizeWallet(tokenAddress);
-  if (normalized === ZERO_ADDRESS) {
+  if (isZeroAddress(normalized)) {
     throw APIError.invalidArgument("ERC-20 token address is required");
   }
 
@@ -1087,7 +1104,8 @@ export async function assertPublishedProjectPath(
   const breadcrumbs = await buildProjectBreadcrumbs(project, folder);
   const hiddenNode = breadcrumbs.find(
     (node) =>
-      !node._id.equals(project.rootNodeId) && node.visibility !== "published",
+      !node._id.equals(project.rootNodeId) &&
+      node.visibility !== CONTENT_VISIBILITY.PUBLISHED,
   );
   if (hiddenNode) {
     throw APIError.permissionDenied("access to this folder is restricted");
@@ -1189,17 +1207,17 @@ export async function normalizeRequestedCustomPolicy(
 
 export function resolvePublishedAt(
   currentPublishedAt: Date | null,
-  currentStatus: "draft" | "published" | "archived",
-  nextStatus: "draft" | "published" | "archived",
+  currentStatus: ContentStatus,
+  nextStatus: ContentStatus,
 ): Date | null {
-  if (nextStatus === "draft") {
+  if (nextStatus === CONTENT_STATUS.DRAFT) {
     return null;
   }
-  if (nextStatus === "archived") {
+  if (nextStatus === CONTENT_STATUS.ARCHIVED) {
     return currentPublishedAt;
   }
 
-  if (currentStatus === "published" && currentPublishedAt) {
+  if (currentStatus === CONTENT_STATUS.PUBLISHED && currentPublishedAt) {
     return currentPublishedAt;
   }
 
@@ -1280,7 +1298,7 @@ export async function buildSubscriptionGrants(
     planId: entitlement.planId.toHexString(),
     validUntil: entitlement.validUntil.toISOString(),
     active:
-      entitlement.status === "active" &&
+      entitlement.status === SUBSCRIPTION_ENTITLEMENT_STATUS.ACTIVE &&
       entitlement.validUntil.getTime() > Date.now(),
   }));
 }
@@ -1317,11 +1335,14 @@ export function policyUsesSubscriptionPlan(
   node: AccessPolicyNode,
   planId: string,
 ): boolean {
-  if (node.type === "subscription") {
+  if (node.type === ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION) {
     return node.planId === planId;
   }
 
-  if (node.type === "and" || node.type === "or") {
+  if (
+    node.type === ACCESS_POLICY_NODE_TYPE.AND ||
+    node.type === ACCESS_POLICY_NODE_TYPE.OR
+  ) {
     return node.children.some((child) =>
       policyUsesSubscriptionPlan(child, planId),
     );
@@ -1340,7 +1361,7 @@ export async function buildAccessPolicyConditionResponses(
   return Promise.all(
     conditions.map(async (condition) => {
       switch (condition.type) {
-        case "subscription": {
+        case ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION: {
           const plan = plansById.get(condition.planId);
           if (!plan) {
             return null;
@@ -1357,22 +1378,24 @@ export async function buildAccessPolicyConditionResponses(
             )?.validUntil ?? null;
 
           return {
-            type: "subscription" as const,
+            type: ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION,
             plan: await toSubscriptionPlanResponseWithStats(plan),
             satisfied: Boolean(subscription),
             validUntil,
           };
         }
-        case "token_balance": {
+        case ACCESS_POLICY_NODE_TYPE.TOKEN_BALANCE: {
           const grant = context.tokenBalances?.find(
             (entry) =>
               entry.chainId === condition.chainId &&
-              entry.contractAddress.toLowerCase() ===
-                condition.contractAddress.toLowerCase(),
+              isSameAddressLike(
+                entry.contractAddress,
+                condition.contractAddress,
+              ),
           );
 
           return {
-            type: "token_balance" as const,
+            type: ACCESS_POLICY_NODE_TYPE.TOKEN_BALANCE,
             chainId: condition.chainId,
             contractAddress: condition.contractAddress,
             minAmount: condition.minAmount,
@@ -1383,12 +1406,14 @@ export async function buildAccessPolicyConditionResponses(
             currentBalance: grant?.balance ?? null,
           };
         }
-        case "nft_ownership": {
+        case ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP: {
           const grant = context.nftOwnerships?.find((entry) => {
             if (
               entry.chainId !== condition.chainId ||
-              entry.contractAddress.toLowerCase() !==
-                condition.contractAddress.toLowerCase() ||
+              !isSameAddressLike(
+                entry.contractAddress,
+                condition.contractAddress,
+              ) ||
               entry.standard !== condition.standard
             ) {
               return false;
@@ -1399,7 +1424,7 @@ export async function buildAccessPolicyConditionResponses(
           const minBalance = condition.minBalance ?? "1";
 
           return {
-            type: "nft_ownership" as const,
+            type: ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP,
             chainId: condition.chainId,
             contractAddress: condition.contractAddress,
             standard: condition.standard,
@@ -1425,23 +1450,31 @@ export async function buildAccessPolicyConditionResponses(
 export function collectPolicyConditionNodes(
   node: AccessPolicyNode,
 ): AccessPolicyNode[] {
-  if (node.type === "and" || node.type === "or") {
+  if (
+    node.type === ACCESS_POLICY_NODE_TYPE.AND ||
+    node.type === ACCESS_POLICY_NODE_TYPE.OR
+  ) {
     return node.children.flatMap((child) => collectPolicyConditionNodes(child));
   }
 
-  return node.type === "public" ? [] : [node];
+  return node.type === ACCESS_POLICY_NODE_TYPE.PUBLIC ? [] : [node];
 }
 
 export function collectSubscriptionPlanIds(node: AccessPolicyNode): string[] {
   return collectPolicyConditionNodes(node).flatMap((condition) =>
-    condition.type === "subscription" ? [condition.planId] : [],
+    condition.type === ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION
+      ? [condition.planId]
+      : [],
   );
 }
 
 export function getConditionMode(
   node: AccessPolicyNode,
 ): "single" | "and" | "or" {
-  return node.type === "and" || node.type === "or" ? node.type : "single";
+  return node.type === ACCESS_POLICY_NODE_TYPE.AND ||
+    node.type === ACCESS_POLICY_NODE_TYPE.OR
+    ? node.type
+    : ACCESS_CONDITION_MODE.SINGLE;
 }
 
 export async function buildAccessPolicyFromInput(
@@ -1471,9 +1504,9 @@ export async function buildAccessPolicyNodeFromInput(
   author: AuthorProfileDoc | null,
 ): Promise<AccessPolicyNode> {
   switch (node.type) {
-    case "public":
-      return { type: "public" } as const;
-    case "subscription": {
+    case ACCESS_POLICY_NODE_TYPE.PUBLIC:
+      return { type: ACCESS_POLICY_NODE_TYPE.PUBLIC } as const;
+    case ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION: {
       if (!author) {
         throw APIError.invalidArgument(
           "subscription policy input requires an existing author profile",
@@ -1494,22 +1527,22 @@ export async function buildAccessPolicyNodeFromInput(
       }
 
       return {
-        type: "subscription",
+        type: ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION,
         authorId: author._id.toHexString(),
         planId: plan._id.toHexString(),
       } as const;
     }
-    case "token_balance":
+    case ACCESS_POLICY_NODE_TYPE.TOKEN_BALANCE:
       return {
-        type: "token_balance",
+        type: ACCESS_POLICY_NODE_TYPE.TOKEN_BALANCE,
         chainId: normalizeChainId(node.chainId),
         contractAddress: normalizeWallet(node.contractAddress),
         minAmount: normalizePositiveInteger(node.minAmount, "minAmount"),
         decimals: normalizeTokenDecimals(node.decimals),
       } as const;
-    case "nft_ownership":
+    case ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP:
       return {
-        type: "nft_ownership",
+        type: ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP,
         chainId: normalizeChainId(node.chainId),
         contractAddress: normalizeWallet(node.contractAddress),
         standard: normalizeNftStandard(node.standard),
@@ -1519,18 +1552,18 @@ export async function buildAccessPolicyNodeFromInput(
             ? undefined
             : normalizePositiveInteger(node.minBalance, "minBalance"),
       } as const;
-    case "or":
+    case ACCESS_POLICY_NODE_TYPE.OR:
       return {
-        type: "or",
+        type: ACCESS_POLICY_NODE_TYPE.OR,
         children: await Promise.all(
           node.children.map((child) =>
             buildAccessPolicyNodeFromInput(child, author),
           ),
         ),
       } as const;
-    case "and":
+    case ACCESS_POLICY_NODE_TYPE.AND:
       return {
-        type: "and",
+        type: ACCESS_POLICY_NODE_TYPE.AND,
         children: await Promise.all(
           node.children.map((child) =>
             buildAccessPolicyNodeFromInput(child, author),
@@ -1560,7 +1593,7 @@ export function normalizeTokenDecimals(decimals: number) {
 }
 
 export function normalizeNftStandard(standard: string) {
-  if (standard !== "erc721" && standard !== "erc1155") {
+  if (standard !== NFT_STANDARD.ERC721 && standard !== NFT_STANDARD.ERC1155) {
     throw APIError.invalidArgument("standard must be erc721 or erc1155");
   }
   return standard;
@@ -1580,7 +1613,7 @@ export function normalizeOptionalIdString(value: string | undefined) {
 }
 
 export function normalizeTxHash(txHash: string): string {
-  const value = txHash.trim().toLowerCase();
+  const value = normalizeHexString(txHash);
   if (!/^0x[a-f0-9]{64}$/.test(value)) {
     throw APIError.invalidArgument(
       "txHash must be a 32-byte hex transaction hash",
@@ -1590,7 +1623,7 @@ export function normalizeTxHash(txHash: string): string {
 }
 
 export function normalizePlanKey(planKey: string): string {
-  const value = planKey.trim().toLowerCase();
+  const value = normalizeHexString(planKey);
   if (!/^0x[a-f0-9]{64}$/.test(value)) {
     throw APIError.invalidArgument("planKey must be a 32-byte hex value");
   }

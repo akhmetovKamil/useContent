@@ -1,5 +1,11 @@
 import { APIError } from "encore.dev/api";
 import { ObjectId } from "mongodb";
+import {
+  CONTENT_STATUS,
+  CONTENT_VISIBILITY,
+  PLATFORM_FEATURE,
+  PROJECT_NODE_KIND,
+} from "../../shared/consts";
 import * as accessRepo from "../access/repository";
 import * as contractDeploymentsRepo from "../contracts/repository";
 import { evaluateAccessPolicy, resolveEntityPolicy } from "../domain/access";
@@ -67,13 +73,13 @@ export async function createMyProject(
   input: CreateProjectRequest,
 ): Promise<ProjectDoc> {
   const author = await getMyAuthorProfile(walletAddress);
-  await assertAuthorPlatformFeature(author, "projects");
+  await assertAuthorPlatformFeature(author, PLATFORM_FEATURE.PROJECTS);
   const now = new Date();
   const projectId = new ObjectId();
   const rootNodeId = new ObjectId();
   const title = normalizeProjectTitle(input.title);
   const description = normalizeProjectDescription(input.description ?? "");
-  const status = input.status ?? "draft";
+  const status = input.status ?? CONTENT_STATUS.DRAFT;
   const policyMode = input.policyMode ?? "inherited";
   const policySelection = await normalizeContentPolicy(
     author,
@@ -88,12 +94,12 @@ export async function createMyProject(
     authorId: author._id,
     projectId,
     parentId: null,
-    kind: "folder",
+    kind: PROJECT_NODE_KIND.FOLDER,
     name: title,
     storageKey: null,
     mimeType: null,
     size: null,
-    visibility: "published",
+    visibility: CONTENT_VISIBILITY.PUBLISHED,
     createdAt: now,
     updatedAt: now,
   });
@@ -108,7 +114,7 @@ export async function createMyProject(
     policy: policySelection.policy,
     accessPolicyId: policySelection.accessPolicyId,
     rootNodeId,
-    publishedAt: status === "published" ? now : null,
+    publishedAt: status === CONTENT_STATUS.PUBLISHED ? now : null,
     createdAt: now,
     updatedAt: now,
   });
@@ -131,7 +137,7 @@ export async function listMyArchivedProjects(
   walletAddress: string,
 ): Promise<ProjectDoc[]> {
   const author = await getMyAuthorProfile(walletAddress);
-  return repo.listProjectsByAuthorId(author._id, "archived");
+  return repo.listProjectsByAuthorId(author._id, CONTENT_STATUS.ARCHIVED);
 }
 
 export async function updateMyProject(
@@ -210,7 +216,7 @@ export async function deleteMyProject(
 
   const nodes = await repo.listProjectNodesByProjectId(project._id);
   for (const node of nodes) {
-    if (node.kind === "file" && node.storageKey) {
+    if (node.kind === PROJECT_NODE_KIND.FILE && node.storageKey) {
       await deleteProjectFile(node.storageKey);
     }
   }
@@ -382,12 +388,12 @@ export async function createMyProjectFolder(
     authorId: author._id,
     projectId: project._id,
     parentId: parent._id,
-    kind: "folder",
+    kind: PROJECT_NODE_KIND.FOLDER,
     name: normalizeProjectNodeName(input.name),
     storageKey: null,
     mimeType: null,
     size: null,
-    visibility: input.visibility ?? "published",
+    visibility: input.visibility ?? CONTENT_VISIBILITY.PUBLISHED,
     createdAt: now,
     updatedAt: now,
   });
@@ -433,12 +439,12 @@ export async function uploadMyProjectFile(
     authorId: author._id,
     projectId: project._id,
     parentId: parent._id,
-    kind: "file",
+    kind: PROJECT_NODE_KIND.FILE,
     name,
     storageKey,
     mimeType: input.contentType || "application/octet-stream",
     size: input.body.length,
-    visibility: "published",
+    visibility: CONTENT_VISIBILITY.PUBLISHED,
     createdAt: now,
     updatedAt: now,
   });
@@ -496,13 +502,13 @@ export async function deleteMyProjectNode(
   }
 
   const descendants =
-    node.kind === "folder"
+    node.kind === PROJECT_NODE_KIND.FOLDER
       ? await repo.findProjectNodeChildrenRecursive(project._id, node._id)
       : [];
   const nodesToDelete = [node, ...descendants];
 
   for (const item of nodesToDelete) {
-    if (item.kind === "file" && item.storageKey) {
+    if (item.kind === PROJECT_NODE_KIND.FILE && item.storageKey) {
       await deleteProjectFile(item.storageKey);
     }
   }
@@ -532,7 +538,7 @@ export async function getAuthorProjectFileBySlug(
     viewerWallet,
   );
   const node = await resolveProjectNode(project, nodeId);
-  if (node.visibility !== "published") {
+  if (node.visibility !== CONTENT_VISIBILITY.PUBLISHED) {
     throw APIError.permissionDenied("access to this file is restricted");
   }
   if (node.parentId) {

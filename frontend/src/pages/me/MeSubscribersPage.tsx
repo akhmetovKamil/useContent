@@ -1,10 +1,11 @@
+import { SUBSCRIPTION_ENTITLEMENT_STATUS } from "@shared/consts"
 import { shortenWalletAddress } from "@shared/utils"
 
+import { ActionCard } from "@/components/ui/action-card"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ActionCard } from "@/components/ui/action-card"
-import { StatusPill } from "@/components/ui/status-pill"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
+import { StatusPill } from "@/components/ui/status-pill"
 import { useMyAuthorSubscribersQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 import { formatDisplayDate } from "@/utils/date"
@@ -84,7 +85,8 @@ export function MeSubscribersPage() {
                                             <StatusPill
                                                 label={subscriber.status}
                                                 variant={
-                                                    subscriber.status === "active"
+                                                    subscriber.status ===
+                                                    SUBSCRIPTION_ENTITLEMENT_STATUS.ACTIVE
                                                         ? "success"
                                                         : "warning"
                                                 }

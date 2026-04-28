@@ -1,13 +1,20 @@
-import type { AccessPolicy, PolicyMode } from "./access";
 import type {
   ContentStatus,
-  SubscriptionPaymentAsset,
-  WalletAddress,
-} from "../../shared/types/content";
+  ContentVisibility,
+  PaymentAsset,
+  PaymentIntentStatus,
+  ProjectNodeKind,
+  SubscriptionEntitlementSource,
+  SubscriptionEntitlementStatus,
+  UserRole,
+  UserWalletKind,
+} from "../../shared/consts";
+import type { WalletAddress } from "../../shared/types/content";
+import type { AccessPolicy, PolicyMode } from "./access";
 
 export interface UserWallet {
   address: WalletAddress;
-  kind: "primary" | "secondary";
+  kind: UserWalletKind;
   addedAt: Date;
 }
 
@@ -19,7 +26,7 @@ export interface User {
   avatarFileId: string | null;
   primaryWallet: WalletAddress;
   wallets: UserWallet[];
-  role: "user" | "admin";
+  role: UserRole;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -86,12 +93,12 @@ export interface ProjectNode {
   authorId: string;
   projectId: string;
   parentId: string | null;
-  kind: "file" | "folder";
+  kind: ProjectNodeKind;
   name: string;
   storageKey: string | null;
   mimeType: string | null;
   size: number | null;
-  visibility: "author" | "published";
+  visibility: ContentVisibility;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -101,7 +108,7 @@ export interface SubscriptionPlan {
   authorId: string;
   code: string;
   title: string;
-  paymentAsset: SubscriptionPaymentAsset;
+  paymentAsset: PaymentAsset;
   chainId: number;
   tokenAddress: string;
   price: string;
@@ -119,9 +126,9 @@ export interface SubscriptionEntitlement {
   authorId: string;
   subscriberWallet: WalletAddress;
   planId: string;
-  status: "active" | "expired";
+  status: SubscriptionEntitlementStatus;
   validUntil: Date;
-  source: "onchain";
+  source: SubscriptionEntitlementSource;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -133,13 +140,13 @@ export interface SubscriptionPaymentIntent {
   planId: string;
   planCode: string;
   planKey: string;
-  paymentAsset: SubscriptionPaymentAsset;
+  paymentAsset: PaymentAsset;
   chainId: number;
   tokenAddress: string;
   contractAddress: string;
   price: string;
   billingPeriodDays: number;
-  status: "pending" | "submitted" | "confirmed" | "expired" | "cancelled";
+  status: PaymentIntentStatus;
   txHash: string | null;
   entitlementId: string | null;
   paidUntil: Date | null;

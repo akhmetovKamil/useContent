@@ -1,5 +1,13 @@
 import { APIError } from "encore.dev/api";
 import { ObjectId } from "mongodb";
+import {
+  CONTENT_STATUS,
+  PLATFORM_FEATURE,
+  POST_PROMOTION_STATUS,
+  POST_REPORT_REASON,
+  POST_REPORT_STATUS,
+  SUBSCRIPTION_ENTITLEMENT_STATUS,
+} from "../../shared/consts";
 import type { PaginatedResponse } from "../../shared/types/common";
 import * as accessRepo from "../access/repository";
 import * as contractDeploymentsRepo from "../contracts/repository";
@@ -82,7 +90,7 @@ export async function listMyFeedPosts(
     entitlements
       .filter(
         (entitlement) =>
-          entitlement.status === "active" &&
+          entitlement.status === SUBSCRIPTION_ENTITLEMENT_STATUS.ACTIVE &&
           entitlement.validUntil.getTime() > Date.now(),
       )
       .map((entitlement) => entitlement.authorId),
@@ -245,7 +253,7 @@ async function getActiveSubscribedAuthorIds(
     entitlements
       .filter(
         (entitlement) =>
-          entitlement.status === "active" &&
+          entitlement.status === SUBSCRIPTION_ENTITLEMENT_STATUS.ACTIVE &&
           entitlement.validUntil.getTime() > Date.now(),
       )
       .map((entitlement) => entitlement.authorId),
@@ -288,7 +296,10 @@ function getHybridFeedScore(
 }
 
 function isPostPromotionActive(post: PostDoc): boolean {
-  return post.promoted === true && post.promotionStatus === "active";
+  return (
+    post.promoted === true &&
+    post.promotionStatus === POST_PROMOTION_STATUS.ACTIVE
+  );
 }
 
 export async function createMyPost(
@@ -299,7 +310,7 @@ export async function createMyPost(
   const now = new Date();
   const title = normalizePostTitle(input.title);
   const content = normalizePostContent(input.content);
-  const status = input.status ?? "draft";
+  const status = input.status ?? CONTENT_STATUS.DRAFT;
   const policyMode = input.policyMode ?? "inherited";
   const policySelection = await normalizeContentPolicy(
     author,
@@ -327,11 +338,11 @@ export async function createMyPost(
     promoted: false,
     promotedAt: null,
     promotionStatus: null,
-    publishedAt: status === "published" ? now : null,
+    publishedAt: status === CONTENT_STATUS.PUBLISHED ? now : null,
     createdAt: now,
     updatedAt: now,
   });
-  if (post.status === "published") {
+  if (post.status === CONTENT_STATUS.PUBLISHED) {
     await recordNewPostActivity(post);
   }
   return post;
@@ -346,7 +357,7 @@ export async function listMyArchivedPosts(
   walletAddress: string,
 ): Promise<PostDoc[]> {
   const author = await getMyAuthorProfile(walletAddress);
-  return repo.listPostsByAuthorId(author._id, "archived");
+  return repo.listPostsByAuthorId(author._id, CONTENT_STATUS.ARCHIVED);
 }
 
 export async function updateMyPost(
@@ -377,8 +388,8 @@ export async function updateMyPost(
     nextPolicySelection.policy,
   );
 
-  const shouldPausePromotion = nextStatus !== "published";
-  const wasPublished = existing.status === "published";
+  const shouldPausePromotion = nextStatus !== CONTENT_STATUS.PUBLISHED;
+  const wasPublished = existing.status === CONTENT_STATUS.PUBLISHED;
   const updated = await repo.updatePost(objectId, author._id, {
     title:
       input.title === undefined
@@ -403,7 +414,7 @@ export async function updateMyPost(
     promoted: shouldPausePromotion ? false : (existing.promoted ?? false),
     promotedAt: existing.promotedAt ?? null,
     promotionStatus: shouldPausePromotion
-      ? "paused"
+      ? POST_PROMOTION_STATUS.PAUSED
       : (existing.promotionStatus ?? null),
     publishedAt: resolvePublishedAt(
       existing.publishedAt,
@@ -417,7 +428,7 @@ export async function updateMyPost(
     throw APIError.notFound("post not found");
   }
 
-  if (!wasPublished && updated.status === "published") {
+  if (!wasPublished && updated.status === CONTENT_STATUS.PUBLISHED) {
     await recordNewPostActivity(updated);
   }
   return updated;
@@ -428,13 +439,13 @@ export async function promoteMyPost(
   postId: string,
 ): Promise<PostDoc> {
   const author = await getMyAuthorProfile(walletAddress);
-  await assertAuthorPlatformFeature(author, "homepage_promo");
+  await assertAuthorPlatformFeature(author, PLATFORM_FEATURE.HOMEPAGE_PROMO);
   const objectId = parseObjectId(postId, "postId");
   const existing = await repo.findPostByIdAndAuthorId(objectId, author._id);
   if (!existing) {
     throw APIError.notFound("post not found");
   }
-  if (existing.status !== "published") {
+  if (existing.status !== CONTENT_STATUS.PUBLISHED) {
     throw APIError.failedPrecondition("only published posts can be promoted");
   }
 
@@ -442,7 +453,7 @@ export async function promoteMyPost(
   const updated = await repo.updatePost(objectId, author._id, {
     promoted: true,
     promotedAt: existing.promotedAt ?? now,
-    promotionStatus: "active",
+    promotionStatus: POST_PROMOTION_STATUS.ACTIVE,
     updatedAt: now,
   });
   if (!updated) {
@@ -624,7 +635,7 @@ export async function createPostReportBySlug(
     reporterWallet,
     reason: normalizePostReportReason(input.reason),
     comment: normalizePostReportComment(input.comment),
-    status: "open",
+    status: POST_REPORT_STATUS.OPEN,
     createdAt: now,
     updatedAt: now,
   });
@@ -632,11 +643,11 @@ export async function createPostReportBySlug(
 
 function normalizePostReportReason(value: string): PostReportDoc["reason"] {
   if (
-    value === "spam" ||
-    value === "scam" ||
-    value === "illegal_content" ||
-    value === "abuse" ||
-    value === "other"
+    value === POST_REPORT_REASON.SPAM ||
+    value === POST_REPORT_REASON.SCAM ||
+    value === POST_REPORT_REASON.ILLEGAL_CONTENT ||
+    value === POST_REPORT_REASON.ABUSE ||
+    value === POST_REPORT_REASON.OTHER
   ) {
     return value;
   }

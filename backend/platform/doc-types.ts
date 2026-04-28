@@ -1,9 +1,13 @@
 import type { ObjectId } from "mongodb";
 import type {
-  AuthorPlatformCleanupItemDto,
-  AuthorPlatformCleanupPreviewDto,
+  CleanupRunStatus,
+  PaymentIntentStatus,
   PlatformBillingStatus,
   PlatformFeature,
+} from "../../shared/consts";
+import type {
+  AuthorPlatformCleanupItemDto,
+  AuthorPlatformCleanupPreviewDto,
   PlatformPlanDto,
 } from "../../shared/types/content";
 
@@ -36,7 +40,7 @@ export interface AuthorPlatformSubscriptionDoc {
 export interface AuthorPlatformCleanupLogDoc {
   _id: ObjectId;
   authorId: ObjectId;
-  status: "skipped" | "completed";
+  status: CleanupRunStatus;
   deletedBytes: number;
   deletedItems: AuthorPlatformCleanupItemDto[];
   previewBefore: AuthorPlatformCleanupPreviewDto;
@@ -55,7 +59,7 @@ export interface PlatformSubscriptionPaymentIntentDoc {
   tokenAddress: string;
   contractAddress: string;
   amount: string;
-  status: "pending" | "submitted" | "confirmed" | "expired" | "cancelled";
+  status: PaymentIntentStatus;
   txHash: string | null;
   validUntil: Date | null;
   expiresAt: Date;

@@ -1,6 +1,10 @@
 import type { ObjectId } from "mongodb";
+import type {
+  ContentStatus,
+  ContentVisibility,
+  ProjectNodeKind,
+} from "../../shared/consts";
 import type { AccessPolicy, PolicyMode } from "../domain/access";
-import type { ContentStatus } from "../../shared/types/content";
 
 export interface ProjectDoc {
   _id: ObjectId;
@@ -22,12 +26,12 @@ export interface ProjectNodeDoc {
   authorId: ObjectId;
   projectId: ObjectId;
   parentId: ObjectId | null;
-  kind: "file" | "folder";
+  kind: ProjectNodeKind;
   name: string;
   storageKey: string | null;
   mimeType: string | null;
   size: number | null;
-  visibility: "author" | "published";
+  visibility: ContentVisibility;
   createdAt: Date;
   updatedAt: Date;
 }

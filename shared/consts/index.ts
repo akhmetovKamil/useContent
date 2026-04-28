@@ -223,6 +223,14 @@ export const POST_REPORT_STATUS = {
   DISMISSED: "dismissed",
 } as const satisfies Record<string, PostReportStatus>;
 
+export type PostPromotionStatus = "active" | "paused" | "expired";
+
+export const POST_PROMOTION_STATUS = {
+  ACTIVE: "active",
+  PAUSED: "paused",
+  EXPIRED: "expired",
+} as const satisfies Record<string, PostPromotionStatus>;
+
 export type ActivityType =
   | "post_liked"
   | "post_commented"
@@ -254,7 +262,9 @@ export const FEED_SOURCE = {
   AUTHOR: "author",
 } as const satisfies Record<string, FeedSource>;
 
-export type ContractName = "SubscriptionManager" | "PlatformSubscriptionManager";
+export type ContractName =
+  | "SubscriptionManager"
+  | "PlatformSubscriptionManager";
 
 export const CONTRACT_NAME = {
   SUBSCRIPTION_MANAGER: "SubscriptionManager",

@@ -1,3 +1,4 @@
+import { PLATFORM_BILLING_STATUS } from "@shared/consts"
 import type { AuthorPlatformCleanupPreviewDto } from "@shared/types/content"
 import { AlertTriangle } from "lucide-react"
 
@@ -58,7 +59,7 @@ export function OverQuotaPanel({
                 <Button
                     className="w-fit rounded-full"
                     disabled={
-                        cleanupPreview?.status !== "expired" ||
+                        cleanupPreview?.status !== PLATFORM_BILLING_STATUS.EXPIRED ||
                         !cleanupPreview?.bytesToDelete ||
                         isPending
                     }
@@ -70,8 +71,8 @@ export function OverQuotaPanel({
                 </Button>
                 {mutationResult ? (
                     <p className="text-sm text-slate-600">
-                        Cleanup {mutationResult.status}: {formatFileSize(mutationResult.deletedBytes)}{" "}
-                        removed.
+                        Cleanup {mutationResult.status}:{" "}
+                        {formatFileSize(mutationResult.deletedBytes)} removed.
                     </p>
                 ) : null}
                 {mutationError ? (

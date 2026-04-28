@@ -1,3 +1,4 @@
+import { CONTENT_STATUS, POLICY_MODE } from "@shared/consts"
 import type { PolicyMode } from "@shared/types/access"
 import type { ContentStatus } from "@shared/types/content"
 import { useState } from "react"
@@ -90,8 +91,8 @@ export function ContentManagerPage({
 }: ContentManagerPageProps) {
     const [draftTitle, setDraftTitle] = useState("")
     const [body, setBody] = useState("")
-    const [status, setStatus] = useState<ContentStatus>("draft")
-    const [policyMode, setPolicyMode] = useState<PolicyMode>("inherited")
+    const [status, setStatus] = useState<ContentStatus>(CONTENT_STATUS.DRAFT)
+    const [policyMode, setPolicyMode] = useState<PolicyMode>(POLICY_MODE.INHERITED)
     const [accessPolicyId, setAccessPolicyId] = useState("")
     const [deleteTarget, setDeleteTarget] = useState<ManagedContentItem | null>(null)
     const bodyLabel = kind === "post" ? "Content" : "Description"
@@ -118,12 +119,13 @@ export function ContentManagerPage({
                                     body,
                                     status,
                                     policyMode,
-                                    accessPolicyId: policyMode === "custom" ? accessPolicyId : null,
+                                    accessPolicyId:
+                                        policyMode === POLICY_MODE.CUSTOM ? accessPolicyId : null,
                                 }).then(() => {
                                     setDraftTitle("")
                                     setBody("")
-                                    setStatus("draft")
-                                    setPolicyMode("inherited")
+                                    setStatus(CONTENT_STATUS.DRAFT)
+                                    setPolicyMode(POLICY_MODE.INHERITED)
                                     setAccessPolicyId("")
                                 })
                             }}
@@ -161,8 +163,12 @@ export function ContentManagerPage({
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="draft">draft</SelectItem>
-                                            <SelectItem value="published">published</SelectItem>
+                                            <SelectItem value={CONTENT_STATUS.DRAFT}>
+                                                draft
+                                            </SelectItem>
+                                            <SelectItem value={CONTENT_STATUS.PUBLISHED}>
+                                                published
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </Label>
@@ -179,15 +185,21 @@ export function ContentManagerPage({
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="inherited">inherited</SelectItem>
-                                            <SelectItem value="public">public</SelectItem>
-                                            <SelectItem value="custom">custom</SelectItem>
+                                            <SelectItem value={POLICY_MODE.INHERITED}>
+                                                inherited
+                                            </SelectItem>
+                                            <SelectItem value={POLICY_MODE.PUBLIC}>
+                                                public
+                                            </SelectItem>
+                                            <SelectItem value={POLICY_MODE.CUSTOM}>
+                                                custom
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </Label>
                             </div>
 
-                            {policyMode === "custom" ? (
+                            {policyMode === POLICY_MODE.CUSTOM ? (
                                 <Label>
                                     Saved access policy
                                     <Select
@@ -326,8 +338,8 @@ function ContentCard({
                     ) : null}
                     <Button
                         className="rounded-full"
-                        disabled={item.status === "published"}
-                        onClick={() => void onToggleStatus(item.id, "published")}
+                        disabled={item.status === CONTENT_STATUS.PUBLISHED}
+                        onClick={() => void onToggleStatus(item.id, CONTENT_STATUS.PUBLISHED)}
                         size="sm"
                         type="button"
                         variant="outline"

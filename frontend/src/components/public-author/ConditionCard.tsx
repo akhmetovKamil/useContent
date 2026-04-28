@@ -1,3 +1,4 @@
+import { ACCESS_POLICY_NODE_TYPE } from "@shared/consts"
 import type { AccessPolicyConditionDto } from "@shared/types/content"
 
 import { ConditionIcon } from "@/components/public-author/ConditionIcon"
@@ -37,7 +38,7 @@ export function ConditionCard({
                 </Badge>
             </div>
 
-            {condition.type === "subscription" ? (
+            {condition.type === ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION ? (
                 <div className="grid gap-3">
                     {condition.validUntil ? (
                         <p className="text-sm text-[var(--muted)]">
@@ -54,7 +55,7 @@ export function ConditionCard({
                 </div>
             ) : null}
 
-            {condition.type === "token_balance" ? (
+            {condition.type === ACCESS_POLICY_NODE_TYPE.TOKEN_BALANCE ? (
                 <TokenConditionAssetCard
                     chainId={condition.chainId}
                     contractAddress={condition.contractAddress}
@@ -65,7 +66,7 @@ export function ConditionCard({
                 />
             ) : null}
 
-            {condition.type === "nft_ownership" ? (
+            {condition.type === ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP ? (
                 <NftConditionAssetCard
                     chainId={condition.chainId}
                     contractAddress={condition.contractAddress}

@@ -1,12 +1,13 @@
+import { ACCESS_CONDITION_MODE, ACCESS_POLICY_NODE_TYPE } from "@shared/consts"
 import type { AccessPolicyConditionDto, AuthorAccessPolicyDto } from "@shared/types/content"
 
 import { formatTokenUnits, resolveTokenAssetMetadata } from "@/utils/web3/assets"
 
 export function describeConditionMode(mode: AuthorAccessPolicyDto["conditionMode"]) {
-    if (mode === "and") {
+    if (mode === ACCESS_CONDITION_MODE.AND) {
         return "Every condition below must be satisfied."
     }
-    if (mode === "or") {
+    if (mode === ACCESS_CONDITION_MODE.OR) {
         return "Any condition below can unlock this tier."
     }
 
@@ -15,11 +16,11 @@ export function describeConditionMode(mode: AuthorAccessPolicyDto["conditionMode
 
 export function formatConditionChip(condition: AccessPolicyConditionDto) {
     switch (condition.type) {
-        case "subscription":
+        case ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION:
             return "Subscription"
-        case "token_balance":
+        case ACCESS_POLICY_NODE_TYPE.TOKEN_BALANCE:
             return "Token"
-        case "nft_ownership":
+        case ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP:
             return "NFT"
         default:
             return "Rule"
@@ -28,11 +29,11 @@ export function formatConditionChip(condition: AccessPolicyConditionDto) {
 
 export function getConditionTitle(condition: AccessPolicyConditionDto) {
     switch (condition.type) {
-        case "subscription":
+        case ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION:
             return condition.plan.title
-        case "token_balance":
+        case ACCESS_POLICY_NODE_TYPE.TOKEN_BALANCE:
             return "Token balance"
-        case "nft_ownership":
+        case ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP:
             return `${condition.standard.toUpperCase()} ownership`
         default:
             return "Condition"
@@ -41,13 +42,13 @@ export function getConditionTitle(condition: AccessPolicyConditionDto) {
 
 export function getConditionDescription(condition: AccessPolicyConditionDto) {
     switch (condition.type) {
-        case "subscription":
+        case ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION:
             return `${formatPlanPrice(
                 condition.plan.chainId,
                 condition.plan.tokenAddress,
                 condition.plan.price
             )} every ${condition.plan.billingPeriodDays} days.`
-        case "token_balance": {
+        case ACCESS_POLICY_NODE_TYPE.TOKEN_BALANCE: {
             const token = resolveTokenAssetMetadata({
                 chainId: condition.chainId,
                 decimals: condition.decimals,
@@ -60,7 +61,7 @@ export function getConditionDescription(condition: AccessPolicyConditionDto) {
                 current ? `${current} ${token.symbol}` : "not detected"
             }.`
         }
-        case "nft_ownership":
+        case ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP:
             return `Requires ${condition.tokenId ? `token #${condition.tokenId}` : "collection ownership"} on chain ${
                 condition.chainId
             }. Current balance: ${condition.currentBalance ?? "not detected"}.`

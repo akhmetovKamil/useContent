@@ -1,6 +1,16 @@
 import { APIError } from "encore.dev/api";
 import { id as hashId } from "ethers";
 import { ObjectId } from "mongodb";
+import {
+  CLEANUP_ITEM_KIND,
+  CLEANUP_RUN_STATUS,
+  PAYMENT_ASSET,
+  PAYMENT_INTENT_STATUS,
+  PLATFORM_BILLING_STATUS,
+  PLATFORM_FEATURE,
+  PLATFORM_PLAN_CODE,
+  type PlatformBillingStatus,
+} from "../../shared/consts";
 import * as accessRepo from "../access/repository";
 import * as contractDeploymentsRepo from "../contracts/repository";
 import {
@@ -61,7 +71,7 @@ const PLATFORM_GRACE_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;
 
 const platformPlans: PlatformPlanDoc[] = [
   {
-    code: "free",
+    code: PLATFORM_PLAN_CODE.FREE,
     title: "Free",
     description: "Start publishing posts with a small storage quota.",
     priceUsdCents: 0,
@@ -69,12 +79,12 @@ const platformPlans: PlatformPlanDoc[] = [
     baseStorageBytes: GIB,
     maxExtraStorageBytes: 0,
     pricePerExtraGbUsdCents: 0,
-    features: ["posts"],
+    features: [PLATFORM_FEATURE.POSTS],
     active: true,
     sortOrder: 1,
   },
   {
-    code: "basic",
+    code: PLATFORM_PLAN_CODE.BASIC,
     title: "Basic",
     description: "Unlock projects and future homepage promotion tools.",
     priceUsdCents: 500,
@@ -82,7 +92,11 @@ const platformPlans: PlatformPlanDoc[] = [
     baseStorageBytes: 3 * GIB,
     maxExtraStorageBytes: 10 * GIB,
     pricePerExtraGbUsdCents: 100,
-    features: ["posts", "projects", "homepage_promo"],
+    features: [
+      PLATFORM_FEATURE.POSTS,
+      PLATFORM_FEATURE.PROJECTS,
+      PLATFORM_FEATURE.HOMEPAGE_PROMO,
+    ],
     active: true,
     sortOrder: 2,
   },
@@ -228,7 +242,7 @@ export async function createPlatformSubscriptionPaymentIntent(
   const wallet = normalizeWallet(walletAddress);
   const author = await getMyAuthorProfile(wallet);
   const plan = getPlatformPlan(input.planCode);
-  if (plan.code === "free") {
+  if (plan.code === PLATFORM_PLAN_CODE.FREE) {
     throw APIError.failedPrecondition(
       "free platform plan does not require payment",
     );
@@ -236,7 +250,10 @@ export async function createPlatformSubscriptionPaymentIntent(
 
   const extraStorageGb = normalizeExtraStorageGb(input.extraStorageGb, plan);
   const chainId = normalizeChainId(input.chainId);
-  const tokenAddress = normalizePlanTokenAddress("erc20", input.tokenAddress);
+  const tokenAddress = normalizePlanTokenAddress(
+    PAYMENT_ASSET.ERC20,
+    input.tokenAddress,
+  );
   const deployment = await repo.findContractDeployment(
     chainId,
     "PlatformSubscriptionManager",
@@ -259,7 +276,7 @@ export async function createPlatformSubscriptionPaymentIntent(
     tokenAddress,
     contractAddress: deployment.address,
     amount: calculatePlatformPlanAmount(plan, extraStorageGb),
-    status: "pending",
+    status: PAYMENT_INTENT_STATUS.PENDING,
     txHash: null,
     validUntil: null,
     expiresAt: addMinutes(now, 30),
@@ -287,11 +304,14 @@ export async function confirmPlatformSubscriptionPayment(
       "platform subscription payment intent is cancelled",
     );
   }
-  if (intent.status === "expired" || intent.expiresAt.getTime() < Date.now()) {
+  if (
+    intent.status === PAYMENT_INTENT_STATUS.EXPIRED ||
+    intent.expiresAt.getTime() < Date.now()
+  ) {
     const expired = await repo.updatePlatformSubscriptionPaymentIntent(
       intent._id,
       {
-        status: "expired",
+        status: PAYMENT_INTENT_STATUS.EXPIRED,
         updatedAt: new Date(),
       },
     );
@@ -300,7 +320,7 @@ export async function confirmPlatformSubscriptionPayment(
     }
     return expired;
   }
-  if (intent.status === "confirmed") {
+  if (intent.status === PAYMENT_INTENT_STATUS.CONFIRMED) {
     return intent;
   }
 
@@ -329,7 +349,7 @@ export async function confirmPlatformSubscriptionPayment(
       authorId: intent.authorId,
       walletAddress: wallet,
       planCode: plan.code,
-      status: "active",
+      status: PLATFORM_BILLING_STATUS.ACTIVE,
       baseStorageBytes: plan.baseStorageBytes,
       extraStorageBytes: intent.extraStorageGb * GIB,
       totalStorageBytes: plan.baseStorageBytes + intent.extraStorageGb * GIB,
@@ -348,7 +368,7 @@ export async function confirmPlatformSubscriptionPayment(
   const updated = await repo.updatePlatformSubscriptionPaymentIntent(
     intent._id,
     {
-      status: "confirmed",
+      status: PAYMENT_INTENT_STATUS.CONFIRMED,
       txHash,
       validUntil: payment.paidUntil,
       updatedAt: now,
@@ -370,10 +390,10 @@ export async function buildAuthorPlatformBilling(
   ]);
   const state = resolvePlatformSubscriptionState(subscription, new Date());
   const subscriptionPlan =
-    subscription && state.status !== "expired"
+    subscription && state.status !== PLATFORM_BILLING_STATUS.EXPIRED
       ? getPlatformPlan(subscription.planCode)
       : null;
-  const plan = subscriptionPlan ?? getPlatformPlan("free");
+  const plan = subscriptionPlan ?? getPlatformPlan(PLATFORM_PLAN_CODE.FREE);
   const baseStorageBytes =
     subscriptionPlan && subscription
       ? subscription.baseStorageBytes
@@ -386,7 +406,7 @@ export async function buildAuthorPlatformBilling(
       : baseStorageBytes + extraStorageBytes;
   const usedStorageBytes = usage.postsBytes + usage.projectsBytes;
   const features =
-    state.status === "active"
+    state.status === PLATFORM_BILLING_STATUS.ACTIVE
       ? (subscription?.features ?? plan.features)
       : plan.features;
 
@@ -408,9 +428,11 @@ export async function buildAuthorPlatformBilling(
     projectsBytes: usage.projectsBytes,
     features,
     isProjectCreationAllowed:
-      state.status === "active" && hasPlatformFeature(features, "projects"),
+      state.status === PLATFORM_BILLING_STATUS.ACTIVE &&
+      hasPlatformFeature(features, PLATFORM_FEATURE.PROJECTS),
     isUploadAllowed:
-      state.status !== "grace" && usedStorageBytes < totalStorageBytes,
+      state.status !== PLATFORM_BILLING_STATUS.GRACE &&
+      usedStorageBytes < totalStorageBytes,
   };
 }
 
@@ -431,19 +453,22 @@ function resolvePlatformSubscriptionState(
   > | null,
   now: Date,
 ): {
-  status: "free" | "active" | "grace" | "expired";
+  status: PlatformBillingStatus;
   graceUntil: Date | null;
 } {
   if (!subscription) {
-    return { status: "free", graceUntil: null };
+    return { status: PLATFORM_BILLING_STATUS.FREE, graceUntil: null };
   }
 
   if (
-    subscription.status === "active" &&
+    subscription.status === PLATFORM_BILLING_STATUS.ACTIVE &&
     subscription.validUntil &&
     subscription.validUntil.getTime() > now.getTime()
   ) {
-    return { status: "active", graceUntil: subscription.graceUntil };
+    return {
+      status: PLATFORM_BILLING_STATUS.ACTIVE,
+      graceUntil: subscription.graceUntil,
+    };
   }
 
   const graceUntil =
@@ -452,21 +477,21 @@ function resolvePlatformSubscriptionState(
       ? new Date(subscription.validUntil.getTime() + PLATFORM_GRACE_PERIOD_MS)
       : null);
   if (
-    subscription.status !== "expired" &&
+    subscription.status !== PLATFORM_BILLING_STATUS.EXPIRED &&
     graceUntil &&
     graceUntil.getTime() > now.getTime()
   ) {
-    return { status: "grace", graceUntil };
+    return { status: PLATFORM_BILLING_STATUS.GRACE, graceUntil };
   }
 
-  return { status: "expired", graceUntil };
+  return { status: PLATFORM_BILLING_STATUS.EXPIRED, graceUntil };
 }
 
 export async function previewAuthorPlatformCleanup(
   author: AuthorProfileDoc,
 ): Promise<AuthorPlatformCleanupPreviewResponse> {
   const billing = await buildAuthorPlatformBilling(author);
-  const freePlan = getPlatformPlan("free");
+  const freePlan = getPlatformPlan(PLATFORM_PLAN_CODE.FREE);
   const bytesToDelete = Math.max(
     billing.usedStorageBytes - freePlan.baseStorageBytes,
     0,
@@ -501,7 +526,7 @@ async function listAuthorCleanupCandidates(
   return [
     ...attachments.map((attachment) => ({
       id: attachment._id.toHexString(),
-      kind: "post_attachment" as const,
+      kind: CLEANUP_ITEM_KIND.POST_ATTACHMENT,
       parentId: attachment.postId.toHexString(),
       fileName: attachment.fileName,
       storageKey: attachment.storageKey,
@@ -510,7 +535,7 @@ async function listAuthorCleanupCandidates(
     })),
     ...projectFiles.map((node) => ({
       id: node._id.toHexString(),
-      kind: "project_file" as const,
+      kind: CLEANUP_ITEM_KIND.PROJECT_FILE,
       parentId: node.projectId.toHexString(),
       fileName: node.name,
       storageKey: node.storageKey ?? "",
@@ -549,11 +574,14 @@ export async function cleanupExpiredAuthorPlatformStorage(
   const now = new Date();
   const deletedItems: AuthorPlatformCleanupItemResponse[] = [];
 
-  if (previewBefore.status !== "expired" || previewBefore.bytesToDelete <= 0) {
+  if (
+    previewBefore.status !== PLATFORM_BILLING_STATUS.EXPIRED ||
+    previewBefore.bytesToDelete <= 0
+  ) {
     const previewAfter = await previewAuthorPlatformCleanup(author);
     const log = await repo.createAuthorPlatformCleanupLog({
       authorId: author._id,
-      status: "skipped",
+      status: CLEANUP_RUN_STATUS.SKIPPED,
       deletedBytes: 0,
       deletedItems,
       previewBefore,
@@ -564,7 +592,7 @@ export async function cleanupExpiredAuthorPlatformStorage(
     return {
       id: log._id.toHexString(),
       authorId: author._id.toHexString(),
-      status: "skipped",
+      status: CLEANUP_RUN_STATUS.SKIPPED,
       deletedBytes: 0,
       deletedItems,
       previewAfter,
@@ -573,7 +601,7 @@ export async function cleanupExpiredAuthorPlatformStorage(
   }
 
   for (const candidate of previewBefore.candidates) {
-    if (candidate.kind === "post_attachment") {
+    if (candidate.kind === CLEANUP_ITEM_KIND.POST_ATTACHMENT) {
       const attachment = await repo.findPostAttachmentByIdAndPostId(
         new ObjectId(candidate.id),
         new ObjectId(candidate.parentId),
@@ -609,7 +637,7 @@ export async function cleanupExpiredAuthorPlatformStorage(
   });
   const log = await repo.createAuthorPlatformCleanupLog({
     authorId: author._id,
-    status: "completed",
+    status: CLEANUP_RUN_STATUS.COMPLETED,
     deletedBytes,
     deletedItems,
     previewBefore,
@@ -620,7 +648,7 @@ export async function cleanupExpiredAuthorPlatformStorage(
   return {
     id: log._id.toHexString(),
     authorId: author._id.toHexString(),
-    status: "completed",
+    status: CLEANUP_RUN_STATUS.COMPLETED,
     deletedBytes,
     deletedItems,
     previewAfter,

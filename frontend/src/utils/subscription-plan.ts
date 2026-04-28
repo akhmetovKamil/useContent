@@ -1,3 +1,5 @@
+import { PAYMENT_ASSET, type PaymentAsset } from "@shared/consts"
+import { isSameAddressLike } from "@shared/utils"
 import { formatUnits, parseUnits } from "viem"
 
 import { getTokenPresets } from "@/utils/config/tokens"
@@ -15,15 +17,13 @@ export function buildPlanCode(title: string) {
 export function getTokenPresetByAddress(
     chainId: number,
     address: string,
-    paymentAsset: "erc20" | "native" = "erc20"
+    paymentAsset: PaymentAsset = PAYMENT_ASSET.ERC20
 ) {
-    if (paymentAsset === "native") {
-        return getTokenPresets(chainId).find((preset) => preset.kind === "native")
+    if (paymentAsset === PAYMENT_ASSET.NATIVE) {
+        return getTokenPresets(chainId).find((preset) => preset.kind === PAYMENT_ASSET.NATIVE)
     }
 
-    return getTokenPresets(chainId).find(
-        (preset) => preset.address?.toLowerCase() === address.toLowerCase()
-    )
+    return getTokenPresets(chainId).find((preset) => isSameAddressLike(preset.address, address))
 }
 
 export function toBaseUnits(amount: string, decimals: number) {
@@ -42,7 +42,7 @@ export function formatPlanAmount(
     chainId: number,
     tokenAddress: string,
     price: string,
-    paymentAsset: "erc20" | "native" = "erc20"
+    paymentAsset: PaymentAsset = PAYMENT_ASSET.ERC20
 ) {
     const token = getTokenPresetByAddress(chainId, tokenAddress, paymentAsset)
     const decimals = token?.decimals ?? 18

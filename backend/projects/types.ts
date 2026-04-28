@@ -1,4 +1,5 @@
 import type { Header } from "encore.dev/api";
+import type { ContentStatus } from "../../shared/consts";
 import type {
   CreateProjectFolderRequest,
   UpdateProjectNodeRequest,
@@ -8,7 +9,7 @@ import type {
 export * from "../lib/content-types";
 
 export interface ListMyProjectsRequest {
-  status?: "draft" | "published" | "archived";
+  status?: ContentStatus;
 }
 
 export interface ProjectIdPathRequest {

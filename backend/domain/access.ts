@@ -10,7 +10,14 @@ export {
   type SubscriptionPolicyNode,
   type TokenBalancePolicyNode,
 } from "../../shared/types/access";
-import { normalizeAddressLike } from "../../shared/utils";
+import {
+  ACCESS_POLICY_NODE_TYPE,
+  NFT_STANDARD,
+  POLICY_MODE,
+  type NftStandard,
+  type PolicyMode,
+} from "../../shared/consts";
+import { isSameAddressLike } from "../../shared/utils";
 
 import {
   ACCESS_POLICY_VERSION,
@@ -37,7 +44,7 @@ export interface TokenBalanceGrant {
 export interface NftOwnershipGrant {
   chainId: number;
   contractAddress: string;
-  standard: "erc721" | "erc1155";
+  standard: NftStandard;
   tokenId?: string;
   balance?: string;
 }
@@ -67,7 +74,7 @@ export interface AccessEvaluationResult {
 export function createPublicPolicy(): AccessPolicy {
   return {
     version: ACCESS_POLICY_VERSION,
-    root: { type: "public" },
+    root: { type: ACCESS_POLICY_NODE_TYPE.PUBLIC },
   };
 }
 
@@ -84,15 +91,15 @@ export function isAccessPolicy(value: unknown): value is AccessPolicy {
 }
 
 export function resolveEntityPolicy(
-  policyMode: "public" | "inherited" | "custom",
+  policyMode: PolicyMode,
   authorDefaultPolicy: AccessPolicy,
   customPolicy?: AccessPolicy | null,
 ): AccessPolicy {
-  if (policyMode === "public") {
+  if (policyMode === POLICY_MODE.PUBLIC) {
     return createPublicPolicy();
   }
 
-  if (policyMode === "custom") {
+  if (policyMode === POLICY_MODE.CUSTOM) {
     if (!customPolicy) {
       throw new Error("custom_policy_required");
     }
@@ -118,30 +125,30 @@ function evaluatePolicyNode(
   context: AccessEvaluationContext,
 ): AccessEvaluationResult {
   switch (node.type) {
-    case "public":
-      return { allowed: true, reason: "public" };
-    case "subscription":
+    case ACCESS_POLICY_NODE_TYPE.PUBLIC:
+      return { allowed: true, reason: ACCESS_POLICY_NODE_TYPE.PUBLIC };
+    case ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION:
       return hasActiveSubscription(node, context)
-        ? { allowed: true, reason: "subscription" }
+        ? { allowed: true, reason: ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION }
         : { allowed: false, reason: "missing_subscription" };
-    case "token_balance":
+    case ACCESS_POLICY_NODE_TYPE.TOKEN_BALANCE:
       return hasRequiredTokenBalance(node, context)
-        ? { allowed: true, reason: "token_balance" }
+        ? { allowed: true, reason: ACCESS_POLICY_NODE_TYPE.TOKEN_BALANCE }
         : { allowed: false, reason: "missing_token_balance" };
-    case "nft_ownership":
+    case ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP:
       return hasRequiredNftOwnership(node, context)
-        ? { allowed: true, reason: "nft_ownership" }
+        ? { allowed: true, reason: ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP }
         : { allowed: false, reason: "missing_nft_ownership" };
-    case "or":
+    case ACCESS_POLICY_NODE_TYPE.OR:
       for (const child of node.children) {
         const result = evaluatePolicyNode(child, context);
         if (result.allowed) {
-          return { allowed: true, reason: "or" };
+          return { allowed: true, reason: ACCESS_POLICY_NODE_TYPE.OR };
         }
       }
 
       return { allowed: false, reason: "invalid_policy" };
-    case "and":
+    case ACCESS_POLICY_NODE_TYPE.AND:
       for (const child of node.children) {
         const result = evaluatePolicyNode(child, context);
         if (!result.allowed) {
@@ -149,7 +156,7 @@ function evaluatePolicyNode(
         }
       }
 
-      return { allowed: true, reason: "and" };
+      return { allowed: true, reason: ACCESS_POLICY_NODE_TYPE.AND };
     default:
       return { allowed: false, reason: "unsupported_policy" };
   }
@@ -175,16 +182,16 @@ function isAccessPolicyNode(value: unknown): value is AccessPolicyNode {
   };
 
   switch (candidate.type) {
-    case "public":
+    case ACCESS_POLICY_NODE_TYPE.PUBLIC:
       return true;
-    case "subscription":
+    case ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION:
       return (
         typeof candidate.authorId === "string" &&
         candidate.authorId.length > 0 &&
         typeof candidate.planId === "string" &&
         candidate.planId.length > 0
       );
-    case "token_balance":
+    case ACCESS_POLICY_NODE_TYPE.TOKEN_BALANCE:
       return (
         typeof candidate.chainId === "number" &&
         Number.isInteger(candidate.chainId) &&
@@ -197,22 +204,23 @@ function isAccessPolicyNode(value: unknown): value is AccessPolicyNode {
         Number.isInteger(candidate.decimals) &&
         candidate.decimals >= 0
       );
-    case "nft_ownership":
+    case ACCESS_POLICY_NODE_TYPE.NFT_OWNERSHIP:
       return (
         typeof candidate.chainId === "number" &&
         Number.isInteger(candidate.chainId) &&
         candidate.chainId > 0 &&
         typeof candidate.contractAddress === "string" &&
         candidate.contractAddress.length > 0 &&
-        (candidate.standard === "erc721" || candidate.standard === "erc1155") &&
+        (candidate.standard === NFT_STANDARD.ERC721 ||
+          candidate.standard === NFT_STANDARD.ERC1155) &&
         (candidate.tokenId === undefined ||
           typeof candidate.tokenId === "string") &&
         (candidate.minBalance === undefined ||
           (typeof candidate.minBalance === "string" &&
             /^[0-9]+$/.test(candidate.minBalance)))
       );
-    case "or":
-    case "and":
+    case ACCESS_POLICY_NODE_TYPE.OR:
+    case ACCESS_POLICY_NODE_TYPE.AND:
       return (
         Array.isArray(candidate.children) &&
         candidate.children.length > 0 &&
@@ -244,8 +252,7 @@ function hasRequiredTokenBalance(
   const grant = context.tokenBalances?.find(
     (entry) =>
       entry.chainId === node.chainId &&
-      normalizeAddressLike(entry.contractAddress) ===
-        normalizeAddressLike(node.contractAddress),
+      isSameAddressLike(entry.contractAddress, node.contractAddress),
   );
 
   if (!grant) {
@@ -263,8 +270,7 @@ function hasRequiredNftOwnership(
     context.nftOwnerships?.some((grant) => {
       if (
         grant.chainId !== node.chainId ||
-        normalizeAddressLike(grant.contractAddress) !==
-          normalizeAddressLike(node.contractAddress) ||
+        !isSameAddressLike(grant.contractAddress, node.contractAddress) ||
         grant.standard !== node.standard
       ) {
         return false;

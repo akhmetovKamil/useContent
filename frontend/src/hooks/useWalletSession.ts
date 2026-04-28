@@ -1,5 +1,6 @@
-import { useMutation } from "@tanstack/react-query"
+import { normalizeAddressLike } from "@shared/utils"
 import { useEffect } from "react"
+import { useMutation } from "@tanstack/react-query"
 import { useAccount, useDisconnect, useSignMessage } from "wagmi"
 
 import { authApi } from "@/api/AuthApi"
@@ -19,13 +20,13 @@ export function useWalletSession() {
     const sessionWalletAddress = useAuthStore((state) => state.walletAddress)
     const expiresAt = useAuthStore((state) => state.expiresAt)
     const setMode = useWorkspaceStore((state) => state.setMode)
-    const normalizedAddress = address?.toLowerCase() ?? null
+    const normalizedAddress = address ? normalizeAddressLike(address) : null
     const isSessionActive = Boolean(
         token &&
-            expiresAt &&
-            !isSessionExpired(expiresAt) &&
-            normalizedAddress &&
-            sessionWalletAddress === normalizedAddress
+        expiresAt &&
+        !isSessionExpired(expiresAt) &&
+        normalizedAddress &&
+        sessionWalletAddress === normalizedAddress
     )
 
     useEffect(() => {
@@ -85,7 +86,7 @@ export function useWalletSession() {
                 throw new Error("Wallet is not connected")
             }
 
-            const normalizedAddress = address.toLowerCase()
+            const normalizedAddress = normalizeAddressLike(address)
             const { message } = await authApi.getNonce(normalizedAddress)
             const signature = await signMessageAsync({ message })
             const { token, expiresAt } = await authApi.verifySignature({

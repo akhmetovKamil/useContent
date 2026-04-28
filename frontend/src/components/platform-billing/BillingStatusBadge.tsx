@@ -1,10 +1,15 @@
+import { PLATFORM_BILLING_STATUS } from "@shared/consts"
 import type { AuthorPlatformBillingDto } from "@shared/types/content"
 
 import { StatusPill } from "@/components/ui/status-pill"
 
 export function BillingStatusBadge({ billing }: { billing: AuthorPlatformBillingDto }) {
     const variant =
-        billing.status === "active" ? "success" : billing.status === "grace" ? "warning" : "default"
+        billing.status === PLATFORM_BILLING_STATUS.ACTIVE
+            ? "success"
+            : billing.status === PLATFORM_BILLING_STATUS.GRACE
+              ? "warning"
+              : "default"
 
     return (
         <StatusPill

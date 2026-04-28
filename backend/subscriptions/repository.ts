@@ -1,4 +1,8 @@
 import { ObjectId, type Collection } from "mongodb";
+import {
+  SUBSCRIPTION_ENTITLEMENT_SOURCE,
+  SUBSCRIPTION_ENTITLEMENT_STATUS,
+} from "../../shared/consts";
 import { ensureIndexes, getCollection } from "../storage/repository-base";
 import type {
   SubscriptionEntitlementDoc,
@@ -128,7 +132,7 @@ export async function countActiveSubscriptionEntitlementsByPlanId(
   const entitlements = await getSubscriptionEntitlementsCollection();
   return entitlements.countDocuments({
     planId,
-    status: "active",
+    status: SUBSCRIPTION_ENTITLEMENT_STATUS.ACTIVE,
     validUntil: { $gt: now },
   });
 }
@@ -144,7 +148,7 @@ export async function countActiveSubscriptionEntitlementsByPlanIds(
   const entitlements = await getSubscriptionEntitlementsCollection();
   const wallets = await entitlements.distinct("subscriberWallet", {
     planId: { $in: planIds },
-    status: "active",
+    status: SUBSCRIPTION_ENTITLEMENT_STATUS.ACTIVE,
     validUntil: { $gt: now },
   });
 
@@ -184,9 +188,9 @@ export async function upsertActiveSubscriptionEntitlement(input: {
     },
     {
       $set: {
-        status: "active",
+        status: SUBSCRIPTION_ENTITLEMENT_STATUS.ACTIVE,
         validUntil: input.validUntil,
-        source: "onchain",
+        source: SUBSCRIPTION_ENTITLEMENT_SOURCE.ONCHAIN,
         updatedAt: input.now,
       },
       $setOnInsert: {
@@ -242,7 +246,6 @@ export async function deleteSubscriptionPaymentIntentsByAuthorId(
   const intents = await getSubscriptionPaymentIntentsCollection();
   await intents.deleteMany({ authorId });
 }
-
 
 export async function updateSubscriptionPaymentIntent(
   id: ObjectId,

@@ -1,3 +1,4 @@
+import { CONTENT_STATUS } from "@shared/consts"
 import type { ProjectDto } from "@shared/types/content"
 import { useEffect, useState } from "react"
 
@@ -20,7 +21,10 @@ export function MeProjectsPage() {
     const [selectedProject, setSelectedProject] = useState<ProjectDto | null>(null)
     const [showArchive, setShowArchive] = useState(false)
     const projectsQuery = useMyProjectsQuery(Boolean(token))
-    const archivedProjectsQuery = useMyProjectsQuery(Boolean(token) && showArchive, "archived")
+    const archivedProjectsQuery = useMyProjectsQuery(
+        Boolean(token) && showArchive,
+        CONTENT_STATUS.ARCHIVED
+    )
     const policiesQuery = useMyAccessPoliciesQuery(Boolean(token))
     const createProjectMutation = useCreateMyProjectMutation()
     const updateProjectMutation = useUpdateMyProjectMutation()
@@ -71,7 +75,7 @@ export function MeProjectsPage() {
                 onArchive={(projectId) =>
                     updateProjectMutation.mutateAsync({
                         projectId,
-                        input: { status: "archived" },
+                        input: { status: CONTENT_STATUS.ARCHIVED },
                     })
                 }
                 onToggleStatus={(projectId, status) =>
@@ -111,7 +115,7 @@ export function MeProjectsPage() {
                     onToggleStatus={(projectId) =>
                         updateProjectMutation.mutateAsync({
                             projectId,
-                            input: { status: "published" },
+                            input: { status: CONTENT_STATUS.PUBLISHED },
                         })
                     }
                     title="Archived project spaces"
