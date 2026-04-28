@@ -1,36 +1,51 @@
 import { APIError } from "encore.dev/api";
-import { id as hashId } from "ethers";
 import { ObjectId } from "mongodb";
-import { ZERO_ADDRESS } from "../../shared/consts";
+import type { PaginatedResponse } from "../../shared/types/common";
+import * as accessRepo from "../access/repository";
+import * as contractDeploymentsRepo from "../contracts/repository";
+import { evaluateAccessPolicy, resolveEntityPolicy } from "../domain/access";
 import {
-  ACCESS_POLICY_VERSION,
-  type AccessPolicy,
-  type AccessEvaluationContext,
-  type AccessPolicyNode,
-  createPublicPolicy,
-  evaluateAccessPolicy,
-  isAccessPolicy,
-  resolveEntityPolicy,
-} from "../domain/access";
+  buildAccessEvaluationContext,
+  buildFeedPostResponse,
+  getReadablePostContext,
+  normalizeAttachmentIds,
+  normalizeContentPolicy,
+  normalizeLinkedProjectIds,
+  normalizePostCommentContent,
+  normalizePostContent,
+  normalizePostTitle,
+  normalizeProjectNodeName,
+  normalizeWallet,
+  parseObjectId,
+  readPostAttachmentObject,
+  resolvePostAttachment,
+  resolvePostAttachmentKind,
+  resolvePublishedAt,
+  toPaginatedResponse,
+  uniqueObjectIds,
+} from "../lib/content-common";
+import type {
+  CreatePostCommentRequest,
+  CreatePostReportRequest,
+  CreatePostRequest,
+  FeedPostResponse,
+  PostAttachmentDoc,
+  PostCommentDoc,
+  PostDoc,
+  PostReportDoc,
+  UpdatePostRequest,
+} from "../lib/content-types";
+import * as platformRepo from "../platform/repository";
+import type { PublishedPostCursor } from "../posts/repository";
+import * as postsRepo from "../posts/repository";
+import * as profilesRepo from "../profiles/repository";
+import * as projectsRepo from "../projects/repository";
+import * as subscriptionsRepo from "../subscriptions/repository";
 import {
   createPostAttachmentStorageKey,
   deletePostAttachmentFile,
   uploadPostAttachmentFile,
 } from "./file-storage";
-import {
-  readOnChainAccessGrants,
-  verifyPlatformSubscriptionPayment,
-  verifyPlanRegistration,
-  verifySubscriptionPayment,
-} from "../onchain";
-import * as accessRepo from "../access/repository";
-import * as contractDeploymentsRepo from "../contracts/repository";
-import * as platformRepo from "../platform/repository";
-import * as postsRepo from "../posts/repository";
-import type { PublishedPostCursor } from "../posts/repository";
-import * as profilesRepo from "../profiles/repository";
-import * as projectsRepo from "../projects/repository";
-import * as subscriptionsRepo from "../subscriptions/repository";
 
 const repo = {
   ...accessRepo,
@@ -41,172 +56,22 @@ const repo = {
   ...projectsRepo,
   ...subscriptionsRepo,
 };
-import type {
-  AccessPolicyPresetDoc,
-  AccessPolicyConditionResponse,
-  AccessPolicyPresetResponse,
-  AuthorAccessPolicyResponse,
-  AuthorCatalogItemResponse,
-  AuthorProfileDoc,
-  AuthorProfileResponse,
-  AuthorSubscriberResponse,
-  AuthorPlatformBillingResponse,
-  AuthorPlatformCleanupItemResponse,
-  AuthorPlatformCleanupPreviewResponse,
-  AuthorPlatformCleanupRunResponse,
-  ConfirmSubscriptionPaymentRequest,
-  AuthorStorageUsageResponse,
-  AuthorStorageUsageStats,
-  ContractDeploymentDoc,
-  ContractDeploymentResponse,
-  CreateAccessPolicyPresetRequest,
-  CreateAuthorProfileRequest,
-  CreatePlatformSubscriptionPaymentIntentRequest,
-  CreatePostRequest,
-  CreateProjectFolderRequest,
-  CreateProjectRequest,
-  CreatePostCommentRequest,
-  CreatePostReportRequest,
-  CreateSubscriptionPaymentIntentRequest,
-  FeedPostResponse,
-  FeedProjectResponse,
-  PostDoc,
-  PostCommentDoc,
-  PostCommentResponse,
-  PostReportDoc,
-  PostReportResponse,
-  PostAttachmentDoc,
-  PostAttachmentResponse,
-  PostResponse,
-  ProjectDoc,
-  ProjectBundleResponse,
-  ProjectNodeDoc,
-  ProjectNodeListResponse,
-  ProjectNodeResponse,
-  ProjectResponse,
-  PlatformFeature,
-  PlatformPlanResponse,
-  PlatformPlanDoc,
-  PlatformSubscriptionPaymentIntentDoc,
-  PlatformSubscriptionPaymentIntentResponse,
-  ReaderSubscriptionResponse,
-  SubscriptionPlanDoc,
-  SubscriptionPlanResponse,
-  SubscriptionEntitlementDoc,
-  SubscriptionEntitlementResponse,
-  SubscriptionPaymentIntentDoc,
-  SubscriptionPaymentIntentResponse,
-  UpdateAuthorProfileRequest,
-  UpdateAccessPolicyPresetRequest,
-  UpsertContractDeploymentRequest,
-  UpsertSubscriptionPlanRequest,
-  UpdateMyProfileRequest,
-  UpdatePostRequest,
-  UpdateProjectNodeRequest,
-  UpdateProjectRequest,
-  UserDoc,
-  UserProfileResponse,
-} from "../lib/content-types";
-import type { PaginatedResponse } from "../../shared/types/common";
-import {
-  toUserProfileResponse,
-  toAuthorProfileResponse,
-  toAuthorStorageUsageResponse,
-  toAccessPolicyPresetResponse,
-  toAccessPolicyPresetResponseWithUsage,
-  toSubscriptionEntitlementResponse,
-  toContractDeploymentResponse,
-  toSubscriptionPaymentIntentResponse,
-  toPlatformSubscriptionPaymentIntentResponse,
-  toSubscriptionPlanResponse,
-  toSubscriptionPlanResponseWithStats,
-  toPostResponse,
-  toPostAttachmentResponse,
-  toPostCommentResponse,
-  buildPostResponse,
-  toFeedPostResponse,
-  buildFeedPostResponse,
-  toPaginatedResponse,
-  describeAccessPolicy,
-  describeAccessPolicyNode,
-  toProjectResponse,
-  buildProjectResponse,
-  toProjectNodeResponse,
-  toFeedProjectResponse,
-  buildFeedProjectResponse,
-  normalizeWallet,
-  isMongoDuplicateKeyError,
-  normalizePaymentAsset,
-  normalizePlanTokenAddress,
-  normalizeUsername,
-  normalizeDisplayName,
-  normalizeBio,
-  normalizeAuthorTags,
-  normalizeSlug,
-  normalizePlanTitle,
-  normalizePresetName,
-  normalizePresetDescription,
-  normalizeChainId,
-  normalizeBillingPeriodDays,
-  normalizePositiveInteger,
-  normalizePostTitle,
-  normalizePostContent,
-  normalizePostCommentContent,
-  normalizeContentPolicy,
-  normalizeAccessPolicy,
-  normalizeProjectTitle,
-  normalizeProjectDescription,
-  normalizeProjectNodeName,
-  getMyProjectContext,
-  resolveProjectNode,
-  resolveProjectFolder,
-  buildProjectBreadcrumbs,
-  buildProjectBundle,
-  getReadablePostContext,
-  buildPostStats,
-  assertPublishedProjectPath,
-  readProjectFileObject,
-  normalizeRequestedAuthorDefaultPolicy,
-  resolveDefaultPolicyFromPreset,
-  normalizePresetPolicy,
-  normalizeRequestedCustomPolicy,
-  resolvePublishedAt,
-  normalizeAttachmentIds,
-  normalizeLinkedProjectIds,
-  resolvePostAttachmentKind,
-  resolvePostAttachment,
-  readPostAttachmentObject,
-  parseObjectId,
-  uniqueObjectIds,
-  buildSubscriptionGrants,
-  buildAccessEvaluationContext,
-  policyUsesSubscriptionPlan,
-  buildAccessPolicyConditionResponses,
-  collectPolicyConditionNodes,
-  collectSubscriptionPlanIds,
-  getConditionMode,
-  shortenWallet,
-  buildAccessPolicyFromInput,
-  buildAccessPolicyNodeFromInput,
-  normalizePlanCode,
-  normalizeTokenDecimals,
-  normalizeNftStandard,
-  normalizeOptionalIdString,
-  normalizeTxHash,
-  normalizePlanKey,
-  buildPlanKey,
-  addMinutes,
-} from "../lib/content-common";
 
-export * from "../lib/content-common";
-import { getAuthorProfileBySlug, getMyAuthorProfile, getOrCreateUserByWallet } from "../profiles/service";
-import { assertAuthorPlatformFeature, assertAuthorStorageQuota } from "../platform/service";
-import { listMyEntitlements } from "../subscriptions/service";
 import {
   recordNewPostActivity,
   recordPostCommentedActivity,
   recordPostLikedActivity,
 } from "../activity/events";
+import {
+  assertAuthorPlatformFeature,
+  assertAuthorStorageQuota,
+} from "../platform/service";
+import {
+  getAuthorProfileBySlug,
+  getMyAuthorProfile,
+  getOrCreateUserByWallet,
+} from "../profiles/service";
+import { listMyEntitlements } from "../subscriptions/service";
 export async function listMyFeedPosts(
   walletAddress: string,
   pagination: FeedPaginationRequest = {},
@@ -266,7 +131,9 @@ export async function listExploreFeedPosts(
 ): Promise<PaginatedResponse<FeedPostResponse>> {
   const page = normalizeFeedPagination(pagination);
   const filters = normalizeExploreFeedFilters(pagination);
-  const normalizedWallet = viewerWallet ? normalizeWallet(viewerWallet) : undefined;
+  const normalizedWallet = viewerWallet
+    ? normalizeWallet(viewerWallet)
+    : undefined;
   const subscribedAuthorIds = normalizedWallet
     ? await getActiveSubscribedAuthorIds(normalizedWallet)
     : [];
@@ -283,8 +150,14 @@ export async function listExploreFeedPosts(
         search: filters.search,
       })
     : [];
-  const posts = rankHybridFeedPosts(publicPosts, subscribedPosts, subscribedAuthorIds)
-    .filter((post) => matchesExploreFeedSource(post, subscribedAuthorIds, filters.source))
+  const posts = rankHybridFeedPosts(
+    publicPosts,
+    subscribedPosts,
+    subscribedAuthorIds,
+  )
+    .filter((post) =>
+      matchesExploreFeedSource(post, subscribedAuthorIds, filters.source),
+    )
     .slice(0, page.limit + 1);
   const authorIds = uniqueObjectIds(posts.map((post) => post.authorId));
   const authors = await repo.findAuthorProfilesByIds(authorIds);
@@ -364,7 +237,9 @@ function matchesExploreFeedSource(
   return !isSubscribed && !isPostPromotionActive(post);
 }
 
-async function getActiveSubscribedAuthorIds(walletAddress: string): Promise<ObjectId[]> {
+async function getActiveSubscribedAuthorIds(
+  walletAddress: string,
+): Promise<ObjectId[]> {
   const entitlements = await listMyEntitlements(walletAddress);
   return uniqueObjectIds(
     entitlements
@@ -732,7 +607,9 @@ export async function createPostReportBySlug(
     throw APIError.notFound("post not found");
   }
   if (post.policyMode !== "public" && !isPostPromotionActive(post)) {
-    throw APIError.failedPrecondition("only public or promoted posts can be reported");
+    throw APIError.failedPrecondition(
+      "only public or promoted posts can be reported",
+    );
   }
   const existing = await repo.findPostReport(post._id, reporterWallet);
   if (existing) {
@@ -766,7 +643,9 @@ function normalizePostReportReason(value: string): PostReportDoc["reason"] {
   throw APIError.invalidArgument("report reason is invalid");
 }
 
-function normalizePostReportComment(value: string | null | undefined): string | null {
+function normalizePostReportComment(
+  value: string | null | undefined,
+): string | null {
   const normalized = String(value ?? "").trim();
   if (!normalized) {
     return null;
@@ -848,7 +727,11 @@ export async function listAuthorPostsBySlug(
       ),
     ),
   );
-  return toPaginatedResponse(feedPosts, page.limit, encodeFeedCursorFromFeedPost);
+  return toPaginatedResponse(
+    feedPosts,
+    page.limit,
+    encodeFeedCursorFromFeedPost,
+  );
 }
 
 export async function getAuthorPostBySlugAndId(

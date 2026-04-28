@@ -1,9 +1,9 @@
 import { APIError } from "encore.dev/api";
 import { ObjectId } from "mongodb";
 import type { PaginatedResponse } from "../../shared/types/common";
-import type { ActivityDoc } from "./doc-types";
 import type { ActivityResponse } from "../lib/content-types";
 import { normalizeWallet } from "../lib/utils/wallet";
+import type { ActivityDoc } from "./doc-types";
 import * as repo from "./repository";
 
 interface ActivityPaginationRequest {
@@ -55,24 +55,29 @@ function toPaginatedActivityResponse(
   requestedLimit: number,
 ): PaginatedResponse<ActivityResponse> {
   const hasMore = activities.length > requestedLimit;
-  const items = (hasMore ? activities.slice(0, requestedLimit) : activities).map(
-    toActivityResponse,
-  );
+  const items = (
+    hasMore ? activities.slice(0, requestedLimit) : activities
+  ).map(toActivityResponse);
   const last = items.at(-1);
   return {
     items,
     hasMore,
-    nextCursor: hasMore && last ? encodeActivityCursor(last.createdAt, last.id) : null,
+    nextCursor:
+      hasMore && last ? encodeActivityCursor(last.createdAt, last.id) : null,
   };
 }
 
 function encodeActivityCursor(createdAt: string, id: string): string {
-  return Buffer.from(JSON.stringify({ createdAt, id }), "utf8").toString("base64url");
+  return Buffer.from(JSON.stringify({ createdAt, id }), "utf8").toString(
+    "base64url",
+  );
 }
 
 function decodeActivityCursor(cursor: string): repo.ActivityCursor {
   try {
-    const parsed = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")) as {
+    const parsed = JSON.parse(
+      Buffer.from(cursor, "base64url").toString("utf8"),
+    ) as {
       createdAt?: string;
       id?: string;
     };

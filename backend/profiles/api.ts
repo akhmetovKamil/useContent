@@ -1,5 +1,9 @@
 import { api } from "encore.dev/api";
 import { getRequiredWallet } from "../lib/api-helpers";
+import {
+  toAuthorProfileResponse,
+  toUserProfileResponse,
+} from "../lib/content-common";
 import * as service from "./service";
 import type {
   AuthorCatalogItemResponse,
@@ -19,7 +23,7 @@ export const getMe = api(
   async (): Promise<UserProfileResponse> => {
     const walletAddress = getRequiredWallet();
     const user = await service.getOrCreateUserByWallet(walletAddress);
-    return service.toUserProfileResponse(user);
+    return toUserProfileResponse(user);
   },
 );
 
@@ -28,7 +32,7 @@ export const updateMe = api(
   async (req: UpdateMyProfileRequest): Promise<UserProfileResponse> => {
     const walletAddress = getRequiredWallet();
     const user = await service.updateMyProfile(walletAddress, req);
-    return service.toUserProfileResponse(user);
+    return toUserProfileResponse(user);
   },
 );
 
@@ -37,7 +41,7 @@ export const createMyAuthorProfile = api(
   async (req: CreateAuthorProfileRequest): Promise<AuthorProfileResponse> => {
     const walletAddress = getRequiredWallet();
     const author = await service.createAuthorProfile(walletAddress, req);
-    return service.toAuthorProfileResponse(author);
+    return toAuthorProfileResponse(author);
   },
 );
 
@@ -54,7 +58,7 @@ export const getMyAuthorProfile = api(
   async (): Promise<AuthorProfileResponse> => {
     const walletAddress = getRequiredWallet();
     const author = await service.getMyAuthorProfile(walletAddress);
-    return service.toAuthorProfileResponse(author);
+    return toAuthorProfileResponse(author);
   },
 );
 
@@ -63,7 +67,7 @@ export const updateMyAuthorProfile = api(
   async (req: UpdateAuthorProfileRequest): Promise<AuthorProfileResponse> => {
     const walletAddress = getRequiredWallet();
     const author = await service.updateMyAuthorProfile(walletAddress, req);
-    return service.toAuthorProfileResponse(author);
+    return toAuthorProfileResponse(author);
   },
 );
 
@@ -87,6 +91,6 @@ export const getAuthorProfile = api(
   { method: "GET", path: "/authors/:slug", expose: true },
   async ({ slug }: GetAuthorProfileRequest): Promise<AuthorProfileResponse> => {
     const author = await service.getAuthorProfileBySlug(slug);
-    return service.toAuthorProfileResponse(author);
+    return toAuthorProfileResponse(author);
   },
 );

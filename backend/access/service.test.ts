@@ -44,7 +44,7 @@ vi.mock("../projects/file-storage", () => ({
   readProjectFile: vi.fn(),
 }));
 
-import { buildAccessPolicyFromInput } from "./service";
+import { buildAccessPolicyFromInput } from "../lib/content-common";
 
 describe("access/service buildAccessPolicyFromInput", () => {
   afterEach(() => {
@@ -106,25 +106,26 @@ describe("access/service buildAccessPolicyFromInput", () => {
 
   test("builds subscription node from plan code", async () => {
     const author = createAuthorProfileDoc();
-    vi.mocked(repositoryMocks.findSubscriptionPlanByAuthorIdAndCode)
-      .mockResolvedValue({
-        _id: new ObjectId("65f111111111111111111111"),
-        authorId: author._id,
-        code: "main",
-        title: "Main",
-        paymentAsset: "native",
-        chainId: 11155111,
-        tokenAddress: "0x0000000000000000000000000000000000000000",
-        price: "1000000",
-        billingPeriodDays: 30,
-        contractAddress: "0x0000000000000000000000000000000000000000",
-        planKey:
-          "0x1111111111111111111111111111111111111111111111111111111111111111",
-        registrationTxHash: null,
-        active: true,
-        createdAt: new Date("2026-01-01T00:00:00.000Z"),
-        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-      });
+    vi.mocked(
+      repositoryMocks.findSubscriptionPlanByAuthorIdAndCode,
+    ).mockResolvedValue({
+      _id: new ObjectId("65f111111111111111111111"),
+      authorId: author._id,
+      code: "main",
+      title: "Main",
+      paymentAsset: "native",
+      chainId: 11155111,
+      tokenAddress: "0x0000000000000000000000000000000000000000",
+      price: "1000000",
+      billingPeriodDays: 30,
+      contractAddress: "0x0000000000000000000000000000000000000000",
+      planKey:
+        "0x1111111111111111111111111111111111111111111111111111111111111111",
+      registrationTxHash: null,
+      active: true,
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    });
 
     const policy = await buildAccessPolicyFromInput(
       {

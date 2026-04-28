@@ -6,6 +6,12 @@ import {
   readRequestBody,
   writeFileResponse,
 } from "../lib/api-helpers";
+import {
+  buildPostResponse,
+  toPostAttachmentResponse,
+  toPostCommentResponse,
+  toPostReportResponse,
+} from "../lib/content-common";
 import * as service from "./service";
 import type {
   CreatePostCommentRequest,
@@ -55,7 +61,12 @@ export const listExploreFeedPosts = api(
     source,
   }: ListExploreFeedRequest): Promise<FeedPostPageResponseDto> => {
     const viewerWallet = await getOptionalViewerWallet(authorization);
-    return service.listExploreFeedPosts(viewerWallet, { cursor, limit, q, source });
+    return service.listExploreFeedPosts(viewerWallet, {
+      cursor,
+      limit,
+      q,
+      source,
+    });
   },
 );
 
@@ -64,15 +75,13 @@ export const createMyPost = api(
   async (req: CreatePostRequest): Promise<PostResponse> => {
     const walletAddress = getRequiredWallet();
     const post = await service.createMyPost(walletAddress, req);
-    return service.buildPostResponse(post, walletAddress);
+    return buildPostResponse(post, walletAddress);
   },
 );
 
 export const listMyPosts = api(
   { method: "GET", path: "/me/posts", expose: true, auth: true },
-  async ({
-    status,
-  }: ListMyPostsRequest): Promise<ListPostsResponseDto> => {
+  async ({ status }: ListMyPostsRequest): Promise<ListPostsResponseDto> => {
     const walletAddress = getRequiredWallet();
     const posts =
       status === "archived"
@@ -80,9 +89,7 @@ export const listMyPosts = api(
         : await service.listMyPosts(walletAddress);
     return {
       posts: await Promise.all(
-        posts.map((post) =>
-          service.buildPostResponse(post, walletAddress),
-        ),
+        posts.map((post) => buildPostResponse(post, walletAddress)),
       ),
     };
   },
@@ -90,13 +97,10 @@ export const listMyPosts = api(
 
 export const updateMyPost = api(
   { method: "PATCH", path: "/me/posts/:postId", expose: true, auth: true },
-  async ({
-    postId,
-    ...req
-  }: UpdatePostPathRequest): Promise<PostResponse> => {
+  async ({ postId, ...req }: UpdatePostPathRequest): Promise<PostResponse> => {
     const walletAddress = getRequiredWallet();
     const post = await service.updateMyPost(walletAddress, postId, req);
-    return service.buildPostResponse(post, walletAddress);
+    return buildPostResponse(post, walletAddress);
   },
 );
 
@@ -118,7 +122,7 @@ export const promoteMyPost = api(
   async ({ postId }: DeletePostRequest): Promise<PostResponse> => {
     const walletAddress = getRequiredWallet();
     const post = await service.promoteMyPost(walletAddress, postId);
-    return service.buildPostResponse(post, walletAddress);
+    return buildPostResponse(post, walletAddress);
   },
 );
 
@@ -132,7 +136,7 @@ export const stopPromotingMyPost = api(
   async ({ postId }: DeletePostRequest): Promise<PostResponse> => {
     const walletAddress = getRequiredWallet();
     const post = await service.stopPromotingMyPost(walletAddress, postId);
-    return service.buildPostResponse(post, walletAddress);
+    return buildPostResponse(post, walletAddress);
   },
 );
 
@@ -162,7 +166,7 @@ export const getAuthorPost = api(
       postId,
       viewerWallet,
     );
-    return service.buildPostResponse(post, viewerWallet);
+    return buildPostResponse(post, viewerWallet);
   },
 );
 
@@ -183,7 +187,7 @@ export const listPostComments = api(
       postId,
       viewerWallet,
     );
-    return { comments: comments.map(service.toPostCommentResponse) };
+    return { comments: comments.map(toPostCommentResponse) };
   },
 );
 
@@ -206,7 +210,7 @@ export const createPostComment = api(
       walletAddress,
       req,
     );
-    return service.toPostCommentResponse(comment);
+    return toPostCommentResponse(comment);
   },
 );
 
@@ -229,7 +233,7 @@ export const createPostReport = api(
       walletAddress,
       req,
     );
-    return service.toPostReportResponse(report);
+    return toPostReportResponse(report);
   },
 );
 
@@ -294,7 +298,7 @@ export const uploadMyPostAttachment = api.raw(
     );
 
     resp.writeHead(200, { "Content-Type": "application/json" });
-    resp.end(JSON.stringify(service.toPostAttachmentResponse(attachment)));
+    resp.end(JSON.stringify(toPostAttachmentResponse(attachment)));
   },
 );
 

@@ -1,27 +1,5 @@
 import { APIError } from "encore.dev/api";
 import * as accessRepo from "../access/repository";
-import * as postsRepo from "../posts/repository";
-import * as profilesRepo from "../profiles/repository";
-import * as projectsRepo from "../projects/repository";
-import * as subscriptionsRepo from "../subscriptions/repository";
-
-const repo = {
-  ...accessRepo,
-  ...postsRepo,
-  ...profilesRepo,
-  ...projectsRepo,
-  ...subscriptionsRepo,
-};
-import type {
-  AuthorCatalogItemResponse,
-  AuthorProfileDoc,
-  AuthorStorageUsageResponse,
-  AuthorStorageUsageStats,
-  CreateAuthorProfileRequest,
-  UpdateAuthorProfileRequest,
-  UpdateMyProfileRequest,
-  UserDoc,
-} from "../lib/content-types";
 import {
   isMongoDuplicateKeyError,
   normalizeAuthorTags,
@@ -34,10 +12,31 @@ import {
   parseObjectId,
   resolveDefaultPolicyFromPreset,
   shortenWallet,
-  toUserProfileResponse,
   toAuthorProfileResponse,
   toAuthorStorageUsageResponse,
 } from "../lib/content-common";
+import type {
+  AuthorCatalogItemResponse,
+  AuthorProfileDoc,
+  AuthorStorageUsageResponse,
+  AuthorStorageUsageStats,
+  CreateAuthorProfileRequest,
+  UpdateAuthorProfileRequest,
+  UpdateMyProfileRequest,
+  UserDoc,
+} from "../lib/content-types";
+import * as postsRepo from "../posts/repository";
+import * as profilesRepo from "../profiles/repository";
+import * as projectsRepo from "../projects/repository";
+import * as subscriptionsRepo from "../subscriptions/repository";
+
+const repo = {
+  ...accessRepo,
+  ...postsRepo,
+  ...profilesRepo,
+  ...projectsRepo,
+  ...subscriptionsRepo,
+};
 
 export {
   toAuthorProfileResponse,

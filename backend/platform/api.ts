@@ -1,5 +1,9 @@
 import { api } from "encore.dev/api";
 import { getRequiredWallet } from "../lib/api-helpers";
+import {
+  toContractDeploymentResponse,
+  toPlatformSubscriptionPaymentIntentResponse,
+} from "../lib/content-common";
 import * as service from "./service";
 import type {
   AuthorPlatformBillingResponse,
@@ -73,9 +77,7 @@ export const getPlatformSubscriptionManagerDeployment = api(
       Number(chainId),
     );
     return {
-      deployment: deployment
-        ? service.toContractDeploymentResponse(deployment)
-        : null,
+      deployment: deployment ? toContractDeploymentResponse(deployment) : null,
     };
   },
 );
@@ -95,7 +97,7 @@ export const createPlatformSubscriptionPaymentIntent = api(
       walletAddress,
       req,
     );
-    return service.toPlatformSubscriptionPaymentIntentResponse(intent);
+    return toPlatformSubscriptionPaymentIntentResponse(intent);
   },
 );
 
@@ -116,6 +118,6 @@ export const confirmPlatformSubscriptionPayment = api(
       intentId,
       req,
     );
-    return service.toPlatformSubscriptionPaymentIntentResponse(intent);
+    return toPlatformSubscriptionPaymentIntentResponse(intent);
   },
 );

@@ -4,6 +4,12 @@ import {
   assertDeploymentRegistryToken,
   getRequiredWallet,
 } from "../lib/api-helpers";
+import {
+  toContractDeploymentResponse,
+  toSubscriptionEntitlementResponse,
+  toSubscriptionPaymentIntentResponse,
+  toSubscriptionPlanResponseWithStats,
+} from "../lib/content-common";
 import * as service from "./service";
 import type {
   AuthorSubscriberResponse,
@@ -37,7 +43,7 @@ export const listMyEntitlements = api(
     const walletAddress = getRequiredWallet();
     const entitlements = await service.listMyEntitlements(walletAddress);
     return {
-      entitlements: entitlements.map(service.toSubscriptionEntitlementResponse),
+      entitlements: entitlements.map(toSubscriptionEntitlementResponse),
     };
   },
 );
@@ -46,9 +52,8 @@ export const listMyReaderSubscriptions = api(
   { method: "GET", path: "/me/subscriptions", expose: true, auth: true },
   async (): Promise<ListReaderSubscriptionsResponseDto> => {
     const walletAddress = getRequiredWallet();
-    const subscriptions = await service.listMyReaderSubscriptions(
-      walletAddress,
-    );
+    const subscriptions =
+      await service.listMyReaderSubscriptions(walletAddress);
     return { subscriptions };
   },
 );
@@ -57,9 +62,7 @@ export const listMyAuthorSubscribers = api(
   { method: "GET", path: "/me/author/subscribers", expose: true, auth: true },
   async (): Promise<ListAuthorSubscribersResponseDto> => {
     const walletAddress = getRequiredWallet();
-    const subscribers = await service.listMyAuthorSubscribers(
-      walletAddress,
-    );
+    const subscribers = await service.listMyAuthorSubscribers(walletAddress);
     return { subscribers };
   },
 );
@@ -77,9 +80,7 @@ export const getSubscriptionManagerDeployment = api(
       Number(chainId),
     );
     return {
-      deployment: deployment
-        ? service.toContractDeploymentResponse(deployment)
-        : null,
+      deployment: deployment ? toContractDeploymentResponse(deployment) : null,
     };
   },
 );
@@ -99,7 +100,7 @@ export const upsertContractDeployment = api(
       deploymentRegistryToken,
     );
     const deployment = await service.upsertContractDeployment(req);
-    return service.toContractDeploymentResponse(deployment);
+    return toContractDeploymentResponse(deployment);
   },
 );
 
@@ -112,11 +113,10 @@ export const listMySubscriptionPaymentIntents = api(
   },
   async (): Promise<ListSubscriptionPaymentIntentsResponseDto> => {
     const walletAddress = getRequiredWallet();
-    const intents = await service.listMySubscriptionPaymentIntents(
-      walletAddress,
-    );
+    const intents =
+      await service.listMySubscriptionPaymentIntents(walletAddress);
     return {
-      intents: intents.map(service.toSubscriptionPaymentIntentResponse),
+      intents: intents.map(toSubscriptionPaymentIntentResponse),
     };
   },
 );
@@ -128,7 +128,7 @@ export const listMySubscriptionPlans = api(
     const plans = await service.listMySubscriptionPlans(walletAddress);
     return {
       plans: await Promise.all(
-        plans.map((plan) => service.toSubscriptionPlanResponseWithStats(plan)),
+        plans.map((plan) => toSubscriptionPlanResponseWithStats(plan)),
       ),
     };
   },
@@ -140,11 +140,8 @@ export const upsertMySubscriptionPlan = api(
     req: UpsertSubscriptionPlanRequest,
   ): Promise<SubscriptionPlanResponse> => {
     const walletAddress = getRequiredWallet();
-    const plan = await service.upsertMySubscriptionPlan(
-      walletAddress,
-      req,
-    );
-    return service.toSubscriptionPlanResponseWithStats(plan);
+    const plan = await service.upsertMySubscriptionPlan(walletAddress, req);
+    return toSubscriptionPlanResponseWithStats(plan);
   },
 );
 
@@ -169,7 +166,7 @@ export const listAuthorSubscriptionPlans = api(
     const plans = await service.listAuthorSubscriptionPlansBySlug(slug);
     return {
       plans: await Promise.all(
-        plans.map((plan) => service.toSubscriptionPlanResponseWithStats(plan)),
+        plans.map((plan) => toSubscriptionPlanResponseWithStats(plan)),
       ),
     };
   },
@@ -192,7 +189,7 @@ export const createSubscriptionPaymentIntent = api(
       slug,
       req,
     );
-    return service.toSubscriptionPaymentIntentResponse(intent);
+    return toSubscriptionPaymentIntentResponse(intent);
   },
 );
 
@@ -213,6 +210,6 @@ export const confirmSubscriptionPayment = api(
       intentId,
       req,
     );
-    return service.toSubscriptionPaymentIntentResponse(intent);
+    return toSubscriptionPaymentIntentResponse(intent);
   },
 );

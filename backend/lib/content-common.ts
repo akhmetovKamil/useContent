@@ -2,18 +2,79 @@ import { APIError } from "encore.dev/api";
 import { id as hashId } from "ethers";
 import { ObjectId } from "mongodb";
 import { ZERO_ADDRESS } from "../../shared/consts";
+import type { PaginatedResponse } from "../../shared/types/common";
+import type { AccessPolicyPresetDoc } from "../access/doc-types";
+import * as accessRepo from "../access/repository";
+import type { ContractDeploymentDoc } from "../contracts/doc-types";
+import * as contractDeploymentsRepo from "../contracts/repository";
 import {
   ACCESS_POLICY_VERSION,
-  type AccessPolicy,
-  type AccessEvaluationContext,
-  type AccessPolicyNode,
   createPublicPolicy,
   evaluateAccessPolicy,
   isAccessPolicy,
   resolveEntityPolicy,
+  type AccessEvaluationContext,
+  type AccessPolicy,
+  type AccessPolicyNode,
 } from "../domain/access";
+import type {
+  AccessPolicyConditionResponse,
+  AccessPolicyPresetResponse,
+  AuthorProfileResponse,
+  AuthorStorageUsageResponse,
+  ContractDeploymentResponse,
+  CreateAccessPolicyPresetRequest,
+  CreateAuthorProfileRequest,
+  CreatePostRequest,
+  CreateProjectRequest,
+  FeedPostResponse,
+  FeedProjectResponse,
+  PlatformSubscriptionPaymentIntentResponse,
+  PostAttachmentResponse,
+  PostCommentResponse,
+  PostReportResponse,
+  PostResponse,
+  ProjectBundleResponse,
+  ProjectNodeResponse,
+  ProjectResponse,
+  SubscriptionEntitlementResponse,
+  SubscriptionPaymentIntentResponse,
+  SubscriptionPlanResponse,
+  UpdateAccessPolicyPresetRequest,
+  UpdateAuthorProfileRequest,
+  UpdatePostRequest,
+  UpdateProjectRequest,
+  UserProfileResponse,
+} from "../lib/content-types";
+import { readOnChainAccessGrants } from "../onchain";
+import type {
+  AuthorStorageUsageStats,
+  PlatformSubscriptionPaymentIntentDoc,
+} from "../platform/doc-types";
+import * as platformRepo from "../platform/repository";
+import type {
+  PostAttachmentDoc,
+  PostCommentDoc,
+  PostDoc,
+  PostReportDoc,
+} from "../posts/doc-types";
 import { readPostAttachmentFile } from "../posts/file-storage";
+import * as postsRepo from "../posts/repository";
+import type { AuthorProfileDoc, UserDoc } from "../profiles/doc-types";
+import * as profilesRepo from "../profiles/repository";
+import {
+  getAuthorProfileBySlug,
+  getMyAuthorProfile,
+} from "../profiles/service";
+import type { ProjectDoc, ProjectNodeDoc } from "../projects/doc-types";
 import { readProjectFile } from "../projects/file-storage";
+import * as projectsRepo from "../projects/repository";
+import type {
+  SubscriptionEntitlementDoc,
+  SubscriptionPaymentIntentDoc,
+  SubscriptionPlanDoc,
+} from "../subscriptions/doc-types";
+import * as subscriptionsRepo from "../subscriptions/repository";
 import { addMinutes } from "./utils/dates";
 import {
   isMongoDuplicateKeyError,
@@ -21,19 +82,6 @@ import {
   uniqueObjectIds,
 } from "./utils/mongo";
 import { normalizeWallet, shortenWallet } from "./utils/wallet";
-import {
-  readOnChainAccessGrants,
-  verifyPlatformSubscriptionPayment,
-  verifyPlanRegistration,
-  verifySubscriptionPayment,
-} from "../onchain";
-import * as accessRepo from "../access/repository";
-import * as contractDeploymentsRepo from "../contracts/repository";
-import * as platformRepo from "../platform/repository";
-import * as postsRepo from "../posts/repository";
-import * as profilesRepo from "../profiles/repository";
-import * as projectsRepo from "../projects/repository";
-import * as subscriptionsRepo from "../subscriptions/repository";
 
 const repo = {
   ...accessRepo,
@@ -44,77 +92,6 @@ const repo = {
   ...projectsRepo,
   ...subscriptionsRepo,
 };
-import type { AccessPolicyPresetDoc } from "../access/doc-types";
-import type { ContractDeploymentDoc } from "../contracts/doc-types";
-import type {
-  AuthorStorageUsageStats,
-  PlatformPlanDoc,
-  PlatformSubscriptionPaymentIntentDoc,
-} from "../platform/doc-types";
-import type { AuthorProfileDoc, UserDoc } from "../profiles/doc-types";
-import type {
-  PostAttachmentDoc,
-  PostCommentDoc,
-  PostDoc,
-  PostReportDoc,
-} from "../posts/doc-types";
-import type { ProjectDoc, ProjectNodeDoc } from "../projects/doc-types";
-import type {
-  SubscriptionEntitlementDoc,
-  SubscriptionPaymentIntentDoc,
-  SubscriptionPlanDoc,
-} from "../subscriptions/doc-types";
-import type {
-  AccessPolicyConditionResponse,
-  AccessPolicyPresetResponse,
-  AuthorAccessPolicyResponse,
-  AuthorCatalogItemResponse,
-  AuthorProfileResponse,
-  AuthorSubscriberResponse,
-  AuthorPlatformBillingResponse,
-  AuthorPlatformCleanupItemResponse,
-  AuthorPlatformCleanupPreviewResponse,
-  AuthorPlatformCleanupRunResponse,
-  ConfirmSubscriptionPaymentRequest,
-  AuthorStorageUsageResponse,
-  ContractDeploymentResponse,
-  CreateAccessPolicyPresetRequest,
-  CreateAuthorProfileRequest,
-  CreatePlatformSubscriptionPaymentIntentRequest,
-  CreatePostRequest,
-  CreateProjectFolderRequest,
-  CreateProjectRequest,
-  CreatePostCommentRequest,
-  CreateSubscriptionPaymentIntentRequest,
-  FeedPostResponse,
-  FeedProjectResponse,
-  PostCommentResponse,
-  PostReportResponse,
-  PostAttachmentResponse,
-  PostResponse,
-  ProjectBundleResponse,
-  ProjectNodeListResponse,
-  ProjectNodeResponse,
-  ProjectResponse,
-  PlatformFeature,
-  PlatformPlanResponse,
-  PlatformSubscriptionPaymentIntentResponse,
-  ReaderSubscriptionResponse,
-  SubscriptionPlanResponse,
-  SubscriptionEntitlementResponse,
-  SubscriptionPaymentIntentResponse,
-  UpdateAuthorProfileRequest,
-  UpdateAccessPolicyPresetRequest,
-  UpsertContractDeploymentRequest,
-  UpsertSubscriptionPlanRequest,
-  UpdateMyProfileRequest,
-  UpdatePostRequest,
-  UpdateProjectNodeRequest,
-  UpdateProjectRequest,
-  UserProfileResponse,
-} from "../lib/content-types";
-import type { PaginatedResponse } from "../../shared/types/common";
-import { getAuthorProfileBySlug, getMyAuthorProfile } from "../profiles/service";
 
 export function toUserProfileResponse(user: UserDoc): UserProfileResponse {
   return {
@@ -399,7 +376,9 @@ export function toPostCommentResponse(
   };
 }
 
-export function toPostReportResponse(report: PostReportDoc): PostReportResponse {
+export function toPostReportResponse(
+  report: PostReportDoc,
+): PostReportResponse {
   return {
     id: report._id.toHexString(),
     postId: report.postId.toHexString(),
@@ -1459,7 +1438,9 @@ export function collectSubscriptionPlanIds(node: AccessPolicyNode): string[] {
   );
 }
 
-export function getConditionMode(node: AccessPolicyNode): "single" | "and" | "or" {
+export function getConditionMode(
+  node: AccessPolicyNode,
+): "single" | "and" | "or" {
   return node.type === "and" || node.type === "or" ? node.type : "single";
 }
 
@@ -1616,7 +1597,11 @@ export function normalizePlanKey(planKey: string): string {
   return value;
 }
 
-export function buildPlanKey(authorId: string, code: string, chainId: number): string {
+export function buildPlanKey(
+  authorId: string,
+  code: string,
+  chainId: number,
+): string {
   return hashId(`usecontent:${chainId}:${authorId}:${code}`).toLowerCase();
 }
 

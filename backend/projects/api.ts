@@ -6,6 +6,10 @@ import {
   readRequestBody,
   writeFileResponse,
 } from "../lib/api-helpers";
+import {
+  buildProjectResponse,
+  toProjectNodeResponse,
+} from "../lib/content-common";
 import * as service from "./service";
 import type {
   AuthorProjectBundlePathRequest,
@@ -38,7 +42,7 @@ export const createMyProject = api(
   async (req: CreateProjectRequest): Promise<ProjectResponse> => {
     const walletAddress = getRequiredWallet();
     const project = await service.createMyProject(walletAddress, req);
-    return service.buildProjectResponse(project);
+    return buildProjectResponse(project);
   },
 );
 
@@ -53,7 +57,7 @@ export const listMyProjects = api(
         ? await service.listMyArchivedProjects(walletAddress)
         : await service.listMyProjects(walletAddress);
     return {
-      projects: await Promise.all(projects.map(service.buildProjectResponse)),
+      projects: await Promise.all(projects.map(buildProjectResponse)),
     };
   },
 );
@@ -75,7 +79,7 @@ export const updateMyProject = api(
       projectId,
       req,
     );
-    return service.buildProjectResponse(project);
+    return buildProjectResponse(project);
   },
 );
 
@@ -125,7 +129,7 @@ export const createMyProjectFolder = api(
       projectId,
       req,
     );
-    return service.toProjectNodeResponse(folder);
+    return toProjectNodeResponse(folder);
   },
 );
 
@@ -148,7 +152,7 @@ export const updateMyProjectNode = api(
       nodeId,
       req,
     );
-    return service.toProjectNodeResponse(node);
+    return toProjectNodeResponse(node);
   },
 );
 
@@ -159,10 +163,7 @@ export const deleteMyProjectNode = api(
     expose: true,
     auth: true,
   },
-  async ({
-    projectId,
-    nodeId,
-  }: ProjectNodePathRequest): Promise<void> => {
+  async ({ projectId, nodeId }: ProjectNodePathRequest): Promise<void> => {
     const walletAddress = getRequiredWallet();
     await service.deleteMyProjectNode(walletAddress, projectId, nodeId);
   },
@@ -201,19 +202,15 @@ export const uploadMyProjectFile = api.raw(
     const contentType = String(
       req.headers["content-type"] ?? "application/octet-stream",
     );
-    const node = await service.uploadMyProjectFile(
-      walletAddress,
-      projectId,
-      {
-        parentId,
-        name,
-        body,
-        contentType,
-      },
-    );
+    const node = await service.uploadMyProjectFile(walletAddress, projectId, {
+      parentId,
+      name,
+      body,
+      contentType,
+    });
 
     resp.writeHead(200, { "Content-Type": "application/json" });
-    resp.end(JSON.stringify(service.toProjectNodeResponse(node)));
+    resp.end(JSON.stringify(toProjectNodeResponse(node)));
   },
 );
 
@@ -264,7 +261,7 @@ export const getAuthorProject = api(
       projectId,
       viewerWallet,
     );
-    return service.buildProjectResponse(project);
+    return buildProjectResponse(project);
   },
 );
 

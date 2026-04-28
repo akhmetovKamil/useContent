@@ -1,11 +1,11 @@
 import { ObjectId } from "mongodb";
 import type { ActivityType } from "../../shared/types/content";
-import type { AuthorProfileDoc } from "../profiles/doc-types";
-import type { PostDoc } from "../posts/doc-types";
 import { normalizeWallet, shortenWallet } from "../lib/utils/wallet";
-import * as activityRepo from "./repository";
+import type { PostDoc } from "../posts/doc-types";
+import type { AuthorProfileDoc } from "../profiles/doc-types";
 import * as profilesRepo from "../profiles/repository";
 import * as subscriptionsRepo from "../subscriptions/repository";
+import * as activityRepo from "./repository";
 
 interface ActivityAuthorContext {
   author: AuthorProfileDoc;
@@ -55,16 +55,18 @@ export async function recordNewPostActivity(post: PostDoc): Promise<void> {
   if (!context) {
     return;
   }
-  const entitlements = await subscriptionsRepo.listSubscriptionEntitlementsByAuthorId(
-    post.authorId,
-  );
+  const entitlements =
+    await subscriptionsRepo.listSubscriptionEntitlementsByAuthorId(
+      post.authorId,
+    );
   const now = Date.now();
   const targetWallets = [
     ...new Set(
       entitlements
         .filter(
           (entitlement) =>
-            entitlement.status === "active" && entitlement.validUntil.getTime() > now,
+            entitlement.status === "active" &&
+            entitlement.validUntil.getTime() > now,
         )
         .map((entitlement) => entitlement.subscriberWallet),
     ),

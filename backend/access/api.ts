@@ -1,5 +1,6 @@
 import { api } from "encore.dev/api";
 import { getOptionalViewerWallet, getRequiredWallet } from "../lib/api-helpers";
+import { toAccessPolicyPresetResponse } from "../lib/content-common";
 import * as service from "./service";
 import type {
   AccessPolicyPresetResponse,
@@ -17,9 +18,8 @@ export const listMyAccessPolicyPresets = api(
   { method: "GET", path: "/me/access-policies", expose: true, auth: true },
   async (): Promise<ListAccessPolicyPresetsResponseDto> => {
     const walletAddress = getRequiredWallet();
-    const policies = await service.listMyAccessPolicyPresetResponses(
-      walletAddress,
-    );
+    const policies =
+      await service.listMyAccessPolicyPresetResponses(walletAddress);
     return { policies };
   },
 );
@@ -30,11 +30,8 @@ export const createMyAccessPolicyPreset = api(
     req: CreateAccessPolicyPresetRequest,
   ): Promise<AccessPolicyPresetResponse> => {
     const walletAddress = getRequiredWallet();
-    const policy = await service.createMyAccessPolicyPreset(
-      walletAddress,
-      req,
-    );
-    return service.toAccessPolicyPresetResponse(policy);
+    const policy = await service.createMyAccessPolicyPreset(walletAddress, req);
+    return toAccessPolicyPresetResponse(policy);
   },
 );
 
@@ -48,16 +45,14 @@ export const updateMyAccessPolicyPreset = api(
   async ({
     policyId,
     ...req
-  }: UpdateAccessPolicyPresetPathRequest): Promise<
-    AccessPolicyPresetResponse
-  > => {
+  }: UpdateAccessPolicyPresetPathRequest): Promise<AccessPolicyPresetResponse> => {
     const walletAddress = getRequiredWallet();
     const policy = await service.updateMyAccessPolicyPreset(
       walletAddress,
       policyId,
       req,
     );
-    return service.toAccessPolicyPresetResponse(policy);
+    return toAccessPolicyPresetResponse(policy);
   },
 );
 
@@ -79,9 +74,7 @@ export const listAuthorAccessPolicies = api(
   async ({
     slug,
     authorization,
-  }: ListAuthorAccessPoliciesRequest): Promise<
-    ListAuthorAccessPoliciesResponseDto
-  > => {
+  }: ListAuthorAccessPoliciesRequest): Promise<ListAuthorAccessPoliciesResponseDto> => {
     const viewerWallet = await getOptionalViewerWallet(authorization);
     const policies = await service.listAuthorAccessPoliciesBySlug(
       slug,
