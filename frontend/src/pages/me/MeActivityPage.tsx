@@ -1,9 +1,4 @@
-import type { ActivityDto } from "@shared/types/content"
-import { shortenWalletAddress } from "@shared/utils"
-import { Bell, Heart, MessageCircle, ReceiptText, Send } from "lucide-react"
-import { Link } from "react-router-dom"
-
-import { formatPostDate } from "@/components/posts/date"
+import { ActivityItem } from "@/components/activity/ActivityItem"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
@@ -68,64 +63,4 @@ export function MeActivityPage() {
             </Card>
         </section>
     )
-}
-
-function ActivityItem({ activity }: { activity: ActivityDto }) {
-    const Icon = getActivityIcon(activity.type)
-    const postHref =
-        activity.authorSlug && activity.postId
-            ? `/authors/${activity.authorSlug}/posts/${activity.postId}`
-            : null
-    const authorHref = activity.authorSlug ? `/authors/${activity.authorSlug}` : null
-
-    return (
-        <article className="flex gap-4 rounded-2xl border border-[var(--line)] bg-[var(--surface-strong)] p-4">
-            <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
-                <Icon className="size-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-[var(--foreground)]">
-                    {activity.message}
-                </div>
-                <div className="mt-1 flex flex-wrap gap-2 text-xs text-[var(--muted)]">
-                    <span>{formatPostDate(activity.createdAt)}</span>
-                    {activity.authorDisplayName && authorHref ? (
-                        <Link className="underline-offset-4 hover:underline" to={authorHref}>
-                            {activity.authorDisplayName}
-                        </Link>
-                    ) : null}
-                    {activity.actorWallet ? (
-                        <span title={activity.actorWallet}>
-                            {shortenWalletAddress(activity.actorWallet)}
-                        </span>
-                    ) : null}
-                </div>
-                {postHref && activity.postTitle ? (
-                    <Button asChild className="mt-3 rounded-full" size="sm" variant="outline">
-                        <Link to={postHref}>Open post</Link>
-                    </Button>
-                ) : authorHref ? (
-                    <Button asChild className="mt-3 rounded-full" size="sm" variant="outline">
-                        <Link to={authorHref}>Open author</Link>
-                    </Button>
-                ) : null}
-            </div>
-        </article>
-    )
-}
-
-function getActivityIcon(type: ActivityDto["type"]) {
-    if (type === "post_liked") {
-        return Heart
-    }
-    if (type === "post_commented") {
-        return MessageCircle
-    }
-    if (type === "new_subscription") {
-        return ReceiptText
-    }
-    if (type === "new_post") {
-        return Send
-    }
-    return Bell
 }

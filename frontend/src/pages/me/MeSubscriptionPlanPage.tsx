@@ -1,14 +1,15 @@
 import type { AccessPolicyPresetDto, SubscriptionPlanDto } from "@shared/types/content"
 import { ZERO_ADDRESS } from "@shared/consts"
-import { ArrowUpRight, FileText, Plus, ShieldCheck, Sparkles } from "lucide-react"
-import type { ReactNode } from "react"
+import { FileText, Plus, ShieldCheck, Sparkles } from "lucide-react"
 import { useEffect, useState } from "react"
 import { usePublicClient } from "wagmi"
-import { formatUnits, isAddress, parseUnits, type Address } from "viem"
+import { formatUnits, isAddress, type Address } from "viem"
 
 import { AccessPolicyEditor } from "@/components/access/AccessPolicyEditor"
+import { FlowCard } from "@/components/access-center/FlowCard"
+import { PolicyCard } from "@/components/access-center/PolicyCard"
+import { SubscriptionPlanCard } from "@/components/access-center/SubscriptionPlanCard"
 import { OnChainPlanPublisher } from "@/components/subscriptions/OnChainPlanPublisher"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
@@ -54,6 +55,12 @@ import {
 } from "@/utils/access-policy"
 import { defaultSubscriptionChain } from "@/utils/config/chains"
 import { getTokenPresets } from "@/utils/config/tokens"
+import {
+    buildPlanCode,
+    formatPlanAmount,
+    getTokenPresetByAddress,
+    toBaseUnits,
+} from "@/utils/subscription-plan"
 import { erc20Abi } from "@/utils/web3/erc20"
 
 const defaultToken = getTokenPresets(defaultSubscriptionChain.id).find(
@@ -416,7 +423,7 @@ export function MeSubscriptionPlanPage() {
                             ) : plansQuery.data?.length ? (
                                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                                     {plansQuery.data.map((plan) => (
-                                        <PlanCard
+                                        <SubscriptionPlanCard
                                             key={plan.id}
                                             onDelete={() =>
                                                 void deletePlanMutation.mutateAsync(plan.id)
@@ -721,205 +728,4 @@ export function MeSubscriptionPlanPage() {
             </Modal>
         </PageSection>
     )
-}
-
-function FlowCard({
-    description,
-    icon,
-    title,
-}: {
-    description: string
-    icon: ReactNode
-    title: string
-}) {
-    return (
-        <div className="rounded-[30px] border border-[var(--line)] bg-[radial-gradient(circle_at_top_left,var(--accent-soft),transparent_48%),var(--surface)] p-5 shadow-[0_16px_48px_rgba(15,23,42,0.05)]">
-            <div className="grid size-11 place-items-center rounded-2xl bg-[var(--foreground)] text-[var(--background)]">
-                {icon}
-            </div>
-            <div className="mt-4 font-medium text-[var(--foreground)]">{title}</div>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{description}</p>
-        </div>
-    )
-}
-
-function PolicyCard({
-    onDelete,
-    onEdit,
-    onMakeDefault,
-    policy,
-}: {
-    onDelete: () => void
-    onEdit: () => void
-    onMakeDefault: () => void
-    policy: AccessPolicyPresetDto
-}) {
-    return (
-        <div className="group rounded-[30px] border border-[var(--line)] bg-[linear-gradient(145deg,var(--surface),var(--surface-strong))] p-5 shadow-[0_18px_58px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow)]">
-            <div className="flex items-start justify-between gap-3">
-                <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-[var(--serif)] text-2xl text-[var(--foreground)]">
-                            {policy.name}
-                        </h3>
-                        {policy.isDefault ? <Badge variant="success">default</Badge> : null}
-                    </div>
-                    <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                        {policy.description || "No description"}
-                    </p>
-                </div>
-                <Button
-                    className="rounded-full"
-                    onClick={onEdit}
-                    size="icon"
-                    type="button"
-                    variant="ghost"
-                >
-                    <ArrowUpRight className="size-4" />
-                </Button>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-2 text-sm md:grid-cols-4">
-                <Badge>{policy.policy.root.type.toUpperCase()}</Badge>
-                <Badge>{policy.postsCount} posts</Badge>
-                <Badge>{policy.projectsCount} projects</Badge>
-                <Badge>{policy.paidSubscribersCount} paid members</Badge>
-            </div>
-            <div className="mt-5 flex flex-wrap gap-2">
-                {!policy.isDefault ? (
-                    <Button
-                        className="rounded-full"
-                        onClick={onMakeDefault}
-                        size="sm"
-                        type="button"
-                        variant="outline"
-                    >
-                        Make default
-                    </Button>
-                ) : null}
-                {!policy.isDefault ? (
-                    <Button
-                        className="rounded-full"
-                        onClick={onDelete}
-                        size="sm"
-                        type="button"
-                        variant="destructive"
-                    >
-                        Delete
-                    </Button>
-                ) : null}
-            </div>
-        </div>
-    )
-}
-
-function PlanCard({
-    onDelete,
-    onEdit,
-    plan,
-}: {
-    onDelete: () => void
-    onEdit: () => void
-    plan: SubscriptionPlanDto
-}) {
-    return (
-        <div className="rounded-[30px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-[0_16px_48px_rgba(15,23,42,0.05)]">
-            <div className="flex items-start justify-between gap-3">
-                <div>
-                    <h3 className="font-[var(--serif)] text-2xl text-[var(--foreground)]">
-                        {plan.title}
-                    </h3>
-                    <p className="mt-1 font-mono text-xs text-[var(--muted)]">{plan.code}</p>
-                </div>
-                <Badge>{plan.active ? "active" : "inactive"}</Badge>
-            </div>
-            <div className="mt-5 grid gap-3 text-sm text-[var(--muted)]">
-                <div className="rounded-2xl bg-[var(--surface-strong)] p-3 text-[var(--foreground)]">
-                    {formatPlanAmount(
-                        plan.chainId,
-                        plan.tokenAddress,
-                        plan.price,
-                        plan.paymentAsset
-                    )}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    <Badge>Every {plan.billingPeriodDays} days</Badge>
-                    <Badge>Chain {plan.chainId}</Badge>
-                    <Badge>{plan.activeSubscribersCount} active subscribers</Badge>
-                </div>
-            </div>
-            <div className="mt-5 flex flex-wrap gap-2">
-                <Button
-                    className="rounded-full"
-                    onClick={onEdit}
-                    size="sm"
-                    type="button"
-                    variant="outline"
-                >
-                    Edit
-                </Button>
-                <Button
-                    className="rounded-full"
-                    onClick={onDelete}
-                    size="sm"
-                    type="button"
-                    variant="destructive"
-                >
-                    Delete
-                </Button>
-            </div>
-        </div>
-    )
-}
-
-function buildPlanCode(title: string) {
-    const value = title
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-
-    return value || "main"
-}
-
-function getTokenPresetByAddress(
-    chainId: number,
-    address: string,
-    paymentAsset: "erc20" | "native" = "erc20"
-) {
-    if (paymentAsset === "native") {
-        return getTokenPresets(chainId).find((preset) => preset.kind === "native")
-    }
-
-    return getTokenPresets(chainId).find(
-        (preset) => preset.address?.toLowerCase() === address.toLowerCase()
-    )
-}
-
-function toBaseUnits(amount: string, decimals: number) {
-    if (!Number.isInteger(decimals) || decimals < 0 || decimals > 255) {
-        return ""
-    }
-
-    try {
-        return parseUnits(amount || "0", decimals).toString()
-    } catch {
-        return ""
-    }
-}
-
-function formatPlanAmount(
-    chainId: number,
-    tokenAddress: string,
-    price: string,
-    paymentAsset: "erc20" | "native" = "erc20"
-) {
-    const token = getTokenPresetByAddress(chainId, tokenAddress, paymentAsset)
-    const decimals = token?.decimals ?? 18
-    const symbol = token?.symbol ?? "tokens"
-
-    try {
-        return `${formatUnits(BigInt(price), decimals)} ${symbol}`
-    } catch {
-        return `${price} ${symbol}`
-    }
 }

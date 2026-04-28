@@ -11,25 +11,18 @@ import {
     ShieldCheck,
     UserRound,
     UsersRound,
-    type LucideIcon,
 } from "lucide-react"
 import { useEffect } from "react"
-import { NavLink, Outlet, useLocation } from "react-router-dom"
+import { Outlet, useLocation } from "react-router-dom"
 
+import { NavItem } from "@/components/layout/NavItem"
 import { WorkspaceModeToggle } from "@/components/layout/WorkspaceModeToggle"
-import { Dock, DockItem, DockSeparator } from "@/components/ui/dock"
+import { Dock } from "@/components/ui/dock"
 import { WalletStatus } from "@/components/wallet/WalletStatus"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 import { useWorkspaceStore } from "@/stores/workspace-store"
-
-interface NavItemConfig {
-    end?: boolean
-    icon: LucideIcon
-    label: string
-    separatorAfter?: boolean
-    to: string
-}
+import type { NavItemConfig } from "@/types/layout"
 
 const publicNavItems: NavItemConfig[] = [{ to: "/", label: "Home", icon: Home, end: true }]
 
@@ -127,24 +120,5 @@ export function RootLayout() {
                 </nav>
             ) : null}
         </div>
-    )
-}
-
-function NavItem({ item }: { item: NavItemConfig }) {
-    const Icon = item.icon
-
-    return (
-        <>
-            <NavLink end={item.end} to={item.to}>
-                {({ isActive }) => (
-                    <DockItem
-                        active={isActive}
-                        icon={<Icon className="size-6" strokeWidth={2.2} />}
-                        label={item.label}
-                    />
-                )}
-            </NavLink>
-            {item.separatorAfter ? <DockSeparator /> : null}
-        </>
     )
 }
