@@ -72,7 +72,7 @@ vi.mock("../activity/events", () => ({
   recordPostCommentedActivity: vi.fn(),
   recordPostLikedActivity: vi.fn(),
 }));
-vi.mock("../content/onchain", () => ({
+vi.mock("../onchain", () => ({
   readOnChainAccessGrants: vi.fn(),
   verifyPlatformSubscriptionPayment: vi.fn(),
   verifyPlanRegistration: vi.fn(),

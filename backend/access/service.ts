@@ -17,7 +17,7 @@ import {
   verifyPlatformSubscriptionPayment,
   verifyPlanRegistration,
   verifySubscriptionPayment,
-} from "../content/onchain";
+} from "../onchain";
 import * as accessRepo from "../access/repository";
 import * as contractDeploymentsRepo from "../lib/contract-deployments.repository";
 import * as platformRepo from "../platform/repository";
