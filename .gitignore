@@ -1,6 +1,7 @@
 **/node_modules/
 **/.secrets.local.cue
 .DS_Store
+**/.DS_Store
 .claude/
 .agents/
 .skills/
@@ -9,14 +10,12 @@ CLAUDE.md
 **/.claude/
 **/.agents/
 **/.skills/
-**/DS_Store
 **/.env
 **/.env.local
 **/.env.*.local
 shared/deployments/
 /docs/
 
-backend/.DS_Store
 backend/.claude/
 backend/.mcp.json
 backend/.secrets.local.cue
