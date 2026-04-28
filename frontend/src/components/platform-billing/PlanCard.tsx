@@ -4,6 +4,7 @@ import { FeatureRow } from "@/components/platform-billing/FeatureRow"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { InfoMetric } from "@/components/ui/info-metric"
 import { formatFileSize, formatUsd } from "@/utils/format"
 
 export function PlanCard({
@@ -49,19 +50,13 @@ export function PlanCard({
                         active={plan.features.includes("homepage_promo")}
                     />
                 </div>
-                <div className="rounded-[22px] border border-[var(--line)] bg-[var(--surface)] p-4">
-                    <div className="text-xs uppercase tracking-[0.25em] text-[var(--muted)]">
-                        Included storage
-                    </div>
-                    <div className="mt-1 text-2xl font-medium">
-                        {formatFileSize(plan.baseStorageBytes)}
-                    </div>
+                <InfoMetric label="Included storage" value={formatFileSize(plan.baseStorageBytes)}>
                     {plan.maxExtraStorageBytes ? (
                         <p className="mt-1 text-xs text-[var(--muted)]">
                             Up to {formatFileSize(plan.maxExtraStorageBytes)} extra storage
                         </p>
                     ) : null}
-                </div>
+                </InfoMetric>
                 <Button
                     className="rounded-full"
                     disabled={isFree || isCurrent}

@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom"
 
-import { Badge } from "@/components/ui/badge"
+import { ActionCard } from "@/components/ui/action-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { StatusPill } from "@/components/ui/status-pill"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
 import { useMyReaderSubscriptionsQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
@@ -38,8 +39,8 @@ export function MeSubscriptionsPage() {
                     ) : subscriptions.length ? (
                         <div className="grid gap-3">
                             {subscriptions.map((subscription) => (
-                                <article
-                                    className="grid gap-3 rounded-[22px] border border-[var(--line)] bg-[var(--surface-strong)] p-4 md:grid-cols-[1fr_1fr_auto]"
+                                <ActionCard
+                                    className="grid gap-3 md:grid-cols-[1fr_1fr_auto]"
                                     key={subscription.id}
                                 >
                                     <div>
@@ -67,16 +68,14 @@ export function MeSubscriptionsPage() {
                                         </div>
                                     </div>
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <Badge
-                                            className="rounded-full"
+                                        <StatusPill
+                                            label={subscription.status}
                                             variant={
                                                 subscription.status === "active"
                                                     ? "success"
                                                     : "warning"
                                             }
-                                        >
-                                            {subscription.status}
-                                        </Badge>
+                                        />
                                         <span className="text-sm text-[var(--muted)]">
                                             until {formatDisplayDate(subscription.validUntil)}
                                         </span>
@@ -91,7 +90,7 @@ export function MeSubscriptionsPage() {
                                             </Link>
                                         </Button>
                                     </div>
-                                </article>
+                                </ActionCard>
                             ))}
                         </div>
                     ) : (

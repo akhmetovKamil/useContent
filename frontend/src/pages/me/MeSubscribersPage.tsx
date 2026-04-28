@@ -2,6 +2,8 @@ import { shortenWalletAddress } from "@shared/utils"
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ActionCard } from "@/components/ui/action-card"
+import { StatusPill } from "@/components/ui/status-pill"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
 import { useMyAuthorSubscribersQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
@@ -36,8 +38,8 @@ export function MeSubscribersPage() {
                     ) : subscribers.length ? (
                         <div className="grid gap-3">
                             {subscribers.map((subscriber) => (
-                                <article
-                                    className="grid gap-3 rounded-[22px] border border-[var(--line)] bg-[var(--surface-strong)] p-4 lg:grid-cols-[1.1fr_0.9fr_0.9fr]"
+                                <ActionCard
+                                    className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr_0.9fr]"
                                     key={subscriber.id}
                                 >
                                     <div>
@@ -79,22 +81,20 @@ export function MeSubscribersPage() {
                                             status
                                         </div>
                                         <div className="mt-2 flex flex-wrap items-center gap-2">
-                                            <Badge
-                                                className="rounded-full"
+                                            <StatusPill
+                                                label={subscriber.status}
                                                 variant={
                                                     subscriber.status === "active"
                                                         ? "success"
                                                         : "warning"
                                                 }
-                                            >
-                                                {subscriber.status}
-                                            </Badge>
+                                            />
                                             <span className="text-sm text-[var(--muted)]">
                                                 until {formatDisplayDate(subscriber.validUntil)}
                                             </span>
                                         </div>
                                     </div>
-                                </article>
+                                </ActionCard>
                             ))}
                         </div>
                     ) : (
