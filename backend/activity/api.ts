@@ -1,5 +1,5 @@
 import { api } from "encore.dev/api";
-import { getAuthData } from "~encore/auth";
+import { getRequiredWallet } from "../lib/api-helpers";
 import type { CursorPaginationInput, ActivityDto } from "../../shared/types/content";
 import type { PaginatedResponse } from "../../shared/types/common";
 import * as service from "./service";
@@ -10,7 +10,7 @@ export const listMyActivity = api(
     cursor,
     limit,
   }: CursorPaginationInput): Promise<PaginatedResponse<ActivityDto>> => {
-    const auth = getAuthData()!;
-    return service.listMyActivity(auth.walletAddress, { cursor, limit });
+    const walletAddress = getRequiredWallet();
+    return service.listMyActivity(walletAddress, { cursor, limit });
   },
 );

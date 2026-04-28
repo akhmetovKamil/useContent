@@ -1,6 +1,5 @@
 import { api, type Header } from "encore.dev/api";
-import { getAuthData } from "~encore/auth";
-import { getOptionalViewerWallet } from "../lib/api-helpers";
+import { getOptionalViewerWallet, getRequiredWallet } from "../lib/api-helpers";
 import * as service from "./service";
 import type {
   AccessPolicyPresetResponse,
@@ -15,9 +14,9 @@ import type {
 export const listMyAccessPolicyPresets = api(
   { method: "GET", path: "/me/access-policies", expose: true, auth: true },
   async (): Promise<ListAccessPolicyPresetsResponseDto> => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const policies = await service.listMyAccessPolicyPresetResponses(
-      auth.walletAddress,
+      walletAddress,
     );
     return { policies };
   },
@@ -28,9 +27,9 @@ export const createMyAccessPolicyPreset = api(
   async (
     req: CreateAccessPolicyPresetRequest,
   ): Promise<AccessPolicyPresetResponse> => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const policy = await service.createMyAccessPolicyPreset(
-      auth.walletAddress,
+      walletAddress,
       req,
     );
     return service.toAccessPolicyPresetResponse(policy);
@@ -50,9 +49,9 @@ export const updateMyAccessPolicyPreset = api(
   }: UpdateAccessPolicyPresetRequest & {
     policyId: string;
   }): Promise<AccessPolicyPresetResponse> => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const policy = await service.updateMyAccessPolicyPreset(
-      auth.walletAddress,
+      walletAddress,
       policyId,
       req,
     );
@@ -68,8 +67,8 @@ export const deleteMyAccessPolicyPreset = api(
     auth: true,
   },
   async ({ policyId }: { policyId: string }): Promise<void> => {
-    const auth = getAuthData()!;
-    await service.deleteMyAccessPolicyPreset(auth.walletAddress, policyId);
+    const walletAddress = getRequiredWallet();
+    await service.deleteMyAccessPolicyPreset(walletAddress, policyId);
   },
 );
 

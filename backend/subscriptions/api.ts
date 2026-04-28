@@ -1,7 +1,9 @@
 import { api, type Header } from "encore.dev/api";
 import { secret } from "encore.dev/config";
-import { getAuthData } from "~encore/auth";
-import { assertDeploymentRegistryToken } from "../lib/api-helpers";
+import {
+  assertDeploymentRegistryToken,
+  getRequiredWallet,
+} from "../lib/api-helpers";
 import * as service from "./service";
 import type {
   AuthorSubscriberResponse,
@@ -29,8 +31,8 @@ const deploymentRegistryTokenSecret = secret("DeploymentRegistryToken");
 export const listMyEntitlements = api(
   { method: "GET", path: "/me/entitlements", expose: true, auth: true },
   async (): Promise<ListEntitlementsResponseDto> => {
-    const auth = getAuthData()!;
-    const entitlements = await service.listMyEntitlements(auth.walletAddress);
+    const walletAddress = getRequiredWallet();
+    const entitlements = await service.listMyEntitlements(walletAddress);
     return {
       entitlements: entitlements.map(service.toSubscriptionEntitlementResponse),
     };
@@ -40,9 +42,9 @@ export const listMyEntitlements = api(
 export const listMyReaderSubscriptions = api(
   { method: "GET", path: "/me/subscriptions", expose: true, auth: true },
   async (): Promise<ListReaderSubscriptionsResponseDto> => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const subscriptions = await service.listMyReaderSubscriptions(
-      auth.walletAddress,
+      walletAddress,
     );
     return { subscriptions };
   },
@@ -51,9 +53,9 @@ export const listMyReaderSubscriptions = api(
 export const listMyAuthorSubscribers = api(
   { method: "GET", path: "/me/author/subscribers", expose: true, auth: true },
   async (): Promise<ListAuthorSubscribersResponseDto> => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const subscribers = await service.listMyAuthorSubscribers(
-      auth.walletAddress,
+      walletAddress,
     );
     return { subscribers };
   },
@@ -110,9 +112,9 @@ export const listMySubscriptionPaymentIntents = api(
     auth: true,
   },
   async (): Promise<ListSubscriptionPaymentIntentsResponseDto> => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const intents = await service.listMySubscriptionPaymentIntents(
-      auth.walletAddress,
+      walletAddress,
     );
     return {
       intents: intents.map(service.toSubscriptionPaymentIntentResponse),
@@ -123,8 +125,8 @@ export const listMySubscriptionPaymentIntents = api(
 export const listMySubscriptionPlans = api(
   { method: "GET", path: "/me/subscription-plans", expose: true, auth: true },
   async (): Promise<ListSubscriptionPlansResponseDto> => {
-    const auth = getAuthData()!;
-    const plans = await service.listMySubscriptionPlans(auth.walletAddress);
+    const walletAddress = getRequiredWallet();
+    const plans = await service.listMySubscriptionPlans(walletAddress);
     return {
       plans: await Promise.all(
         plans.map((plan) => service.toSubscriptionPlanResponseWithStats(plan)),
@@ -138,9 +140,9 @@ export const upsertMySubscriptionPlan = api(
   async (
     req: UpsertSubscriptionPlanRequest,
   ): Promise<SubscriptionPlanResponse> => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const plan = await service.upsertMySubscriptionPlan(
-      auth.walletAddress,
+      walletAddress,
       req,
     );
     return service.toSubscriptionPlanResponseWithStats(plan);
@@ -155,8 +157,8 @@ export const deleteMySubscriptionPlan = api(
     auth: true,
   },
   async ({ planId }: { planId: string }): Promise<void> => {
-    const auth = getAuthData()!;
-    await service.deleteMySubscriptionPlan(auth.walletAddress, planId);
+    const walletAddress = getRequiredWallet();
+    await service.deleteMySubscriptionPlan(walletAddress, planId);
   },
 );
 
@@ -189,9 +191,9 @@ export const createSubscriptionPaymentIntent = api(
   }: CreateSubscriptionPaymentIntentRequest & {
     slug: string;
   }): Promise<SubscriptionPaymentIntentResponse> => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const intent = await service.createSubscriptionPaymentIntent(
-      auth.walletAddress,
+      walletAddress,
       slug,
       req,
     );
@@ -212,9 +214,9 @@ export const confirmSubscriptionPayment = api(
   }: ConfirmSubscriptionPaymentRequest & {
     intentId: string;
   }): Promise<SubscriptionPaymentIntentResponse> => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const intent = await service.confirmSubscriptionPayment(
-      auth.walletAddress,
+      walletAddress,
       intentId,
       req,
     );

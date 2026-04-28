@@ -1,5 +1,5 @@
 import { api } from "encore.dev/api";
-import { getAuthData } from "~encore/auth";
+import { getRequiredWallet } from "../lib/api-helpers";
 import * as service from "./service";
 import type {
   AuthorCatalogItemResponse,
@@ -15,8 +15,8 @@ import type { ListAuthorsResponseDto } from "../../shared/types/content";
 export const getMe = api(
   { method: "GET", path: "/me", expose: true, auth: true },
   async (): Promise<UserProfileResponse> => {
-    const auth = getAuthData()!;
-    const user = await service.getOrCreateUserByWallet(auth.walletAddress);
+    const walletAddress = getRequiredWallet();
+    const user = await service.getOrCreateUserByWallet(walletAddress);
     return service.toUserProfileResponse(user);
   },
 );
@@ -24,8 +24,8 @@ export const getMe = api(
 export const updateMe = api(
   { method: "PATCH", path: "/me", expose: true, auth: true },
   async (req: UpdateMyProfileRequest): Promise<UserProfileResponse> => {
-    const auth = getAuthData()!;
-    const user = await service.updateMyProfile(auth.walletAddress, req);
+    const walletAddress = getRequiredWallet();
+    const user = await service.updateMyProfile(walletAddress, req);
     return service.toUserProfileResponse(user);
   },
 );
@@ -33,8 +33,8 @@ export const updateMe = api(
 export const createMyAuthorProfile = api(
   { method: "POST", path: "/authors", expose: true, auth: true },
   async (req: CreateAuthorProfileRequest): Promise<AuthorProfileResponse> => {
-    const auth = getAuthData()!;
-    const author = await service.createAuthorProfile(auth.walletAddress, req);
+    const walletAddress = getRequiredWallet();
+    const author = await service.createAuthorProfile(walletAddress, req);
     return service.toAuthorProfileResponse(author);
   },
 );
@@ -54,8 +54,8 @@ export const listAuthors = api(
 export const getMyAuthorProfile = api(
   { method: "GET", path: "/me/author", expose: true, auth: true },
   async (): Promise<AuthorProfileResponse> => {
-    const auth = getAuthData()!;
-    const author = await service.getMyAuthorProfile(auth.walletAddress);
+    const walletAddress = getRequiredWallet();
+    const author = await service.getMyAuthorProfile(walletAddress);
     return service.toAuthorProfileResponse(author);
   },
 );
@@ -63,8 +63,8 @@ export const getMyAuthorProfile = api(
 export const updateMyAuthorProfile = api(
   { method: "PATCH", path: "/me/author", expose: true, auth: true },
   async (req: UpdateAuthorProfileRequest): Promise<AuthorProfileResponse> => {
-    const auth = getAuthData()!;
-    const author = await service.updateMyAuthorProfile(auth.walletAddress, req);
+    const walletAddress = getRequiredWallet();
+    const author = await service.updateMyAuthorProfile(walletAddress, req);
     return service.toAuthorProfileResponse(author);
   },
 );
@@ -72,16 +72,16 @@ export const updateMyAuthorProfile = api(
 export const deleteMyAuthorProfile = api(
   { method: "DELETE", path: "/me/author", expose: true, auth: true },
   async (): Promise<void> => {
-    const auth = getAuthData()!;
-    await service.deleteMyAuthorProfile(auth.walletAddress);
+    const walletAddress = getRequiredWallet();
+    await service.deleteMyAuthorProfile(walletAddress);
   },
 );
 
 export const getMyAuthorStorageUsage = api(
   { method: "GET", path: "/me/author/storage-usage", expose: true, auth: true },
   async (): Promise<AuthorStorageUsageResponse> => {
-    const auth = getAuthData()!;
-    return service.getMyAuthorStorageUsage(auth.walletAddress);
+    const walletAddress = getRequiredWallet();
+    return service.getMyAuthorStorageUsage(walletAddress);
   },
 );
 

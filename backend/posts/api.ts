@@ -1,7 +1,7 @@
 import { api, type Header } from "encore.dev/api";
-import { getAuthData } from "~encore/auth";
 import {
   getOptionalViewerWallet,
+  getRequiredWallet,
   parseFilePath,
   readRequestBody,
   writeFileResponse,
@@ -32,8 +32,8 @@ export const listMyFeedPosts = api(
     cursor,
     limit,
   }: CursorPaginationInput): Promise<FeedPostPageResponseDto> => {
-    const auth = getAuthData()!;
-    return service.listMyFeedPosts(auth.walletAddress, { cursor, limit });
+    const walletAddress = getRequiredWallet();
+    return service.listMyFeedPosts(walletAddress, { cursor, limit });
   },
 );
 
@@ -60,9 +60,9 @@ export const listExploreFeedPosts = api(
 export const createMyPost = api(
   { method: "POST", path: "/me/posts", expose: true, auth: true },
   async (req: CreatePostRequest): Promise<PostResponse> => {
-    const auth = getAuthData()!;
-    const post = await service.createMyPost(auth.walletAddress, req);
-    return service.buildPostResponse(post, auth.walletAddress);
+    const walletAddress = getRequiredWallet();
+    const post = await service.createMyPost(walletAddress, req);
+    return service.buildPostResponse(post, walletAddress);
   },
 );
 
@@ -75,15 +75,15 @@ export const listMyPosts = api(
   async ({
     status,
   }: ListMyPostsRequest): Promise<ListPostsResponseDto> => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const posts =
       status === "archived"
-        ? await service.listMyArchivedPosts(auth.walletAddress)
-        : await service.listMyPosts(auth.walletAddress);
+        ? await service.listMyArchivedPosts(walletAddress)
+        : await service.listMyPosts(walletAddress);
     return {
       posts: await Promise.all(
         posts.map((post) =>
-          service.buildPostResponse(post, auth.walletAddress),
+          service.buildPostResponse(post, walletAddress),
         ),
       ),
     };
@@ -96,17 +96,17 @@ export const updateMyPost = api(
     postId,
     ...req
   }: UpdatePostRequest & { postId: string }): Promise<PostResponse> => {
-    const auth = getAuthData()!;
-    const post = await service.updateMyPost(auth.walletAddress, postId, req);
-    return service.buildPostResponse(post, auth.walletAddress);
+    const walletAddress = getRequiredWallet();
+    const post = await service.updateMyPost(walletAddress, postId, req);
+    return service.buildPostResponse(post, walletAddress);
   },
 );
 
 export const deleteMyPost = api(
   { method: "DELETE", path: "/me/posts/:postId", expose: true, auth: true },
   async ({ postId }: { postId: string }): Promise<void> => {
-    const auth = getAuthData()!;
-    await service.deleteMyPost(auth.walletAddress, postId);
+    const walletAddress = getRequiredWallet();
+    await service.deleteMyPost(walletAddress, postId);
   },
 );
 
@@ -118,9 +118,9 @@ export const promoteMyPost = api(
     auth: true,
   },
   async ({ postId }: { postId: string }): Promise<PostResponse> => {
-    const auth = getAuthData()!;
-    const post = await service.promoteMyPost(auth.walletAddress, postId);
-    return service.buildPostResponse(post, auth.walletAddress);
+    const walletAddress = getRequiredWallet();
+    const post = await service.promoteMyPost(walletAddress, postId);
+    return service.buildPostResponse(post, walletAddress);
   },
 );
 
@@ -132,9 +132,9 @@ export const stopPromotingMyPost = api(
     auth: true,
   },
   async ({ postId }: { postId: string }): Promise<PostResponse> => {
-    const auth = getAuthData()!;
-    const post = await service.stopPromotingMyPost(auth.walletAddress, postId);
-    return service.buildPostResponse(post, auth.walletAddress);
+    const walletAddress = getRequiredWallet();
+    const post = await service.stopPromotingMyPost(walletAddress, postId);
+    return service.buildPostResponse(post, walletAddress);
   },
 );
 
@@ -217,11 +217,11 @@ export const createPostComment = api(
     slug: string;
     postId: string;
   }): Promise<PostCommentResponse> => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const comment = await service.createPostCommentBySlug(
       slug,
       postId,
-      auth.walletAddress,
+      walletAddress,
       req,
     );
     return service.toPostCommentResponse(comment);
@@ -243,11 +243,11 @@ export const createPostReport = api(
     slug: string;
     postId: string;
   }): Promise<PostReportResponse> => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const report = await service.createPostReportBySlug(
       slug,
       postId,
-      auth.walletAddress,
+      walletAddress,
       req,
     );
     return service.toPostReportResponse(report);
@@ -268,8 +268,8 @@ export const togglePostLike = api(
     slug: string;
     postId: string;
   }): Promise<TogglePostLikeResponseDto> => {
-    const auth = getAuthData()!;
-    return service.togglePostLikeBySlug(slug, postId, auth.walletAddress);
+    const walletAddress = getRequiredWallet();
+    return service.togglePostLikeBySlug(slug, postId, walletAddress);
   },
 );
 
@@ -307,7 +307,7 @@ export const uploadMyPostAttachment = api.raw(
     auth: true,
   },
   async (req, resp) => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const url = new URL(req.url ?? "", "http://localhost");
     const postId = url.pathname.replace("/me/post-files/upload/", "");
     const name = url.searchParams.get("name") ?? "";
@@ -316,7 +316,7 @@ export const uploadMyPostAttachment = api.raw(
       req.headers["content-type"] ?? "application/octet-stream",
     );
     const attachment = await service.uploadMyPostAttachment(
-      auth.walletAddress,
+      walletAddress,
       postId,
       { name, body, contentType },
     );
@@ -334,13 +334,13 @@ export const downloadMyPostAttachment = api.raw(
     auth: true,
   },
   async (req, resp) => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const [postId, attachmentId] = parseFilePath(
       req.url ?? "",
       "/me/post-files/download/",
     );
     const file = await service.getMyPostAttachment(
-      auth.walletAddress,
+      walletAddress,
       postId,
       attachmentId,
     );

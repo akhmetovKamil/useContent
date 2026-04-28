@@ -1,5 +1,10 @@
 import { APIError, type Header } from "encore.dev/api";
+import { getAuthData } from "~encore/auth";
 import { validateToken } from "../auth/auth.service";
+
+export function getRequiredWallet(): string {
+  return getAuthData()!.walletAddress;
+}
 
 export async function getOptionalViewerWallet(
   authorization?: Header<"Authorization"> | string,

@@ -1,5 +1,5 @@
 import { api } from "encore.dev/api";
-import { getAuthData } from "~encore/auth";
+import { getRequiredWallet } from "../lib/api-helpers";
 import * as service from "./service";
 import type {
   AuthorPlatformBillingResponse,
@@ -28,8 +28,8 @@ export const getMyAuthorPlatformBilling = api(
     auth: true,
   },
   async (): Promise<AuthorPlatformBillingResponse> => {
-    const auth = getAuthData()!;
-    return service.getMyAuthorPlatformBilling(auth.walletAddress);
+    const walletAddress = getRequiredWallet();
+    return service.getMyAuthorPlatformBilling(walletAddress);
   },
 );
 
@@ -41,8 +41,8 @@ export const previewMyAuthorPlatformCleanup = api(
     auth: true,
   },
   async (): Promise<AuthorPlatformCleanupPreviewResponse> => {
-    const auth = getAuthData()!;
-    return service.previewMyAuthorPlatformCleanup(auth.walletAddress);
+    const walletAddress = getRequiredWallet();
+    return service.previewMyAuthorPlatformCleanup(walletAddress);
   },
 );
 
@@ -54,8 +54,8 @@ export const runMyAuthorPlatformCleanup = api(
     auth: true,
   },
   async (): Promise<AuthorPlatformCleanupRunResponse> => {
-    const auth = getAuthData()!;
-    return service.runMyAuthorPlatformCleanup(auth.walletAddress);
+    const walletAddress = getRequiredWallet();
+    return service.runMyAuthorPlatformCleanup(walletAddress);
   },
 );
 
@@ -91,9 +91,9 @@ export const createPlatformSubscriptionPaymentIntent = api(
   async (
     req: CreatePlatformSubscriptionPaymentIntentRequest,
   ): Promise<PlatformSubscriptionPaymentIntentResponse> => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const intent = await service.createPlatformSubscriptionPaymentIntent(
-      auth.walletAddress,
+      walletAddress,
       req,
     );
     return service.toPlatformSubscriptionPaymentIntentResponse(intent);
@@ -113,9 +113,9 @@ export const confirmPlatformSubscriptionPayment = api(
   }: ConfirmSubscriptionPaymentRequest & {
     intentId: string;
   }): Promise<PlatformSubscriptionPaymentIntentResponse> => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const intent = await service.confirmPlatformSubscriptionPayment(
-      auth.walletAddress,
+      walletAddress,
       intentId,
       req,
     );

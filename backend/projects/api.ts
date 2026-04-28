@@ -1,7 +1,7 @@
 import { api, type Header } from "encore.dev/api";
-import { getAuthData } from "~encore/auth";
 import {
   getOptionalViewerWallet,
+  getRequiredWallet,
   parseFilePath,
   readRequestBody,
   writeFileResponse,
@@ -30,8 +30,8 @@ interface ListMyProjectsRequest {
 export const createMyProject = api(
   { method: "POST", path: "/me/projects", expose: true, auth: true },
   async (req: CreateProjectRequest): Promise<ProjectResponse> => {
-    const auth = getAuthData()!;
-    const project = await service.createMyProject(auth.walletAddress, req);
+    const walletAddress = getRequiredWallet();
+    const project = await service.createMyProject(walletAddress, req);
     return service.buildProjectResponse(project);
   },
 );
@@ -41,11 +41,11 @@ export const listMyProjects = api(
   async ({
     status,
   }: ListMyProjectsRequest): Promise<ListProjectsResponseDto> => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const projects =
       status === "archived"
-        ? await service.listMyArchivedProjects(auth.walletAddress)
-        : await service.listMyProjects(auth.walletAddress);
+        ? await service.listMyArchivedProjects(walletAddress)
+        : await service.listMyProjects(walletAddress);
     return {
       projects: await Promise.all(projects.map(service.buildProjectResponse)),
     };
@@ -65,9 +65,9 @@ export const updateMyProject = api(
   }: UpdateProjectRequest & {
     projectId: string;
   }): Promise<ProjectResponse> => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const project = await service.updateMyProject(
-      auth.walletAddress,
+      walletAddress,
       projectId,
       req,
     );
@@ -83,8 +83,8 @@ export const deleteMyProject = api(
     auth: true,
   },
   async ({ projectId }: { projectId: string }): Promise<void> => {
-    const auth = getAuthData()!;
-    await service.deleteMyProject(auth.walletAddress, projectId);
+    const walletAddress = getRequiredWallet();
+    await service.deleteMyProject(walletAddress, projectId);
   },
 );
 
@@ -104,8 +104,8 @@ export const listMyProjectNodes = api(
     projectId,
     parentId,
   }: ListProjectNodesRequest): Promise<ProjectNodeListResponse> => {
-    const auth = getAuthData()!;
-    return service.listMyProjectNodes(auth.walletAddress, projectId, parentId);
+    const walletAddress = getRequiredWallet();
+    return service.listMyProjectNodes(walletAddress, projectId, parentId);
   },
 );
 
@@ -122,9 +122,9 @@ export const createMyProjectFolder = api(
   }: CreateProjectFolderRequest & {
     projectId: string;
   }): Promise<ProjectNodeResponse> => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const folder = await service.createMyProjectFolder(
-      auth.walletAddress,
+      walletAddress,
       projectId,
       req,
     );
@@ -147,9 +147,9 @@ export const updateMyProjectNode = api(
     projectId: string;
     nodeId: string;
   }): Promise<ProjectNodeResponse> => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const node = await service.updateMyProjectNode(
-      auth.walletAddress,
+      walletAddress,
       projectId,
       nodeId,
       req,
@@ -172,8 +172,8 @@ export const deleteMyProjectNode = api(
     projectId: string;
     nodeId: string;
   }): Promise<void> => {
-    const auth = getAuthData()!;
-    await service.deleteMyProjectNode(auth.walletAddress, projectId, nodeId);
+    const walletAddress = getRequiredWallet();
+    await service.deleteMyProjectNode(walletAddress, projectId, nodeId);
   },
 );
 
@@ -191,8 +191,8 @@ export const getMyProjectBundle = api(
     projectId: string;
     folderId?: string | null;
   }): Promise<ProjectBundleResponse> => {
-    const auth = getAuthData()!;
-    return service.getMyProjectBundle(auth.walletAddress, projectId, folderId);
+    const walletAddress = getRequiredWallet();
+    return service.getMyProjectBundle(walletAddress, projectId, folderId);
   },
 );
 
@@ -204,7 +204,7 @@ export const uploadMyProjectFile = api.raw(
     auth: true,
   },
   async (req, resp) => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const url = new URL(req.url ?? "", "http://localhost");
     const projectId = url.pathname.replace("/me/project-files/upload/", "");
     const name = url.searchParams.get("name") ?? "";
@@ -214,7 +214,7 @@ export const uploadMyProjectFile = api.raw(
       req.headers["content-type"] ?? "application/octet-stream",
     );
     const node = await service.uploadMyProjectFile(
-      auth.walletAddress,
+      walletAddress,
       projectId,
       {
         parentId,
@@ -237,13 +237,13 @@ export const downloadMyProjectFile = api.raw(
     auth: true,
   },
   async (req, resp) => {
-    const auth = getAuthData()!;
+    const walletAddress = getRequiredWallet();
     const [projectId, nodeId] = parseFilePath(
       req.url ?? "",
       "/me/project-files/download/",
     );
     const file = await service.getMyProjectFile(
-      auth.walletAddress,
+      walletAddress,
       projectId,
       nodeId,
     );
