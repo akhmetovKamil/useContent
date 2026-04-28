@@ -1,5 +1,5 @@
 import { APIError } from "encore.dev/api";
-import { Contract, JsonRpcProvider, isAddress } from "ethers";
+import { Contract, type JsonRpcProvider } from "ethers";
 import { platformSubscriptionManagerAbi } from "../../shared/abi/platform-subscription-manager.abi";
 import { subscriptionManagerAbi } from "../../shared/abi/subscription-manager.abi";
 import { PAYMENT_ASSET_CODE } from "../../shared/consts";
@@ -11,6 +11,12 @@ import {
   platformSubscriptionManagerInterface,
   subscriptionManagerInterface,
 } from "./abi";
+import {
+  normalizeAddress,
+  normalizeBytes32,
+  tryNormalizeAddress,
+} from "./address";
+import { getProvider } from "./provider";
 import type {
   OnChainAccessGrants,
   VerifiedPlatformSubscriptionPayment,
@@ -247,18 +253,6 @@ export async function verifyPlatformSubscriptionPayment(
   };
 }
 
-function getProvider(chainId: number): JsonRpcProvider {
-  const url =
-    process.env[`RPC_URL_${chainId}`] ??
-    (chainId === 11155111 ? process.env.SEPOLIA_RPC_URL : undefined);
-
-  if (!url) {
-    throw APIError.failedPrecondition(`RPC_URL_${chainId} is not configured`);
-  }
-
-  return new JsonRpcProvider(url, chainId);
-}
-
 function collectOnChainRequirements(node: AccessPolicyNode): {
   tokenBalances: Map<string, { chainId: number; contractAddress: string }>;
   nftOwnerships: Map<
@@ -461,20 +455,4 @@ function tryParsePlatformManagerLog(log: {
   } catch {
     return null;
   }
-}
-
-function normalizeAddress(address: string): string {
-  if (!isAddress(address)) {
-    throw APIError.invalidArgument("invalid address");
-  }
-
-  return address.toLowerCase();
-}
-
-function tryNormalizeAddress(address: string): string | null {
-  return isAddress(address) ? address.toLowerCase() : null;
-}
-
-function normalizeBytes32(value: string): string {
-  return value.toLowerCase();
 }

@@ -15,7 +15,7 @@ vi.mock("encore.dev/api", () => {
   return { APIError: MockAPIError };
 });
 
-vi.mock("../lib/content-common", () => ({
+vi.mock("../lib/utils/wallet", () => ({
   normalizeWallet: (wallet: string) => wallet.toLowerCase(),
 }));
 vi.mock("./repository", () => repositoryMocks);

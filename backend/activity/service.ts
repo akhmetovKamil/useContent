@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 import type { PaginatedResponse } from "../../shared/types/common";
 import type { ActivityDoc } from "./doc-types";
 import type { ActivityResponse } from "../lib/content-types";
-import { normalizeWallet } from "../lib/content-common";
+import { normalizeWallet } from "../lib/utils/wallet";
 import * as repo from "./repository";
 
 interface ActivityPaginationRequest {
