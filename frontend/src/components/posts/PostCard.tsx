@@ -1,29 +1,21 @@
-import type { PostAttachmentDto, PostDto, PostReportReason } from "@shared/types/content"
-import { Archive, ExternalLink, Flag, Megaphone, Pencil, RotateCcw, Send, Trash2 } from "lucide-react"
-import type { ComponentType } from "react"
+import type { PostAttachmentDto, PostReportReason } from "@shared/types/content"
+import { Flag } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 
 import { AttachedProjectCard } from "@/components/posts/AttachedProjectCard"
-import { formatPostDate } from "@/components/posts/date"
+import { AuthorActions } from "@/components/posts/AuthorActions"
+import { AuthorLine, PostMeta } from "@/components/posts/PostCardHeaderParts"
 import { InlineComments } from "@/components/posts/InlineComments"
 import { LockedPostPreview } from "@/components/posts/LockedPostPreview"
 import { PostEngagementBar } from "@/components/posts/PostEngagementBar"
 import { PostMediaGallery } from "@/components/posts/PostMediaGallery"
+import { PostText } from "@/components/posts/PostText"
+import { ReportPostModal } from "@/components/posts/ReportPostModal"
 import type { AuthorPostActions, FeedPost } from "@/components/posts/types"
 import { getFeedAuthor, getPostAccess } from "@/components/posts/types"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Modal } from "@/components/ui/modal"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import {
     useCreatePostCommentMutation,
     useCreatePostReportMutation,
@@ -33,7 +25,6 @@ import {
     useTogglePostLikeMutation,
 } from "@/queries/posts"
 import { useAuthStore } from "@/stores/auth-store"
-import { cn } from "@/utils/cn"
 
 interface PostCardProps extends AuthorPostActions {
     commentsMode?: "inline" | "hidden"
@@ -267,260 +258,5 @@ export function PostCard({
                 />
             ) : null}
         </Card>
-    )
-}
-
-function ReportPostModal({
-    comment,
-    error,
-    isPending,
-    onCommentChange,
-    onOpenChange,
-    onReasonChange,
-    onSubmit,
-    open,
-    reason,
-    submitted,
-}: {
-    comment: string
-    error: Error | null
-    isPending: boolean
-    onCommentChange: (value: string) => void
-    onOpenChange: (open: boolean) => void
-    onReasonChange: (value: PostReportReason) => void
-    onSubmit: () => void
-    open: boolean
-    reason: PostReportReason
-    submitted: boolean
-}) {
-    return (
-        <Modal
-            description="Reports help keep promoted and public posts safe. The post will not be hidden automatically."
-            onOpenChange={onOpenChange}
-            open={open}
-            title="Report post"
-        >
-            {submitted ? (
-                <div className="grid gap-4">
-                    <p className="text-sm leading-6 text-[var(--muted)]">
-                        Thanks. The report was saved for future moderation review.
-                    </p>
-                    <Button className="w-fit rounded-full" onClick={() => onOpenChange(false)}>
-                        Close
-                    </Button>
-                </div>
-            ) : (
-                <form
-                    className="grid gap-4"
-                    onSubmit={(event) => {
-                        event.preventDefault()
-                        onSubmit()
-                    }}
-                >
-                    <Select
-                        onValueChange={(value) => onReasonChange(value as PostReportReason)}
-                        value={reason}
-                    >
-                        <SelectTrigger>
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="spam">Spam</SelectItem>
-                            <SelectItem value="scam">Scam or fraud</SelectItem>
-                            <SelectItem value="illegal_content">Illegal content</SelectItem>
-                            <SelectItem value="abuse">Abuse or harassment</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Textarea
-                        className="min-h-28"
-                        maxLength={1000}
-                        onChange={(event) => onCommentChange(event.target.value)}
-                        placeholder="Optional context for moderation..."
-                        value={comment}
-                    />
-                    {error ? <p className="text-sm text-rose-600">{error.message}</p> : null}
-                    <div className="flex justify-end gap-2">
-                        <Button onClick={() => onOpenChange(false)} type="button" variant="outline">
-                            Cancel
-                        </Button>
-                        <Button disabled={isPending} type="submit">
-                            {isPending ? "Saving..." : "Submit report"}
-                        </Button>
-                    </div>
-                </form>
-            )}
-        </Modal>
-    )
-}
-
-function AuthorLine({ post }: { post: Extract<FeedPost, { authorSlug: string }> }) {
-    return (
-        <div className="mb-2 flex flex-wrap items-center gap-2 text-sm text-[var(--muted)]">
-            <span className="font-medium text-[var(--foreground)]">{post.authorDisplayName}</span>
-            <Link
-                className="font-mono underline-offset-4 hover:underline"
-                to={`/authors/${post.authorSlug}`}
-            >
-                @{post.authorSlug}
-            </Link>
-            {post.feedReason ? <span>· {post.feedReason}</span> : null}
-        </div>
-    )
-}
-
-function PostMeta({ post }: { post: FeedPost }) {
-    return (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-            <Badge className="rounded-full">{post.status}</Badge>
-            {"accessLabel" in post && post.accessLabel ? (
-                <Badge className="rounded-full" variant={post.hasAccess ? "success" : "warning"}>
-                    {post.accessLabel}
-                </Badge>
-            ) : null}
-            {"promotion" in post && post.promotion?.active ? (
-                <Badge className="rounded-full" variant="warning">
-                    Promoted
-                </Badge>
-            ) : null}
-            <span className="text-xs text-[var(--muted)]">
-                {formatPostDate(post.publishedAt ?? post.createdAt)}
-            </span>
-        </div>
-    )
-}
-
-function PostText({
-    content,
-    expanded,
-    onToggle,
-}: {
-    content: string
-    expanded: boolean
-    onToggle: () => void
-}) {
-    const isLong = content.length > 420
-
-    return (
-        <div className="grid gap-2">
-            <p
-                className={cn(
-                    "whitespace-pre-wrap text-sm leading-6 text-[var(--foreground)]",
-                    isLong && !expanded ? "line-clamp-5" : ""
-                )}
-            >
-                {content}
-            </p>
-            {isLong ? (
-                <button
-                    className="w-fit text-sm font-medium text-[var(--accent)] underline-offset-4 hover:underline"
-                    onClick={onToggle}
-                    type="button"
-                >
-                    {expanded ? "Show less" : "Show more"}
-                </button>
-            ) : null}
-        </div>
-    )
-}
-
-function AuthorActions({
-    onArchive,
-    onDelete,
-    onEdit,
-    onPublish,
-    onPromote,
-    onRestoreDraft,
-    onStopPromotion,
-    onUnarchive,
-    post,
-}: AuthorPostActions & { post: FeedPost }) {
-    const editablePost = post as PostDto
-    const isPromoted = post.promotion?.active === true
-
-    return (
-        <div className="flex flex-wrap justify-end gap-2">
-            {post.status === "draft" ? (
-                <IconAction icon={Send} label="Publish" onClick={() => onPublish?.(editablePost)} />
-            ) : null}
-            {post.status === "archived" ? (
-                <>
-                    <IconAction
-                        icon={RotateCcw}
-                        label="Restore draft"
-                        onClick={() => onRestoreDraft?.(editablePost)}
-                    />
-                    <IconAction
-                        icon={Send}
-                        label="Publish"
-                        onClick={() => onUnarchive?.(editablePost)}
-                    />
-                </>
-            ) : null}
-            <IconAction icon={Pencil} label="Edit" onClick={() => onEdit?.(editablePost)} />
-            {post.status === "published" && (onPromote || onStopPromotion) ? (
-                isPromoted && onStopPromotion ? (
-                    <IconAction
-                        icon={Megaphone}
-                        label="Pause promo"
-                        onClick={() => onStopPromotion?.(editablePost)}
-                    />
-                ) : onPromote ? (
-                    <IconAction
-                        icon={Megaphone}
-                        label="Promote"
-                        onClick={() => onPromote(editablePost)}
-                    />
-                ) : null
-            ) : null}
-            {post.status !== "archived" ? (
-                <IconAction
-                    icon={Archive}
-                    label="Archive"
-                    onClick={() => onArchive?.(editablePost)}
-                />
-            ) : null}
-            {"authorSlug" in post ? (
-                <Button asChild className="rounded-full" size="sm" type="button" variant="outline">
-                    <Link to={`/authors/${post.authorSlug}/posts/${post.id}`}>
-                        <ExternalLink className="size-4" />
-                        Open
-                    </Link>
-                </Button>
-            ) : null}
-            <Button
-                className="rounded-full"
-                onClick={() => onDelete?.(editablePost)}
-                size="sm"
-                type="button"
-                variant="destructive"
-            >
-                <Trash2 className="size-4" />
-                Delete
-            </Button>
-        </div>
-    )
-}
-
-function IconAction({
-    icon: Icon,
-    label,
-    onClick,
-}: {
-    icon: ComponentType<{ className?: string }>
-    label: string
-    onClick: () => void
-}) {
-    return (
-        <Button
-            className="rounded-full"
-            onClick={onClick}
-            size="sm"
-            type="button"
-            variant="outline"
-        >
-            <Icon className="size-4" />
-            {label}
-        </Button>
     )
 }
