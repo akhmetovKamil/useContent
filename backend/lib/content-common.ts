@@ -14,6 +14,13 @@ import {
 } from "../domain/access";
 import { readPostAttachmentFile } from "../posts/file-storage";
 import { readProjectFile } from "../projects/file-storage";
+import { addMinutes } from "./utils/dates";
+import {
+  isMongoDuplicateKeyError,
+  parseObjectId,
+  uniqueObjectIds,
+} from "./utils/mongo";
+import { normalizeWallet, shortenWallet } from "./utils/wallet";
 import {
   readOnChainAccessGrants,
   verifyPlatformSubscriptionPayment,
@@ -638,23 +645,6 @@ export async function buildFeedProjectResponse(
       hasAccess,
       stats,
     },
-  );
-}
-
-export function normalizeWallet(walletAddress: string): string {
-  const value = walletAddress.trim().toLowerCase();
-  if (!value) {
-    throw APIError.invalidArgument("wallet address is required");
-  }
-  return value;
-}
-
-export function isMongoDuplicateKeyError(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: unknown }).code === 11000
   );
 }
 
@@ -1296,30 +1286,6 @@ export async function readPostAttachmentObject(
   return readPostAttachmentFile(attachment);
 }
 
-export function parseObjectId(value: string, field: string): ObjectId {
-  if (!ObjectId.isValid(value)) {
-    throw APIError.invalidArgument(`${field} is invalid`);
-  }
-
-  return new ObjectId(value);
-}
-
-export function uniqueObjectIds(ids: ObjectId[]): ObjectId[] {
-  const seen = new Set<string>();
-  const result: ObjectId[] = [];
-  for (const id of ids) {
-    const key = id.toHexString();
-    if (seen.has(key)) {
-      continue;
-    }
-
-    seen.add(key);
-    result.push(id);
-  }
-
-  return result;
-}
-
 export async function buildSubscriptionGrants(
   authorId: ObjectId,
   viewerWallet: string,
@@ -1497,14 +1463,6 @@ export function getConditionMode(node: AccessPolicyNode): "single" | "and" | "or
   return node.type === "and" || node.type === "or" ? node.type : "single";
 }
 
-export function shortenWallet(walletAddress: string): string {
-  if (walletAddress.length <= 10) {
-    return walletAddress;
-  }
-
-  return `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
-}
-
 export async function buildAccessPolicyFromInput(
   policyInput:
     | NonNullable<CreateAuthorProfileRequest["defaultPolicyInput"]>
@@ -1662,6 +1620,11 @@ export function buildPlanKey(authorId: string, code: string, chainId: number): s
   return hashId(`usecontent:${chainId}:${authorId}:${code}`).toLowerCase();
 }
 
-export function addMinutes(date: Date, minutes: number): Date {
-  return new Date(date.getTime() + minutes * 60 * 1000);
-}
+export {
+  addMinutes,
+  isMongoDuplicateKeyError,
+  normalizeWallet,
+  parseObjectId,
+  shortenWallet,
+  uniqueObjectIds,
+};
