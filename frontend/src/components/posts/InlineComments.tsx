@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/utils/cn"
 import { formatPostDate } from "@/utils/date"
+import { validateForm } from "@/validation/form"
+import { commentSchema } from "@/validation/schemas"
 
 interface InlineCommentsProps {
     authorId: string
@@ -31,6 +33,7 @@ export function InlineComments({
     token,
 }: InlineCommentsProps) {
     const [comment, setComment] = useState("")
+    const [fieldError, setFieldError] = useState("")
     const [optimisticComments, setOptimisticComments] = useState<PostCommentDto[]>([])
     const visibleComments = useMemo(() => {
         const base = comments ?? commentsPreview
@@ -39,10 +42,12 @@ export function InlineComments({
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault()
-        const nextContent = comment.trim()
-        if (!nextContent) {
+        const result = validateForm(commentSchema, { content: comment })
+        setFieldError(result.success ? "" : (result.fieldErrors.content ?? "Invalid comment."))
+        if (!result.success) {
             return
         }
+        const nextContent = result.data.content
 
         const optimistic: PostCommentDto = {
             id: `optimistic-${Date.now()}`,
@@ -119,6 +124,7 @@ export function InlineComments({
             {token ? (
                 <form className="flex gap-2" onSubmit={handleSubmit}>
                     <Input
+                        aria-invalid={Boolean(fieldError)}
                         onChange={(event) => setComment(event.target.value)}
                         placeholder="Write a comment..."
                         value={comment}
@@ -126,6 +132,9 @@ export function InlineComments({
                     <Button disabled={isPending} size="icon" type="submit">
                         <SendHorizontal className="size-4" />
                     </Button>
+                    {fieldError ? (
+                        <p className="basis-full text-xs text-rose-600">{fieldError}</p>
+                    ) : null}
                 </form>
             ) : (
                 <p className="text-xs text-[var(--muted)]">Sign in to like and comment.</p>

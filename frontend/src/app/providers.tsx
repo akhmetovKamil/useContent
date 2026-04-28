@@ -13,6 +13,7 @@ import { injected } from "wagmi/connectors"
 
 import { supportedChains } from "@/utils/config/chains"
 import { getFrontendRpcUrl } from "@/utils/config/env"
+import { AppToaster } from "@/components/app/AppToaster"
 import { queryClient } from "./query-client"
 
 const wagmiConfig = createConfig({
@@ -36,7 +37,10 @@ interface AppProvidersProps {
 export function AppProviders({ children }: AppProvidersProps) {
     return (
         <WagmiProvider config={wagmiConfig}>
-            <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+            <QueryClientProvider client={queryClient}>
+                {children}
+                <AppToaster />
+            </QueryClientProvider>
         </WagmiProvider>
     )
 }

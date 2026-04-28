@@ -6,6 +6,7 @@ import { authApi } from "@/api/AuthApi"
 import { queryClient } from "@/app/query-client"
 import { isSessionExpired, useAuthStore } from "@/stores/auth-store"
 import { useWorkspaceStore } from "@/stores/workspace-store"
+import { emitSessionExpired } from "@/utils/session-events"
 
 export function useWalletSession() {
     const { address, isConnected, status } = useAccount()
@@ -64,6 +65,7 @@ export function useWalletSession() {
             clearExpiredSession()
             queryClient.clear()
             setMode("reader")
+            emitSessionExpired()
             return
         }
 
@@ -71,6 +73,7 @@ export function useWalletSession() {
             clearExpiredSession()
             queryClient.clear()
             setMode("reader")
+            emitSessionExpired()
         }, delay)
 
         return () => window.clearTimeout(timeout)

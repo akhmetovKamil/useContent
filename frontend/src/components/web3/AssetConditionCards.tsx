@@ -288,7 +288,7 @@ function getPriceFallback(isTestnet?: boolean, isError?: boolean) {
         return "price unavailable"
     }
 
-    return "no market price"
+    return "No live price"
 }
 
 function getTokenSwapUrl(chainId: number, tokenAddress: string) {

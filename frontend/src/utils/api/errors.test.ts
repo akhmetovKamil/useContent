@@ -2,8 +2,11 @@ import axios, { AxiosError } from "axios"
 import { describe, expect, test } from "vitest"
 
 import {
+    AppError,
     getApiErrorMessage,
+    isAuthError,
     isApiNotFoundError,
+    isNetworkError,
     normalizeApiError,
 } from "@/utils/api/errors"
 
@@ -18,7 +21,7 @@ describe("api error helpers", () => {
             config: {} as never,
         }
 
-        expect(getApiErrorMessage(error)).toBe("author slug already exists")
+        expect(getApiErrorMessage(error)).toBe("This username is already taken.")
     })
 
     test("falls back to backend code when message is missing", () => {
@@ -42,7 +45,7 @@ describe("api error helpers", () => {
         expect(getApiErrorMessage("oops")).toBe("Request failed")
     })
 
-    test("normalizes existing error instance", () => {
+    test("normalizes axios errors into app errors", () => {
         const error = new AxiosError("Network")
         error.response = {
             data: { message: "normalized" },
@@ -54,8 +57,9 @@ describe("api error helpers", () => {
 
         const normalized = normalizeApiError(error)
 
-        expect(normalized).toBe(error)
+        expect(normalized).toBeInstanceOf(AppError)
         expect(normalized.message).toBe("normalized")
+        expect(normalized.status).toBe(400)
     })
 
     test("creates new error for non-error values", () => {
@@ -63,6 +67,14 @@ describe("api error helpers", () => {
 
         expect(normalized).toBeInstanceOf(Error)
         expect(normalized.message).toBe("Request failed")
+    })
+
+    test("detects auth and network errors", () => {
+        const authError = new AppError("Session expired", { status: 401 })
+        const networkError = new AppError("Backend down", { isNetworkError: true })
+
+        expect(isAuthError(authError)).toBe(true)
+        expect(isNetworkError(networkError)).toBe(true)
     })
 
     test("detects axios 404 as not found", () => {

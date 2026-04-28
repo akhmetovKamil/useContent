@@ -10,15 +10,19 @@ export function useTokenUsdPriceQuery(coingeckoId?: string, enabled = true) {
     return useQuery({
         enabled: Boolean(coingeckoId) && enabled,
         queryFn: async () => {
-            const response = await fetch(
-                `https://api.coingecko.com/api/v3/simple/price?ids=${coingeckoId}&vs_currencies=usd`
-            )
-            if (!response.ok) {
-                throw new Error("price unavailable")
-            }
+            try {
+                const response = await fetch(
+                    `https://api.coingecko.com/api/v3/simple/price?ids=${coingeckoId}&vs_currencies=usd`
+                )
+                if (!response.ok) {
+                    return null
+                }
 
-            const data = (await response.json()) as CoinGeckoSimplePriceResponse
-            return data[coingeckoId ?? ""]?.usd ?? null
+                const data = (await response.json()) as CoinGeckoSimplePriceResponse
+                return data[coingeckoId ?? ""]?.usd ?? null
+            } catch {
+                return null
+            }
         },
         queryKey: ["web3-token-price", coingeckoId],
         retry: 1,

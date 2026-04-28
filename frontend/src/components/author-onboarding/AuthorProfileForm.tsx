@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/utils/cn"
+import { validateForm } from "@/validation/form"
+import { authorProfileSchema } from "@/validation/schemas"
 import { authorTags } from "./author-content"
 
 interface AuthorProfileFormProps {
@@ -51,30 +53,23 @@ export function AuthorProfileForm({
 
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault()
-        const nextErrors: Record<string, string> = {}
-        const normalizedSlug = slug.trim().toLowerCase()
-        const normalizedDisplayName = displayName.trim()
+        const result = validateForm(authorProfileSchema(mode), {
+            bio,
+            displayName,
+            slug,
+            tags,
+        })
 
-        if (!normalizedDisplayName) {
-            nextErrors.displayName = "Display name is required."
-        }
-        if (mode === "create" && !/^[a-z0-9-]{3,50}$/.test(normalizedSlug)) {
-            nextErrors.slug = "Use 3-50 chars: a-z, 0-9, and hyphen."
-        }
-        if (bio.trim().length > 500) {
-            nextErrors.bio = "Description must be 500 characters or less."
-        }
-
-        setFieldErrors(nextErrors)
-        if (Object.keys(nextErrors).length) {
+        setFieldErrors(result.fieldErrors)
+        if (!result.success) {
             return
         }
 
         onSubmit({
-            slug: normalizedSlug,
-            displayName: normalizedDisplayName,
-            bio: bio.trim(),
-            tags,
+            slug: result.data.slug,
+            displayName: result.data.displayName,
+            bio: result.data.bio,
+            tags: result.data.tags,
         })
     }
 
