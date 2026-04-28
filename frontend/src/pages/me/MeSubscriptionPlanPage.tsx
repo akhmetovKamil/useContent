@@ -1,18 +1,18 @@
 import type { AccessPolicyPresetDto, SubscriptionPlanDto } from "@shared/types/content"
 import { ZERO_ADDRESS } from "@shared/consts"
-import { FileText, Plus, ShieldCheck, Sparkles } from "lucide-react"
+import { Plus } from "lucide-react"
 import { useEffect, useState } from "react"
 import { usePublicClient } from "wagmi"
 import { formatUnits, isAddress, type Address } from "viem"
 
 import { AccessPolicyEditor } from "@/components/access/AccessPolicyEditor"
-import { FlowCard } from "@/components/access-center/FlowCard"
-import { PolicyCard } from "@/components/access-center/PolicyCard"
-import { SubscriptionPlanCard } from "@/components/access-center/SubscriptionPlanCard"
+import {
+    AccessCenterFlow,
+    PolicyListSection,
+    SubscriptionPlanListSection,
+} from "@/components/access-center/AccessCenterSections"
 import { OnChainPlanPublisher } from "@/components/subscriptions/OnChainPlanPublisher"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { EmptyState } from "@/components/ui/empty-state"
 import {
     Drawer,
     DrawerContent,
@@ -24,7 +24,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Modal } from "@/components/ui/modal"
 import { Eyebrow, PageSection } from "@/components/ui/page"
-import { ErrorMessage, LoadingMessage } from "@/components/ui/query-state"
 import { Textarea } from "@/components/ui/textarea"
 import {
     ChainPicker,
@@ -328,126 +327,34 @@ export function MeSubscriptionPlanPage() {
                 </p>
             ) : (
                 <div className="mt-6 grid gap-6">
-                    <div className="grid gap-4 lg:grid-cols-3">
-                        <FlowCard
-                            description="Create one rule set for a content tier."
-                            icon={<ShieldCheck className="size-5" />}
-                            title="1. Define policy"
-                        />
-                        <FlowCard
-                            description="Add subscription, token balance, or NFT ownership conditions."
-                            icon={<Sparkles className="size-5" />}
-                            title="2. Compose conditions"
-                        />
-                        <FlowCard
-                            description="Pick the policy when publishing posts or projects."
-                            icon={<FileText className="size-5" />}
-                            title="3. Attach to content"
-                        />
-                    </div>
+                    <AccessCenterFlow />
 
-                    <Card className="overflow-hidden rounded-[34px]">
-                        <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                            <div>
-                                <CardTitle>Reusable policies</CardTitle>
-                                <CardDescription>
-                                    These are the actual access tiers users see and content uses.
-                                </CardDescription>
-                            </div>
-                            <Button
-                                className="rounded-full"
-                                onClick={() => openPolicyModal()}
-                                type="button"
-                            >
-                                <Plus className="size-4" />
-                                Create policy
-                            </Button>
-                        </CardHeader>
-                        <CardContent>
-                            {policiesQuery.isLoading ? (
-                                <LoadingMessage>Loading policies...</LoadingMessage>
-                            ) : policiesQuery.isError ? (
-                                <ErrorMessage>{policiesQuery.error.message}</ErrorMessage>
-                            ) : policiesQuery.data?.length ? (
-                                <div className="grid gap-4 lg:grid-cols-2">
-                                    {policiesQuery.data.map((policy) => (
-                                        <PolicyCard
-                                            key={policy.id}
-                                            onDelete={() => setDeletePolicyId(policy.id)}
-                                            onEdit={() => openPolicyModal(policy)}
-                                            onMakeDefault={() =>
-                                                void updatePolicyMutation.mutateAsync({
-                                                    policyId: policy.id,
-                                                    input: { isDefault: true },
-                                                })
-                                            }
-                                            policy={policy}
-                                        />
-                                    ))}
-                                </div>
-                            ) : (
-                                <EmptyState
-                                    action="Create first policy"
-                                    description="Create a policy before publishing private content. Public content can still be selected directly on posts and projects."
-                                    onAction={() => openPolicyModal()}
-                                    title="No access policies yet"
-                                />
-                            )}
-                        </CardContent>
-                    </Card>
+                    <PolicyListSection
+                        errorMessage={policiesQuery.error?.message}
+                        isError={policiesQuery.isError}
+                        isLoading={policiesQuery.isLoading}
+                        onCreate={() => openPolicyModal()}
+                        onDelete={setDeletePolicyId}
+                        onEdit={openPolicyModal}
+                        onMakeDefault={(policyId) =>
+                            void updatePolicyMutation.mutateAsync({
+                                policyId,
+                                input: { isDefault: true },
+                            })
+                        }
+                        policies={policiesQuery.data ?? []}
+                    />
 
-                    <Card className="rounded-[34px]">
-                        <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                            <div>
-                                <CardTitle>Subscription building blocks</CardTitle>
-                                <CardDescription>
-                                    Plans are hidden behind policies. Create them only when a policy
-                                    needs paid subscription access.
-                                </CardDescription>
-                            </div>
-                            <Button
-                                className="rounded-full"
-                                onClick={() => openPlanModal()}
-                                type="button"
-                                variant="outline"
-                            >
-                                <Plus className="size-4" />
-                                Create plan
-                            </Button>
-                        </CardHeader>
-                        <CardContent>
-                            {plansQuery.isLoading ? (
-                                <LoadingMessage>Loading plans...</LoadingMessage>
-                            ) : plansQuery.isError ? (
-                                <ErrorMessage>{plansQuery.error.message}</ErrorMessage>
-                            ) : plansQuery.data?.length ? (
-                                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                                    {plansQuery.data.map((plan) => (
-                                        <SubscriptionPlanCard
-                                            key={plan.id}
-                                            onDelete={() =>
-                                                void deletePlanMutation.mutateAsync(plan.id)
-                                            }
-                                            onEdit={() => openPlanModal(plan)}
-                                            plan={plan}
-                                        />
-                                    ))}
-                                </div>
-                            ) : (
-                                <EmptyState
-                                    action="Create subscription plan"
-                                    description="You can also create a plan from inside a subscription condition."
-                                    onAction={() => openPlanModal()}
-                                    title="No subscription plans yet"
-                                />
-                            )}
-                            {deletePlanMutation.isError ? (
-                                <div className="mt-3">
-                                    <ErrorMessage>{deletePlanMutation.error.message}</ErrorMessage>
-                                </div>
-                            ) : null}
-                        </CardContent>
-                    </Card>
+                    <SubscriptionPlanListSection
+                        deleteErrorMessage={deletePlanMutation.error?.message}
+                        errorMessage={plansQuery.error?.message}
+                        isError={plansQuery.isError}
+                        isLoading={plansQuery.isLoading}
+                        onCreate={() => openPlanModal()}
+                        onDelete={(planId) => void deletePlanMutation.mutateAsync(planId)}
+                        onEdit={openPlanModal}
+                        plans={plansQuery.data ?? []}
+                    />
                 </div>
             )}
 
