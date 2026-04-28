@@ -1,8 +1,11 @@
+import { shortenWalletAddress } from "@shared/utils"
+
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
 import { useMyAuthorSubscribersQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
+import { formatDisplayDate } from "@/utils/date"
 
 export function MeSubscribersPage() {
     const token = useAuthStore((state) => state.token)
@@ -40,7 +43,7 @@ export function MeSubscribersPage() {
                                     <div>
                                         <div className="font-medium text-[var(--foreground)]">
                                             {subscriber.subscriberDisplayName ??
-                                                shortWallet(subscriber.subscriberWallet)}
+                                                shortenWalletAddress(subscriber.subscriberWallet)}
                                         </div>
                                         <div className="mt-1 break-all font-mono text-xs text-[var(--muted)]">
                                             {subscriber.subscriberUsername
@@ -87,7 +90,7 @@ export function MeSubscribersPage() {
                                                 {subscriber.status}
                                             </Badge>
                                             <span className="text-sm text-[var(--muted)]">
-                                                until {formatDate(subscriber.validUntil)}
+                                                until {formatDisplayDate(subscriber.validUntil)}
                                             </span>
                                         </div>
                                     </div>
@@ -103,16 +106,4 @@ export function MeSubscribersPage() {
             </Card>
         </section>
     )
-}
-
-function shortWallet(wallet: string) {
-    return `${wallet.slice(0, 6)}...${wallet.slice(-4)}`
-}
-
-function formatDate(value: string) {
-    return new Intl.DateTimeFormat("en", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-    }).format(new Date(value))
 }

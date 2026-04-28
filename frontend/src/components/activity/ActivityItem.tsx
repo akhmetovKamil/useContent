@@ -2,9 +2,9 @@ import type { ActivityDto } from "@shared/types/content"
 import { shortenWalletAddress } from "@shared/utils"
 import { Link } from "react-router-dom"
 
-import { formatPostDate } from "@/components/posts/date"
 import { Button } from "@/components/ui/button"
 import { getActivityIcon } from "@/utils/activity"
+import { formatPostDate } from "@/utils/date"
 
 export function ActivityItem({ activity }: { activity: ActivityDto }) {
     const Icon = getActivityIcon(activity.type)

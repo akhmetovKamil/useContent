@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
 import { useMyReaderSubscriptionsQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
+import { formatDisplayDate } from "@/utils/date"
 
 export function MeSubscriptionsPage() {
     const token = useAuthStore((state) => state.token)
@@ -77,7 +78,7 @@ export function MeSubscriptionsPage() {
                                             {subscription.status}
                                         </Badge>
                                         <span className="text-sm text-[var(--muted)]">
-                                            until {formatDate(subscription.validUntil)}
+                                            until {formatDisplayDate(subscription.validUntil)}
                                         </span>
                                         <Button asChild className="rounded-full" size="sm" variant="outline">
                                             <Link to={`/me/feed?author=${subscription.authorSlug}`}>
@@ -103,12 +104,4 @@ export function MeSubscriptionsPage() {
             </Card>
         </section>
     )
-}
-
-function formatDate(value: string) {
-    return new Intl.DateTimeFormat("en", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-    }).format(new Date(value))
 }

@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom"
 
-import { formatPostDate } from "@/components/posts/date"
 import type { FeedPost } from "@/components/posts/types"
 import { Badge } from "@/components/ui/badge"
+import { formatPostDate } from "@/utils/date"
 
 export function AuthorLine({ post }: { post: Extract<FeedPost, { authorSlug: string }> }) {
     return (

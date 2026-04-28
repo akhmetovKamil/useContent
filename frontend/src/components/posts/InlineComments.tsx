@@ -6,8 +6,8 @@ import { useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { formatPostDate } from "@/components/posts/date"
 import { cn } from "@/utils/cn"
+import { formatPostDate } from "@/utils/date"
 
 interface InlineCommentsProps {
     authorId: string
