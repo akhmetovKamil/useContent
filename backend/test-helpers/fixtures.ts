@@ -1,10 +1,6 @@
 import { ObjectId } from "mongodb";
-import type {
-  AuthorProfileDoc,
-  ProjectDoc,
-  ProjectNodeDoc,
-  UserDoc,
-} from "../lib/content-types";
+import type { AuthorProfileDoc, UserDoc } from "../profiles/doc-types";
+import type { ProjectDoc, ProjectNodeDoc } from "../projects/doc-types";
 
 export function createAuthorProfileDoc(
   overrides: Partial<AuthorProfileDoc> = {},

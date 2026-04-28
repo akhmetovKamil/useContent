@@ -37,13 +37,31 @@ const repo = {
   ...projectsRepo,
   ...subscriptionsRepo,
 };
+import type { AccessPolicyPresetDoc } from "../access/doc-types";
+import type { ContractDeploymentDoc } from "../contracts/doc-types";
 import type {
-  AccessPolicyPresetDoc,
+  AuthorStorageUsageStats,
+  PlatformPlanDoc,
+  PlatformSubscriptionPaymentIntentDoc,
+} from "../platform/doc-types";
+import type { AuthorProfileDoc, UserDoc } from "../profiles/doc-types";
+import type {
+  PostAttachmentDoc,
+  PostCommentDoc,
+  PostDoc,
+  PostReportDoc,
+} from "../posts/doc-types";
+import type { ProjectDoc, ProjectNodeDoc } from "../projects/doc-types";
+import type {
+  SubscriptionEntitlementDoc,
+  SubscriptionPaymentIntentDoc,
+  SubscriptionPlanDoc,
+} from "../subscriptions/doc-types";
+import type {
   AccessPolicyConditionResponse,
   AccessPolicyPresetResponse,
   AuthorAccessPolicyResponse,
   AuthorCatalogItemResponse,
-  AuthorProfileDoc,
   AuthorProfileResponse,
   AuthorSubscriberResponse,
   AuthorPlatformBillingResponse,
@@ -52,8 +70,6 @@ import type {
   AuthorPlatformCleanupRunResponse,
   ConfirmSubscriptionPaymentRequest,
   AuthorStorageUsageResponse,
-  AuthorStorageUsageStats,
-  ContractDeploymentDoc,
   ContractDeploymentResponse,
   CreateAccessPolicyPresetRequest,
   CreateAuthorProfileRequest,
@@ -65,31 +81,20 @@ import type {
   CreateSubscriptionPaymentIntentRequest,
   FeedPostResponse,
   FeedProjectResponse,
-  PostDoc,
-  PostCommentDoc,
   PostCommentResponse,
-  PostReportDoc,
   PostReportResponse,
-  PostAttachmentDoc,
   PostAttachmentResponse,
   PostResponse,
-  ProjectDoc,
   ProjectBundleResponse,
-  ProjectNodeDoc,
   ProjectNodeListResponse,
   ProjectNodeResponse,
   ProjectResponse,
   PlatformFeature,
   PlatformPlanResponse,
-  PlatformPlanDoc,
-  PlatformSubscriptionPaymentIntentDoc,
   PlatformSubscriptionPaymentIntentResponse,
   ReaderSubscriptionResponse,
-  SubscriptionPlanDoc,
   SubscriptionPlanResponse,
-  SubscriptionEntitlementDoc,
   SubscriptionEntitlementResponse,
-  SubscriptionPaymentIntentDoc,
   SubscriptionPaymentIntentResponse,
   UpdateAuthorProfileRequest,
   UpdateAccessPolicyPresetRequest,
@@ -99,7 +104,6 @@ import type {
   UpdatePostRequest,
   UpdateProjectNodeRequest,
   UpdateProjectRequest,
-  UserDoc,
   UserProfileResponse,
 } from "../lib/content-types";
 import type { PaginatedResponse } from "../../shared/types/common";

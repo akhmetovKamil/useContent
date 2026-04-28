@@ -1,4 +1,4 @@
-import type { ProjectNodeDoc } from "../lib/content-types";
+import type { ProjectNodeDoc } from "./doc-types";
 import {
   deleteObject,
   getObject,

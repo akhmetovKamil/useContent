@@ -1,6 +1,6 @@
 import { ObjectId, type Collection } from "mongodb";
 import { ensureIndexes, getCollection } from "../storage/repository-base";
-import type { ActivityDoc } from "../lib/content-types";
+import type { ActivityDoc } from "./doc-types";
 
 export interface ActivityCursor {
   createdAt: Date;

@@ -7,7 +7,7 @@ import type {
   PostLikeDoc,
   PostReportDoc,
   PostViewDoc,
-} from "../lib/content-types";
+} from "./doc-types";
 
 export async function getPostsCollection(): Promise<Collection<PostDoc>> {
   await ensureIndexes();

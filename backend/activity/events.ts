@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import type { ActivityType } from "../../shared/types/content";
-import type { AuthorProfileDoc, PostDoc } from "../lib/content-types";
+import type { AuthorProfileDoc } from "../profiles/doc-types";
+import type { PostDoc } from "../posts/doc-types";
 import { normalizeWallet, shortenWallet } from "../lib/content-common";
 import * as activityRepo from "./repository";
 import * as profilesRepo from "../profiles/repository";

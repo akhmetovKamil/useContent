@@ -1,6 +1,6 @@
 import { ObjectId, type Collection } from "mongodb";
 import { ensureIndexes, getCollection } from "../storage/repository-base";
-import type { AccessPolicyPresetDoc } from "../lib/content-types";
+import type { AccessPolicyPresetDoc } from "./doc-types";
 
 export async function getAccessPolicyPresetsCollection(): Promise<
   Collection<AccessPolicyPresetDoc>

@@ -1,7 +1,8 @@
 import { APIError } from "encore.dev/api";
 import { ObjectId } from "mongodb";
 import type { PaginatedResponse } from "../../shared/types/common";
-import type { ActivityDoc, ActivityResponse } from "../lib/content-types";
+import type { ActivityDoc } from "./doc-types";
+import type { ActivityResponse } from "../lib/content-types";
 import { normalizeWallet } from "../lib/content-common";
 import * as repo from "./repository";
 

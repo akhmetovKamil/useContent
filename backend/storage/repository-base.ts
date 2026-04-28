@@ -1,27 +1,29 @@
 import { secret } from "encore.dev/config";
 import { type Collection, type Document } from "mongodb";
+import type { AccessPolicyPresetDoc } from "../access/doc-types";
+import type { ActivityDoc } from "../activity/doc-types";
+import type { ContractDeploymentDoc } from "../contracts/doc-types";
 import { getDb } from "../lib/mongo";
 import type {
-  AccessPolicyPresetDoc,
-  ActivityDoc,
   AuthorPlatformCleanupLogDoc,
   AuthorPlatformSubscriptionDoc,
-  AuthorProfileDoc,
-  ContractDeploymentDoc,
   PlatformSubscriptionPaymentIntentDoc,
+} from "../platform/doc-types";
+import type { AuthorProfileDoc, UserDoc } from "../profiles/doc-types";
+import type {
   PostAttachmentDoc,
   PostCommentDoc,
-  PostReportDoc,
   PostDoc,
   PostLikeDoc,
+  PostReportDoc,
   PostViewDoc,
-  ProjectDoc,
-  ProjectNodeDoc,
+} from "../posts/doc-types";
+import type { ProjectDoc, ProjectNodeDoc } from "../projects/doc-types";
+import type {
   SubscriptionEntitlementDoc,
   SubscriptionPaymentIntentDoc,
   SubscriptionPlanDoc,
-  UserDoc,
-} from "../lib/content-types";
+} from "../subscriptions/doc-types";
 
 const mongoUri = secret("MongoUri");
 

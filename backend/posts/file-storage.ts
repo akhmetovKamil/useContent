@@ -1,4 +1,4 @@
-import type { PostAttachmentDoc } from "../lib/content-types";
+import type { PostAttachmentDoc } from "./doc-types";
 import {
   deleteObject,
   getObject,

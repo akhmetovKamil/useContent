@@ -1,6 +1,6 @@
 import { ObjectId, type Collection } from "mongodb";
 import { ensureIndexes, getCollection } from "../storage/repository-base";
-import type { ProjectDoc, ProjectNodeDoc } from "../lib/content-types";
+import type { ProjectDoc, ProjectNodeDoc } from "./doc-types";
 
 export async function getProjectsCollection(): Promise<Collection<ProjectDoc>> {
   await ensureIndexes();

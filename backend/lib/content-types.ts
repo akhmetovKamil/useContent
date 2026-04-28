@@ -1,55 +1,48 @@
-import type { ObjectId } from "mongodb";
-import type { AccessPolicy, PolicyMode } from "../domain/access";
 import type {
-  AccessPolicyPresetDto,
   AccessPolicyConditionDto,
+  AccessPolicyPresetDto,
+  ActivityDto,
   AuthorAccessPolicyDto,
   AuthorCatalogItemDto,
-  ActivityDto,
-  ActivityType,
-  AuthorSubscriberDto,
+  AuthorPlatformBillingDto,
+  AuthorPlatformCleanupItemDto,
+  AuthorPlatformCleanupPreviewDto,
+  AuthorPlatformCleanupRunDto,
   AuthorProfileDto,
   AuthorStorageUsageDto,
-  AuthorPlatformBillingDto,
-  AuthorPlatformCleanupPreviewDto,
-  AuthorPlatformCleanupItemDto,
-  AuthorPlatformCleanupRunDto,
+  AuthorSubscriberDto,
   ConfirmSubscriptionPaymentInput,
-  ContentStatus,
   ContractDeploymentDto,
   ContractDeploymentLookupDto,
   CreateAccessPolicyPresetInput,
   CreateAuthorProfileInput,
   CreatePlatformSubscriptionPaymentIntentInput,
+  CreatePostCommentInput,
   CreatePostInput,
-  CreateProjectInput,
+  CreatePostReportInput,
   CreateProjectFolderInput,
+  CreateProjectInput,
   CreateSubscriptionPaymentIntentInput,
   FeedPostDto,
   FeedProjectDto,
-  PostDto,
-  PostCommentDto,
-  PostReportDto,
-  PostReportReason,
-  PostAttachmentDto,
-  PostAttachmentKind,
-  RecordPostViewInput,
-  CreatePostCommentInput,
-  CreatePostReportInput,
-  ProjectBundleDto,
-  ProjectDto,
-  ProjectNodeListDto,
-  ProjectNodeDto,
-  PlatformBillingStatus,
   PlatformFeature,
   PlatformPlanDto,
   PlatformSubscriptionPaymentIntentDto,
+  PostAttachmentDto,
+  PostCommentDto,
+  PostDto,
+  PostReportDto,
+  ProjectBundleDto,
+  ProjectDto,
+  ProjectNodeDto,
+  ProjectNodeListDto,
   ReaderSubscriptionDto,
+  RecordPostViewInput,
   SubscriptionEntitlementDto,
   SubscriptionPaymentIntentDto,
   SubscriptionPlanDto,
-  UpdateAuthorProfileInput,
   UpdateAccessPolicyPresetInput,
+  UpdateAuthorProfileInput,
   UpdateMyProfileInput,
   UpdatePostInput,
   UpdateProjectInput,
@@ -59,288 +52,40 @@ import type {
   UserProfileDto,
 } from "../../shared/types/content";
 
-export type { PlatformBillingStatus, PlatformFeature };
+export type {
+  PlatformBillingStatus,
+  PlatformFeature,
+} from "../../shared/types/content";
 
-export interface UserWalletDoc {
-  address: string;
-  kind: "primary" | "secondary";
-  addedAt: Date;
-}
-
-export interface UserDoc {
-  _id: ObjectId;
-  username: string | null;
-  displayName: string;
-  bio: string;
-  avatarFileId: ObjectId | null;
-  primaryWallet: string;
-  wallets: UserWalletDoc[];
-  role: "user" | "admin";
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface ActivityDoc {
-  _id: ObjectId;
-  type: ActivityType;
-  targetWallet: string;
-  actorWallet: string | null;
-  authorId: ObjectId | null;
-  authorSlug: string | null;
-  authorDisplayName: string | null;
-  postId: ObjectId | null;
-  postTitle: string | null;
-  message: string;
-  dedupeKey: string | null;
-  createdAt: Date;
-  readAt: Date | null;
-}
-
-export interface AuthorProfileDoc {
-  _id: ObjectId;
-  userId: string;
-  slug: string;
-  displayName: string;
-  bio: string;
-  tags: string[];
-  avatarFileId: ObjectId | null;
-  defaultPolicy: AccessPolicy;
-  defaultPolicyId: ObjectId | null;
-  subscriptionPlanId: ObjectId | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface AuthorStorageUsageStats {
-  postsBytes: number;
-  projectsBytes: number;
-}
-
-export type PlatformPlanDoc = PlatformPlanDto;
-
-export interface AuthorPlatformSubscriptionDoc {
-  _id: ObjectId;
-  authorId: ObjectId;
-  walletAddress: string;
-  planCode: PlatformPlanDto["code"];
-  status: Exclude<PlatformBillingStatus, "free">;
-  baseStorageBytes: number;
-  extraStorageBytes: number;
-  totalStorageBytes: number;
-  features: PlatformFeature[];
-  validUntil: Date | null;
-  graceUntil: Date | null;
-  cleanupScheduledAt: Date | null;
-  lastCleanupAt: Date | null;
-  lastTxHash: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface AccessPolicyPresetDoc {
-  _id: ObjectId;
-  authorId: ObjectId;
-  name: string;
-  description: string;
-  policy: AccessPolicy;
-  isDefault: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface PostDoc {
-  _id: ObjectId;
-  authorId: ObjectId;
-  title: string;
-  content: string;
-  status: ContentStatus;
-  policyMode: PolicyMode;
-  policy: AccessPolicy | null;
-  accessPolicyId: ObjectId | null;
-  attachmentIds: ObjectId[];
-  linkedProjectIds: ObjectId[];
-  promoted?: boolean;
-  promotedAt?: Date | null;
-  promotionStatus?: "active" | "paused" | "expired" | null;
-  publishedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface ProjectDoc {
-  _id: ObjectId;
-  authorId: ObjectId;
-  title: string;
-  description: string;
-  status: ContentStatus;
-  policyMode: PolicyMode;
-  policy: AccessPolicy | null;
-  accessPolicyId: ObjectId | null;
-  rootNodeId: ObjectId;
-  publishedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface PostLikeDoc {
-  _id: ObjectId;
-  postId: ObjectId;
-  authorId: ObjectId;
-  walletAddress: string;
-  createdAt: Date;
-}
-
-export interface PostCommentDoc {
-  _id: ObjectId;
-  postId: ObjectId;
-  authorId: ObjectId;
-  walletAddress: string;
-  displayName: string;
-  content: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface PostReportDoc {
-  _id: ObjectId;
-  postId: ObjectId;
-  authorId: ObjectId;
-  reporterWallet: string;
-  reason: PostReportReason;
-  comment: string | null;
-  status: "open" | "reviewed" | "dismissed";
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface AuthorPlatformCleanupLogDoc {
-  _id: ObjectId;
-  authorId: ObjectId;
-  status: "skipped" | "completed";
-  deletedBytes: number;
-  deletedItems: AuthorPlatformCleanupItemDto[];
-  previewBefore: AuthorPlatformCleanupPreviewDto;
-  previewAfter: AuthorPlatformCleanupPreviewDto;
-  createdAt: Date;
-}
-
-export interface PostAttachmentDoc {
-  _id: ObjectId;
-  postId: ObjectId;
-  authorId: ObjectId;
-  kind: PostAttachmentKind;
-  fileName: string;
-  storageKey: string;
-  mimeType: string;
-  size: number;
-  createdAt: Date;
-}
-
-export interface PostViewDoc {
-  _id: ObjectId;
-  postId: ObjectId;
-  viewerKey: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface ProjectNodeDoc {
-  _id: ObjectId;
-  authorId: ObjectId;
-  projectId: ObjectId;
-  parentId: ObjectId | null;
-  kind: "file" | "folder";
-  name: string;
-  storageKey: string | null;
-  mimeType: string | null;
-  size: number | null;
-  visibility: "author" | "published";
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface SubscriptionPlanDoc {
-  _id: ObjectId;
-  authorId: ObjectId;
-  code: string;
-  title: string;
-  paymentAsset: "erc20" | "native";
-  chainId: number;
-  tokenAddress: string;
-  price: string;
-  billingPeriodDays: number;
-  contractAddress: string;
-  planKey: string;
-  registrationTxHash: string | null;
-  active: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface SubscriptionEntitlementDoc {
-  _id: ObjectId;
-  authorId: ObjectId;
-  subscriberWallet: string;
-  planId: ObjectId;
-  status: "active" | "expired";
-  validUntil: Date;
-  source: "onchain";
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface SubscriptionPaymentIntentDoc {
-  _id: ObjectId;
-  authorId: ObjectId;
-  subscriberWallet: string;
-  planId: ObjectId;
-  planCode: string;
-  planKey: string;
-  paymentAsset: "erc20" | "native";
-  chainId: number;
-  tokenAddress: string;
-  contractAddress: string;
-  price: string;
-  billingPeriodDays: number;
-  status: "pending" | "submitted" | "confirmed" | "expired" | "cancelled";
-  txHash: string | null;
-  entitlementId: ObjectId | null;
-  paidUntil: Date | null;
-  expiresAt: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface PlatformSubscriptionPaymentIntentDoc {
-  _id: ObjectId;
-  authorId: ObjectId;
-  walletAddress: string;
-  planCode: PlatformPlanDto["code"];
-  tierKey: string;
-  extraStorageGb: number;
-  chainId: number;
-  tokenAddress: string;
-  contractAddress: string;
-  amount: string;
-  status: "pending" | "submitted" | "confirmed" | "expired" | "cancelled";
-  txHash: string | null;
-  validUntil: Date | null;
-  expiresAt: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface ContractDeploymentDoc {
-  _id: ObjectId;
-  chainId: number;
-  contractName: "SubscriptionManager" | "PlatformSubscriptionManager";
-  address: string;
-  platformTreasury: string;
-  deployedBy: string;
-  deploymentTxHash: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type { AccessPolicyPresetDoc } from "../access/doc-types";
+export type { ActivityDoc } from "../activity/doc-types";
+export type { ContractDeploymentDoc } from "../contracts/doc-types";
+export type {
+  AuthorPlatformCleanupLogDoc,
+  AuthorPlatformSubscriptionDoc,
+  AuthorStorageUsageStats,
+  PlatformPlanDoc,
+  PlatformSubscriptionPaymentIntentDoc,
+} from "../platform/doc-types";
+export type {
+  AuthorProfileDoc,
+  UserDoc,
+  UserWalletDoc,
+} from "../profiles/doc-types";
+export type {
+  PostAttachmentDoc,
+  PostCommentDoc,
+  PostDoc,
+  PostLikeDoc,
+  PostReportDoc,
+  PostViewDoc,
+} from "../posts/doc-types";
+export type { ProjectDoc, ProjectNodeDoc } from "../projects/doc-types";
+export type {
+  SubscriptionEntitlementDoc,
+  SubscriptionPaymentIntentDoc,
+  SubscriptionPlanDoc,
+} from "../subscriptions/doc-types";
 
 export type UserProfileResponse = UserProfileDto;
 export type ActivityResponse = ActivityDto;
@@ -396,3 +141,5 @@ export type CreatePlatformSubscriptionPaymentIntentRequest =
   CreatePlatformSubscriptionPaymentIntentInput;
 export type ConfirmSubscriptionPaymentRequest = ConfirmSubscriptionPaymentInput;
 export type UpsertContractDeploymentRequest = UpsertContractDeploymentInput;
+export type PlatformPlanCode = PlatformPlanDto["code"];
+export type PlatformFeatureCode = PlatformFeature;

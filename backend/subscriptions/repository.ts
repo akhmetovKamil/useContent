@@ -1,6 +1,10 @@
 import { ObjectId, type Collection } from "mongodb";
 import { ensureIndexes, getCollection } from "../storage/repository-base";
-import type { SubscriptionEntitlementDoc, SubscriptionPaymentIntentDoc, SubscriptionPlanDoc } from "../lib/content-types";
+import type {
+  SubscriptionEntitlementDoc,
+  SubscriptionPaymentIntentDoc,
+  SubscriptionPlanDoc,
+} from "./doc-types";
 
 export async function getSubscriptionPlansCollection(): Promise<
   Collection<SubscriptionPlanDoc>

@@ -4,7 +4,7 @@ import {
   escapeRegExp,
   getCollection,
 } from "../storage/repository-base";
-import type { AuthorProfileDoc, UserDoc } from "../lib/content-types";
+import type { AuthorProfileDoc, UserDoc } from "./doc-types";
 
 export async function getUsersCollection(): Promise<Collection<UserDoc>> {
   await ensureIndexes();
