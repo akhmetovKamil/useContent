@@ -30,7 +30,7 @@ vi.mock("../posts/repository", () => repositoryMocks);
 vi.mock("../projects/repository", () => repositoryMocks);
 vi.mock("../platform/repository", () => repositoryMocks);
 vi.mock("../subscriptions/repository", () => repositoryMocks);
-vi.mock("../lib/contract-deployments.repository", () => repositoryMocks);
+vi.mock("../contracts/repository", () => repositoryMocks);
 vi.mock("../onchain", () => ({
   readOnChainAccessGrants: vi.fn(),
   verifyPlatformSubscriptionPayment: vi.fn(),

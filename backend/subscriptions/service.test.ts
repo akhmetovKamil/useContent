@@ -50,7 +50,7 @@ vi.mock("../platform/repository", () => repositoryMocks);
 vi.mock("../posts/repository", () => repositoryMocks);
 vi.mock("../projects/repository", () => repositoryMocks);
 vi.mock("../profiles/repository", () => repositoryMocks);
-vi.mock("../lib/contract-deployments.repository", () => repositoryMocks);
+vi.mock("../contracts/repository", () => repositoryMocks);
 vi.mock("../profiles/service", () => profileMocks);
 vi.mock("../activity/events", () => ({
   recordNewSubscriptionActivity: vi.fn(),

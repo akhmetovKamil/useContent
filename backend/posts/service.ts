@@ -24,7 +24,7 @@ import {
   verifySubscriptionPayment,
 } from "../onchain";
 import * as accessRepo from "../access/repository";
-import * as contractDeploymentsRepo from "../lib/contract-deployments.repository";
+import * as contractDeploymentsRepo from "../contracts/repository";
 import * as platformRepo from "../platform/repository";
 import * as postsRepo from "../posts/repository";
 import type { PublishedPostCursor } from "../posts/repository";
