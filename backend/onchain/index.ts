@@ -1,79 +1,33 @@
 import { APIError } from "encore.dev/api";
-import { Contract, Interface, JsonRpcProvider, isAddress } from "ethers";
+import { Contract, JsonRpcProvider, isAddress } from "ethers";
 import { platformSubscriptionManagerAbi } from "../../shared/abi/platform-subscription-manager.abi";
 import { subscriptionManagerAbi } from "../../shared/abi/subscription-manager.abi";
 import { PAYMENT_ASSET_CODE } from "../../shared/consts";
 import type { AccessPolicy, AccessPolicyNode } from "../domain/access";
+import {
+  erc1155ReadAbi,
+  erc20ReadAbi,
+  erc721ReadAbi,
+  platformSubscriptionManagerInterface,
+  subscriptionManagerInterface,
+} from "./abi";
+import type {
+  OnChainAccessGrants,
+  VerifiedPlatformSubscriptionPayment,
+  VerifiedSubscriptionPayment,
+  VerifyPlatformSubscriptionPaymentInput,
+  VerifyPlanRegistrationInput,
+  VerifySubscriptionPaymentInput,
+} from "./types";
 
-const managerInterface = new Interface(subscriptionManagerAbi);
-const platformManagerInterface = new Interface(platformSubscriptionManagerAbi);
-const erc20ReadAbi = [
-  "function balanceOf(address account) view returns (uint256)",
-] as const;
-const erc721ReadAbi = [
-  "function ownerOf(uint256 tokenId) view returns (address)",
-  "function balanceOf(address owner) view returns (uint256)",
-] as const;
-const erc1155ReadAbi = [
-  "function balanceOf(address account,uint256 id) view returns (uint256)",
-] as const;
-interface VerifyPlanRegistrationInput {
-  authorWallet: string;
-  chainId: number;
-  contractAddress: string;
-  planKey: string;
-  paymentAsset: "erc20" | "native";
-  tokenAddress: string;
-  price: string;
-  billingPeriodDays: number;
-  active: boolean;
-  txHash: string;
-}
-
-interface VerifySubscriptionPaymentInput {
-  subscriberWallet: string;
-  chainId: number;
-  contractAddress: string;
-  planKey: string;
-  paymentAsset: "erc20" | "native";
-  tokenAddress: string;
-  price: string;
-  txHash: string;
-}
-
-export interface VerifiedSubscriptionPayment {
-  paidUntil: Date;
-}
-
-interface VerifyPlatformSubscriptionPaymentInput {
-  authorWallet: string;
-  chainId: number;
-  contractAddress: string;
-  tierKey: string;
-  extraStorageGb: number;
-  tokenAddress: string;
-  amount: string;
-  txHash: string;
-}
-
-export interface VerifiedPlatformSubscriptionPayment {
-  paidUntil: Date;
-}
-
-export interface OnChainAccessGrants {
-  tokenBalances: Array<{
-    chainId: number;
-    contractAddress: string;
-    balance: string;
-  }>;
-  nftOwnerships: Array<{
-    chainId: number;
-    contractAddress: string;
-    standard: "erc721" | "erc1155";
-    tokenId?: string;
-    balance?: string;
-  }>;
-}
+export type {
+  OnChainAccessGrants,
+  VerifiedPlatformSubscriptionPayment,
+  VerifiedSubscriptionPayment,
+  VerifyPlatformSubscriptionPaymentInput,
+  VerifyPlanRegistrationInput,
+  VerifySubscriptionPaymentInput,
+} from "./types";
 
 export async function readOnChainAccessGrants(
   policy: AccessPolicy,
@@ -486,7 +440,7 @@ async function readPlan(
 
 function tryParseManagerLog(log: { topics: readonly string[]; data: string }) {
   try {
-    return managerInterface.parseLog({
+    return subscriptionManagerInterface.parseLog({
       topics: [...log.topics],
       data: log.data,
     });
@@ -500,7 +454,7 @@ function tryParsePlatformManagerLog(log: {
   data: string;
 }) {
   try {
-    return platformManagerInterface.parseLog({
+    return platformSubscriptionManagerInterface.parseLog({
       topics: [...log.topics],
       data: log.data,
     });
