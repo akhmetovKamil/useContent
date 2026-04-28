@@ -1,4 +1,4 @@
-import { api, type Header } from "encore.dev/api";
+import { api } from "encore.dev/api";
 import {
   getOptionalViewerWallet,
   getRequiredWallet,
@@ -8,24 +8,30 @@ import {
 } from "../lib/api-helpers";
 import * as service from "./service";
 import type {
+  AuthorProjectBundlePathRequest,
+  CreateProjectFolderPathRequest,
   CreateProjectFolderRequest,
   CreateProjectRequest,
   FeedProjectResponse,
+  GetAuthorProjectRequest,
+  ListAuthorProjectNodesRequest,
+  ListAuthorProjectsRequest,
+  ListMyProjectsRequest,
+  ListProjectNodesRequest,
+  ProjectBundlePathRequest,
   ProjectBundleResponse,
+  ProjectIdPathRequest,
   ProjectNodeListResponse,
+  ProjectNodePathRequest,
   ProjectNodeResponse,
   ProjectResponse,
-  UpdateProjectNodeRequest,
-  UpdateProjectRequest,
+  UpdateProjectNodePathRequest,
+  UpdateProjectPathRequest,
 } from "./types";
 import type {
   ListAuthorProjectsResponseDto,
   ListProjectsResponseDto,
 } from "../../shared/types/content";
-
-interface ListMyProjectsRequest {
-  status?: "draft" | "published" | "archived";
-}
 
 export const createMyProject = api(
   { method: "POST", path: "/me/projects", expose: true, auth: true },
@@ -62,9 +68,7 @@ export const updateMyProject = api(
   async ({
     projectId,
     ...req
-  }: UpdateProjectRequest & {
-    projectId: string;
-  }): Promise<ProjectResponse> => {
+  }: UpdateProjectPathRequest): Promise<ProjectResponse> => {
     const walletAddress = getRequiredWallet();
     const project = await service.updateMyProject(
       walletAddress,
@@ -82,16 +86,11 @@ export const deleteMyProject = api(
     expose: true,
     auth: true,
   },
-  async ({ projectId }: { projectId: string }): Promise<void> => {
+  async ({ projectId }: ProjectIdPathRequest): Promise<void> => {
     const walletAddress = getRequiredWallet();
     await service.deleteMyProject(walletAddress, projectId);
   },
 );
-
-interface ListProjectNodesRequest {
-  projectId: string;
-  parentId?: string | null;
-}
 
 export const listMyProjectNodes = api(
   {
@@ -119,9 +118,7 @@ export const createMyProjectFolder = api(
   async ({
     projectId,
     ...req
-  }: CreateProjectFolderRequest & {
-    projectId: string;
-  }): Promise<ProjectNodeResponse> => {
+  }: CreateProjectFolderPathRequest): Promise<ProjectNodeResponse> => {
     const walletAddress = getRequiredWallet();
     const folder = await service.createMyProjectFolder(
       walletAddress,
@@ -143,10 +140,7 @@ export const updateMyProjectNode = api(
     projectId,
     nodeId,
     ...req
-  }: UpdateProjectNodeRequest & {
-    projectId: string;
-    nodeId: string;
-  }): Promise<ProjectNodeResponse> => {
+  }: UpdateProjectNodePathRequest): Promise<ProjectNodeResponse> => {
     const walletAddress = getRequiredWallet();
     const node = await service.updateMyProjectNode(
       walletAddress,
@@ -168,10 +162,7 @@ export const deleteMyProjectNode = api(
   async ({
     projectId,
     nodeId,
-  }: {
-    projectId: string;
-    nodeId: string;
-  }): Promise<void> => {
+  }: ProjectNodePathRequest): Promise<void> => {
     const walletAddress = getRequiredWallet();
     await service.deleteMyProjectNode(walletAddress, projectId, nodeId);
   },
@@ -187,10 +178,7 @@ export const getMyProjectBundle = api(
   async ({
     projectId,
     folderId,
-  }: {
-    projectId: string;
-    folderId?: string | null;
-  }): Promise<ProjectBundleResponse> => {
+  }: ProjectBundlePathRequest): Promise<ProjectBundleResponse> => {
     const walletAddress = getRequiredWallet();
     return service.getMyProjectBundle(walletAddress, projectId, folderId);
   },
@@ -251,11 +239,6 @@ export const downloadMyProjectFile = api.raw(
   },
 );
 
-interface ListAuthorProjectsRequest {
-  slug: string;
-  authorization?: Header<"Authorization">;
-}
-
 export const listAuthorProjects = api(
   { method: "GET", path: "/authors/:slug/projects", expose: true },
   async ({
@@ -267,12 +250,6 @@ export const listAuthorProjects = api(
     return { projects };
   },
 );
-
-interface GetAuthorProjectRequest {
-  slug: string;
-  projectId: string;
-  authorization?: Header<"Authorization">;
-}
 
 export const getAuthorProject = api(
   { method: "GET", path: "/authors/:slug/projects/:projectId", expose: true },
@@ -290,13 +267,6 @@ export const getAuthorProject = api(
     return service.buildProjectResponse(project);
   },
 );
-
-interface ListAuthorProjectNodesRequest {
-  slug: string;
-  projectId: string;
-  parentId?: string | null;
-  authorization?: Header<"Authorization">;
-}
 
 export const listAuthorProjectNodes = api(
   {
@@ -331,12 +301,7 @@ export const getAuthorProjectBundle = api(
     projectId,
     folderId,
     authorization,
-  }: {
-    slug: string;
-    projectId: string;
-    folderId?: string | null;
-    authorization?: Header<"Authorization">;
-  }): Promise<ProjectBundleResponse> => {
+  }: AuthorProjectBundlePathRequest): Promise<ProjectBundleResponse> => {
     const viewerWallet = await getOptionalViewerWallet(authorization);
     return service.getAuthorProjectBundleBySlug(
       slug,

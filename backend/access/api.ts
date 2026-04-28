@@ -1,10 +1,12 @@
-import { api, type Header } from "encore.dev/api";
+import { api } from "encore.dev/api";
 import { getOptionalViewerWallet, getRequiredWallet } from "../lib/api-helpers";
 import * as service from "./service";
 import type {
   AccessPolicyPresetResponse,
   CreateAccessPolicyPresetRequest,
-  UpdateAccessPolicyPresetRequest,
+  DeleteAccessPolicyPresetRequest,
+  ListAuthorAccessPoliciesRequest,
+  UpdateAccessPolicyPresetPathRequest,
 } from "./types";
 import type {
   ListAccessPolicyPresetsResponseDto,
@@ -46,9 +48,9 @@ export const updateMyAccessPolicyPreset = api(
   async ({
     policyId,
     ...req
-  }: UpdateAccessPolicyPresetRequest & {
-    policyId: string;
-  }): Promise<AccessPolicyPresetResponse> => {
+  }: UpdateAccessPolicyPresetPathRequest): Promise<
+    AccessPolicyPresetResponse
+  > => {
     const walletAddress = getRequiredWallet();
     const policy = await service.updateMyAccessPolicyPreset(
       walletAddress,
@@ -66,23 +68,20 @@ export const deleteMyAccessPolicyPreset = api(
     expose: true,
     auth: true,
   },
-  async ({ policyId }: { policyId: string }): Promise<void> => {
+  async ({ policyId }: DeleteAccessPolicyPresetRequest): Promise<void> => {
     const walletAddress = getRequiredWallet();
     await service.deleteMyAccessPolicyPreset(walletAddress, policyId);
   },
 );
-
-interface ListAuthorAccessPoliciesRequest {
-  slug: string;
-  authorization?: Header<"Authorization">;
-}
 
 export const listAuthorAccessPolicies = api(
   { method: "GET", path: "/authors/:slug/access-policies", expose: true },
   async ({
     slug,
     authorization,
-  }: ListAuthorAccessPoliciesRequest): Promise<ListAuthorAccessPoliciesResponseDto> => {
+  }: ListAuthorAccessPoliciesRequest): Promise<
+    ListAuthorAccessPoliciesResponseDto
+  > => {
     const viewerWallet = await getOptionalViewerWallet(authorization);
     const policies = await service.listAuthorAccessPoliciesBySlug(
       slug,

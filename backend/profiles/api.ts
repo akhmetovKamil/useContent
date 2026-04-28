@@ -6,6 +6,8 @@ import type {
   AuthorProfileResponse,
   AuthorStorageUsageResponse,
   CreateAuthorProfileRequest,
+  GetAuthorProfileRequest,
+  ListAuthorsRequest,
   UpdateAuthorProfileRequest,
   UpdateMyProfileRequest,
   UserProfileResponse,
@@ -41,11 +43,7 @@ export const createMyAuthorProfile = api(
 
 export const listAuthors = api(
   { method: "GET", path: "/authors", expose: true },
-  async ({
-    q,
-  }: {
-    q?: string;
-  }): Promise<ListAuthorsResponseDto> => {
+  async ({ q }: ListAuthorsRequest): Promise<ListAuthorsResponseDto> => {
     const authors = await service.listAuthors(q);
     return { authors };
   },
@@ -87,7 +85,7 @@ export const getMyAuthorStorageUsage = api(
 
 export const getAuthorProfile = api(
   { method: "GET", path: "/authors/:slug", expose: true },
-  async ({ slug }: { slug: string }): Promise<AuthorProfileResponse> => {
+  async ({ slug }: GetAuthorProfileRequest): Promise<AuthorProfileResponse> => {
     const author = await service.getAuthorProfileBySlug(slug);
     return service.toAuthorProfileResponse(author);
   },

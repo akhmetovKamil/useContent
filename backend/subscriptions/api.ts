@@ -1,4 +1,4 @@
-import { api, type Header } from "encore.dev/api";
+import { api } from "encore.dev/api";
 import { secret } from "encore.dev/config";
 import {
   assertDeploymentRegistryToken,
@@ -7,15 +7,18 @@ import {
 import * as service from "./service";
 import type {
   AuthorSubscriberResponse,
-  ConfirmSubscriptionPaymentRequest,
+  ConfirmSubscriptionPaymentPathRequest,
+  ContractDeploymentChainRequest,
   ContractDeploymentLookupResponse,
   ContractDeploymentResponse,
-  CreateSubscriptionPaymentIntentRequest,
+  CreateSubscriptionPaymentIntentPathRequest,
+  DeleteSubscriptionPlanRequest,
+  ListAuthorSubscriptionPlansRequest,
   ReaderSubscriptionResponse,
   SubscriptionEntitlementResponse,
   SubscriptionPaymentIntentResponse,
   SubscriptionPlanResponse,
-  UpsertContractDeploymentRequest,
+  UpsertContractDeploymentRegistryRequest,
   UpsertSubscriptionPlanRequest,
 } from "./types";
 import type {
@@ -69,9 +72,7 @@ export const getSubscriptionManagerDeployment = api(
   },
   async ({
     chainId,
-  }: {
-    chainId: string;
-  }): Promise<ContractDeploymentLookupResponse> => {
+  }: ContractDeploymentChainRequest): Promise<ContractDeploymentLookupResponse> => {
     const deployment = await service.getSubscriptionManagerDeployment(
       Number(chainId),
     );
@@ -92,9 +93,7 @@ export const upsertContractDeployment = api(
   async ({
     deploymentRegistryToken,
     ...req
-  }: UpsertContractDeploymentRequest & {
-    deploymentRegistryToken: Header<"X-Deployment-Registry-Token">;
-  }): Promise<ContractDeploymentResponse> => {
+  }: UpsertContractDeploymentRegistryRequest): Promise<ContractDeploymentResponse> => {
     assertDeploymentRegistryToken(
       deploymentRegistryTokenSecret(),
       deploymentRegistryToken,
@@ -156,7 +155,7 @@ export const deleteMySubscriptionPlan = api(
     expose: true,
     auth: true,
   },
-  async ({ planId }: { planId: string }): Promise<void> => {
+  async ({ planId }: DeleteSubscriptionPlanRequest): Promise<void> => {
     const walletAddress = getRequiredWallet();
     await service.deleteMySubscriptionPlan(walletAddress, planId);
   },
@@ -166,9 +165,7 @@ export const listAuthorSubscriptionPlans = api(
   { method: "GET", path: "/authors/:slug/subscription-plans", expose: true },
   async ({
     slug,
-  }: {
-    slug: string;
-  }): Promise<ListSubscriptionPlansResponseDto> => {
+  }: ListAuthorSubscriptionPlansRequest): Promise<ListSubscriptionPlansResponseDto> => {
     const plans = await service.listAuthorSubscriptionPlansBySlug(slug);
     return {
       plans: await Promise.all(
@@ -188,9 +185,7 @@ export const createSubscriptionPaymentIntent = api(
   async ({
     slug,
     ...req
-  }: CreateSubscriptionPaymentIntentRequest & {
-    slug: string;
-  }): Promise<SubscriptionPaymentIntentResponse> => {
+  }: CreateSubscriptionPaymentIntentPathRequest): Promise<SubscriptionPaymentIntentResponse> => {
     const walletAddress = getRequiredWallet();
     const intent = await service.createSubscriptionPaymentIntent(
       walletAddress,
@@ -211,9 +206,7 @@ export const confirmSubscriptionPayment = api(
   async ({
     intentId,
     ...req
-  }: ConfirmSubscriptionPaymentRequest & {
-    intentId: string;
-  }): Promise<SubscriptionPaymentIntentResponse> => {
+  }: ConfirmSubscriptionPaymentPathRequest): Promise<SubscriptionPaymentIntentResponse> => {
     const walletAddress = getRequiredWallet();
     const intent = await service.confirmSubscriptionPayment(
       walletAddress,

@@ -5,8 +5,9 @@ import type {
   AuthorPlatformBillingResponse,
   AuthorPlatformCleanupPreviewResponse,
   AuthorPlatformCleanupRunResponse,
-  ConfirmSubscriptionPaymentRequest,
+  ConfirmPlatformSubscriptionPaymentPathRequest,
   CreatePlatformSubscriptionPaymentIntentRequest,
+  ContractDeploymentChainRequest,
   ContractDeploymentLookupResponse,
   PlatformPlanResponse,
   PlatformSubscriptionPaymentIntentResponse,
@@ -67,9 +68,7 @@ export const getPlatformSubscriptionManagerDeployment = api(
   },
   async ({
     chainId,
-  }: {
-    chainId: string;
-  }): Promise<ContractDeploymentLookupResponse> => {
+  }: ContractDeploymentChainRequest): Promise<ContractDeploymentLookupResponse> => {
     const deployment = await service.getPlatformSubscriptionManagerDeployment(
       Number(chainId),
     );
@@ -110,9 +109,7 @@ export const confirmPlatformSubscriptionPayment = api(
   async ({
     intentId,
     ...req
-  }: ConfirmSubscriptionPaymentRequest & {
-    intentId: string;
-  }): Promise<PlatformSubscriptionPaymentIntentResponse> => {
+  }: ConfirmPlatformSubscriptionPaymentPathRequest): Promise<PlatformSubscriptionPaymentIntentResponse> => {
     const walletAddress = getRequiredWallet();
     const intent = await service.confirmPlatformSubscriptionPayment(
       walletAddress,

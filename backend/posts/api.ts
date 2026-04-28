@@ -1,4 +1,4 @@
-import { api, type Header } from "encore.dev/api";
+import { api } from "encore.dev/api";
 import {
   getOptionalViewerWallet,
   getRequiredWallet,
@@ -10,15 +10,23 @@ import * as service from "./service";
 import type {
   CreatePostCommentRequest,
   CreatePostRequest,
-  CreatePostReportRequest,
+  CreatePostCommentPathRequest,
+  CreatePostReportPathRequest,
+  DeletePostRequest,
+  GetAuthorPostRequest,
+  ListAuthorPostsRequest,
+  ListExploreFeedRequest,
+  MyFeedPostsRequest,
+  ListMyPostsRequest,
   PostCommentResponse,
   PostReportResponse,
   PostResponse,
-  RecordPostViewRequest,
+  RecordPostViewPathRequest,
+  TogglePostLikeRequest,
   UpdatePostRequest,
+  UpdatePostPathRequest,
 } from "./types";
 import type {
-  CursorPaginationInput,
   FeedPostPageResponseDto,
   ListPostCommentsResponseDto,
   ListPostsResponseDto,
@@ -31,17 +39,11 @@ export const listMyFeedPosts = api(
   async ({
     cursor,
     limit,
-  }: CursorPaginationInput): Promise<FeedPostPageResponseDto> => {
+  }: MyFeedPostsRequest): Promise<FeedPostPageResponseDto> => {
     const walletAddress = getRequiredWallet();
     return service.listMyFeedPosts(walletAddress, { cursor, limit });
   },
 );
-
-interface ListExploreFeedRequest extends CursorPaginationInput {
-  authorization?: Header<"Authorization">;
-  q?: string;
-  source?: "all" | "public" | "subscribed" | "promoted";
-}
 
 export const listExploreFeedPosts = api(
   { method: "GET", path: "/feed", expose: true },
@@ -65,10 +67,6 @@ export const createMyPost = api(
     return service.buildPostResponse(post, walletAddress);
   },
 );
-
-interface ListMyPostsRequest {
-  status?: "draft" | "published" | "archived";
-}
 
 export const listMyPosts = api(
   { method: "GET", path: "/me/posts", expose: true, auth: true },
@@ -95,7 +93,7 @@ export const updateMyPost = api(
   async ({
     postId,
     ...req
-  }: UpdatePostRequest & { postId: string }): Promise<PostResponse> => {
+  }: UpdatePostPathRequest): Promise<PostResponse> => {
     const walletAddress = getRequiredWallet();
     const post = await service.updateMyPost(walletAddress, postId, req);
     return service.buildPostResponse(post, walletAddress);
@@ -104,7 +102,7 @@ export const updateMyPost = api(
 
 export const deleteMyPost = api(
   { method: "DELETE", path: "/me/posts/:postId", expose: true, auth: true },
-  async ({ postId }: { postId: string }): Promise<void> => {
+  async ({ postId }: DeletePostRequest): Promise<void> => {
     const walletAddress = getRequiredWallet();
     await service.deleteMyPost(walletAddress, postId);
   },
@@ -117,7 +115,7 @@ export const promoteMyPost = api(
     expose: true,
     auth: true,
   },
-  async ({ postId }: { postId: string }): Promise<PostResponse> => {
+  async ({ postId }: DeletePostRequest): Promise<PostResponse> => {
     const walletAddress = getRequiredWallet();
     const post = await service.promoteMyPost(walletAddress, postId);
     return service.buildPostResponse(post, walletAddress);
@@ -131,19 +129,12 @@ export const stopPromotingMyPost = api(
     expose: true,
     auth: true,
   },
-  async ({ postId }: { postId: string }): Promise<PostResponse> => {
+  async ({ postId }: DeletePostRequest): Promise<PostResponse> => {
     const walletAddress = getRequiredWallet();
     const post = await service.stopPromotingMyPost(walletAddress, postId);
     return service.buildPostResponse(post, walletAddress);
   },
 );
-
-interface ListAuthorPostsRequest {
-  slug: string;
-  cursor?: string;
-  limit?: number;
-  authorization?: Header<"Authorization">;
-}
 
 export const listAuthorPosts = api(
   { method: "GET", path: "/authors/:slug/posts", expose: true },
@@ -157,12 +148,6 @@ export const listAuthorPosts = api(
     return service.listAuthorPostsBySlug(slug, viewerWallet, { cursor, limit });
   },
 );
-
-interface GetAuthorPostRequest {
-  slug: string;
-  postId: string;
-  authorization?: Header<"Authorization">;
-}
 
 export const getAuthorPost = api(
   { method: "GET", path: "/authors/:slug/posts/:postId", expose: true },
@@ -213,10 +198,7 @@ export const createPostComment = api(
     slug,
     postId,
     ...req
-  }: CreatePostCommentRequest & {
-    slug: string;
-    postId: string;
-  }): Promise<PostCommentResponse> => {
+  }: CreatePostCommentPathRequest): Promise<PostCommentResponse> => {
     const walletAddress = getRequiredWallet();
     const comment = await service.createPostCommentBySlug(
       slug,
@@ -239,10 +221,7 @@ export const createPostReport = api(
     slug,
     postId,
     ...req
-  }: CreatePostReportRequest & {
-    slug: string;
-    postId: string;
-  }): Promise<PostReportResponse> => {
+  }: CreatePostReportPathRequest): Promise<PostReportResponse> => {
     const walletAddress = getRequiredWallet();
     const report = await service.createPostReportBySlug(
       slug,
@@ -264,10 +243,7 @@ export const togglePostLike = api(
   async ({
     slug,
     postId,
-  }: {
-    slug: string;
-    postId: string;
-  }): Promise<TogglePostLikeResponseDto> => {
+  }: TogglePostLikeRequest): Promise<TogglePostLikeResponseDto> => {
     const walletAddress = getRequiredWallet();
     return service.togglePostLikeBySlug(slug, postId, walletAddress);
   },
@@ -284,11 +260,7 @@ export const recordPostView = api(
     postId,
     authorization,
     ...req
-  }: RecordPostViewRequest & {
-    slug: string;
-    postId: string;
-    authorization?: Header<"Authorization">;
-  }): Promise<RecordPostViewResponseDto> => {
+  }: RecordPostViewPathRequest): Promise<RecordPostViewResponseDto> => {
     const viewerWallet = await getOptionalViewerWallet(authorization);
     return service.recordPostViewBySlug(
       slug,
