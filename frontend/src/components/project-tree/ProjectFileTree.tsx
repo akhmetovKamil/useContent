@@ -1,25 +1,20 @@
 import type { ProjectNodeDto } from "@shared/types/content"
-import {
-    Download,
-    Eye,
-    FileText,
-    Folder,
-    FolderPlus,
-    PackageOpen,
-    Pencil,
-    Trash2,
-    Upload,
-} from "lucide-react"
+import { PackageOpen } from "lucide-react"
 import { useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 
 import { projectsApi } from "@/api/ProjectsApi"
-import { ProjectFilePreview } from "@/components/project-tree/ProjectFilePreview"
-import { Badge } from "@/components/ui/badge"
+import { ProjectBreadcrumbs } from "@/components/project-tree/ProjectBreadcrumbs"
+import { ProjectNodeRow } from "@/components/project-tree/ProjectNodeRow"
+import {
+    CreateFolderModal,
+    DeleteNodeModal,
+    PreviewNodeModal,
+    RenameNodeModal,
+} from "@/components/project-tree/ProjectTreeModals"
+import { ProjectTreeToolbar } from "@/components/project-tree/ProjectTreeToolbar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Modal } from "@/components/ui/modal"
 import {
     useAuthorProjectNodesQuery,
     useCreateMyProjectFolderMutation,
@@ -32,7 +27,6 @@ import {
 } from "@/queries/projects"
 import { queryKeys } from "@/queries/queryKeys"
 import type { ProjectFileTreeProps } from "@/types/projects"
-import { formatFileSize } from "@/utils/format"
 
 export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: ProjectFileTreeProps) {
     const [currentFolderId, setCurrentFolderId] = useState<string | null>(rootNodeId)
@@ -191,64 +185,13 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                 </div>
 
                 {isAuthor ? (
-                    <div className="flex flex-wrap gap-2">
-                        <Button
-                            className="rounded-full"
-                            onClick={() => setFolderModalOpen(true)}
-                            size="sm"
-                            type="button"
-                            variant="outline"
-                        >
-                            <FolderPlus className="size-4" />
-                            New folder
-                        </Button>
-                        <Button
-                            className="rounded-full"
-                            onClick={() => fileInputRef.current?.click()}
-                            size="sm"
-                            type="button"
-                        >
-                            <Upload className="size-4" />
-                            Upload files
-                        </Button>
-                        <Button
-                            className="rounded-full"
-                            onClick={() => folderInputRef.current?.click()}
-                            size="sm"
-                            type="button"
-                            variant="outline"
-                        >
-                            <Upload className="size-4" />
-                            Upload folder
-                        </Button>
-                        <Input
-                            className="hidden"
-                            onChange={(event) => {
-                                const files = Array.from(event.target.files ?? [])
-                                if (files.length) {
-                                    void uploadFiles(files)
-                                }
-                                event.currentTarget.value = ""
-                            }}
-                            multiple
-                            ref={fileInputRef}
-                            type="file"
-                        />
-                        <Input
-                            className="hidden"
-                            onChange={(event) => {
-                                const files = Array.from(event.target.files ?? [])
-                                if (files.length) {
-                                    void uploadFolderFiles(files)
-                                }
-                                event.currentTarget.value = ""
-                            }}
-                            multiple
-                            ref={folderInputRef}
-                            type="file"
-                            {...{ directory: "", webkitdirectory: "" }}
-                        />
-                    </div>
+                    <ProjectTreeToolbar
+                        fileInputRef={fileInputRef}
+                        folderInputRef={folderInputRef}
+                        onCreateFolder={() => setFolderModalOpen(true)}
+                        onUploadFiles={(files) => void uploadFiles(files)}
+                        onUploadFolderFiles={(files) => void uploadFolderFiles(files)}
+                    />
                 ) : null}
             </CardHeader>
 
@@ -266,19 +209,11 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                         {bulkDownloadPending ? "Downloading..." : "Download current folder"}
                     </Button>
                 </div>
-                <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-[var(--muted)]">
-                    {nodesQuery.data?.breadcrumbs.map((breadcrumb, index) => (
-                        <Button
-                            className="h-8 rounded-full px-3"
-                            key={breadcrumb.id}
-                            onClick={() => setCurrentFolderId(breadcrumb.id)}
-                            type="button"
-                            variant={breadcrumb.id === currentFolderId ? "default" : "outline"}
-                        >
-                            {index === 0 ? "Root" : breadcrumb.name}
-                        </Button>
-                    ))}
-                </div>
+                <ProjectBreadcrumbs
+                    breadcrumbs={nodesQuery.data?.breadcrumbs ?? []}
+                    currentFolderId={currentFolderId}
+                    onOpenFolder={setCurrentFolderId}
+                />
 
                 {nodesQuery.isLoading ? (
                     <p className="text-sm text-[var(--muted)]">Loading files...</p>
@@ -289,115 +224,22 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                 ) : orderedNodes.length ? (
                     <div className="overflow-hidden rounded-2xl border border-[var(--line)]">
                         {orderedNodes.map((node) => (
-                            <div
-                                className="grid gap-3 border-b border-[var(--line)] bg-[var(--surface)] p-4 last:border-b-0 md:grid-cols-[1fr_auto]"
+                            <ProjectNodeRow
+                                bulkDownloadPending={bulkDownloadPending}
+                                isAuthor={isAuthor}
                                 key={node.id}
-                            >
-                                <button
-                                    className="flex min-w-0 items-center gap-3 text-left"
-                                    disabled={node.kind !== "folder"}
-                                    onClick={() => openFolder(node)}
-                                    type="button"
-                                >
-                                    <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[var(--surface-strong)] text-[var(--foreground)]">
-                                        {node.kind === "folder" ? (
-                                            <Folder className="size-5" />
-                                        ) : (
-                                            <FileText className="size-5" />
-                                        )}
-                                    </span>
-                                    <span className="min-w-0">
-                                        <span className="block truncate font-medium text-[var(--foreground)]">
-                                            {node.name}
-                                        </span>
-                                        <span className="mt-1 flex flex-wrap gap-2 text-xs text-[var(--muted)]">
-                                            <span>{node.kind}</span>
-                                            {node.size ? (
-                                                <span>{formatFileSize(node.size)}</span>
-                                            ) : null}
-                                            {node.mimeType ? <span>{node.mimeType}</span> : null}
-                                        </span>
-                                    </span>
-                                </button>
-
-                                <div className="flex flex-wrap items-center gap-2 md:justify-end">
-                                    <Badge>{node.visibility}</Badge>
-                                    {node.kind === "file" ? (
-                                        <>
-                                            <Button
-                                                className="rounded-full"
-                                                onClick={() => setPreviewNode(node)}
-                                                size="sm"
-                                                type="button"
-                                                variant="outline"
-                                            >
-                                                <Eye className="size-4" />
-                                                Preview
-                                            </Button>
-                                            <Button
-                                                className="rounded-full"
-                                                onClick={() => void downloadFile(node)}
-                                                size="sm"
-                                                type="button"
-                                                variant="outline"
-                                            >
-                                                <Download className="size-4" />
-                                                Download
-                                            </Button>
-                                        </>
-                                    ) : (
-                                        <Button
-                                            className="rounded-full"
-                                            disabled={bulkDownloadPending}
-                                            onClick={() => void downloadFolder(node.id)}
-                                            size="sm"
-                                            type="button"
-                                            variant="outline"
-                                        >
-                                            <PackageOpen className="size-4" />
-                                            Download folder
-                                        </Button>
-                                    )}
-                                    {isAuthor ? (
-                                        <>
-                                            <Button
-                                                className="rounded-full"
-                                                onClick={() => {
-                                                    setRenameNodeTarget(node)
-                                                    setRenameName(node.name)
-                                                }}
-                                                size="sm"
-                                                type="button"
-                                                variant="outline"
-                                            >
-                                                <Pencil className="size-4" />
-                                                Rename
-                                            </Button>
-                                            <Button
-                                                className="rounded-full"
-                                                onClick={() => void toggleVisibility(node)}
-                                                size="sm"
-                                                type="button"
-                                                variant="outline"
-                                            >
-                                                {node.visibility === "published"
-                                                    ? "Make private"
-                                                    : "Publish"}
-                                            </Button>
-                                            <Button
-                                                className="rounded-full"
-                                                onClick={() => setDeleteNodeTarget(node)}
-                                                size="sm"
-                                                type="button"
-                                                variant="destructive"
-                                            >
-                                                <Trash2 className="size-4" />
-                                                Delete
-                                            </Button>
-                                        </>
-                                    ) : null}
-                                </div>
-                            </div>
+                                node={node}
+                                onDelete={setDeleteNodeTarget}
+                                onDownloadFile={(target) => void downloadFile(target)}
+                                onDownloadFolder={(folderId) => void downloadFolder(folderId)}
+                                onOpenFolder={openFolder}
+                                onPreview={setPreviewNode}
+                                onRename={(target) => {
+                                    setRenameNodeTarget(target)
+                                    setRenameName(target.name)
+                                }}
+                                onToggleVisibility={(target) => void toggleVisibility(target)}
+                            />
                         ))}
                     </div>
                 ) : (
@@ -407,139 +249,67 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                 )}
             </CardContent>
 
-            <Modal
-                description="Create a folder inside the current project location."
+            <CreateFolderModal
+                folderName={folderName}
+                isPending={createFolderMutation.isPending}
+                onCreate={() => void createFolder()}
+                onFolderNameChange={setFolderName}
                 onOpenChange={setFolderModalOpen}
                 open={folderModalOpen}
-                title="New folder"
-            >
-                <form
-                    className="grid gap-4"
-                    onSubmit={(event) => {
-                        event.preventDefault()
-                        void createFolder()
-                    }}
-                >
-                    <Input
-                        autoFocus
-                        onChange={(event) => setFolderName(event.target.value)}
-                        placeholder="Folder name"
-                        value={folderName}
-                    />
-                    <div className="flex justify-end gap-2">
-                        <Button
-                            onClick={() => setFolderModalOpen(false)}
-                            type="button"
-                            variant="outline"
-                        >
-                            Cancel
-                        </Button>
-                        <Button disabled={createFolderMutation.isPending} type="submit">
-                            Create folder
-                        </Button>
-                    </div>
-                </form>
-            </Modal>
+            />
 
-            <Modal
-                description="Rename this project file or folder."
+            <RenameNodeModal
+                isPending={updateNodeMutation.isPending}
                 onOpenChange={(open) => {
                     if (!open) {
                         setRenameNodeTarget(null)
                     }
                 }}
+                onRename={() => {
+                    if (renameNodeTarget) {
+                        void renameNode(renameNodeTarget)
+                    }
+                }}
+                onRenameNameChange={setRenameName}
                 open={Boolean(renameNodeTarget)}
-                title="Rename item"
-            >
-                <form
-                    className="grid gap-4"
-                    onSubmit={(event) => {
-                        event.preventDefault()
-                        if (renameNodeTarget) {
-                            void renameNode(renameNodeTarget)
-                        }
-                    }}
-                >
-                    <Input
-                        autoFocus
-                        onChange={(event) => setRenameName(event.target.value)}
-                        placeholder="New name"
-                        value={renameName}
-                    />
-                    <div className="flex justify-end gap-2">
-                        <Button
-                            onClick={() => setRenameNodeTarget(null)}
-                            type="button"
-                            variant="outline"
-                        >
-                            Cancel
-                        </Button>
-                        <Button disabled={updateNodeMutation.isPending} type="submit">
-                            Save name
-                        </Button>
-                    </div>
-                </form>
-            </Modal>
+                renameName={renameName}
+            />
 
-            <Modal
-                description={
-                    deleteNodeTarget
-                        ? `This will delete "${deleteNodeTarget.name}" from the project.`
-                        : undefined
-                }
+            <DeleteNodeModal
+                isPending={deleteNodeMutation.isPending}
+                node={deleteNodeTarget}
+                onDelete={() => {
+                    if (deleteNodeTarget) {
+                        void deleteNode(deleteNodeTarget)
+                    }
+                }}
                 onOpenChange={(open) => {
                     if (!open) {
                         setDeleteNodeTarget(null)
                     }
                 }}
-                open={Boolean(deleteNodeTarget)}
-                title="Delete item?"
-            >
-                <div className="flex justify-end gap-2">
-                    <Button
-                        onClick={() => setDeleteNodeTarget(null)}
-                        type="button"
-                        variant="outline"
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        disabled={deleteNodeMutation.isPending}
-                        onClick={() => {
-                            if (deleteNodeTarget) {
-                                void deleteNode(deleteNodeTarget)
-                            }
-                        }}
-                        type="button"
-                        variant="destructive"
-                    >
-                        Delete
-                    </Button>
-                </div>
-            </Modal>
+            />
 
-            <Modal
-                className="max-w-5xl"
+            <PreviewNodeModal
+                downloadUrl={
+                    previewNode
+                        ? isAuthor
+                            ? `/me/project-files/download/${projectId}/${previewNode.id}`
+                            : `/project-files/download/${slug}/${projectId}/${previewNode.id}`
+                        : ""
+                }
+                node={previewNode}
+                onDownload={() => {
+                    if (previewNode) {
+                        void downloadFile(previewNode)
+                    }
+                }}
                 onOpenChange={(open) => {
                     if (!open) {
                         setPreviewNode(null)
                     }
                 }}
-                open={Boolean(previewNode)}
-                title="File preview"
-            >
-                {previewNode ? (
-                    <ProjectFilePreview
-                        downloadUrl={
-                            isAuthor
-                                ? `/me/project-files/download/${projectId}/${previewNode.id}`
-                                : `/project-files/download/${slug}/${projectId}/${previewNode.id}`
-                        }
-                        node={previewNode}
-                        onDownload={() => void downloadFile(previewNode)}
-                    />
-                ) : null}
-            </Modal>
+            />
         </Card>
     )
 }
