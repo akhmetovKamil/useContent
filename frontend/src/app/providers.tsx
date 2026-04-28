@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { QueryClientProvider } from "@tanstack/react-query"
 import { createConfig, http, WagmiProvider } from "wagmi"
 import {
     arbitrum,
@@ -13,8 +13,7 @@ import { injected } from "wagmi/connectors"
 
 import { supportedChains } from "@/utils/config/chains"
 import { getFrontendRpcUrl } from "@/utils/config/env"
-
-const queryClient = new QueryClient()
+import { queryClient } from "./query-client"
 
 const wagmiConfig = createConfig({
     chains: supportedChains,

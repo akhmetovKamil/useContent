@@ -9,7 +9,7 @@ import type { AuthUser } from "./types";
 const jwtSecret = secret("JwtSecret");
 
 const NONCE_TTL_MS = 5 * 60 * 1000;
-const JWT_TTL = "24h";
+const JWT_TTL_MS = 24 * 60 * 60 * 1000;
 
 function jwtKey(): Uint8Array {
   return new TextEncoder().encode(jwtSecret());
@@ -29,7 +29,10 @@ export async function requestNonce(rawAddress: string): Promise<string> {
   return buildSignMessage(address, nonce);
 }
 
-export async function authenticate(rawAddress: string, signature: string): Promise<string> {
+export async function authenticate(
+  rawAddress: string,
+  signature: string
+): Promise<{ token: string; expiresAt: Date }> {
   const address = rawAddress.toLowerCase();
 
   const doc = await findNonce(address);
@@ -55,12 +58,15 @@ export async function authenticate(rawAddress: string, signature: string): Promi
 
   await deleteNonce(address);
 
-  return new SignJWT({ walletAddress: address })
+  const expiresAt = new Date(Date.now() + JWT_TTL_MS);
+  const token = await new SignJWT({ walletAddress: address })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(address)
     .setIssuedAt()
-    .setExpirationTime(JWT_TTL)
+    .setExpirationTime(expiresAt)
     .sign(jwtKey());
+
+  return { token, expiresAt };
 }
 
 export async function validateToken(token: string): Promise<AuthUser> {

@@ -15,4 +15,5 @@ export interface VerifySignatureInput {
 
 export interface VerifySignatureDto {
   token: string;
+  expiresAt: string;
 }

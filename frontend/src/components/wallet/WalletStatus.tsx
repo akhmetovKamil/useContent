@@ -3,15 +3,19 @@ import { useConnect } from "wagmi"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useWalletSession } from "@/hooks/useWalletSession"
-import { useAuthStore } from "@/stores/auth-store"
+import { isSessionExpired, useAuthStore } from "@/stores/auth-store"
+import { shortenWalletAddress } from "@shared/utils"
 
 export function WalletStatus() {
     const { connect, connectors, isPending: connectPending } = useConnect()
-    const { address, isConnected, signIn, signInPending, signInError, signOut } = useWalletSession()
+    const { address, isConnected, signIn, signInPending, signInError, signOut, isSessionActive } =
+        useWalletSession()
     const token = useAuthStore((state) => state.token)
+    const expiresAt = useAuthStore((state) => state.expiresAt)
 
     const connector = connectors[0]
-    const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : null
+    const shortAddress = address ? shortenWalletAddress(address) : null
+    const hasExpiredToken = Boolean(token && isSessionExpired(expiresAt))
 
     return (
         <div className="flex flex-wrap items-center gap-3 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-2 shadow-[var(--shadow)] backdrop-blur-sm">
@@ -19,10 +23,14 @@ export function WalletStatus() {
             {isConnected && shortAddress ? (
                 <>
                     <div className="font-mono text-sm text-[var(--foreground)]">{shortAddress}</div>
-                    <Badge variant={token ? "success" : "warning"}>
-                        {token ? "session active" : "signature required"}
+                    <Badge variant={isSessionActive ? "success" : "warning"}>
+                        {isSessionActive
+                            ? "session active"
+                            : hasExpiredToken
+                              ? "session expired"
+                              : "signature required"}
                     </Badge>
-                    {!token ? (
+                    {!isSessionActive ? (
                         <Button
                             className="rounded-full"
                             disabled={signInPending}

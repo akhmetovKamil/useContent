@@ -1,8 +1,10 @@
 import axios, { type AxiosRequestConfig } from "axios"
 
+import { queryClient } from "@/app/query-client"
 import { useAuthStore } from "@/stores/auth-store"
 import { env } from "@/utils/config/env"
 import { normalizeApiError } from "@/utils/api/errors"
+import { emitSessionExpired } from "@/utils/session-events"
 
 export const http = axios.create({
     baseURL: env.apiBaseUrl,
@@ -29,6 +31,22 @@ http.interceptors.request.use((config) => {
 
     return config
 })
+
+http.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+            const { token, clearSession } = useAuthStore.getState()
+            if (token) {
+                clearSession()
+                queryClient.clear()
+                emitSessionExpired()
+            }
+        }
+
+        return Promise.reject(error)
+    }
+)
 
 export async function request<TResponse, TParams extends object = ApiQueryParams>(
     config: ApiRequestConfig<TParams>

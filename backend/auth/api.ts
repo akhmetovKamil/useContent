@@ -18,7 +18,7 @@ export const getNonce = api(
 export const verifySignature = api(
   { method: "POST", path: "/auth/verify", expose: true },
   async ({ address, signature }: VerifySignatureInput): Promise<VerifySignatureDto> => {
-    const token = await authenticate(address, signature);
-    return { token };
+    const { token, expiresAt } = await authenticate(address, signature);
+    return { token, expiresAt: expiresAt.toISOString() };
   }
 );
