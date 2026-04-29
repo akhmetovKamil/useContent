@@ -4,6 +4,7 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion"
+import { InfoMetric } from "@/components/common/InfoMetric"
 import { authorFaq } from "./author-content"
 
 export function AuthorValuePanel() {
@@ -26,9 +27,9 @@ export function AuthorValuePanel() {
                 </p>
 
                 <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                    <Metric label="platform fee" value="20%" />
-                    <Metric label="author share" value="80%" />
-                    <Metric label="wallet mode" value="web3" />
+                    <InfoMetric label="platform fee" value="20%" />
+                    <InfoMetric label="author share" value="80%" />
+                    <InfoMetric label="wallet mode" value="web3" />
                 </div>
 
                 <div className="mt-6">
@@ -44,17 +45,6 @@ export function AuthorValuePanel() {
                         ))}
                     </Accordion>
                 </div>
-            </div>
-        </div>
-    )
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-    return (
-        <div className="rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-4">
-            <div className="text-3xl font-medium text-[var(--foreground)]">{value}</div>
-            <div className="mt-1 text-xs uppercase tracking-[0.25em] text-[var(--muted)]">
-                {label}
             </div>
         </div>
     )

@@ -3,7 +3,7 @@ import type { PostDto } from "@shared/types/posts"
 import { Archive, ExternalLink, Megaphone, Pencil, RotateCcw, Send, Trash2 } from "lucide-react"
 import { Link } from "react-router-dom"
 
-import { IconAction } from "@/components/posts/IconAction"
+import { IconAction } from "@/components/common/IconAction"
 import type { AuthorPostActions, FeedPost } from "@/components/posts/types"
 import { Button } from "@/components/ui/button"
 

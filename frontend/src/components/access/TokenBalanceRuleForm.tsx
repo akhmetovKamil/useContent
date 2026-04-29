@@ -1,6 +1,6 @@
 import { AddressInput } from "@/components/web3/pickers/AddressInput"
 import { ChainPicker } from "@/components/web3/pickers/ChainPicker"
-import { LabeledInput } from "@/components/access/LabeledInput"
+import { LabeledInput } from "@/components/common/LabeledInput"
 import { TokenConditionAssetCard } from "@/components/web3/TokenConditionAssetCard"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"

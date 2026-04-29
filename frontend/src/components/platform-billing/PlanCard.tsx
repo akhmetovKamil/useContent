@@ -4,7 +4,7 @@ import { FeatureRow } from "@/components/platform-billing/FeatureRow"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { InfoMetric } from "@/components/ui/info-metric"
+import { InfoMetric } from "@/components/common/InfoMetric"
 import { formatFileSize, formatUsdCents } from "@/utils/format"
 
 export function PlanCard({

@@ -2,7 +2,7 @@ import { CONTENT_STATUS } from "@shared/consts"
 import type { ProjectDto } from "@shared/types/projects"
 import { useEffect, useState } from "react"
 
-import { ContentManagerPage } from "@/components/content-manager/ContentManagerPage"
+import { ContentManager } from "@/components/content-manager/ContentManager"
 import { ProjectFileTree } from "@/components/project-tree/ProjectFileTree"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -48,7 +48,7 @@ export function MeProjectsPage() {
 
     return (
         <div className="grid gap-6">
-            <ContentManagerPage
+            <ContentManager
                 accessPolicies={policiesQuery.data}
                 createError={createProjectMutation.error}
                 createPending={createProjectMutation.isPending}
@@ -97,7 +97,7 @@ export function MeProjectsPage() {
             </button>
 
             {showArchive ? (
-                <ContentManagerPage
+                <ContentManager
                     createPending={false}
                     emptyLabel="Project archive is empty."
                     hideCreate

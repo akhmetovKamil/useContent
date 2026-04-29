@@ -1,4 +1,4 @@
-import { Field } from "@/components/forms/Field"
+import { Field } from "@/components/common/Field"
 import { Input } from "@/components/ui/input"
 
 interface LabeledInputProps {
