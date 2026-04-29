@@ -3,15 +3,11 @@ import type { PostDto } from "@shared/types/posts"
 import { useState } from "react"
 import { Link } from "react-router-dom"
 
+import { PostEditorModal } from "@/components/me-posts/PostEditorModal"
+import { PostWorkspaceTabs } from "@/components/me-posts/PostWorkspaceTabs"
 import { PostComposer } from "@/components/posts/PostComposer"
-import { PostFeed } from "@/components/posts/PostFeed"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Modal } from "@/components/ui/modal"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
-import { Textarea } from "@/components/ui/textarea"
-import { postEmptyLabels, postTabs } from "@/constants/posts"
 import { useMyAccessPoliciesQuery } from "@/queries/access-policies"
 import {
     useCreateMyPostMutation,
@@ -26,7 +22,6 @@ import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useMyProjectsQuery } from "@/queries/projects"
 import { useAuthStore } from "@/stores/auth-store"
 import type { AuthorPostsTab } from "@/types/navigation"
-import { cn } from "@/utils/cn"
 
 export function MePostsPage() {
     const token = useAuthStore((state) => state.token)
@@ -133,129 +128,57 @@ export function MePostsPage() {
                 />
             ) : null}
 
-            <Card className="overflow-hidden rounded-[28px]">
-                <CardHeader>
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div>
-                            <CardTitle>Publishing workspace</CardTitle>
-                            <p className="mt-2 text-sm text-[var(--muted)]">
-                                Manage drafts, published posts, archived content and promoted
-                                updates from one place.
-                            </p>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            {postTabs.map((tab) => {
-                                const count =
-                                    tab.id === CONTENT_STATUS.PUBLISHED
-                                        ? publishedPosts.length
-                                        : tab.id === "drafts"
-                                          ? draftPosts.length
-                                          : tab.id === "promoted"
-                                            ? promotedPosts.length
-                                            : (archivedPosts?.length ?? 0)
+            <PostWorkspaceTabs
+                activeListError={activeListError}
+                activeTab={activeTab}
+                archivedCount={archivedPosts?.length ?? 0}
+                draftCount={draftPosts.length}
+                isActiveListError={isActiveListError}
+                isActiveListLoading={isActiveListLoading}
+                onArchive={(post) => updatePostStatus(post, CONTENT_STATUS.ARCHIVED)}
+                onDelete={(post) => void deletePostMutation.mutateAsync(post.id)}
+                onEdit={(post) => {
+                    setEditingPost(post)
+                    setEditTitle(post.title)
+                    setEditContent(post.content)
+                }}
+                onPromote={(post) => void promotePostMutation.mutateAsync(post.id)}
+                onPublish={(post) => updatePostStatus(post, CONTENT_STATUS.PUBLISHED)}
+                onRestoreDraft={(post) => updatePostStatus(post, CONTENT_STATUS.DRAFT)}
+                onStopPromotion={(post) => void stopPromotionMutation.mutateAsync(post.id)}
+                onTabChange={setActiveTab}
+                onUnarchive={(post) => updatePostStatus(post, CONTENT_STATUS.PUBLISHED)}
+                promotedCount={promotedPosts.length}
+                publishedCount={publishedPosts.length}
+                visiblePosts={visiblePosts}
+            />
 
-                                return (
-                                    <button
-                                        className={cn(
-                                            "rounded-full border border-[var(--line)] px-4 py-2 text-sm font-medium transition",
-                                            activeTab === tab.id
-                                                ? "bg-[var(--foreground)] text-[var(--background)]"
-                                                : "bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--foreground)]"
-                                        )}
-                                        key={tab.id}
-                                        onClick={() => setActiveTab(tab.id)}
-                                        type="button"
-                                    >
-                                        {tab.label}
-                                        <span className="ml-2 opacity-70">{count}</span>
-                                    </button>
-                                )
-                            })}
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    {isActiveListLoading ? (
-                        <p className="text-[var(--muted)]">Loading posts...</p>
-                    ) : isActiveListError ? (
-                        <p className="text-rose-600">{activeListError?.message}</p>
-                    ) : (
-                        <PostFeed
-                            emptyLabel={postEmptyLabels[activeTab]}
-                            isAuthorView
-                            onArchive={(post) => updatePostStatus(post, CONTENT_STATUS.ARCHIVED)}
-                            onDelete={(post) => void deletePostMutation.mutateAsync(post.id)}
-                            onEdit={(post) => {
-                                setEditingPost(post)
-                                setEditTitle(post.title)
-                                setEditContent(post.content)
-                            }}
-                            onPromote={(post) => void promotePostMutation.mutateAsync(post.id)}
-                            onPublish={(post) => updatePostStatus(post, CONTENT_STATUS.PUBLISHED)}
-                            onRestoreDraft={(post) => updatePostStatus(post, CONTENT_STATUS.DRAFT)}
-                            onStopPromotion={(post) =>
-                                void stopPromotionMutation.mutateAsync(post.id)
-                            }
-                            onUnarchive={(post) => updatePostStatus(post, CONTENT_STATUS.PUBLISHED)}
-                            posts={visiblePosts}
-                        />
-                    )}
-                </CardContent>
-            </Card>
-
-            <Modal
-                description="Update the post copy without changing its access policy or attachments."
+            <PostEditorModal
+                editContent={editContent}
+                editTitle={editTitle}
+                editingPost={editingPost}
+                isPending={updatePostMutation.isPending}
+                onContentChange={setEditContent}
                 onOpenChange={(open) => {
                     if (!open) {
                         setEditingPost(null)
                     }
                 }}
-                open={Boolean(editingPost)}
-                title="Edit post"
-            >
-                <form
-                    className="grid gap-4"
-                    onSubmit={(event) => {
-                        event.preventDefault()
-                        if (!editingPost) {
-                            return
-                        }
-                        void updatePostMutation
-                            .mutateAsync({
-                                postId: editingPost.id,
-                                input: {
-                                    content: editContent,
-                                    title: editTitle,
-                                },
-                            })
-                            .then(() => setEditingPost(null))
-                    }}
-                >
-                    <Input
-                        onChange={(event) => setEditTitle(event.target.value)}
-                        placeholder="Post title"
-                        value={editTitle}
-                    />
-                    <Textarea
-                        className="min-h-40"
-                        onChange={(event) => setEditContent(event.target.value)}
-                        placeholder="Post content"
-                        value={editContent}
-                    />
-                    <div className="flex justify-end gap-2">
-                        <Button
-                            onClick={() => setEditingPost(null)}
-                            type="button"
-                            variant="outline"
-                        >
-                            Cancel
-                        </Button>
-                        <Button disabled={updatePostMutation.isPending} type="submit">
-                            Save changes
-                        </Button>
-                    </div>
-                </form>
-            </Modal>
+                onSave={async () => {
+                    if (!editingPost) {
+                        return
+                    }
+                    await updatePostMutation.mutateAsync({
+                        postId: editingPost.id,
+                        input: {
+                            content: editContent,
+                            title: editTitle,
+                        },
+                    })
+                    setEditingPost(null)
+                }}
+                onTitleChange={setEditTitle}
+            />
         </section>
     )
 }
