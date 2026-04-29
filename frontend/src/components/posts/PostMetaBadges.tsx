@@ -1,25 +1,8 @@
-import { Link } from "react-router-dom"
-
 import type { FeedPost } from "@/components/posts/types"
 import { Badge } from "@/components/ui/badge"
 import { formatPostDate } from "@/utils/date"
 
-export function AuthorLine({ post }: { post: Extract<FeedPost, { authorSlug: string }> }) {
-    return (
-        <div className="mb-2 flex flex-wrap items-center gap-2 text-sm text-[var(--muted)]">
-            <span className="font-medium text-[var(--foreground)]">{post.authorDisplayName}</span>
-            <Link
-                className="font-mono underline-offset-4 hover:underline"
-                to={`/authors/${post.authorSlug}`}
-            >
-                @{post.authorSlug}
-            </Link>
-            {post.feedReason ? <span>· {post.feedReason}</span> : null}
-        </div>
-    )
-}
-
-export function PostMeta({ post }: { post: FeedPost }) {
+export function PostMetaBadges({ post }: { post: FeedPost }) {
     return (
         <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge className="rounded-full">{post.status}</Badge>

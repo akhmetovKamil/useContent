@@ -15,7 +15,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Web3HelpModal } from "@/components/web3/Web3Pickers"
+import { Web3HelpModal } from "@/components/web3/pickers/Web3HelpModal"
 import type { AccessComposer } from "@/utils/access-policy"
 import { createDefaultRule } from "@/utils/access-policy"
 

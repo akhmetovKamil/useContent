@@ -6,11 +6,9 @@ import { useEffect, useState } from "react"
 import { usePublicClient } from "wagmi"
 import { formatUnits, isAddress, type Address } from "viem"
 
-import {
-    AccessCenterFlow,
-    PolicyListSection,
-    SubscriptionPlanListSection,
-} from "@/components/access-center/AccessCenterSections"
+import { AccessCenterFlow } from "@/components/access-center/AccessCenterFlow"
+import { PolicyListSection } from "@/components/access-center/PolicyListSection"
+import { SubscriptionPlanListSection } from "@/components/access-center/SubscriptionPlanListSection"
 import { AccessPolicyEditor } from "@/components/access/AccessPolicyEditor"
 import { OnChainPlanPublisher } from "@/components/subscriptions/OnChainPlanPublisher"
 import { Button } from "@/components/ui/button"
@@ -26,12 +24,10 @@ import { Label } from "@/components/ui/label"
 import { Modal } from "@/components/ui/modal"
 import { Eyebrow, PageSection } from "@/components/ui/page"
 import { Textarea } from "@/components/ui/textarea"
-import {
-    ChainPicker,
-    TokenAmountInput,
-    TokenPicker,
-    Web3SummaryPanel,
-} from "@/components/web3/Web3Pickers"
+import { ChainPicker } from "@/components/web3/pickers/ChainPicker"
+import { TokenAmountInput } from "@/components/web3/pickers/TokenAmountInput"
+import { TokenPicker } from "@/components/web3/pickers/TokenPicker"
+import { Web3SummaryPanel } from "@/components/web3/pickers/Web3SummaryPanel"
 import { getTokenId } from "@/utils/web3/tokens"
 import {
     useCreateMyAccessPolicyMutation,

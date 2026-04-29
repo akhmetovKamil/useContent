@@ -4,10 +4,8 @@ import type { AccessPolicyConditionDto } from "@shared/types/access"
 import { ConditionIcon } from "@/components/public-author/ConditionIcon"
 import { SubscribeButton } from "@/components/subscriptions/SubscribeButton"
 import { Badge } from "@/components/ui/badge"
-import {
-    NftConditionAssetCard,
-    TokenConditionAssetCard,
-} from "@/components/web3/AssetConditionCards"
+import { NftConditionAssetCard } from "@/components/web3/NftConditionAssetCard"
+import { TokenConditionAssetCard } from "@/components/web3/TokenConditionAssetCard"
 import {
     formatAccessTierDate,
     getConditionDescription,

@@ -5,7 +5,8 @@ import { Link } from "react-router-dom"
 
 import { AttachedProjectCard } from "@/components/posts/AttachedProjectCard"
 import { AuthorActions } from "@/components/posts/AuthorActions"
-import { AuthorLine, PostMeta } from "@/components/posts/PostCardHeaderParts"
+import { PostAuthorLine } from "@/components/posts/PostAuthorLine"
+import { PostMetaBadges } from "@/components/posts/PostMetaBadges"
 import { InlineComments } from "@/components/posts/InlineComments"
 import { LockedPostPreview } from "@/components/posts/LockedPostPreview"
 import { PostEngagementBar } from "@/components/posts/PostEngagementBar"
@@ -132,7 +133,7 @@ export function PostCard({
             <CardHeader className="gap-4 pb-3">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0">
-                        {showAuthor && author ? <AuthorLine post={author} /> : null}
+                        {showAuthor && author ? <PostAuthorLine post={author} /> : null}
                         <CardTitle className="text-xl leading-7">
                             {postLink ? (
                                 <Link className="underline-offset-4 hover:underline" to={postLink}>
@@ -142,7 +143,7 @@ export function PostCard({
                                 post.title
                             )}
                         </CardTitle>
-                        <PostMeta post={post} />
+                        <PostMetaBadges post={post} />
                     </div>
                     {isAuthorView ? (
                         <AuthorActions

@@ -1,6 +1,7 @@
-import { AddressInput, ChainPicker } from "@/components/web3/Web3Pickers"
+import { AddressInput } from "@/components/web3/pickers/AddressInput"
+import { ChainPicker } from "@/components/web3/pickers/ChainPicker"
 import { LabeledInput } from "@/components/access/LabeledInput"
-import { NftConditionAssetCard } from "@/components/web3/AssetConditionCards"
+import { NftConditionAssetCard } from "@/components/web3/NftConditionAssetCard"
 import {
     Select,
     SelectContent,
