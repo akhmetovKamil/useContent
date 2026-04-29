@@ -1,0 +1,53 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 14
+skinparam ArrowColor Black
+skinparam RectangleBorderColor Black
+skinparam ComponentBorderColor Black
+skinparam DatabaseBorderColor Black
+skinparam PackageBorderColor Black
+skinparam PackageBackgroundColor White
+skinparam ComponentBackgroundColor White
+skinparam DatabaseBackgroundColor White
+
+actor "Автор / подписчик" as User
+
+package "Клиентское окружение" as Client {
+    component "Браузер" as Browser
+    component "Frontend SPA\nReact + Vite" as Frontend
+    component "Rabby Wallet\nили другой EVM-кошелек" as Wallet
+}
+
+package "Серверное окружение" as Server {
+    component "nginx\nраздача frontend" as Nginx
+    component "Backend API\nEncore.ts" as Backend
+    database "MongoDB\nметаданные" as Mongo
+    database "MinIO\nобъектное хранилище" as MinIO
+    component "Coolify\nуправление runtime" as Coolify
+}
+
+package "Web3-контур" as Web3 {
+    component "RPC provider\nEVM-сеть" as RPC
+    component "SubscriptionManager\nsmart contract" as Contract
+    component "ERC-20 token\noptional" as Token
+}
+
+User --> Browser : открывает платформу
+Browser --> Frontend : UI
+Frontend --> Nginx : получение static files
+Frontend --> Backend : HTTPS API / JWT
+Frontend --> Wallet : connect, sign nonce,\nsend transaction
+Wallet --> RPC : eth_sendTransaction\npersonal_sign
+Frontend --> RPC : read contract state\nthrough viem/wagmi
+Backend --> RPC : get receipt,\nread events
+RPC --> Contract : registerPlan,\nupdatePlan, subscribe
+Contract --> Token : transferFrom\nдля ERC-20 оплаты
+Backend --> Mongo : users, authors,\nposts, policies,\nentitlements
+Backend --> MinIO : post attachments,\nproject files
+Coolify --> Nginx : deploy frontend container
+Coolify --> Backend : deploy backend container
+@enduml
