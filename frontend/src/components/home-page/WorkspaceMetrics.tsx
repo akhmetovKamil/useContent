@@ -1,15 +1,9 @@
-import { MetricCard } from "@/components/common/MetricCard"
+import { MetricsGrid } from "@/components/common/MetricsGrid"
 
 interface WorkspaceMetricsProps {
     metrics: Array<{ label: string; value: string }>
 }
 
 export function WorkspaceMetrics({ metrics }: WorkspaceMetricsProps) {
-    return (
-        <section className="grid gap-4 md:grid-cols-4">
-            {metrics.map((metric) => (
-                <MetricCard key={metric.label} label={metric.label} value={metric.value} />
-            ))}
-        </section>
-    )
+    return <MetricsGrid metrics={metrics} />
 }

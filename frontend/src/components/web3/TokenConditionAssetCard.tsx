@@ -1,6 +1,7 @@
 import { ExternalLink } from "lucide-react"
 
-import { AssetMetricTile, TokenAvatar } from "@/components/web3/AssetMetaRow"
+import { AssetAvatar } from "@/components/common/AssetAvatar"
+import { AssetMetricTile } from "@/components/web3/AssetMetaRow"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useTokenUsdPriceQuery } from "@/queries/web3-assets"
@@ -53,7 +54,7 @@ export function TokenConditionAssetCard({
                 <div className="absolute -top-16 -right-12 size-40 rounded-full bg-white/20 blur-2xl" />
                 <div className="relative flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <TokenAvatar logoUrl={token.logoUrl} symbol={token.symbol} />
+                        <AssetAvatar imageUrl={token.logoUrl} label={token.symbol.slice(0, 4)} />
                         <div>
                             <div className="text-lg font-semibold">{token.symbol}</div>
                             <div className="text-sm text-white/75">{token.name}</div>

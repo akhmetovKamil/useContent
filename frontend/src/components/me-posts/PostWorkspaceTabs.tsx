@@ -1,4 +1,3 @@
-import { CONTENT_STATUS } from "@shared/consts"
 import type { PostDto } from "@shared/types/posts"
 
 import { PostFeed } from "@/components/posts/PostFeed"
@@ -6,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { postEmptyLabels, postTabs } from "@/constants/posts"
 import type { AuthorPostsTab } from "@/types/navigation"
 import { cn } from "@/utils/cn"
+import { getPostTabCount } from "@/utils/post-tabs"
 
 interface PostWorkspaceTabsProps {
     activeListError?: Error | null
@@ -74,12 +74,11 @@ export function PostWorkspaceTabs({
                             >
                                 {tab.label}
                                 <span className="ml-2 opacity-70">
-                                    {getTabCount({
+                                    {getPostTabCount(tab.id, {
                                         archivedCount,
                                         draftCount,
                                         promotedCount,
                                         publishedCount,
-                                        tab: tab.id,
                                     })}
                                 </span>
                             </button>
@@ -110,29 +109,4 @@ export function PostWorkspaceTabs({
             </CardContent>
         </Card>
     )
-}
-
-function getTabCount({
-    archivedCount,
-    draftCount,
-    promotedCount,
-    publishedCount,
-    tab,
-}: {
-    archivedCount: number
-    draftCount: number
-    promotedCount: number
-    publishedCount: number
-    tab: AuthorPostsTab
-}) {
-    if (tab === CONTENT_STATUS.PUBLISHED) {
-        return publishedCount
-    }
-    if (tab === "drafts") {
-        return draftCount
-    }
-    if (tab === "promoted") {
-        return promotedCount
-    }
-    return archivedCount
 }

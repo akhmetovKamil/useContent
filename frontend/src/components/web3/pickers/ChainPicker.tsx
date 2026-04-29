@@ -1,5 +1,6 @@
 import { Check, Network } from "lucide-react"
 
+import { AssetAvatar } from "@/components/common/AssetAvatar"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/utils/cn"
 import { getChainDisplayConfig, supportedChainOptions } from "@/utils/config/chains"
@@ -52,7 +53,11 @@ export function ChainPicker({ className, onChange, value }: ChainPickerProps) {
                             )}
                         />
                         <div className="relative flex items-center gap-3">
-                            <ChainAvatar chainId={chain.id} />
+                            <AssetAvatar
+                                accent={getChainDisplayConfig(chain.id).accent}
+                                label={getChainDisplayConfig(chain.id).icon}
+                                variant="circle"
+                            />
                             <div className="min-w-0">
                                 <div className="flex items-center gap-2">
                                     <span className="font-medium text-[var(--foreground)]">
@@ -71,20 +76,5 @@ export function ChainPicker({ className, onChange, value }: ChainPickerProps) {
                 ))}
             </div>
         </div>
-    )
-}
-
-function ChainAvatar({ chainId }: { chainId: number }) {
-    const config = getChainDisplayConfig(chainId)
-
-    return (
-        <span
-            className={cn(
-                "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xs font-semibold text-white shadow-lg",
-                config.accent,
-            )}
-        >
-            {config.icon}
-        </span>
     )
 }

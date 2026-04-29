@@ -1,6 +1,4 @@
-import { Link } from "react-router-dom"
-
-import { Button } from "@/components/ui/button"
+import { ActionLink } from "@/components/common/ActionLink"
 import { PageSection, PageTitle } from "@/components/ui/page"
 
 interface HomeHeroProps {
@@ -41,13 +39,5 @@ export function HomeHero({ authorSlug, isSignedIn }: HomeHeroProps) {
                 )}
             </div>
         </PageSection>
-    )
-}
-
-function ActionLink({ label, to }: { label: string; to: string }) {
-    return (
-        <Button asChild className="justify-start rounded-full" variant="outline">
-            <Link to={to}>{label}</Link>
-        </Button>
     )
 }

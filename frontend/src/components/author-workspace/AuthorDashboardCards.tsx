@@ -1,24 +1,5 @@
-import { MetricCard } from "@/components/common/MetricCard"
+import { MetricsGrid, type MetricGridItem } from "@/components/common/MetricsGrid"
 
-interface Metric {
-    description: string
-    label: string
-    to?: string
-    value: string
-}
-
-export function AuthorMetrics({ metrics }: { metrics: Metric[] }) {
-    return (
-        <div className="mt-6 grid gap-4 md:grid-cols-4">
-            {metrics.map((metric) => (
-                <MetricCard
-                    description={metric.description}
-                    key={metric.label}
-                    label={metric.label}
-                    to={metric.to}
-                    value={metric.value}
-                />
-            ))}
-        </div>
-    )
+export function AuthorMetrics({ metrics }: { metrics: MetricGridItem[] }) {
+    return <MetricsGrid className="mt-6 grid gap-4 md:grid-cols-4" metrics={metrics} />
 }
