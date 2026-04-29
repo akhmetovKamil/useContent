@@ -1,12 +1,6 @@
-import type { FeedSourceFilter, FeedSourceFilterOption } from "@/types/navigation"
+import { feedSourceFilters } from "@/constants/navigation"
+import type { FeedSourceFilter } from "@/types/navigation"
 import { cn } from "@/utils/cn"
-
-const feedSourceFilters: FeedSourceFilterOption[] = [
-    { id: "all", label: "All" },
-    { id: "public", label: "Public" },
-    { id: "subscribed", label: "Subscribed" },
-    { id: "promoted", label: "Promoted" },
-]
 
 interface FeedSourceFiltersProps {
     value: FeedSourceFilter

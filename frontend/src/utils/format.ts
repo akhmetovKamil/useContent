@@ -16,9 +16,21 @@ export function formatFileSize(size: number) {
     return `${value.toFixed(digits)} ${units[unitIndex]}`
 }
 
-export function formatUsd(cents: number) {
+export function formatUsdCents(cents: number) {
     return new Intl.NumberFormat("en-US", {
         currency: "USD",
         style: "currency",
     }).format(cents / 100)
+}
+
+export function formatUsdAmount(value: number | null | undefined) {
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+        return null
+    }
+
+    return new Intl.NumberFormat("en", {
+        currency: "USD",
+        maximumFractionDigits: value >= 1 ? 2 : 6,
+        style: "currency",
+    }).format(value)
 }

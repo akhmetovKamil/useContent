@@ -16,7 +16,8 @@ import type {
 } from "@shared/types/access"
 import type { AccessPolicyInput, AccessPolicyInputAndNode, AccessPolicyInputNftOwnershipNode, AccessPolicyInputNode, AccessPolicyInputOrNode, AccessPolicyInputSubscriptionNode, AccessPolicyInputTokenBalanceNode } from "@shared/types/access"
 import { normalizeAddressLike } from "@shared/utils/web3"
-import { v4 as uuidv4 } from "uuid"
+
+import { createLocalId } from "@/utils/local-id"
 
 export type { AccessComposer } from "@shared/consts"
 
@@ -57,7 +58,7 @@ export function createDefaultPolicyBuilderState(): AccessPolicyBuilderState {
 
 export function createDefaultRule(): AccessRuleForm {
     return {
-        id: uuidv4(),
+        id: createLocalId("rule"),
         type: ACCESS_POLICY_NODE_TYPE.SUBSCRIPTION,
         planCode: "main",
         chainId: "11155111",

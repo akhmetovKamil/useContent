@@ -1,17 +1,3 @@
-import {
-    FileText,
-    FolderKanban,
-    Home,
-    Info,
-    Landmark,
-    LayoutDashboard,
-    Bell,
-    ReceiptText,
-    Settings,
-    ShieldCheck,
-    UserRound,
-    UsersRound,
-} from "lucide-react"
 import { useEffect } from "react"
 import { Outlet, useLocation } from "react-router-dom"
 
@@ -19,32 +5,10 @@ import { NavItem } from "@/components/layout/NavItem"
 import { WorkspaceModeToggle } from "@/components/layout/WorkspaceModeToggle"
 import { Dock } from "@/components/ui/dock"
 import { WalletStatus } from "@/components/wallet/WalletStatus"
+import { authorNavItems, publicNavItems, readerNavItems } from "@/constants/navigation"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 import { useWorkspaceStore } from "@/stores/workspace-store"
-import type { NavItemConfig } from "@/types/layout"
-
-const publicNavItems: NavItemConfig[] = [{ to: "/", label: "Home", icon: Home, end: true }]
-
-const readerNavItems: NavItemConfig[] = [
-    { to: "/", label: "Home", icon: Home, end: true, separatorAfter: true },
-    { to: "/me/profile", label: "Profile", icon: UserRound },
-    { to: "/me/subscriptions", label: "Subscriptions", icon: ReceiptText },
-    { to: "/me/activity", label: "Activity", icon: Bell },
-    { to: "/me/settings", label: "Settings", icon: Settings },
-]
-
-const authorNavItems: NavItemConfig[] = [
-    { to: "/author", label: "Workspace", icon: LayoutDashboard, end: true },
-    { to: "/author/about", label: "About", icon: Info, separatorAfter: true },
-    { to: "/me/author", label: "Settings", icon: Settings },
-    { to: "/me/subscribers", label: "Subscribers", icon: UsersRound },
-    { to: "/me/posts", label: "Posts", icon: FileText },
-    { to: "/me/projects", label: "Projects", icon: FolderKanban },
-    { to: "/me/access", label: "Access", icon: ShieldCheck },
-    { to: "/me/activity", label: "Activity", icon: Bell },
-    { to: "/me/platform-billing", label: "Billing", icon: Landmark },
-]
 
 export function RootLayout() {
     const location = useLocation()

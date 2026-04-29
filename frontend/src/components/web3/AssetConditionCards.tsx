@@ -8,7 +8,7 @@ import { cn } from "@/utils/cn"
 import { getChainDisplayConfig } from "@/utils/config/chains"
 import {
     formatTokenUnits,
-    formatUsd,
+    formatUsdAmount,
     getExplorerAddressUrl,
     getOpenSeaAssetUrl,
     getTokenProgress,
@@ -277,7 +277,7 @@ function getUsdEstimate(amount: string, price?: number | null) {
         return null
     }
 
-    return formatUsd(parsed * price)
+    return formatUsdAmount(parsed * price)
 }
 
 function getPriceFallback(isTestnet?: boolean, isError?: boolean) {

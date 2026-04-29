@@ -5,6 +5,7 @@ import { formatUnits } from "viem"
 import type { TokenPreset } from "@/types/web3"
 import { supportedChainOptions } from "@/utils/config/chains"
 import { getTokenPresets } from "@/utils/config/tokens"
+import { formatUsdAmount } from "@/utils/format"
 
 export interface TokenAssetMetadata {
     address: string
@@ -105,14 +106,4 @@ export function getTokenProgress(current: string | null | undefined, required: s
     }
 }
 
-export function formatUsd(value: number | null | undefined) {
-    if (typeof value !== "number" || !Number.isFinite(value)) {
-        return null
-    }
-
-    return new Intl.NumberFormat("en", {
-        currency: "USD",
-        maximumFractionDigits: value >= 1 ? 2 : 6,
-        style: "currency",
-    }).format(value)
-}
+export { formatUsdAmount }

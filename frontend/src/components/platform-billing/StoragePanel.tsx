@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useRunMyAuthorPlatformCleanupMutation } from "@/queries/platform"
-import { formatFileSize, formatUsd } from "@/utils/format"
+import { formatFileSize, formatUsdCents } from "@/utils/format"
 import { GIB } from "@/utils/platform-billing"
 
 export function StoragePanel({
@@ -118,7 +118,7 @@ export function StoragePanel({
                         label="Total quota after upgrade"
                         value={formatFileSize(estimatedTotal)}
                     />
-                    <SummaryRow label="Monthly estimate" value={formatUsd(monthlyEstimateCents)} />
+                    <SummaryRow label="Monthly estimate" value={formatUsdCents(monthlyEstimateCents)} />
                 </div>
 
                 <Button

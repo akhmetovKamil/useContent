@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom"
 
 import { DockItem, DockSeparator } from "@/components/ui/dock"
-import type { NavItemConfig } from "@/types/layout"
+import type { NavItemConfig } from "@/types/navigation"
 
 export function NavItem({ item }: { item: NavItemConfig }) {
     const Icon = item.icon

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label"
 import type { TokenLookupState, TokenPreset } from "@/types/web3"
 import { cn } from "@/utils/cn"
 import { getTokenPresets } from "@/utils/config/tokens"
+import { getTokenId } from "@/utils/web3/tokens"
 
 interface TokenPickerProps {
     chainId: number
@@ -150,8 +151,4 @@ function TokenLookupStateView({ lookup }: { lookup?: TokenPickerProps["lookup"] 
     }
 
     return <p className="text-xs text-amber-700">{lookup.error}</p>
-}
-
-export function getTokenId(token: TokenPreset) {
-    return token.address?.toLowerCase() ?? token.kind
 }

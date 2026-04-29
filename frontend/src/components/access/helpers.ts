@@ -1,12 +1,11 @@
-import { v4 as uuidv4 } from "uuid"
-
 import { ruleTypeOptions } from "@/components/access/options"
 import type { AccessRuleForm } from "@/utils/access-policy"
+import { createLocalId } from "@/utils/local-id"
 
 export function createRuleFromTemplate(rule: AccessRuleForm): AccessRuleForm {
     return {
         ...rule,
-        id: uuidv4(),
+        id: createLocalId("rule"),
     }
 }
 

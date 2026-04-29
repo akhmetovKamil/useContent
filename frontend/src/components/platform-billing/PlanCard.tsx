@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { InfoMetric } from "@/components/ui/info-metric"
-import { formatFileSize, formatUsd } from "@/utils/format"
+import { formatFileSize, formatUsdCents } from "@/utils/format"
 
 export function PlanCard({
     billing,
@@ -32,7 +32,7 @@ export function PlanCard({
                     {isCurrent ? <Badge variant="success">Current</Badge> : null}
                 </div>
                 <CardTitle className="font-[var(--serif)] text-3xl">
-                    {isFree ? "Free" : formatUsd(plan.priceUsdCents)}
+                    {isFree ? "Free" : formatUsdCents(plan.priceUsdCents)}
                     {!isFree ? (
                         <span className="ml-1 font-sans text-sm text-[var(--muted)]">
                             / {plan.billingPeriodDays} days

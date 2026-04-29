@@ -28,11 +28,11 @@ import { Eyebrow, PageSection } from "@/components/ui/page"
 import { Textarea } from "@/components/ui/textarea"
 import {
     ChainPicker,
-    getTokenId,
     TokenAmountInput,
     TokenPicker,
     Web3SummaryPanel,
 } from "@/components/web3/Web3Pickers"
+import { getTokenId } from "@/utils/web3/tokens"
 import {
     useCreateMyAccessPolicyMutation,
     useDeleteMyAccessPolicyMutation,

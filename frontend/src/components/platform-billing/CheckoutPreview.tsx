@@ -27,7 +27,7 @@ import {
 import { queryKeys } from "@/queries/queryKeys"
 import { supportedChainOptions } from "@/utils/config/chains"
 import { getTokenPresets } from "@/utils/config/tokens"
-import { formatFileSize, formatUsd } from "@/utils/format"
+import { formatFileSize, formatUsdCents } from "@/utils/format"
 import { GIB } from "@/utils/platform-billing"
 import { erc20Abi } from "@/utils/web3/erc20"
 import { toAddress } from "@/utils/web3/subscriptions"
@@ -213,14 +213,14 @@ export function CheckoutPreview({
             )}
             <Card className="rounded-[28px]">
                 <CardContent className="grid gap-4 p-5">
-                    <SummaryRow label="Base plan" value={formatUsd(plan.priceUsdCents)} />
+                    <SummaryRow label="Base plan" value={formatUsdCents(plan.priceUsdCents)} />
                     <SummaryRow
                         label="Extra storage"
-                        value={`${extraGb} GB · ${formatUsd(
+                        value={`${extraGb} GB · ${formatUsdCents(
                             extraGb * plan.pricePerExtraGbUsdCents
                         )}`}
                     />
-                    <SummaryRow label="Total estimate" value={formatUsd(monthlyEstimateCents)} />
+                    <SummaryRow label="Total estimate" value={formatUsdCents(monthlyEstimateCents)} />
                     <SummaryRow
                         label="Quota after upgrade"
                         value={formatFileSize(plan.baseStorageBytes + extraGb * GIB)}

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Modal } from "@/components/ui/modal"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
 import { Textarea } from "@/components/ui/textarea"
+import { postEmptyLabels, postTabs } from "@/constants/posts"
 import { useMyAccessPoliciesQuery } from "@/queries/access-policies"
 import {
     useCreateMyPostMutation,
@@ -24,15 +25,8 @@ import {
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useMyProjectsQuery } from "@/queries/projects"
 import { useAuthStore } from "@/stores/auth-store"
-import type { AuthorPostsTab, AuthorPostsTabOption } from "@/types/navigation"
+import type { AuthorPostsTab } from "@/types/navigation"
 import { cn } from "@/utils/cn"
-
-const postTabs: AuthorPostsTabOption[] = [
-    { id: CONTENT_STATUS.PUBLISHED, label: "Published" },
-    { id: "drafts", label: "Drafts" },
-    { id: CONTENT_STATUS.ARCHIVED, label: "Archived" },
-    { id: "promoted", label: "Promoted" },
-]
 
 export function MePostsPage() {
     const token = useAuthStore((state) => state.token)
@@ -187,7 +181,7 @@ export function MePostsPage() {
                         <p className="text-rose-600">{activeListError?.message}</p>
                     ) : (
                         <PostFeed
-                            emptyLabel={getEmptyLabel(activeTab)}
+                            emptyLabel={postEmptyLabels[activeTab]}
                             isAuthorView
                             onArchive={(post) => updatePostStatus(post, CONTENT_STATUS.ARCHIVED)}
                             onDelete={(post) => void deletePostMutation.mutateAsync(post.id)}
@@ -264,17 +258,4 @@ export function MePostsPage() {
             </Modal>
         </section>
     )
-}
-
-function getEmptyLabel(tab: AuthorPostsTab) {
-    if (tab === "drafts") {
-        return "No drafts yet."
-    }
-    if (tab === CONTENT_STATUS.ARCHIVED) {
-        return "Archive is empty."
-    }
-    if (tab === "promoted") {
-        return "No promoted posts yet."
-    }
-    return "No published posts yet."
 }

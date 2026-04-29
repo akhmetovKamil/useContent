@@ -1,6 +1,7 @@
 import { ACCESS_CONDITION_MODE, ACCESS_POLICY_NODE_TYPE } from "@shared/consts"
 import type { AccessPolicyConditionDto, AuthorAccessPolicyDto } from "@shared/types/access"
 
+import { formatDisplayDate } from "@/utils/date"
 import { formatTokenUnits, resolveTokenAssetMetadata } from "@/utils/web3/assets"
 
 export function describeConditionMode(mode: AuthorAccessPolicyDto["conditionMode"]) {
@@ -71,11 +72,7 @@ export function getConditionDescription(condition: AccessPolicyConditionDto) {
 }
 
 export function formatAccessTierDate(value: string) {
-    return new Intl.DateTimeFormat("en", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-    }).format(new Date(value))
+    return formatDisplayDate(value)
 }
 
 function formatPlanPrice(chainId: number, tokenAddress: string, price: string) {

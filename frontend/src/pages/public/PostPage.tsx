@@ -1,6 +1,5 @@
 import type { FeedPostDto } from "@shared/types/posts"
 import { LockKeyhole } from "lucide-react"
-import { v4 as uuidv4 } from "uuid"
 import { useEffect, useMemo } from "react"
 import { Link, useParams } from "react-router-dom"
 
@@ -20,6 +19,7 @@ import {
     useRecordPostViewMutation,
 } from "@/queries/posts"
 import { useAuthStore } from "@/stores/auth-store"
+import { getOrCreateBrowserId } from "@/utils/local-id"
 import { isApiPermissionError } from "@/utils/api/errors"
 
 export function PostPage() {
@@ -147,13 +147,5 @@ function toFeedPost(
 }
 
 function getViewerKey() {
-    const key = "usecontent.viewerKey"
-    const existing = window.localStorage.getItem(key)
-    if (existing) {
-        return existing
-    }
-
-    const next = uuidv4()
-    window.localStorage.setItem(key, next)
-    return next
+    return getOrCreateBrowserId("usecontent.viewerKey")
 }

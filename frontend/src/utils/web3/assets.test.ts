@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest"
 import {
     findTokenPreset,
     formatTokenUnits,
-    formatUsd,
+    formatUsdAmount,
     getExplorerAddressUrl,
     getOpenSeaAssetUrl,
     getTokenProgress,
@@ -86,8 +86,8 @@ describe("web3 asset helpers", () => {
     })
 
     test("formats usd or returns null for invalid values", () => {
-        expect(formatUsd(12.5)).toBe("$12.50")
-        expect(formatUsd(Number.NaN)).toBeNull()
-        expect(formatUsd(undefined)).toBeNull()
+        expect(formatUsdAmount(12.5)).toBe("$12.50")
+        expect(formatUsdAmount(Number.NaN)).toBeNull()
+        expect(formatUsdAmount(undefined)).toBeNull()
     })
 })
