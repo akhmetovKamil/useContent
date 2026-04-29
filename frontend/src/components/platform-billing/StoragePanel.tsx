@@ -1,8 +1,4 @@
-import type {
-    AuthorPlatformBillingDto,
-    AuthorPlatformCleanupPreviewDto,
-    PlatformPlanDto,
-} from "@shared/types/content"
+import type { AuthorPlatformBillingDto, AuthorPlatformCleanupPreviewDto, PlatformPlanDto } from "@shared/types/platform"
 import { CreditCard, HardDrive } from "lucide-react"
 
 import { OverQuotaPanel } from "@/components/platform-billing/OverQuotaPanel"

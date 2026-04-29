@@ -1,4 +1,4 @@
-import type { ContentStatus } from "@shared/types/content"
+import type { ContentStatus } from "@shared/types/posts"
 import type { ExploreFeedSource } from "@/types/navigation"
 
 export interface CursorPageInput {

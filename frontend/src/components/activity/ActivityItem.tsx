@@ -1,5 +1,5 @@
-import type { ActivityDto } from "@shared/types/content"
-import { shortenWalletAddress } from "@shared/utils"
+import type { ActivityDto } from "@shared/types/posts"
+import { shortenWalletAddress } from "@shared/utils/web3"
 import { Link } from "react-router-dom"
 
 import { Button } from "@/components/ui/button"

@@ -1,5 +1,5 @@
 import { CONTENT_STATUS } from "@shared/consts"
-import type { PostDto } from "@shared/types/content"
+import type { PostDto } from "@shared/types/posts"
 import type { QueryClient } from "@tanstack/react-query"
 
 import { invalidateMany } from "@/queries/invalidate"

@@ -1,5 +1,5 @@
 import { SUBSCRIPTION_ENTITLEMENT_STATUS } from "@shared/consts"
-import { shortenWalletAddress } from "@shared/utils"
+import { shortenWalletAddress } from "@shared/utils/web3"
 
 import { ActionCard } from "@/components/ui/action-card"
 import { Badge } from "@/components/ui/badge"

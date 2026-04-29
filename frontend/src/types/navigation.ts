@@ -1,4 +1,4 @@
-import type { FeedSource } from "@shared/types/content"
+import type { FeedSource } from "@shared/types/posts"
 
 export type ExploreFeedSource = Exclude<FeedSource, "author">
 

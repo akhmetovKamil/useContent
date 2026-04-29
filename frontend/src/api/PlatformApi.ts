@@ -1,13 +1,7 @@
-import type {
-    AuthorPlatformBillingDto,
-    AuthorPlatformCleanupPreviewDto,
-    AuthorPlatformCleanupRunDto,
-    ConfirmSubscriptionPaymentInput,
-    ContractDeploymentLookupDto,
-    CreatePlatformSubscriptionPaymentIntentInput,
-    ListPlatformPlansResponseDto,
-    PlatformSubscriptionPaymentIntentDto,
-} from "@shared/types/content"
+import type { AuthorPlatformBillingDto, AuthorPlatformCleanupPreviewDto, AuthorPlatformCleanupRunDto, CreatePlatformSubscriptionPaymentIntentInput, PlatformSubscriptionPaymentIntentDto } from "@shared/types/platform"
+import type { ConfirmSubscriptionPaymentInput } from "@shared/types/subscriptions"
+import type { ContractDeploymentLookupDto } from "@shared/types/contracts"
+import type { ListPlatformPlansResponseDto } from "@shared/types/responses"
 
 import { getData, postData } from "@/utils/api/http"
 import { unwrapResponseKey } from "@/utils/api/response"

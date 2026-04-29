@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useWalletSession } from "@/hooks/useWalletSession"
 import { isSessionExpired, useAuthStore } from "@/stores/auth-store"
-import { shortenWalletAddress } from "@shared/utils"
+import { shortenWalletAddress } from "@shared/utils/web3"
 
 export function WalletStatus() {
     const { connect, connectors, isPending: connectPending } = useConnect()

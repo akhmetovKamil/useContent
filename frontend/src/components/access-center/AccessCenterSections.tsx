@@ -1,4 +1,5 @@
-import type { AccessPolicyPresetDto, SubscriptionPlanDto } from "@shared/types/content"
+import type { AccessPolicyPresetDto } from "@shared/types/access"
+import type { SubscriptionPlanDto } from "@shared/types/subscriptions"
 import { FileText, Plus, ShieldCheck, Sparkles } from "lucide-react"
 
 import { FlowCard } from "@/components/access-center/FlowCard"

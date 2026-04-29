@@ -1,4 +1,4 @@
-import { normalizeAddressLike } from "@shared/utils"
+import { normalizeAddressLike } from "@shared/utils/web3"
 import { useEffect } from "react"
 import { useMutation } from "@tanstack/react-query"
 import { useAccount, useDisconnect, useSignMessage } from "wagmi"

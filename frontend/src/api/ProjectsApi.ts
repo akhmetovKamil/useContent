@@ -1,14 +1,5 @@
-import type {
-    CreateProjectFolderInput,
-    CreateProjectInput,
-    ListProjectsResponseDto,
-    ProjectBundleDto,
-    ProjectDto,
-    ProjectNodeDto,
-    ProjectNodeListDto,
-    UpdateProjectInput,
-    UpdateProjectNodeInput,
-} from "@shared/types/content"
+import type { CreateProjectFolderInput, CreateProjectInput, ProjectBundleDto, ProjectDto, ProjectNodeDto, ProjectNodeListDto, UpdateProjectInput, UpdateProjectNodeInput } from "@shared/types/projects"
+import type { ListProjectsResponseDto } from "@shared/types/responses"
 
 import { downloadBlob } from "@/utils/download-blob"
 import {

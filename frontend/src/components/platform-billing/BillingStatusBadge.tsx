@@ -1,5 +1,5 @@
 import { PLATFORM_BILLING_STATUS } from "@shared/consts"
-import type { AuthorPlatformBillingDto } from "@shared/types/content"
+import type { AuthorPlatformBillingDto } from "@shared/types/platform"
 
 import { StatusPill } from "@/components/ui/status-pill"
 

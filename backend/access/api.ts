@@ -9,10 +9,7 @@ import type {
   ListAuthorAccessPoliciesRequest,
   UpdateAccessPolicyPresetPathRequest,
 } from "./types";
-import type {
-  ListAccessPolicyPresetsResponseDto,
-  ListAuthorAccessPoliciesResponseDto,
-} from "../../shared/types/content";
+import type { ListAccessPolicyPresetsResponseDto, ListAuthorAccessPoliciesResponseDto } from "../../shared/types/responses"
 
 export const listMyAccessPolicyPresets = api(
   { method: "GET", path: "/me/access-policies", expose: true, auth: true },

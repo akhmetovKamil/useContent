@@ -1,7 +1,7 @@
 import { subscriptionManagerAbi } from "@shared/abi/subscription-manager.abi"
 import { PAYMENT_ASSET_CODE, type PaymentAsset } from "@shared/consts"
-import type { UpsertSubscriptionPlanInput } from "@shared/types/content"
-import { isSameAddressLike, isZeroAddress, normalizeAddressLike } from "@shared/utils"
+import type { UpsertSubscriptionPlanInput } from "@shared/types/subscriptions"
+import { isSameAddressLike, isZeroAddress, normalizeAddressLike } from "@shared/utils/web3"
 import { useState } from "react"
 import { useAccount, usePublicClient, useWriteContract } from "wagmi"
 

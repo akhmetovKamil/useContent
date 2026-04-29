@@ -5,6 +5,10 @@ import {
 } from "../consts";
 import type { ExplorerAddressInput, OpenSeaAssetInput } from "../types/web3";
 
+export function isPresent<T>(value: T | null | undefined): value is T {
+  return value !== null && value !== undefined;
+}
+
 export function normalizeAddressLike(address: string): string {
   return address.trim().toLowerCase();
 }

@@ -7,7 +7,7 @@ import {
     optimismSepolia,
     sepolia,
 } from "wagmi/chains"
-import { getEvmChainMetadata } from "@shared/utils"
+import { getEvmChainMetadata } from "@shared/utils/web3"
 import type { ChainDisplayConfig } from "@/types/web3"
 
 export const supportedChains = [

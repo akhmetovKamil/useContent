@@ -1,5 +1,5 @@
 import type { ObjectId } from "mongodb";
-import type { ActivityType } from "../../shared/types/content";
+import type { ActivityType } from "../../shared/consts"
 
 export interface ActivityDoc {
   _id: ObjectId;

@@ -1,4 +1,4 @@
-import type { FeedPostDto, PostDto } from "@shared/types/content"
+import type { FeedPostDto, PostDto } from "@shared/types/posts"
 
 export type FeedPost = PostDto | FeedPostDto
 

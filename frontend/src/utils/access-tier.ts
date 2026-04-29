@@ -1,5 +1,5 @@
 import { ACCESS_CONDITION_MODE, ACCESS_POLICY_NODE_TYPE } from "@shared/consts"
-import type { AccessPolicyConditionDto, AuthorAccessPolicyDto } from "@shared/types/content"
+import type { AccessPolicyConditionDto, AuthorAccessPolicyDto } from "@shared/types/access"
 
 import { formatTokenUnits, resolveTokenAssetMetadata } from "@/utils/web3/assets"
 

@@ -1,6 +1,6 @@
 import { CONTENT_STATUS, POLICY_MODE } from "@shared/consts"
 import type { PolicyMode } from "@shared/types/access"
-import type { ContentStatus } from "@shared/types/content"
+import type { ContentStatus } from "@shared/types/posts"
 import { useState } from "react"
 
 import { Badge } from "@/components/ui/badge"

@@ -1,4 +1,4 @@
-import type { AuthorCatalogItemDto } from "@shared/types/content"
+import type { AuthorCatalogItemDto } from "@shared/types/profile"
 import { ArrowUpRight, Search, UsersRound } from "lucide-react"
 import { Link } from "react-router-dom"
 

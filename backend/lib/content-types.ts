@@ -1,61 +1,16 @@
-import type {
-  AccessPolicyConditionDto,
-  AccessPolicyPresetDto,
-  ActivityDto,
-  AuthorAccessPolicyDto,
-  AuthorCatalogItemDto,
-  AuthorPlatformBillingDto,
-  AuthorPlatformCleanupItemDto,
-  AuthorPlatformCleanupPreviewDto,
-  AuthorPlatformCleanupRunDto,
-  AuthorProfileDto,
-  AuthorStorageUsageDto,
-  AuthorSubscriberDto,
-  ConfirmSubscriptionPaymentInput,
-  ContractDeploymentDto,
-  ContractDeploymentLookupDto,
-  CreateAccessPolicyPresetInput,
-  CreateAuthorProfileInput,
-  CreatePlatformSubscriptionPaymentIntentInput,
-  CreatePostCommentInput,
-  CreatePostInput,
-  CreatePostReportInput,
-  CreateProjectFolderInput,
-  CreateProjectInput,
-  CreateSubscriptionPaymentIntentInput,
-  FeedPostDto,
-  FeedProjectDto,
-  PlatformFeature,
-  PlatformPlanDto,
-  PlatformSubscriptionPaymentIntentDto,
-  PostAttachmentDto,
-  PostCommentDto,
-  PostDto,
-  PostReportDto,
-  ProjectBundleDto,
-  ProjectDto,
-  ProjectNodeDto,
-  ProjectNodeListDto,
-  ReaderSubscriptionDto,
-  RecordPostViewInput,
-  SubscriptionEntitlementDto,
-  SubscriptionPaymentIntentDto,
-  SubscriptionPlanDto,
-  UpdateAccessPolicyPresetInput,
-  UpdateAuthorProfileInput,
-  UpdateMyProfileInput,
-  UpdatePostInput,
-  UpdateProjectInput,
-  UpdateProjectNodeInput,
-  UpsertContractDeploymentInput,
-  UpsertSubscriptionPlanInput,
-  UserProfileDto,
-} from "../../shared/types/content";
+import type { AccessPolicyConditionDto, AccessPolicyPresetDto, AuthorAccessPolicyDto, CreateAccessPolicyPresetInput, UpdateAccessPolicyPresetInput } from "../../shared/types/access"
+import type { ActivityDto, CreatePostCommentInput, CreatePostInput, CreatePostReportInput, FeedPostDto, PostAttachmentDto, PostCommentDto, PostDto, PostReportDto, RecordPostViewInput, UpdatePostInput } from "../../shared/types/posts"
+import type { AuthorCatalogItemDto, AuthorProfileDto, AuthorStorageUsageDto, CreateAuthorProfileInput, UpdateAuthorProfileInput, UpdateMyProfileInput, UserProfileDto } from "../../shared/types/profile"
+import type { AuthorPlatformBillingDto, AuthorPlatformCleanupItemDto, AuthorPlatformCleanupPreviewDto, AuthorPlatformCleanupRunDto, CreatePlatformSubscriptionPaymentIntentInput, PlatformPlanDto, PlatformSubscriptionPaymentIntentDto } from "../../shared/types/platform"
+import type { AuthorSubscriberDto, ConfirmSubscriptionPaymentInput, CreateSubscriptionPaymentIntentInput, ReaderSubscriptionDto, SubscriptionEntitlementDto, SubscriptionPaymentIntentDto, SubscriptionPlanDto, UpsertSubscriptionPlanInput } from "../../shared/types/subscriptions"
+import type { ContractDeploymentDto, ContractDeploymentLookupDto, UpsertContractDeploymentInput } from "../../shared/types/contracts"
+import type { CreateProjectFolderInput, CreateProjectInput, FeedProjectDto, ProjectBundleDto, ProjectDto, ProjectNodeDto, ProjectNodeListDto, UpdateProjectInput, UpdateProjectNodeInput } from "../../shared/types/projects"
+import type { PlatformFeature } from "../../shared/consts"
 
 export type {
   PlatformBillingStatus,
   PlatformFeature,
-} from "../../shared/types/content";
+} from "../../shared/consts";
 
 export type { AccessPolicyPresetDoc } from "../access/doc-types";
 export type { ActivityDoc } from "../activity/doc-types";

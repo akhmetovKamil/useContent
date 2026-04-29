@@ -16,7 +16,7 @@ import type {
   PlatformPlanResponse,
   PlatformSubscriptionPaymentIntentResponse,
 } from "./types";
-import type { ListPlatformPlansResponseDto } from "../../shared/types/content";
+import type { ListPlatformPlansResponseDto } from "../../shared/types/responses"
 
 export const listPlatformPlans = api(
   { method: "GET", path: "/platform/plans", expose: true },

@@ -1,6 +1,6 @@
 import type { Header } from "encore.dev/api";
 import type { ContentStatus } from "../../shared/consts";
-import type { CursorPaginationInput } from "../../shared/types/content";
+import type { CursorPaginationInput } from "../../shared/types/common";
 import type {
   CreatePostCommentRequest,
   CreatePostReportRequest,
@@ -8,7 +8,14 @@ import type {
   UpdatePostRequest,
 } from "../lib/content-types";
 
-export * from "../lib/content-types";
+export type {
+  CreatePostCommentRequest,
+  CreatePostRequest,
+  PostCommentResponse,
+  PostReportResponse,
+  PostResponse,
+  UpdatePostRequest,
+} from "../lib/content-types";
 
 export interface DeletePostRequest {
   postId: string;

@@ -1,5 +1,5 @@
 import { PLATFORM_BILLING_STATUS } from "@shared/consts"
-import type { AuthorPlatformBillingDto } from "@shared/types/content"
+import type { AuthorPlatformBillingDto } from "@shared/types/platform"
 import { AlertTriangle, Clock } from "lucide-react"
 
 import { Card, CardContent } from "@/components/ui/card"

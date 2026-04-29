@@ -1,11 +1,5 @@
 import { PAYMENT_ASSET, ZERO_ADDRESS } from "@shared/consts"
-import {
-    buildExplorerAddressUrl,
-    buildOpenSeaAssetUrl,
-    isNativeTokenAddress,
-    isSameAddressLike,
-    normalizeAddressLike,
-} from "@shared/utils"
+import { buildExplorerAddressUrl, buildOpenSeaAssetUrl, isNativeTokenAddress, isSameAddressLike, normalizeAddressLike } from "@shared/utils/web3"
 import { formatUnits } from "viem"
 
 import type { TokenPreset } from "@/types/web3"

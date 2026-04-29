@@ -1,8 +1,5 @@
 import { APIError } from "encore.dev/api";
-import {
-  normalizeAddressLike,
-  shortenWalletAddress,
-} from "../../../shared/utils";
+import { normalizeAddressLike } from "../../../shared/utils/web3";
 
 export function normalizeWallet(walletAddress: string): string {
   const value = normalizeAddressLike(walletAddress);
@@ -10,8 +7,4 @@ export function normalizeWallet(walletAddress: string): string {
     throw APIError.invalidArgument("wallet address is required");
   }
   return value;
-}
-
-export function shortenWallet(walletAddress: string): string {
-  return shortenWalletAddress(walletAddress);
 }

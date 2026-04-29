@@ -1,5 +1,6 @@
 import { PAYMENT_ASSET, ZERO_ADDRESS } from "@shared/consts"
-import type { AccessPolicyPresetDto, SubscriptionPlanDto } from "@shared/types/content"
+import type { AccessPolicyPresetDto } from "@shared/types/access"
+import type { SubscriptionPlanDto } from "@shared/types/subscriptions"
 import { Plus } from "lucide-react"
 import { useEffect, useState } from "react"
 import { usePublicClient } from "wagmi"

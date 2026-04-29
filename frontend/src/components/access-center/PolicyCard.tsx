@@ -1,4 +1,4 @@
-import type { AccessPolicyPresetDto } from "@shared/types/content"
+import type { AccessPolicyPresetDto } from "@shared/types/access"
 import { ArrowUpRight } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"

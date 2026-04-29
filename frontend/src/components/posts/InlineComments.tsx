@@ -1,4 +1,4 @@
-import type { PostCommentDto } from "@shared/types/content"
+import type { PostCommentDto } from "@shared/types/posts"
 import { SendHorizontal } from "lucide-react"
 import type { FormEvent } from "react"
 import { useMemo, useState } from "react"

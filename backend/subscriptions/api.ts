@@ -27,13 +27,7 @@ import type {
   UpsertContractDeploymentRegistryRequest,
   UpsertSubscriptionPlanRequest,
 } from "./types";
-import type {
-  ListAuthorSubscribersResponseDto,
-  ListEntitlementsResponseDto,
-  ListReaderSubscriptionsResponseDto,
-  ListSubscriptionPaymentIntentsResponseDto,
-  ListSubscriptionPlansResponseDto,
-} from "../../shared/types/content";
+import type { ListAuthorSubscribersResponseDto, ListEntitlementsResponseDto, ListReaderSubscriptionsResponseDto, ListSubscriptionPaymentIntentsResponseDto, ListSubscriptionPlansResponseDto } from "../../shared/types/responses"
 
 const deploymentRegistryTokenSecret = secret("DeploymentRegistryToken");
 

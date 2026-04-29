@@ -5,11 +5,7 @@ import type {
   PlatformBillingStatus,
   PlatformFeature,
 } from "../../shared/consts";
-import type {
-  AuthorPlatformCleanupItemDto,
-  AuthorPlatformCleanupPreviewDto,
-  PlatformPlanDto,
-} from "../../shared/types/content";
+import type { AuthorPlatformCleanupItemDto, AuthorPlatformCleanupPreviewDto, PlatformPlanDto } from "../../shared/types/platform"
 
 export interface AuthorStorageUsageStats {
   postsBytes: number;

@@ -7,6 +7,7 @@ import {
   PAYMENT_ASSET_CODE,
   type NftStandard,
 } from "../../shared/consts";
+import { normalizeHexString } from "../../shared/utils/web3";
 import type { AccessPolicy, AccessPolicyNode } from "../domain/access";
 import {
   erc1155ReadAbi,
@@ -15,11 +16,7 @@ import {
   platformSubscriptionManagerInterface,
   subscriptionManagerInterface,
 } from "./abi";
-import {
-  normalizeAddress,
-  normalizeBytes32,
-  tryNormalizeAddress,
-} from "./address";
+import { normalizeAddress, tryNormalizeAddress } from "./address";
 import { getProvider } from "./provider";
 import type {
   OnChainAccessGrants,
@@ -95,7 +92,7 @@ export async function verifyPlanRegistration(
       (log) =>
         log &&
         (log.name === "PlanRegistered" || log.name === "PlanUpdated") &&
-        normalizeBytes32(String(log.args.planKey)) === input.planKey,
+        normalizeHexString(String(log.args.planKey)) === input.planKey,
     );
 
   if (!event) {
@@ -155,7 +152,7 @@ export async function verifySubscriptionPayment(
       (log) =>
         log &&
         log.name === "SubscriptionPaid" &&
-        normalizeBytes32(String(log.args.planKey)) === input.planKey,
+        normalizeHexString(String(log.args.planKey)) === input.planKey,
     );
 
   if (!event) {
@@ -225,7 +222,7 @@ export async function verifyPlatformSubscriptionPayment(
       (log) =>
         log &&
         log.name === "PlatformSubscriptionPaid" &&
-        normalizeBytes32(String(log.args.tierKey)) === input.tierKey,
+        normalizeHexString(String(log.args.tierKey)) === input.tierKey,
     );
 
   if (!event) {

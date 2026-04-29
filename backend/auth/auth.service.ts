@@ -3,7 +3,7 @@ import { secret } from "encore.dev/config";
 import { ethers } from "ethers";
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import { randomBytes } from "node:crypto";
-import { normalizeAddressLike } from "../../shared/utils";
+import { normalizeAddressLike } from "../../shared/utils/web3";
 import { upsertNonce, findNonce, deleteNonce } from "./repository";
 import type { AuthUser } from "./types";
 

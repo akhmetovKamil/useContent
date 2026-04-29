@@ -1,4 +1,4 @@
-import type { AuthorPlatformBillingDto, PlatformPlanDto } from "@shared/types/content"
+import type { AuthorPlatformBillingDto, PlatformPlanDto } from "@shared/types/platform"
 
 import { FeatureRow } from "@/components/platform-billing/FeatureRow"
 import { Badge } from "@/components/ui/badge"

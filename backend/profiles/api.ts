@@ -16,7 +16,7 @@ import type {
   UpdateMyProfileRequest,
   UserProfileResponse,
 } from "./types";
-import type { ListAuthorsResponseDto } from "../../shared/types/content";
+import type { ListAuthorsResponseDto } from "../../shared/types/responses"
 
 export const getMe = api(
   { method: "GET", path: "/me", expose: true, auth: true },

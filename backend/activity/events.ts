@@ -4,7 +4,8 @@ import {
   SUBSCRIPTION_ENTITLEMENT_STATUS,
   type ActivityType,
 } from "../../shared/consts";
-import { normalizeWallet, shortenWallet } from "../lib/utils/wallet";
+import { shortenWalletAddress } from "../../shared/utils/web3";
+import { normalizeWallet } from "../lib/utils/wallet";
 import type { PostDoc } from "../posts/doc-types";
 import type { AuthorProfileDoc } from "../profiles/doc-types";
 import * as profilesRepo from "../profiles/repository";
@@ -28,7 +29,7 @@ export async function recordPostLikedActivity(
     actorWallet,
     author: context.author,
     dedupeKey: `post_liked:${post._id.toHexString()}:${normalizeWallet(actorWallet)}`,
-    message: `${shortenWallet(actorWallet)} liked "${post.title}".`,
+    message: `${shortenWalletAddress(actorWallet)} liked "${post.title}".`,
     post,
     targetWallet: context.ownerWallet,
     type: ACTIVITY_TYPE.POST_LIKED,
@@ -47,7 +48,7 @@ export async function recordPostCommentedActivity(
     actorWallet,
     author: context.author,
     dedupeKey: null,
-    message: `${shortenWallet(actorWallet)} commented on "${post.title}".`,
+    message: `${shortenWalletAddress(actorWallet)} commented on "${post.title}".`,
     post,
     targetWallet: context.ownerWallet,
     type: ACTIVITY_TYPE.POST_COMMENTED,
@@ -108,7 +109,7 @@ export async function recordNewSubscriptionActivity({
     actorWallet: subscriberWallet,
     author: context.author,
     dedupeKey: `new_subscription:${authorId.toHexString()}:${normalizeWallet(subscriberWallet)}:${planCode}`,
-    message: `${shortenWallet(subscriberWallet)} subscribed to ${planCode}.`,
+    message: `${shortenWalletAddress(subscriberWallet)} subscribed to ${planCode}.`,
     post: null,
     targetWallet: context.ownerWallet,
     type: ACTIVITY_TYPE.NEW_SUBSCRIPTION,

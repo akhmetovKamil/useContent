@@ -1,5 +1,5 @@
 import { PLATFORM_BILLING_STATUS } from "@shared/consts"
-import type { AuthorPlatformCleanupPreviewDto } from "@shared/types/content"
+import type { AuthorPlatformCleanupPreviewDto } from "@shared/types/platform"
 import { AlertTriangle } from "lucide-react"
 
 import { SummaryRow } from "@/components/platform-billing/SummaryRow"

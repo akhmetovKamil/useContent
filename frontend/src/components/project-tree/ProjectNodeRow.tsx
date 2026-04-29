@@ -1,5 +1,5 @@
 import { CONTENT_VISIBILITY } from "@shared/consts"
-import type { ProjectNodeDto } from "@shared/types/content"
+import type { ProjectNodeDto } from "@shared/types/projects"
 import { Download, Eye, FileText, Folder, PackageOpen, Pencil, Trash2 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"

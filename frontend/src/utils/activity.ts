@@ -1,4 +1,4 @@
-import type { ActivityDto } from "@shared/types/content"
+import type { ActivityDto } from "@shared/types/posts"
 import { Bell, Heart, MessageCircle, ReceiptText, Send } from "lucide-react"
 
 export function getActivityIcon(type: ActivityDto["type"]) {

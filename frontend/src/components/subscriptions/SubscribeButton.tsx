@@ -1,6 +1,6 @@
 import { subscriptionManagerAbi } from "@shared/abi/subscription-manager.abi"
 import { PAYMENT_ASSET } from "@shared/consts"
-import type { SubscriptionPlanDto } from "@shared/types/content"
+import type { SubscriptionPlanDto } from "@shared/types/subscriptions"
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useAccount, usePublicClient, useWriteContract } from "wagmi"

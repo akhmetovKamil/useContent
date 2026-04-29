@@ -1,4 +1,4 @@
-import type { PostReportReason } from "@shared/types/content"
+import type { PostReportReason } from "@shared/types/posts"
 
 import { Button } from "@/components/ui/button"
 import { Modal } from "@/components/ui/modal"

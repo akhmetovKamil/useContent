@@ -1,4 +1,4 @@
-import type { PostAttachmentDto } from "@shared/types/content"
+import type { PostAttachmentDto } from "@shared/types/posts"
 import { Download, FileText, Music, Play } from "lucide-react"
 import { useEffect, useState } from "react"
 

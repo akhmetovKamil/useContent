@@ -6,7 +6,15 @@ import type {
   UpdateProjectRequest,
 } from "../lib/content-types";
 
-export * from "../lib/content-types";
+export type {
+  CreateProjectFolderRequest,
+  CreateProjectRequest,
+  FeedProjectResponse,
+  ProjectBundleResponse,
+  ProjectNodeListResponse,
+  ProjectNodeResponse,
+  ProjectResponse,
+} from "../lib/content-types";
 
 export interface ListMyProjectsRequest {
   status?: ContentStatus;

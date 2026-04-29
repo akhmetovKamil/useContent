@@ -1,15 +1,7 @@
-import type {
-    AuthorProfileDto,
-    CreateAuthorProfileInput,
-    FeedPostDto,
-    ListAuthorSubscribersResponseDto,
-    ListEntitlementsResponseDto,
-    ListReaderSubscriptionsResponseDto,
-    PaginatedResponse,
-    UpdateAuthorProfileInput,
-    UpdateMyProfileInput,
-    UserProfileDto,
-} from "@shared/types/content"
+import type { AuthorProfileDto, CreateAuthorProfileInput, UpdateAuthorProfileInput, UpdateMyProfileInput, UserProfileDto } from "@shared/types/profile"
+import type { FeedPostDto } from "@shared/types/posts"
+import type { ListAuthorSubscribersResponseDto, ListEntitlementsResponseDto, ListReaderSubscriptionsResponseDto } from "@shared/types/responses"
+import type { PaginatedResponse } from "@shared/types/common"
 
 import {
     deleteData,

@@ -1,6 +1,6 @@
 import { api } from "encore.dev/api";
 import { getRequiredWallet } from "../lib/api-helpers";
-import type { ActivityDto } from "../../shared/types/content";
+import type { ActivityDto } from "../../shared/types/posts"
 import type { PaginatedResponse } from "../../shared/types/common";
 import type { ActivityPaginationRequest } from "./types";
 import * as service from "./service";

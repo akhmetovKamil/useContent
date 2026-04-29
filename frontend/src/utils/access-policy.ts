@@ -14,16 +14,8 @@ import type {
     PolicyMode,
     TokenBalancePolicyNode,
 } from "@shared/types/access"
-import type {
-    AccessPolicyInput,
-    AccessPolicyInputAndNode,
-    AccessPolicyInputNftOwnershipNode,
-    AccessPolicyInputNode,
-    AccessPolicyInputOrNode,
-    AccessPolicyInputSubscriptionNode,
-    AccessPolicyInputTokenBalanceNode,
-} from "@shared/types/content"
-import { normalizeAddressLike } from "@shared/utils"
+import type { AccessPolicyInput, AccessPolicyInputAndNode, AccessPolicyInputNftOwnershipNode, AccessPolicyInputNode, AccessPolicyInputOrNode, AccessPolicyInputSubscriptionNode, AccessPolicyInputTokenBalanceNode } from "@shared/types/access"
+import { normalizeAddressLike } from "@shared/utils/web3"
 import { v4 as uuidv4 } from "uuid"
 
 export type { AccessComposer } from "@shared/consts"

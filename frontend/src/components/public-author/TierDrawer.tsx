@@ -1,4 +1,4 @@
-import type { AuthorAccessPolicyDto } from "@shared/types/content"
+import type { AuthorAccessPolicyDto } from "@shared/types/access"
 import { UsersRound } from "lucide-react"
 import { Link } from "react-router-dom"
 

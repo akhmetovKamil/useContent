@@ -1,5 +1,5 @@
 import { PAYMENT_ASSET, type PaymentAsset } from "@shared/consts"
-import { isSameAddressLike } from "@shared/utils"
+import { isSameAddressLike } from "@shared/utils/web3"
 import { formatUnits, parseUnits } from "viem"
 
 import { getTokenPresets } from "@/utils/config/tokens"

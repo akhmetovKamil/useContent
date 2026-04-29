@@ -1,4 +1,4 @@
-import type { WalletAddress } from "../../shared/types/content";
+import type { WalletAddress } from "../../shared/types/common"
 
 export interface NonceDoc {
   address: WalletAddress;

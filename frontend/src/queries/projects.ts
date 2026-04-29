@@ -1,10 +1,4 @@
-import type {
-    CreateProjectFolderInput,
-    CreateProjectInput,
-    ProjectDto,
-    UpdateProjectInput,
-    UpdateProjectNodeInput,
-} from "@shared/types/content"
+import type { CreateProjectFolderInput, CreateProjectInput, ProjectDto, UpdateProjectInput, UpdateProjectNodeInput } from "@shared/types/projects"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { authorsApi } from "@/api/AuthorsApi"

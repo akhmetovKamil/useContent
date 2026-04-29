@@ -5,7 +5,16 @@ import type {
   UpsertContractDeploymentRequest,
 } from "../lib/content-types";
 
-export * from "../lib/content-types";
+export type {
+  AuthorSubscriberResponse,
+  ContractDeploymentLookupResponse,
+  ContractDeploymentResponse,
+  ReaderSubscriptionResponse,
+  SubscriptionEntitlementResponse,
+  SubscriptionPaymentIntentResponse,
+  SubscriptionPlanResponse,
+  UpsertSubscriptionPlanRequest,
+} from "../lib/content-types";
 
 export interface ContractDeploymentChainRequest {
   chainId: string;

@@ -1,5 +1,5 @@
 import { CONTENT_STATUS } from "@shared/consts"
-import type { PostDto } from "@shared/types/content"
+import type { PostDto } from "@shared/types/posts"
 import { useState } from "react"
 import { Link } from "react-router-dom"
 

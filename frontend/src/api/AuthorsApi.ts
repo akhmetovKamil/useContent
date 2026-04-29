@@ -1,12 +1,7 @@
-import type {
-    AuthorProfileDto,
-    FeedPostDto,
-    ListAuthorAccessPoliciesResponseDto,
-    ListAuthorProjectsResponseDto,
-    ListAuthorsResponseDto,
-    ListSubscriptionPlansResponseDto,
-    PaginatedResponse,
-} from "@shared/types/content"
+import type { AuthorProfileDto } from "@shared/types/profile"
+import type { FeedPostDto } from "@shared/types/posts"
+import type { ListAuthorAccessPoliciesResponseDto, ListAuthorProjectsResponseDto, ListAuthorsResponseDto, ListSubscriptionPlansResponseDto } from "@shared/types/responses"
+import type { PaginatedResponse } from "@shared/types/common"
 
 import { getData } from "@/utils/api/http"
 import { unwrapResponseKey } from "@/utils/api/response"

@@ -33,10 +33,7 @@ import type {
   UpdateProjectNodePathRequest,
   UpdateProjectPathRequest,
 } from "./types";
-import type {
-  ListAuthorProjectsResponseDto,
-  ListProjectsResponseDto,
-} from "../../shared/types/content";
+import type { ListAuthorProjectsResponseDto, ListProjectsResponseDto } from "../../shared/types/responses"
 
 export const createMyProject = api(
   { method: "POST", path: "/me/projects", expose: true, auth: true },

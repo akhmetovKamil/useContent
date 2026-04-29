@@ -1,6 +1,6 @@
 import { CONTENT_STATUS, POLICY_MODE } from "@shared/consts"
 import type { PolicyMode } from "@shared/types/access"
-import type { ContentStatus, CreatePostInput } from "@shared/types/content"
+import type { ContentStatus, CreatePostInput } from "@shared/types/posts"
 import { FolderKanban, ImagePlus, X } from "lucide-react"
 import type { DragEvent } from "react"
 import { useEffect, useMemo, useRef, useState } from "react"

@@ -1,4 +1,4 @@
-import type { ProjectNodeDto } from "@shared/types/content"
+import type { ProjectNodeDto } from "@shared/types/projects"
 
 import { Button } from "@/components/ui/button"
 

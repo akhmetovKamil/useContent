@@ -1,4 +1,4 @@
-import type { FeedPostDto } from "@shared/types/content"
+import type { FeedPostDto } from "@shared/types/posts"
 import { LockKeyhole } from "lucide-react"
 import { v4 as uuidv4 } from "uuid"
 import { useEffect, useMemo } from "react"

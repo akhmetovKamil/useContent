@@ -1,11 +1,5 @@
 import { CONTENT_STATUS } from "@shared/consts"
-import type {
-    CreatePostCommentInput,
-    CreatePostInput,
-    CreatePostReportInput,
-    PostDto,
-    UpdatePostInput,
-} from "@shared/types/content"
+import type { CreatePostCommentInput, CreatePostInput, CreatePostReportInput, PostDto, UpdatePostInput } from "@shared/types/posts"
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { authorsApi } from "@/api/AuthorsApi"

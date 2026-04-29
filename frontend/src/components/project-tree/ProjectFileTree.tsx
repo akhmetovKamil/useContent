@@ -1,5 +1,5 @@
 import { CONTENT_VISIBILITY } from "@shared/consts"
-import type { ProjectNodeDto } from "@shared/types/content"
+import type { ProjectNodeDto } from "@shared/types/projects"
 import { PackageOpen } from "lucide-react"
 import { useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"

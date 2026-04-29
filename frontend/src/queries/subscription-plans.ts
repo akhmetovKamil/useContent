@@ -1,8 +1,4 @@
-import type {
-    ConfirmSubscriptionPaymentInput,
-    CreateSubscriptionPaymentIntentInput,
-    UpsertSubscriptionPlanInput,
-} from "@shared/types/content"
+import type { ConfirmSubscriptionPaymentInput, CreateSubscriptionPaymentIntentInput, UpsertSubscriptionPlanInput } from "@shared/types/subscriptions"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { authorsApi } from "@/api/AuthorsApi"

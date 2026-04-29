@@ -17,7 +17,7 @@ import {
   type NftStandard,
   type PolicyMode,
 } from "../../shared/consts";
-import { isSameAddressLike } from "../../shared/utils";
+import { isSameAddressLike } from "../../shared/utils/web3";
 
 import {
   ACCESS_POLICY_VERSION,

@@ -1,4 +1,4 @@
-import type { PaginatedResponse } from "@shared/types/content"
+import type { PaginatedResponse } from "@shared/types/common"
 import type { InfiniteData, UseInfiniteQueryResult } from "@tanstack/react-query"
 
 export type InfiniteQueryWithItems<TItem, TError = Error> = UseInfiniteQueryResult<

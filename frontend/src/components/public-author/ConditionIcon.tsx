@@ -1,5 +1,5 @@
 import { ACCESS_POLICY_NODE_TYPE } from "@shared/consts"
-import type { AccessPolicyConditionDto } from "@shared/types/content"
+import type { AccessPolicyConditionDto } from "@shared/types/access"
 import { CheckCircle2, Gem, LockKeyhole, WalletCards } from "lucide-react"
 
 export function ConditionIcon({ condition }: { condition: AccessPolicyConditionDto }) {

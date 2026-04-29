@@ -1,4 +1,5 @@
-import type { ActivityDto, PaginatedResponse } from "@shared/types/content"
+import type { ActivityDto } from "@shared/types/posts"
+import type { PaginatedResponse } from "@shared/types/common"
 import { getData } from "@/utils/api/http"
 
 class ActivityApi {

@@ -1,4 +1,4 @@
-import type { FeedPostDto } from "@shared/types/content"
+import type { FeedPostDto } from "@shared/types/posts"
 import { Search } from "lucide-react"
 import type { RefObject } from "react"
 

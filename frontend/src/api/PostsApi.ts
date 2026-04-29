@@ -1,18 +1,5 @@
-import type {
-    CreatePostCommentInput,
-    CreatePostReportInput,
-    CreatePostInput,
-    ListPostCommentsResponseDto,
-    ListPostsResponseDto,
-    PostAttachmentDto,
-    PostCommentDto,
-    PostReportDto,
-    PostDto,
-    RecordPostViewResponseDto,
-    RecordPostViewInput,
-    TogglePostLikeResponseDto,
-    UpdatePostInput,
-} from "@shared/types/content"
+import type { CreatePostCommentInput, CreatePostReportInput, CreatePostInput, PostAttachmentDto, PostCommentDto, PostReportDto, PostDto, RecordPostViewInput, UpdatePostInput } from "@shared/types/posts"
+import type { ListPostCommentsResponseDto, ListPostsResponseDto, RecordPostViewResponseDto, TogglePostLikeResponseDto } from "@shared/types/responses"
 
 import { downloadBlob } from "@/utils/download-blob"
 import {

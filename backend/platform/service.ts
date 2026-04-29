@@ -11,6 +11,7 @@ import {
   PLATFORM_PLAN_CODE,
   type PlatformBillingStatus,
 } from "../../shared/consts";
+import { shortenWalletAddress } from "../../shared/utils/web3";
 import * as accessRepo from "../access/repository";
 import * as contractDeploymentsRepo from "../contracts/repository";
 import {
@@ -24,7 +25,6 @@ import {
   normalizeUsername,
   normalizeWallet,
   parseObjectId,
-  shortenWallet,
   toAuthorProfileResponse,
   toAuthorStorageUsageResponse,
 } from "../lib/content-common";
@@ -114,7 +114,7 @@ export async function getOrCreateUserByWallet(
   const now = new Date();
   return repo.createUser({
     username: null,
-    displayName: shortenWallet(normalizedWallet),
+    displayName: shortenWalletAddress(normalizedWallet),
     bio: "",
     avatarFileId: null,
     primaryWallet: normalizedWallet,

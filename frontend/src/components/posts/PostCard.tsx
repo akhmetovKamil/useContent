@@ -1,4 +1,4 @@
-import type { PostAttachmentDto, PostReportReason } from "@shared/types/content"
+import type { PostAttachmentDto, PostReportReason } from "@shared/types/posts"
 import { Flag } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"

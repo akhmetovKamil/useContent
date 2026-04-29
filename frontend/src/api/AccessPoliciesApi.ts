@@ -1,9 +1,5 @@
-import type {
-    AccessPolicyPresetDto,
-    CreateAccessPolicyPresetInput,
-    ListAccessPolicyPresetsResponseDto,
-    UpdateAccessPolicyPresetInput,
-} from "@shared/types/content"
+import type { AccessPolicyPresetDto, CreateAccessPolicyPresetInput, UpdateAccessPolicyPresetInput } from "@shared/types/access"
+import type { ListAccessPolicyPresetsResponseDto } from "@shared/types/responses"
 
 import { deleteData, getData, patchData, postData } from "@/utils/api/http"
 import { unwrapResponseKey } from "@/utils/api/response"

@@ -1,4 +1,4 @@
-import type { FeedProjectDto, ProjectDto } from "@shared/types/content"
+import type { FeedProjectDto, ProjectDto } from "@shared/types/projects"
 import { FileText, FolderKanban, HardDrive, LockKeyhole } from "lucide-react"
 import { Link } from "react-router-dom"
 

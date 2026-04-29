@@ -9,7 +9,7 @@ import type {
   UserRole,
   UserWalletKind,
 } from "../../shared/consts";
-import type { WalletAddress } from "../../shared/types/content";
+import type { WalletAddress } from "../../shared/types/common"
 import type { AccessPolicy, PolicyMode } from "./access";
 
 export interface UserWallet {

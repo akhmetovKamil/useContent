@@ -1,4 +1,4 @@
-import type { SubscriptionPlanDto } from "@shared/types/content"
+import type { SubscriptionPlanDto } from "@shared/types/subscriptions"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"

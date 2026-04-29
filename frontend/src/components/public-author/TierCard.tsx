@@ -1,4 +1,4 @@
-import type { AuthorAccessPolicyDto } from "@shared/types/content"
+import type { AuthorAccessPolicyDto } from "@shared/types/access"
 import { ShieldCheck, UsersRound } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"

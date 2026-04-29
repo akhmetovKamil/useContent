@@ -1,4 +1,4 @@
-import type { ProjectNodeDto } from "@shared/types/content"
+import type { ProjectNodeDto } from "@shared/types/projects"
 import { Download, FileText } from "lucide-react"
 import { useEffect, useState } from "react"
 

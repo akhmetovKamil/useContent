@@ -1,5 +1,5 @@
 import { ACCESS_POLICY_NODE_TYPE } from "@shared/consts"
-import type { AccessPolicyConditionDto } from "@shared/types/content"
+import type { AccessPolicyConditionDto } from "@shared/types/access"
 
 import { ConditionIcon } from "@/components/public-author/ConditionIcon"
 import { SubscribeButton } from "@/components/subscriptions/SubscribeButton"

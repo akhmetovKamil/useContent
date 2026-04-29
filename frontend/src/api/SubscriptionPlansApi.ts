@@ -1,12 +1,6 @@
-import type {
-    ConfirmSubscriptionPaymentInput,
-    ContractDeploymentLookupDto,
-    CreateSubscriptionPaymentIntentInput,
-    ListSubscriptionPlansResponseDto,
-    SubscriptionPaymentIntentDto,
-    SubscriptionPlanDto,
-    UpsertSubscriptionPlanInput,
-} from "@shared/types/content"
+import type { ConfirmSubscriptionPaymentInput, CreateSubscriptionPaymentIntentInput, SubscriptionPaymentIntentDto, SubscriptionPlanDto, UpsertSubscriptionPlanInput } from "@shared/types/subscriptions"
+import type { ContractDeploymentLookupDto } from "@shared/types/contracts"
+import type { ListSubscriptionPlansResponseDto } from "@shared/types/responses"
 
 import { deleteData, getData, postData, putData } from "@/utils/api/http"
 import { unwrapResponseKey } from "@/utils/api/response"

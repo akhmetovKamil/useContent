@@ -19,7 +19,7 @@ import {
   isSameAddressLike,
   isZeroAddress,
   normalizeHexString,
-} from "../../shared/utils";
+} from "../../shared/utils/web3";
 import type { AccessPolicyPresetDoc } from "../access/doc-types";
 import * as accessRepo from "../access/repository";
 import type { ContractDeploymentDoc } from "../contracts/doc-types";
@@ -98,7 +98,7 @@ import {
   parseObjectId,
   uniqueObjectIds,
 } from "./utils/mongo";
-import { normalizeWallet, shortenWallet } from "./utils/wallet";
+import { normalizeWallet } from "./utils/wallet";
 
 const repo = {
   ...accessRepo,
@@ -1643,6 +1643,5 @@ export {
   isMongoDuplicateKeyError,
   normalizeWallet,
   parseObjectId,
-  shortenWallet,
   uniqueObjectIds,
 };

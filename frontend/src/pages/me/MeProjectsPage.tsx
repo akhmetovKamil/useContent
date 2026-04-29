@@ -1,5 +1,5 @@
 import { CONTENT_STATUS } from "@shared/consts"
-import type { ProjectDto } from "@shared/types/content"
+import type { ProjectDto } from "@shared/types/projects"
 import { useEffect, useState } from "react"
 
 import { ContentManagerPage } from "@/components/content-manager/ContentManagerPage"

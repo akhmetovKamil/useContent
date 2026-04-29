@@ -1,4 +1,4 @@
-import type { FeedPostDto } from "@shared/types/content"
+import type { FeedPostDto } from "@shared/types/posts"
 import { render, screen } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 import { beforeEach, describe, expect, test, vi } from "vitest"

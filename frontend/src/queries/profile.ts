@@ -1,8 +1,4 @@
-import type {
-    CreateAuthorProfileInput,
-    UpdateAuthorProfileInput,
-    UpdateMyProfileInput,
-} from "@shared/types/content"
+import type { CreateAuthorProfileInput, UpdateAuthorProfileInput, UpdateMyProfileInput } from "@shared/types/profile"
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { profileApi } from "@/api/ProfileApi"

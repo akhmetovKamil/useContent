@@ -33,13 +33,7 @@ import type {
   UpdatePostRequest,
   UpdatePostPathRequest,
 } from "./types";
-import type {
-  FeedPostPageResponseDto,
-  ListPostCommentsResponseDto,
-  ListPostsResponseDto,
-  RecordPostViewResponseDto,
-  TogglePostLikeResponseDto,
-} from "../../shared/types/content";
+import type { FeedPostPageResponseDto, ListPostCommentsResponseDto, ListPostsResponseDto, RecordPostViewResponseDto, TogglePostLikeResponseDto } from "../../shared/types/responses"
 
 export const listMyFeedPosts = api(
   { method: "GET", path: "/me/feed", expose: true, auth: true },

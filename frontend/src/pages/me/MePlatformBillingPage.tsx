@@ -1,4 +1,4 @@
-import type { PlatformPlanDto } from "@shared/types/content"
+import type { PlatformPlanDto } from "@shared/types/platform"
 import { useState } from "react"
 
 import { BillingStatusBadge } from "@/components/platform-billing/BillingStatusBadge"
