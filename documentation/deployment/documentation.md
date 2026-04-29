@@ -21,3 +21,15 @@ When the Coolify app is connected to the GitHub repository and auto deploy is en
 
 The main application can remain on `app.domain.com`, while documentation is served independently from `docs.domain.com`.
 
+## Deployment checklist
+
+1. Create a new Coolify Static App from the same GitHub repository.
+2. Select the branch that should publish documentation.
+3. Set the root directory to `documentation`.
+4. Use `npm ci` as the install command.
+5. Use `npm run docs:build` as the build command.
+6. Use `.vitepress/dist` as the publish directory.
+7. Enable automatic deploys for the selected branch.
+8. Add `docs.domain.com` when the domain is ready.
+
+No additional environment variables are required for this documentation site.

@@ -17,3 +17,14 @@
 
 The repository contains a `shared` package with DTOs, constants, ABI exports and pure web3 helpers used by both frontend and backend. This reduces drift between API responses, frontend views and backend service contracts.
 
+## Why this stack fits the product
+
+| Requirement | Stack choice | Reason |
+| --- | --- | --- |
+| Static application shell | React + Vite | Fast build and simple nginx/static deployment. |
+| Server state and cache invalidation | TanStack Query | Fits feed pages, optimistic reactions, mutation invalidation and paginated data. |
+| Wallet and contract operations | wagmi + viem | Native React hooks for wallet state and low-level contract reads/writes. |
+| Domain-oriented backend | Encore.ts | Service boundaries, typed APIs and simple infrastructure wiring. |
+| Protected binary storage | MinIO | Private objects, signed URLs and controllable storage accounting. |
+| Payment verification | Solidity + Hardhat | Explicit contract state, events and reproducible tests/deploy scripts. |
+| Engineering documentation | VitePress + Mermaid | Static portal with diagrams stored alongside the repository. |

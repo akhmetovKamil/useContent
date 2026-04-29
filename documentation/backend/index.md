@@ -62,3 +62,25 @@ flowchart TD
 
 Backend services return domain-specific API errors such as unauthenticated, invalid argument, not found and failed precondition. The frontend normalizes those errors into inline states, toasts or form validation messages depending on context.
 
+## Repository and storage boundaries
+
+Domain services use repositories for MongoDB access and storage helpers for MinIO operations. File bytes are never treated as normal MongoDB fields. Instead, services persist object keys and file metadata, then call the storage layer when upload, download or cleanup operations are required.
+
+## On-chain boundary
+
+The backend does not send user transactions. Users sign transactions in the browser through their wallet. The backend only verifies receipts and decoded events. This keeps private wallet actions on the client side while still making payment state reliable for access checks.
+
+## Runtime configuration
+
+The backend receives runtime values through environment and Encore secrets:
+
+- MongoDB URI;
+- JWT secret;
+- MinIO credentials;
+- RPC URLs per chain;
+- deployment registry token.
+
+Contract deployment private keys are not part of the backend runtime configuration.
+
+See [Backend Operations](./operations) for operational details.
+

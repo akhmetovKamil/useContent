@@ -3,6 +3,7 @@ import { defineConfig } from "vitepress";
 export default defineConfig({
     title: "useContent Documentation",
     description: "Engineering documentation portal for the useContent platform.",
+    head: [["meta", { name: "theme-color", content: "#0f766e" }]],
     cleanUrls: true,
     vite: {
         build: {
@@ -37,20 +38,39 @@ export default defineConfig({
         },
     },
     themeConfig: {
+        logo: "/logo-mark.svg",
+        siteTitle: "useContent",
         nav: [
-            { text: "Overview", link: "/overview/introduction" },
-            { text: "Architecture", link: "/architecture/" },
-            { text: "Data Model", link: "/data-model/" },
-            { text: "Frontend", link: "/frontend/" },
-            { text: "Backend", link: "/backend/" },
-            { text: "Smart Contracts", link: "/smart-contracts/" },
-            { text: "Testing", link: "/testing/" },
-            { text: "Deployment", link: "/deployment/" },
-            { text: "ADR", link: "/adr/" },
+            { text: "Start", link: "/overview/introduction" },
+            {
+                text: "System",
+                items: [
+                    { text: "Architecture", link: "/architecture/" },
+                    { text: "Core Flows", link: "/architecture/core-flows" },
+                    { text: "Data Model", link: "/data-model/" },
+                ],
+            },
+            {
+                text: "Engineering",
+                items: [
+                    { text: "Frontend", link: "/frontend/" },
+                    { text: "Backend", link: "/backend/" },
+                    { text: "Smart Contracts", link: "/smart-contracts/" },
+                ],
+            },
+            {
+                text: "Operations",
+                items: [
+                    { text: "Testing", link: "/testing/" },
+                    { text: "Deployment", link: "/deployment/" },
+                    { text: "ADR", link: "/adr/" },
+                ],
+            },
         ],
         sidebar: [
             {
-                text: "Overview",
+                text: "01. Product Context",
+                collapsed: false,
                 items: [
                     { text: "Introduction", link: "/overview/introduction" },
                     { text: "Requirements", link: "/overview/requirements" },
@@ -58,7 +78,8 @@ export default defineConfig({
                 ],
             },
             {
-                text: "Architecture",
+                text: "02. System Architecture",
+                collapsed: false,
                 items: [
                     { text: "High-Level Architecture", link: "/architecture/" },
                     { text: "Core Flows", link: "/architecture/core-flows" },
@@ -68,27 +89,34 @@ export default defineConfig({
                 ],
             },
             {
-                text: "Data Model",
+                text: "03. Data & Storage",
+                collapsed: false,
                 items: [{ text: "Domain Model", link: "/data-model/" }],
             },
             {
-                text: "Implementation",
+                text: "04. Implementation",
+                collapsed: false,
                 items: [
                     { text: "Frontend", link: "/frontend/" },
+                    { text: "Frontend Data Flow", link: "/frontend/data-flow" },
                     { text: "Backend", link: "/backend/" },
+                    { text: "Backend Operations", link: "/backend/operations" },
                     { text: "Smart Contracts", link: "/smart-contracts/" },
                 ],
             },
             {
-                text: "Verification & Operations",
+                text: "05. Verification & Deployment",
+                collapsed: false,
                 items: [
                     { text: "Testing", link: "/testing/" },
                     { text: "Deployment", link: "/deployment/" },
+                    { text: "Runtime Environments", link: "/deployment/environments" },
                     { text: "Documentation Deployment", link: "/deployment/documentation" },
                 ],
             },
             {
-                text: "Architecture Decisions",
+                text: "06. Architecture Decisions",
+                collapsed: true,
                 items: [
                     { text: "ADR Index", link: "/adr/" },
                     { text: "ADR-001 MinIO over IPFS", link: "/adr/minio-over-ipfs" },

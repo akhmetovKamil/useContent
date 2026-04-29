@@ -39,3 +39,14 @@ flowchart TD
 
 This layout keeps objects scoped by author and content type. It also makes storage accounting possible because post attachments and project file nodes are tracked with byte sizes in MongoDB.
 
+## Storage accounting
+
+```mermaid
+flowchart LR
+    PostAttachments["Post attachments<br/>size metadata"] --> Usage["Author storage usage"]
+    ProjectFiles["Project file nodes<br/>size metadata"] --> Usage
+    Usage --> Quota["Platform billing quota"]
+    Quota --> UploadGuard["Upload allowed or rejected"]
+```
+
+The backend does not scan MinIO on every request to calculate usage. Instead, file size metadata is stored with post attachments and project nodes. This keeps quota checks fast and makes cleanup rules predictable.

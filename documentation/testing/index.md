@@ -62,3 +62,14 @@ When a new file upload is attempted
 Then the backend rejects the upload with a quota error
 ```
 
+## Verification commands
+
+| Area | Command |
+| --- | --- |
+| Backend tests | `cd backend && npm test -- --run` |
+| Frontend tests | `cd frontend && npm test -- --run` |
+| Frontend build | `cd frontend && npm run build` |
+| Smart contracts | `cd solidity && npx hardhat test` |
+| Documentation build | `cd documentation && npm run docs:build` |
+
+The commands intentionally target each workspace separately because the repository is not a single root package workspace.

@@ -57,3 +57,17 @@ flowchart LR
 
 The backend is split into domain services: profiles, access, subscriptions, platform billing, posts, projects, activity, authentication, storage and on-chain helpers. This keeps the access model, payment confirmation and file tree logic separated instead of centralizing all behavior in a single content module.
 
+## Runtime responsibility map
+
+| Area | Owner in the system | Why |
+| --- | --- | --- |
+| Session state | Frontend + auth service | Frontend stores the JWT metadata, backend verifies the token. |
+| Access decisions | Backend access layer | The frontend cannot be trusted to protect data by itself. |
+| Payment execution | Wallet + smart contract | The user signs transactions and the contract enforces payment logic. |
+| Payment confirmation | Backend on-chain layer | Receipts and events are decoded through RPC before MongoDB state changes. |
+| File bytes | MinIO | Binary objects are kept outside MongoDB. |
+| File visibility | Backend + signed URLs | A MinIO object is only exposed after access evaluation. |
+
+## Why the architecture is hybrid
+
+The platform deliberately avoids putting content metadata and files on-chain. Blockchain operations are used where they add strong payment proof: subscriptions, paid-until extension and treasury transfers. Product behavior such as feeds, comments, access policy composition, file trees and activity remains in the backend/database layer, where it can evolve without contract migrations.

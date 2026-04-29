@@ -31,3 +31,17 @@
 - Smart contract payment confirmation validates receipt logs rather than trusting a user-provided transaction hash.
 - Platform and reader subscription managers are deployed through manual GitHub Actions workflows rather than runtime containers.
 
+## Operational requirements
+
+- Frontend and documentation builds must remain static artifacts.
+- Backend deployment must not require contract private keys at runtime.
+- Smart contract deployment must be repeatable per EVM network.
+- Object storage keys must allow author-level accounting and cleanup.
+- Public documentation must not require application secrets or runtime environment variables.
+
+## UX requirements
+
+- A stale wallet session must not be shown as active.
+- Backend and network errors should be distinguishable from user input errors.
+- Locked content should expose enough context to explain which access tier is required.
+- Author tools should show storage usage, billing state and access-policy composition without requiring blockchain explorer lookups.

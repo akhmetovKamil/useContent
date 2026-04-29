@@ -40,6 +40,26 @@ The access context includes:
 - token balance or NFT ownership checks;
 - content status and author ownership.
 
+## Condition evaluation model
+
+```mermaid
+flowchart TD
+    Request["Content request"] --> Policy["Load attached policy"]
+    Policy --> Public{"Public?"}
+    Public -- "yes" --> Granted["Access granted"]
+    Public -- "no" --> Mode{"Mode"}
+    Mode -- "single" --> One["Evaluate one condition"]
+    Mode -- "and" --> All["Evaluate all children"]
+    Mode -- "or" --> Any["Evaluate any child"]
+    One --> Result["Decision"]
+    All --> Result
+    Any --> Result
+    Result -- "passed" --> Granted
+    Result -- "failed" --> Locked["Locked preview"]
+```
+
+Subscription conditions are resolved from MongoDB entitlements. Token and NFT conditions may require RPC reads. The resulting response is enriched so the frontend can show which exact condition is missing.
+
 ## Policy examples
 
 | Mode | Meaning |
@@ -49,3 +69,6 @@ The access context includes:
 | AND | All child conditions must be satisfied. |
 | OR | At least one child condition must be satisfied. |
 
+## Why access policies are reusable
+
+Authors attach policies to many posts/projects instead of configuring payment rules on every content item. This makes the product easier to maintain: a creator can update a tier and reuse the same policy across multiple pieces of content.

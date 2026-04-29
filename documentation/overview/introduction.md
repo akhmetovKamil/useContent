@@ -23,3 +23,19 @@ The platform combines traditional web application components with blockchain-bas
 
 useContent does not store private content on-chain. Smart contracts handle payment and subscription validity, while the backend remains responsible for access verification, metadata, object storage and signed URL generation.
 
+<div class="doc-callout">
+<p><strong>Engineering focus.</strong> The system is designed as a hybrid Web2/Web3 platform: blockchain is used for payment proof and subscription state, while the backend handles product data, file protection and user-facing access decisions.</p>
+</div>
+
+## Main product loop
+
+```mermaid
+flowchart LR
+    Author["Author creates tier"] --> Policy["Access policy"]
+    Policy --> Content["Post or project"]
+    Reader["Reader unlocks tier"] --> Payment["On-chain payment or ownership condition"]
+    Payment --> Entitlement["Backend access state"]
+    Entitlement --> Content
+```
+
+The important part is that a subscription plan is not the final product object visible to the reader. The reader sees an access tier, and the tier may include a subscription condition, token ownership, NFT ownership or a combination of rules.

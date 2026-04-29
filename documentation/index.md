@@ -30,3 +30,23 @@ This portal describes useContent as an engineering system. It is not an end-user
 
 The documentation is intentionally focused on implemented behavior. Potential future features are not mixed into the core pages.
 
+## Fast paths
+
+<div class="doc-grid">
+    <a class="doc-card" href="/architecture/">
+        <strong>System Architecture</strong>
+        <span>See how the browser, backend, MongoDB, MinIO and EVM networks interact.</span>
+    </a>
+    <a class="doc-card" href="/architecture/core-flows">
+        <strong>Core Flows</strong>
+        <span>Follow wallet auth, file upload, content delivery and subscription confirmation.</span>
+    </a>
+    <a class="doc-card" href="/frontend/data-flow">
+        <strong>Frontend Data Flow</strong>
+        <span>Understand TanStack Query, API classes, session state and mutation invalidation.</span>
+    </a>
+    <a class="doc-card" href="/deployment/">
+        <strong>Deployment</strong>
+        <span>Review Coolify runtime, GitHub Actions, contract workflows and static docs deploy.</span>
+    </a>
+</div>
