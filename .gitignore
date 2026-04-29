@@ -13,6 +13,8 @@ CLAUDE.md
 **/.env
 **/.env.local
 **/.env.*.local
+documentation/.vitepress/cache/
+documentation/.vitepress/dist/
 shared/deployments/
 /docs/
 
