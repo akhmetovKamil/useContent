@@ -1,6 +1,6 @@
 # High-Level Architecture
 
-useContent is organized around a static frontend, an Encore.ts backend, MongoDB metadata, MinIO object storage and EVM smart contracts. The backend is the security boundary for protected content: it verifies sessions, evaluates access policies, confirms blockchain events and issues signed file URLs only when access is valid.
+useContent is organized around a static frontend, an Encore.ts backend, MongoDB metadata, MinIO object storage and EVM smart contracts. Production traffic enters through the Coolify proxy, which terminates HTTPS for `usecontent.app`, `api.usecontent.app` and `docs.usecontent.app`. The backend is the security boundary for protected content: it verifies sessions, evaluates access policies, confirms blockchain events and issues signed file URLs only when access is valid.
 
 ```mermaid
 flowchart LR
@@ -10,13 +10,20 @@ flowchart LR
         Wallet["EVM wallet"]
     end
 
-    subgraph Web["Web application"]
-        Frontend["Frontend SPA<br/>React + Vite"]
-        Docs["VitePress docs<br/>static site"]
+    subgraph Edge["Public HTTPS edge"]
+        Proxy["Coolify proxy<br/>Let's Encrypt TLS"]
+        AppDomain["usecontent.app"]
+        ApiDomain["api.usecontent.app"]
+        DocsDomain["docs.usecontent.app"]
+    end
+
+    subgraph Web["Web resources"]
+        Frontend["Frontend SPA<br/>React + Vite + nginx"]
+        Docs["VitePress docs<br/>Coolify Static App"]
     end
 
     subgraph Backend["Server environment"]
-        API["Encore.ts API<br/>domain services"]
+        API["Encore.ts API<br/>domain services<br/>internal :8080"]
         Mongo[("MongoDB<br/>metadata")]
         MinIO[("MinIO<br/>object storage")]
     end
@@ -31,13 +38,15 @@ flowchart LR
     subgraph Ops["Operations"]
         GitHub["GitHub Actions"]
         Coolify["Coolify"]
-        Nginx["nginx frontend container"]
+        GHCR["GHCR<br/>backend image"]
     end
 
     Reader --> Browser
-    Browser --> Frontend
-    Browser --> Docs
-    Frontend --> API
+    Browser --> Proxy
+    Proxy --> AppDomain --> Frontend
+    Proxy --> ApiDomain --> API
+    Proxy --> DocsDomain --> Docs
+    Frontend --> ApiDomain
     Frontend --> Wallet
     Wallet --> RPC
     Frontend --> RPC
@@ -48,9 +57,11 @@ flowchart LR
     RPC --> PlatformManager
     ReaderManager --> ERC20
     PlatformManager --> ERC20
+    GitHub --> GHCR
     GitHub --> Coolify
-    Coolify --> Nginx
-    Nginx --> Frontend
+    Coolify --> Frontend
+    Coolify --> Docs
+    GHCR -.-> API
 ```
 
 ## Service boundaries

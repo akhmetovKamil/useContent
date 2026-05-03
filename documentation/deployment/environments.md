@@ -7,6 +7,7 @@ The project separates three operational concerns: application runtime, contract 
 ```mermaid
 flowchart TD
     subgraph Runtime["Application runtime"]
+        Proxy["Coolify proxy<br/>HTTPS + certificates"]
         Frontend["frontend container"]
         Backend["backend container"]
         Mongo["MongoDB"]
@@ -24,6 +25,9 @@ flowchart TD
         Static["Coolify Static App"]
     end
 
+    Proxy --> Frontend
+    Proxy --> Backend
+    Proxy --> Static
     Workflow --> Hardhat
     Hardhat --> Registry
     Registry --> Backend
@@ -36,17 +40,17 @@ Application runtime needs API, database, object storage and RPC configuration. C
 
 | Environment | Needs secrets | Notes |
 | --- | --- | --- |
-| Frontend runtime build | Public API/RPC values | Values are baked into the static SPA build. |
-| Backend runtime | MongoDB, JWT, MinIO, RPC, registry token | Runs in Coolify containers. |
+| Frontend runtime build | Public API/RPC values | Values are baked into the static SPA build; production API base URL is `https://api.usecontent.app`. |
+| Backend runtime | MongoDB, JWT, MinIO, RPC, registry token | Runs in Coolify containers and is exposed publicly through the Coolify proxy. |
 | Contract deployment | Deployer key, treasury, RPC, registry token | Runs only in manual GitHub Actions workflows. |
-| Documentation static app | No | Builds Markdown/VitePress only. |
+| Documentation static app | No | Builds Markdown/VitePress only and is served from `docs.usecontent.app`. |
 
 ## Domain layout
 
-The intended public layout is:
+The production public layout is:
 
-- `app.domain.com` for the main useContent application;
-- `docs.domain.com` for the VitePress documentation portal.
+- `https://usecontent.app` for the main useContent frontend;
+- `https://api.usecontent.app` for frontend-to-backend API traffic;
+- `https://docs.usecontent.app` for the VitePress documentation portal.
 
-Keeping the domains separate avoids coupling documentation deploys to application releases.
-
+Keeping the domains separate avoids coupling documentation deploys to application releases and keeps the API origin explicit for CORS.
