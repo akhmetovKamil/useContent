@@ -4,20 +4,19 @@ The documentation portal is a VitePress static site located in `documentation/`.
 
 ## Coolify Static App settings
 
-<div class="doc-copy-card">
-<p><strong>Root Directory</strong><br><code>documentation</code></p>
-</div>
-
-<div class="doc-copy-card">
-<p><strong>Install Command</strong><br><code>npm ci</code></p>
-</div>
-
-<div class="doc-copy-card">
-<p><strong>Build Command</strong><br><code>npm run docs:build</code></p>
-</div>
-
-<div class="doc-copy-card">
-<p><strong>Publish Directory</strong><br><code>.vitepress/dist</code></p>
+<div class="doc-grid compact">
+    <div class="doc-copy-card">
+        <p><strong>Root Directory</strong><br><code>documentation</code></p>
+    </div>
+    <div class="doc-copy-card">
+        <p><strong>Install Command</strong><br><code>npm ci</code></p>
+    </div>
+    <div class="doc-copy-card">
+        <p><strong>Build Command</strong><br><code>npm run docs:build</code></p>
+    </div>
+    <div class="doc-copy-card">
+        <p><strong>Publish Directory</strong><br><code>.vitepress/dist</code></p>
+    </div>
 </div>
 
 | Setting | Value |

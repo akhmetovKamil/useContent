@@ -38,8 +38,13 @@
 }
 
 .VPNavBarTitle .title {
+    border-bottom: 0 !important;
     color: var(--vp-c-text-1);
     letter-spacing: -0.02em;
+}
+
+.VPNavBarTitle.has-sidebar .title {
+    border-bottom-color: transparent !important;
 }
 
 .VPNavBar,
@@ -69,6 +74,7 @@
 }
 
 .DocSearch-Button {
+    min-width: 220px !important;
     border: 1px solid var(--vp-c-divider) !important;
     background: var(--vp-c-bg-soft) !important;
     color: var(--vp-c-text-2) !important;
@@ -223,6 +229,25 @@
     text-align: center;
 }
 
+.mermaid-wrapper .edgeLabel,
+.mermaid-wrapper .edgeLabel p,
+.mermaid-wrapper .edgeLabel span {
+    background: transparent !important;
+    color: var(--vp-c-brand-1) !important;
+}
+
+.mermaid-wrapper .edgeLabel rect,
+.mermaid-wrapper .labelBkg,
+.mermaid-wrapper .relationLabelBox {
+    fill: transparent !important;
+    opacity: 0 !important;
+}
+
+.mermaid-wrapper .relationshipLabelBox,
+.mermaid-wrapper .er.relationshipLabelBox {
+    fill: transparent !important;
+}
+
 .vp-doc table {
     display: table;
     width: 100%;
@@ -240,7 +265,7 @@
 .doc-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 16px;
+    gap: 18px;
     margin: 28px 0;
 }
 
@@ -259,6 +284,15 @@
         box-shadow 160ms ease;
 }
 
+.doc-grid.compact {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.doc-grid.compact .doc-card {
+    min-height: auto;
+    padding: 16px;
+}
+
 .doc-card:hover {
     border-color: var(--vp-c-brand-1);
     transform: translateY(-2px);
@@ -275,6 +309,10 @@
         color 160ms ease;
 }
 
+.doc-card .doc-badge + strong {
+    margin-left: 10px;
+}
+
 .doc-card:hover strong {
     border-bottom-color: var(--uc-accent-2);
     color: var(--vp-c-brand-1);
@@ -282,7 +320,7 @@
 
 .doc-card span:not(.doc-badge) {
     display: block;
-    margin-top: 12px;
+    margin-top: 14px;
     color: var(--vp-c-text-2);
     font-size: 14px;
     text-decoration: none !important;
@@ -352,4 +390,23 @@
 
 .doc-copy-card {
     background: var(--vp-c-bg-soft);
+}
+
+.VPDocAsideOutline .outline-link {
+    color: var(--vp-c-text-2);
+}
+
+.VPDocAsideOutline .outline-link:hover,
+.VPDocAsideOutline .outline-link.active {
+    color: var(--vp-c-brand-1);
+}
+
+.VPDocAsideOutline .outline-marker {
+    background: var(--vp-c-brand-1);
+}
+
+@media (min-width: 960px) {
+    .VPDocAside {
+        padding-top: 0;
+    }
 }
