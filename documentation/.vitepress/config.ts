@@ -5,6 +5,7 @@ export default defineConfig({
     description: "Engineering documentation portal for the useContent platform.",
     head: [["meta", { name: "theme-color", content: "#0f766e" }]],
     cleanUrls: true,
+    outDir: "dist",
     vite: {
         build: {
             chunkSizeWarningLimit: 4000,
