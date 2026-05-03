@@ -34,18 +34,22 @@ The documentation is intentionally focused on implemented behavior. Potential fu
 
 <div class="doc-grid">
     <a class="doc-card" href="/architecture/">
+        <span class="doc-badge">Architecture</span>
         <strong>System Architecture</strong>
         <span>See how the browser, backend, MongoDB, MinIO and EVM networks interact.</span>
     </a>
     <a class="doc-card" href="/architecture/core-flows">
+        <span class="doc-badge">Flow</span>
         <strong>Core Flows</strong>
         <span>Follow wallet auth, file upload, content delivery and subscription confirmation.</span>
     </a>
     <a class="doc-card" href="/frontend/data-flow">
+        <span class="doc-badge">Frontend</span>
         <strong>Frontend Data Flow</strong>
         <span>Understand TanStack Query, API classes, session state and mutation invalidation.</span>
     </a>
     <a class="doc-card" href="/deployment/">
+        <span class="doc-badge">Ops</span>
         <strong>Deployment</strong>
         <span>Review Coolify runtime, GitHub Actions, contract workflows and static docs deploy.</span>
     </a>

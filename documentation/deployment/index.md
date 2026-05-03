@@ -2,6 +2,24 @@
 
 The runtime application and the documentation portal are deployed separately.
 
+<div class="doc-grid">
+    <a class="doc-card" href="#application-deployment">
+        <span class="doc-badge">Runtime</span>
+        <strong>Application stack</strong>
+        <span>Frontend nginx container, backend image, MongoDB and MinIO.</span>
+    </a>
+    <a class="doc-card" href="#contract-deployment">
+        <span class="doc-badge">Contracts</span>
+        <strong>Manual workflows</strong>
+        <span>Hardhat deployment jobs with private keys scoped to GitHub Actions.</span>
+    </a>
+    <a class="doc-card" href="/deployment/documentation">
+        <span class="doc-badge">Docs</span>
+        <strong>Static VitePress</strong>
+        <span>Coolify Static App with no Dockerfile and no runtime secrets.</span>
+    </a>
+</div>
+
 ```mermaid
 flowchart TD
     Push["Push to master"] --> Actions["GitHub Actions"]
@@ -31,6 +49,10 @@ The frontend is built into a static bundle and served through nginx. The backend
 | mongo | Stores application metadata and access state. |
 | minio | Stores binary objects for posts and projects. |
 | minio-init | Creates the required bucket during startup. |
+
+<div class="doc-diagram-note">
+<p><strong>Deployment boundary.</strong> Runtime containers receive only application runtime configuration. Contract deployment secrets live in manual GitHub Actions workflows, not in Coolify containers.</p>
+</div>
 
 ## CI/CD flow
 
@@ -65,4 +87,3 @@ Manual workflows are used because contract deployment requires private keys and 
 The VitePress documentation is deployed as a separate Coolify Static App. It does not require Dockerfile or docker-compose configuration.
 
 See [Documentation Deployment](./documentation) for exact Coolify settings.
-

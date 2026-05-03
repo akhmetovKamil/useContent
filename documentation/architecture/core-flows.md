@@ -2,7 +2,12 @@
 
 This section summarizes the main runtime flows that connect frontend, backend, object storage and smart contracts.
 
-## Wallet authentication flow
+<div class="doc-diagram-note">
+<p><strong>How to read these flows.</strong> Each panel describes a runtime path through the system. The frontend starts the interaction, but access, storage and payment confirmation are finalized on the backend.</p>
+</div>
+
+<details class="doc-flow-card" open>
+<summary>Wallet authentication flow</summary>
 
 ```mermaid
 sequenceDiagram
@@ -24,7 +29,10 @@ sequenceDiagram
     Store-->>UI: Session active
 ```
 
-## File upload flow
+</details>
+
+<details class="doc-flow-card">
+<summary>File upload flow</summary>
 
 ```mermaid
 sequenceDiagram
@@ -44,7 +52,10 @@ sequenceDiagram
 
 The upload flow is intentionally backend-mediated. The frontend does not write directly into MinIO because quota checks, author ownership and project/post metadata must be committed consistently.
 
-## Reader subscription flow
+</details>
+
+<details class="doc-flow-card">
+<summary>Reader subscription flow</summary>
 
 ```mermaid
 sequenceDiagram
@@ -70,7 +81,10 @@ sequenceDiagram
 
 TanStack Query invalidates author tiers, posts, projects and reader subscription state after confirmation. This keeps the UI in sync without requiring a full page reload.
 
-## Author platform billing flow
+</details>
+
+<details class="doc-flow-card">
+<summary>Author platform billing flow</summary>
 
 ```mermaid
 sequenceDiagram
@@ -95,3 +109,5 @@ sequenceDiagram
 ```
 
 Author platform billing uses a different manager contract because the money flow is author-to-platform, not reader-to-author. The backend updates quota and feature availability after receipt verification.
+
+</details>
