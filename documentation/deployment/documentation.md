@@ -34,6 +34,8 @@ The repository workflow triggers a separate Coolify webhook for the documentatio
 
 The main application is served from `usecontent.app`, while documentation is served independently from `docs.usecontent.app`.
 
+The documentation resource does not need MongoDB, MinIO, wallet RPC variables or backend secrets. Its deploy can fail or be restarted without recreating the application containers, which makes it safe to update architecture notes frequently during development.
+
 ## Deployment checklist
 
 1. Create a new Coolify Static App from the same GitHub repository.

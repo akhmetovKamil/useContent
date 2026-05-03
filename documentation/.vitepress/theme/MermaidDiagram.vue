@@ -7,6 +7,8 @@ const props = defineProps<{
 }>();
 
 const container = ref<HTMLElement | null>(null);
+const renderedHtml = ref("");
+const isExpanded = ref(false);
 const source = computed(() => decodeURIComponent(props.code));
 let mermaidModule: typeof import("mermaid").default | null = null;
 const { isDark } = useData();
@@ -142,6 +144,7 @@ const renderDiagram = async () => {
     container.value.removeAttribute("data-processed");
     const mermaid = await configureMermaid();
     await mermaid.run({ nodes: [container.value] });
+    renderedHtml.value = container.value.innerHTML;
 };
 
 onMounted(renderDiagram);
@@ -151,6 +154,19 @@ watch([source, isDark], renderDiagram);
 
 <template>
     <div class="mermaid-wrapper">
+        <button class="mermaid-open-button" type="button" @click="isExpanded = true">
+            Open larger
+        </button>
         <pre ref="container" class="mermaid"></pre>
     </div>
+    <Teleport to="body">
+        <div v-if="isExpanded" class="mermaid-modal" role="dialog" aria-modal="true" @click.self="isExpanded = false">
+            <div class="mermaid-modal-panel">
+                <button class="mermaid-close-button" type="button" @click="isExpanded = false">
+                    Close
+                </button>
+                <div class="mermaid-modal-content" v-html="renderedHtml"></div>
+            </div>
+        </div>
+    </Teleport>
 </template>

@@ -3,66 +3,45 @@
 useContent is organized around a static frontend, an Encore.ts backend, MongoDB metadata, MinIO object storage and EVM smart contracts. Production traffic enters through the Coolify proxy, which terminates HTTPS for `usecontent.app`, `api.usecontent.app` and `docs.usecontent.app`. The backend is the security boundary for protected content: it verifies sessions, evaluates access policies, confirms blockchain events and issues signed file URLs only when access is valid.
 
 ```mermaid
-flowchart LR
-    subgraph Client["Client environment"]
-        Reader["Reader / Author"]
-        Browser["Browser"]
-        Wallet["EVM wallet"]
+flowchart TD
+    User["Reader / Author<br/>browser + EVM wallet"]
+    Proxy["Coolify proxy<br/>HTTPS for usecontent.app / api / docs"]
+
+    subgraph Public["Public web resources"]
+        Frontend["React SPA<br/>usecontent.app"]
+        Docs["VitePress docs<br/>docs.usecontent.app"]
     end
 
-    subgraph Edge["Public HTTPS edge"]
-        Proxy["Coolify proxy<br/>Let's Encrypt TLS"]
-        AppDomain["usecontent.app"]
-        ApiDomain["api.usecontent.app"]
-        DocsDomain["docs.usecontent.app"]
+    subgraph Server["Backend runtime"]
+        API["Encore.ts API<br/>domain services"]
+        Data["MongoDB<br/>metadata + access state"]
+        Files["MinIO<br/>protected objects"]
     end
 
-    subgraph Web["Web resources"]
-        Frontend["Frontend SPA<br/>React + Vite + nginx"]
-        Docs["VitePress docs<br/>Coolify Static App"]
+    subgraph Web3["EVM layer"]
+        RPC["RPC providers"]
+        Managers["SubscriptionManager<br/>PlatformSubscriptionManager"]
+        Tokens["Native / ERC-20 assets"]
     end
 
-    subgraph Backend["Server environment"]
-        API["Encore.ts API<br/>domain services<br/>internal :8080"]
-        Mongo[("MongoDB<br/>metadata")]
-        MinIO[("MinIO<br/>object storage")]
-    end
-
-    subgraph Chain["EVM networks"]
-        RPC["RPC provider"]
-        ReaderManager["SubscriptionManager"]
-        PlatformManager["PlatformSubscriptionManager"]
-        ERC20["ERC-20 tokens"]
-    end
-
-    subgraph Ops["Operations"]
-        GitHub["GitHub Actions"]
-        Coolify["Coolify"]
-        GHCR["GHCR<br/>backend image"]
-    end
-
-    Reader --> Browser
-    Browser --> Proxy
-    Proxy --> AppDomain --> Frontend
-    Proxy --> ApiDomain --> API
-    Proxy --> DocsDomain --> Docs
-    Frontend --> ApiDomain
-    Frontend --> Wallet
-    Wallet --> RPC
+    User --> Proxy
+    Proxy --> Frontend
+    Proxy --> Docs
+    Frontend --> API
+    API --> Data
+    API --> Files
     Frontend --> RPC
-    API --> Mongo
-    API --> MinIO
+    User --> RPC
     API --> RPC
-    RPC --> ReaderManager
-    RPC --> PlatformManager
-    ReaderManager --> ERC20
-    PlatformManager --> ERC20
-    GitHub --> GHCR
-    GitHub --> Coolify
-    Coolify --> Frontend
-    Coolify --> Docs
-    GHCR -.-> API
+    RPC --> Managers
+    Managers --> Tokens
 ```
+
+## Production entry points
+
+The public system has three entry points. `usecontent.app` serves the React application, `api.usecontent.app` receives browser API calls, and `docs.usecontent.app` serves the documentation portal. All three domains terminate TLS at the Coolify proxy, so application containers do not store certificate files and do not need to bind public HTTPS ports themselves.
+
+The frontend still talks to the backend as a separate origin. That keeps the deployment explicit: CORS allows the production application origin, while the API can remain independently routed, logged and restarted.
 
 ## Service boundaries
 

@@ -32,10 +32,10 @@ flowchart TD
     DocsWebhook --> CoolifyDocs["Coolify Static App<br/>documentation"]
 
     CoolifyApp --> Frontend["Build frontend container<br/>React static files + nginx"]
-    CoolifyApp -.-> Backend["Pull backend image<br/>from GHCR"]
+    CoolifyApp --> Backend["Backend runtime<br/>Encore.ts container"]
+    Backend -.->|pulls image| GHCR
     CoolifyApp --> Mongo["MongoDB container"]
     CoolifyApp --> MinIO["MinIO container"]
-    GHCR -.-> Backend
 
     CoolifyDocs --> DocsBuild["Build VitePress<br/>static files"]
     CoolifyDocs --> DocsStatic["Serve docs.usecontent.app"]
@@ -71,6 +71,10 @@ flowchart LR
 The frontend is built into a static bundle and served through nginx on `https://usecontent.app`. The backend is built as a Docker image through GitHub Actions and pushed to GitHub Container Registry. Coolify pulls and runs that image as the API resource for `https://api.usecontent.app`.
 
 The backend listens on port `8080` inside the Docker network, but it is not published directly on the host. Public HTTPS traffic reaches it through the Coolify proxy.
+
+This separation keeps the runtime predictable: the frontend can be rebuilt by Coolify from the repository, while the backend image is produced by the CI workflow that already knows how to run the Encore Docker build. The public API origin stays stable as `https://api.usecontent.app`, so the browser never talks to the raw server IP or a host port. CORS is intentionally narrow: credentialed requests are accepted from `https://usecontent.app`, not from wildcard origins.
+
+The proxy is also responsible for TLS certificates. Once DNS records point `usecontent.app`, `api.usecontent.app` and `docs.usecontent.app` to the server, Coolify can terminate HTTPS and route traffic to the correct internal resource. This keeps certificates out of the frontend nginx config and out of the backend container.
 
 ## Runtime containers
 
