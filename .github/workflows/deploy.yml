@@ -56,3 +56,8 @@ jobs:
         run: |
           curl -sSf -X POST "${{ secrets.COOLIFY_WEBHOOK_URL }}" \
             -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}"
+
+      - name: Trigger Coolify documentation deploy
+        run: |
+          curl -sSf -X POST "${{ secrets.COOLIFY_DOCS_WEBHOOK_URL }}" \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}"
