@@ -74,7 +74,7 @@
 }
 
 .DocSearch-Button {
-    min-width: 220px !important;
+    min-width: 280px !important;
     border: 1px solid var(--vp-c-divider) !important;
     background: var(--vp-c-bg-soft) !important;
     color: var(--vp-c-text-2) !important;
@@ -219,7 +219,7 @@
     overflow-x: auto;
     border: 1px solid var(--vp-c-divider);
     border-radius: 18px;
-    background: var(--vp-c-bg-soft);
+    background: transparent;
     padding: 22px;
 }
 
@@ -231,20 +231,26 @@
 
 .mermaid-wrapper .edgeLabel,
 .mermaid-wrapper .edgeLabel p,
+.mermaid-wrapper .edgeLabel foreignObject,
+.mermaid-wrapper .edgeLabel div,
 .mermaid-wrapper .edgeLabel span {
     background: transparent !important;
     color: var(--vp-c-brand-1) !important;
 }
 
 .mermaid-wrapper .edgeLabel rect,
+.mermaid-wrapper .edgeLabels rect,
 .mermaid-wrapper .labelBkg,
-.mermaid-wrapper .relationLabelBox {
+.mermaid-wrapper .relationLabelBox,
+.mermaid-wrapper g.edgeLabel rect,
+.mermaid-wrapper g.label rect {
     fill: transparent !important;
     opacity: 0 !important;
 }
 
 .mermaid-wrapper .relationshipLabelBox,
-.mermaid-wrapper .er.relationshipLabelBox {
+.mermaid-wrapper .er.relationshipLabelBox,
+.mermaid-wrapper .stateLabel rect {
     fill: transparent !important;
 }
 
@@ -274,7 +280,7 @@
     min-height: 168px;
     border: 1px solid var(--vp-c-divider);
     border-radius: 20px;
-    background: var(--vp-c-bg-soft);
+    background: transparent;
     padding: 20px;
     color: var(--vp-c-text-1);
     text-decoration: none !important;
@@ -352,7 +358,7 @@
 .doc-flow-card {
     border: 1px solid var(--vp-c-divider);
     border-radius: 18px;
-    background: var(--vp-c-bg-soft);
+    background: transparent;
     padding: 20px;
     margin: 24px 0;
 }
@@ -364,7 +370,7 @@
 }
 
 .doc-flow-card {
-    background: var(--vp-c-bg-soft);
+    background: transparent;
 }
 
 .doc-flow-card > summary {
@@ -389,7 +395,23 @@
 }
 
 .doc-copy-card {
-    background: var(--vp-c-bg-soft);
+    background: transparent;
+}
+
+.VPDocAsideOutline {
+    height: calc(100vh - var(--vp-nav-height));
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.VPDocAsideOutline .content {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.VPDocAsideOutline .outline {
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 .VPDocAsideOutline .outline-link {
