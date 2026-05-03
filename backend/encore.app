@@ -1,14 +1,14 @@
 {
-	"id":   "backend-pig2",
+	"id": "backend-pig2",
 	"lang": "typescript",
 	"global_cors": {
-    	"debug": true,
-    	"allow_headers": ["Authorization", "Content-Type"],
-    	"allow_origins_with_credentials": [
-    		"http://95.217.209.126:3000"
-    	],
-    	"allow_origins_without_credentials": [
-    		"*"
-    	]
+		"debug": true,
+		"allow_headers": ["Authorization", "Content-Type"],
+		"allow_origins_with_credentials": [
+			"https://usecontent.app"
+		],
+		"allow_origins_without_credentials": [
+			"*"
+		]
 	}
 }

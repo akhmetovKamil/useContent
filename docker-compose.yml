@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: ./frontend/Dockerfile
       args:
-        API_BASE_URL: ${API_BASE_URL:-http://localhost:8080}
+        API_BASE_URL: ${API_BASE_URL:-https://api.usecontent.app}
         RPC_URL_11155111: ${RPC_URL_11155111:-}
         RPC_URL_84532: ${RPC_URL_84532:-}
         RPC_URL_11155420: ${RPC_URL_11155420:-}
