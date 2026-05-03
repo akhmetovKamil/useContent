@@ -24,6 +24,7 @@ const mermaidThemeVariables = computed(() => {
             tertiaryColor: "#1f2937",
             tertiaryTextColor: "#f8fafc",
             tertiaryBorderColor: "#64748b",
+            edgeLabelBackground: "#101315",
             lineColor: "#cbd5e1",
             textColor: "#f8fafc",
             mainBkg: "#123f3a",
@@ -56,6 +57,7 @@ const mermaidThemeVariables = computed(() => {
         tertiaryBorderColor: "#94a3b8",
         lineColor: "#334155",
         textColor: "#0f172a",
+        edgeLabelBackground: "#f8fafc",
         actorBkg: "#f8fafc",
         actorBorder: "#0f766e",
         actorTextColor: "#0f172a",
@@ -92,6 +94,11 @@ const configureMermaid = async () => {
         themeVariables: mermaidThemeVariables.value,
         flowchart: {
             curve: "basis",
+            nodeSpacing: 80,
+            rankSpacing: 80,
+            useMaxWidth: true,
+        },
+        state: {
             useMaxWidth: true,
         },
         sequence: {

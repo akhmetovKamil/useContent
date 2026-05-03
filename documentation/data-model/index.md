@@ -99,12 +99,13 @@ MongoDB contains documents and access state. MinIO contains the actual file byte
 
 ```mermaid
 stateDiagram-v2
+    direction LR
     [*] --> draft
     draft --> published: publish
     draft --> archived: archive
     published --> archived: archive
-    archived --> draft: restore as draft
-    archived --> published: restore and publish
+    archived --> draft: restore draft
+    archived --> published: restore publish
 ```
 
 Draft content is author-only. Published content can appear in feeds if the access policy allows it. Archived content is hidden from reader feeds and ordinary author lists.

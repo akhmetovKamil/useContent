@@ -127,9 +127,11 @@
 }
 
 .VPSidebarItem.level-0 > .item {
+    display: flex;
+    align-items: center;
     min-height: 36px;
     border-radius: 12px;
-    padding: 0 8px;
+    padding: 8px 10px;
 }
 
 .VPSidebarItem.level-0 > .item > .text {
@@ -168,7 +170,7 @@
 
 .VPSidebarItem.level-1.is-active > .item .link,
 .VPSidebarItem.level-1.has-active > .item .link {
-    background: var(--uc-sidebar-active-bg);
+    background: transparent;
     text-decoration: underline;
     text-decoration-color: var(--uc-accent-2);
     text-decoration-thickness: 2px;
