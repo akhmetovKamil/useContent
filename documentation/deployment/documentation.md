@@ -4,25 +4,12 @@ The documentation portal is a VitePress static site located in `documentation/` 
 
 ## Coolify Static App settings
 
-<div class="doc-grid compact">
-    <div class="doc-copy-card">
-        <p><strong>Base Directory</strong><br><code>/documentation</code></p>
-    </div>
-    <div class="doc-copy-card">
-        <p><strong>Install Command</strong><br><code>npm ci</code></p>
-    </div>
-    <div class="doc-copy-card">
-        <p><strong>Build Command</strong><br><code>npm run docs:build</code></p>
-    </div>
-    <div class="doc-copy-card">
-        <p><strong>Publish Directory</strong><br><code>dist</code></p>
-    </div>
-</div>
-
 | Setting | Value |
 | --- | --- |
 | Domain | `docs.usecontent.app` |
 | Base Directory | `/documentation` |
+| Install Command | `npm ci` |
+| Build Command | `npm run docs:build` |
 | Publish Directory | `/dist` |
 | Auto Deploy | Triggered by the documentation Coolify webhook from GitHub Actions |
 

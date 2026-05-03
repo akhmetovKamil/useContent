@@ -5,6 +5,8 @@ useContent uses two smart contract managers:
 - `SubscriptionManager` for reader-to-author subscriptions;
 - `PlatformSubscriptionManager` for author-to-platform billing and storage quota payments.
 
+Both contracts are deployed per supported EVM network and discovered by the backend through the deployment registry. Current runtime configuration includes test networks such as Sepolia, Base Sepolia, Optimism Sepolia and Arbitrum Sepolia, plus production-oriented chain ids for Base, Optimism and Arbitrum.
+
 ## SubscriptionManager
 
 ```mermaid
@@ -22,6 +24,8 @@ flowchart TD
 ```
 
 The contract supports native token payments and ERC-20 payments. For ERC-20 plans, the reader approves the manager contract before calling `subscribe`. For native token plans, the reader sends `msg.value` with the subscription transaction.
+
+The important contract state is intentionally small: registered plans and `paidUntil` by subscriber and plan key. Rich product state such as comments, access policy names, tier descriptions and content metadata remains off-chain.
 
 ## Reader payment verification
 
@@ -64,10 +68,14 @@ This contract does not split revenue with creators. It represents author-to-plat
 
 ## Contract responsibilities
 
-| Contract | Payment direction | Main state | Backend mirror |
-| --- | --- | --- | --- |
-| SubscriptionManager | reader → author + platform fee | plan, paidUntil | entitlement |
-| PlatformSubscriptionManager | author → platform | tier, extra storage, paidUntil | platform subscription and quota |
+<div class="doc-grid compact">
+    <div class="doc-copy-card">
+        <p><strong>SubscriptionManager</strong><br>Reader pays an author plan. The contract stores plan data and paid-until state, splits payment between author and platform treasury, and emits `SubscriptionPaid`.</p>
+    </div>
+    <div class="doc-copy-card">
+        <p><strong>PlatformSubscriptionManager</strong><br>Author pays the platform for a tier and extra storage. The contract transfers the full amount to the treasury and emits `PlatformSubscriptionPaid`.</p>
+    </div>
+</div>
 
 ## Native vs ERC-20 payments
 
@@ -75,6 +83,21 @@ This contract does not split revenue with creators. It represents author-to-plat
 | --- | --- | --- |
 | Native token | Call payable `subscribe` with `msg.value` | Contract validates the sent value and transfers native funds. |
 | ERC-20 token | Approve manager, then call `subscribe` | Contract uses `transferFrom` to move tokens. |
+
+Reader subscription plans may accept native token or ERC-20 payments depending on the author configuration. Platform billing v1 uses ERC-20 payment flow because author billing needs predictable pricing semantics for tiers and extra storage.
+
+## Backend confirmation rules
+
+The backend validates contract events before updating MongoDB. It checks:
+
+- manager address from the deployment registry;
+- subscriber or author wallet;
+- plan key or platform tier key;
+- token address and amount;
+- chain id and transaction hash idempotency;
+- paid-until timestamp emitted by the contract.
+
+This makes MongoDB an operational projection of verified on-chain events rather than a source of payment truth.
 
 ## Deployment
 

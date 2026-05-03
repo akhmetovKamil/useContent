@@ -341,10 +341,6 @@
     margin-top: 40px;
 }
 
-.vp-doc {
-    padding-bottom: 34vh;
-}
-
 .vp-doc a {
     text-decoration-color: color-mix(in srgb, var(--vp-c-brand-1) 45%, transparent);
     text-underline-offset: 3px;
@@ -505,6 +501,7 @@
 .VPDocAsideOutline .outline-link:hover,
 .VPDocAsideOutline .outline-link.active {
     color: var(--vp-c-brand-1);
+    font-weight: 750;
 }
 
 .VPDocAsideOutline .outline-marker {

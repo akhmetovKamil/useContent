@@ -15,7 +15,9 @@ The documentation is implemented as a standalone VitePress project in `documenta
 - Documentation can be built and deployed independently from the main app.
 - GitHub Actions triggers a separate Coolify documentation webhook after pushes to `master`.
 - The documentation domain receives TLS through the same Coolify proxy as the application domains.
+- Documentation deploys do not need MongoDB, MinIO, RPC or wallet secrets.
+- Architecture notes can be updated without recreating frontend/backend runtime containers.
 
 ## Alternatives considered
 
-An nginx Dockerfile was considered but not selected because VitePress output is static and Coolify can serve it directly.
+An nginx Dockerfile was considered but not selected because VitePress output is static and Coolify can serve it directly. Serving documentation from the main frontend container was rejected because docs changes should not require rebuilding the application image.

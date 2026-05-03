@@ -1,91 +1,105 @@
 # Frontend Data Flow
 
-The frontend is a static React application, but most screens depend on server state. TanStack Query is the main coordination layer between UI components, API classes and backend responses.
+The frontend is a static React application, but most screens depend on server state: feeds, access tiers, billing state, comments, project trees and session-aware user data. The data flow is built around small domain hooks instead of direct Axios calls from pages.
 
 <div class="doc-grid">
-    <div class="doc-card">
+    <a class="doc-card" href="#tanstack-query-lifecycle">
         <span class="doc-badge">Cache</span>
         <strong>TanStack Query</strong>
         <span>Owns server state, pagination, loading states and refetch behavior.</span>
-    </div>
-    <div class="doc-card">
+    </a>
+    <a class="doc-card" href="#typed-api-layer">
         <span class="doc-badge">HTTP</span>
         <strong>Typed API layer</strong>
         <span>Keeps pages away from raw Axios calls and response object shapes.</span>
-    </div>
-    <div class="doc-card">
+    </a>
+    <a class="doc-card" href="#session-state">
         <span class="doc-badge">Session</span>
         <strong>Auth store</strong>
         <span>Tracks wallet address, JWT token and expiration metadata.</span>
-    </div>
+    </a>
 </div>
 
-<details class="doc-flow-card" open>
-<summary>Query lifecycle</summary>
+## TanStack Query lifecycle
 
 ```mermaid
 flowchart TD
-    Page["Page component"] --> Hook["Domain query hook"]
-    Hook --> Query["TanStack Query cache"]
-    Query --> API["Typed API class"]
-    API --> HTTP["Axios HTTP client"]
+    Page["Page"] --> Hook["Domain query hook"]
+    Hook --> Cache{"TanStack Query cache"}
+    Cache -->|cache hit| ViewState["Typed view state<br/>items + loading + actions"]
+    Cache -->|cache miss / stale| API["Domain API class"]
+    API --> HTTP["HTTP client<br/>auth + error normalization"]
     HTTP --> Backend["Encore API"]
     Backend --> HTTP
     HTTP --> API
-    API --> Query
-    Query --> Hook
-    Hook --> Page
+    API --> Cache
+    Cache --> ViewState
+    ViewState --> Page
 ```
 
-Pages do not call Axios directly. They use domain query hooks that return already shaped data such as feed items, loading states, pagination helpers and mutation actions.
+Pages consume already-shaped hooks such as feed items, loading flags, pagination helpers and mutation actions. This keeps page components focused on layout instead of response parsing.
 
-</details>
+## Typed API layer
 
-<details class="doc-flow-card">
-<summary>Mutation and invalidation</summary>
+The API layer wraps Axios with typed helpers for `GET`, `POST`, `PATCH`, uploads and downloads. Query params are serialized centrally, so API classes do not repeat `undefined` checks or inline response wrappers. Shared DTOs define the API contract, while frontend-only types describe local filters, tabs and form state.
+
+## Session state
+
+Protected requests attach the current JWT. The auth store also keeps the connected wallet address, `authenticatedAt` and `expiresAt`. If a request returns `401`, the HTTP layer clears the session and protected query cache while keeping public pages usable.
+
+```mermaid
+flowchart TD
+    Request["Protected request"] --> Token{"JWT available<br/>and not expired?"}
+    Token -- "yes" --> Header["Attach Authorization header"]
+    Header --> API["Backend request"]
+    API --> Response{"Response"}
+    Response -- "success" --> Cache["Update query cache"]
+    Response -- "401" --> Clear["Clear auth store<br/>reset protected queries"]
+    Token -- "no" --> Sign["Show signature required state"]
+```
+
+## Mutation invalidation
 
 ```mermaid
 sequenceDiagram
     participant UI as UI component
     participant Mutation as Mutation hook
-    participant API as API class
     participant Cache as Query cache
-    participant Backend as Backend
+    participant API as API class
+    participant Backend
 
     UI->>Mutation: User action
-    Mutation->>Cache: Optional optimistic update
-    Mutation->>API: Send request
+    Mutation->>Cache: Optimistic update when safe
+    Mutation->>API: Send typed request
     API->>Backend: HTTP mutation
     Backend-->>API: Updated DTO
     API-->>Mutation: Result
-    Mutation->>Cache: Invalidate related queries
-    Cache-->>UI: Re-render with fresh data
+    Mutation->>Cache: Invalidate related domains
+    Cache-->>UI: Re-render with fresh state
 ```
 
-This pattern is used for actions such as likes, comments, post archive/restore, subscription confirmation, author profile updates and billing updates.
+This pattern is used for likes, comments, post archive/restore, subscription confirmation, author profile updates, reports and platform billing updates.
 
-</details>
+## Web3 request flow
 
-## Session-aware requests
-
-The Axios layer attaches the current JWT when a protected request is made. If the backend returns an unauthenticated response, the frontend clears the stored session and keeps public pages usable. This prevents the UI from showing an old wallet session as active after the token expires.
-
-<details class="doc-flow-card">
-<summary>Web3 request flow</summary>
-
-Web3 operations are not treated as normal HTTP requests. The frontend first uses wagmi/viem to read wallet, chain and contract state. Once a transaction is confirmed by the wallet, the backend receives the transaction hash and validates the event through RPC.
+Web3 operations combine wallet state, contract writes and backend confirmation. The frontend can request a transaction, but access is updated only after the backend verifies the event through RPC.
 
 ```mermaid
-flowchart LR
-    UI["Subscribe button"] --> Wallet["Wallet confirmation"]
-    Wallet --> Contract["Smart contract transaction"]
-    Contract --> TxHash["Transaction hash"]
-    TxHash --> Backend["Backend confirm endpoint"]
-    Backend --> RPC["RPC receipt lookup"]
-    RPC --> Event["Decoded event"]
-    Event --> Cache["Invalidate query cache"]
+sequenceDiagram
+    participant UI as Frontend
+    participant Wallet
+    participant Contract as Smart contract
+    participant API as Backend confirm endpoint
+    participant RPC
+    participant Cache as TanStack Query
+
+    UI->>Wallet: Request approve / subscribe
+    Wallet->>Contract: Send transaction
+    Contract-->>Wallet: Transaction hash
+    UI->>API: Confirm tx hash
+    API->>RPC: Load receipt and decode event
+    API-->>UI: Confirmed access or billing state
+    UI->>Cache: Invalidate affected queries
 ```
 
-The UI does not assume that a transaction hash is enough. Access is updated only after backend confirmation succeeds.
-
-</details>
+The same shape is used for reader subscriptions and author platform billing, but the backend validates different manager contracts and updates different MongoDB projections.

@@ -14,8 +14,9 @@ useContent stores binary content in MinIO and stores metadata in MongoDB.
 - Storage usage can be counted per author.
 - Files can be deleted or cleaned up according to platform billing rules.
 - The system depends on server-side object storage instead of decentralized public content addressing.
+- Object keys can use internal identifiers instead of user-facing names.
+- Folder bundles and bulk downloads can be generated without exposing a public content-addressed graph.
 
 ## Alternatives considered
 
-IPFS was not selected because public content addressing does not match the current access-control model.
-
+IPFS was not selected because public content addressing does not match the current access-control model. A hybrid model with encrypted IPFS objects was considered too heavy for the current stage because key distribution, revocation and paid access expiry would become separate product problems.

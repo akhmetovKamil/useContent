@@ -43,6 +43,8 @@ Server state is handled by TanStack Query. Local session state is stored in Zust
 
 The API layer wraps Axios and returns typed DTOs. Request params and response shapes are centralized to avoid inline object contracts inside pages.
 
+The important rule is that pages do not know transport details. A page asks a domain hook for `items`, `loadMore`, `isLoading`, `error` and mutation actions. The hook decides which query key to use, which API class to call and which related queries must be invalidated after a mutation.
+
 ## Web3 integration
 
 wagmi and viem are used for:
@@ -53,6 +55,8 @@ wagmi and viem are used for:
 - approve transactions;
 - subscription transactions;
 - transaction status handling.
+
+The UI never grants access immediately after `writeContract`. It waits for backend confirmation of the transaction receipt. This prevents a pending, reverted or unrelated transaction hash from becoming access state in the product.
 
 ## Page composition
 
@@ -71,3 +75,6 @@ Large pages are decomposed into page-specific component folders. Shared visual p
 
 See [Frontend Data Flow](./data-flow) for the detailed request/cache/mutation flow.
 
+## Error and validation model
+
+The frontend separates three kinds of failure. Query failures render inline states, user-triggered mutation failures use toast notifications, and invalid form input is shown near the affected field. Validation schemas are written with Zod for important forms such as author onboarding, reports, comments and content forms.

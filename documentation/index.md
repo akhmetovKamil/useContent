@@ -35,13 +35,13 @@ The documentation is intentionally focused on implemented behavior. Potential fu
 <div class="doc-grid">
     <a class="doc-card" href="/architecture/">
         <span class="doc-badge">Architecture</span>
-        <strong>System Architecture</strong>
+        <strong>Architecture Overview</strong>
         <span>See how the browser, backend, MongoDB, MinIO and EVM networks interact.</span>
     </a>
-    <a class="doc-card" href="/architecture/core-flows">
+    <a class="doc-card" href="/flows">
         <span class="doc-badge">Flow</span>
-        <strong>Core Flows</strong>
-        <span>Follow wallet auth, file upload, content delivery and subscription confirmation.</span>
+        <strong>Runtime Flows</strong>
+        <span>Follow file upload, subscription confirmation, billing and promoted feed paths.</span>
     </a>
     <a class="doc-card" href="/frontend/data-flow">
         <span class="doc-badge">Frontend</span>

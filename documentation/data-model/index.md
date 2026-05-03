@@ -1,4 +1,4 @@
-# Data Model
+# Domain Model
 
 The database model is centered around author-owned content, reusable access policies and subscription-derived entitlements.
 
@@ -94,6 +94,8 @@ erDiagram
 ## Separation of concerns
 
 MongoDB contains documents and access state. MinIO contains the actual file bytes. Smart contracts contain payment state and emit events, but the backend mirrors successful payments into MongoDB entitlements for fast access evaluation.
+
+For a deeper storage-focused view, see [Storage Model](./storage) and [MongoDB Collections](./mongodb).
 
 ## Content state model
 

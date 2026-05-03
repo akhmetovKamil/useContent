@@ -60,7 +60,7 @@ flowchart TD
 
 ## Error handling
 
-Backend services return domain-specific API errors such as unauthenticated, invalid argument, not found and failed precondition. The frontend normalizes those errors into inline states, toasts or form validation messages depending on context.
+Backend services return domain-specific API errors such as unauthenticated, invalid argument, not found and failed precondition. Operational failure categories and request flow are described in [Backend Operations](./operations).
 
 ## Repository and storage boundaries
 
@@ -84,3 +84,6 @@ Contract deployment private keys are not part of the backend runtime configurati
 
 See [Backend Operations](./operations) for operational details.
 
+## Service style
+
+The backend modules follow the same pattern: API handlers stay thin, services own business rules, repositories own MongoDB access, and storage/on-chain helpers sit behind explicit domain boundaries. This structure keeps cross-cutting concerns visible without rebuilding a monolithic content service.

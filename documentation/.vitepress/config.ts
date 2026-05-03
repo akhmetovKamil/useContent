@@ -44,10 +44,10 @@ export default defineConfig({
         nav: [
             { text: "Start", link: "/overview/introduction" },
             {
-                text: "System",
+                text: "Architecture",
                 items: [
                     { text: "Architecture", link: "/architecture/" },
-                    { text: "Core Flows", link: "/architecture/core-flows" },
+                    { text: "Runtime Flows", link: "/flows" },
                     { text: "Data Model", link: "/data-model/" },
                 ],
             },
@@ -79,23 +79,31 @@ export default defineConfig({
                 ],
             },
             {
-                text: "02. System Architecture",
+                text: "02. Architecture",
                 collapsed: false,
                 items: [
                     { text: "High-Level Architecture", link: "/architecture/" },
-                    { text: "Core Flows", link: "/architecture/core-flows" },
                     { text: "Access Control", link: "/architecture/access-control" },
                     { text: "Content Delivery", link: "/architecture/content-delivery" },
                     { text: "Wallet Authentication", link: "/architecture/wallet-auth" },
                 ],
             },
             {
-                text: "03. Data & Storage",
+                text: "03. Runtime Flows",
                 collapsed: false,
-                items: [{ text: "Domain Model", link: "/data-model/" }],
+                items: [{ text: "Flow Map", link: "/flows" }],
             },
             {
-                text: "04. Implementation",
+                text: "04. Data & Storage",
+                collapsed: false,
+                items: [
+                    { text: "Domain Model", link: "/data-model/" },
+                    { text: "Storage Model", link: "/data-model/storage" },
+                    { text: "MongoDB Collections", link: "/data-model/mongodb" },
+                ],
+            },
+            {
+                text: "05. Implementation",
                 collapsed: false,
                 items: [
                     { text: "Frontend", link: "/frontend/" },
@@ -106,26 +114,32 @@ export default defineConfig({
                 ],
             },
             {
-                text: "05. Verification & Deployment",
+                text: "06. Testing",
+                collapsed: false,
+                items: [{ text: "Testing Strategy", link: "/testing/" }],
+            },
+            {
+                text: "07. Deployment",
                 collapsed: false,
                 items: [
-                    { text: "Testing", link: "/testing/" },
-                    { text: "Deployment", link: "/deployment/" },
-                    { text: "Runtime Environments", link: "/deployment/environments" },
+                    { text: "Deployment Overview", link: "/deployment/" },
+                    { text: "Secrets & Environments", link: "/deployment/secrets-environments" },
                     { text: "Documentation Deployment", link: "/deployment/documentation" },
                 ],
             },
             {
-                text: "06. Architecture Decisions",
+                text: "08. Architecture Decisions",
                 collapsed: true,
                 items: [
-                    { text: "ADR Index", link: "/adr/" },
+                    { text: "ADR List", link: "/adr/" },
                     { text: "ADR-001 MinIO over IPFS", link: "/adr/minio-over-ipfs" },
                     { text: "ADR-002 Backend Access Verification", link: "/adr/backend-access-verification" },
                     { text: "ADR-003 Signed URLs", link: "/adr/signed-urls" },
                     { text: "ADR-004 Shared Reader Manager", link: "/adr/shared-reader-manager" },
                     { text: "ADR-005 Platform Billing Manager", link: "/adr/platform-billing-manager" },
                     { text: "ADR-006 Static Docs Deployment", link: "/adr/static-docs-deployment" },
+                    { text: "ADR-007 Coolify Proxy Domains", link: "/adr/coolify-proxy-domains" },
+                    { text: "ADR-008 TanStack Query Boundary", link: "/adr/tanstack-query-boundary" },
                 ],
             },
         ],
