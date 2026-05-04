@@ -48,7 +48,7 @@ export default defineConfig({
                 text: "Architecture",
                 items: [
                     { text: "Architecture", link: "/architecture/" },
-                    { text: "Runtime Flows", link: "/flows" },
+                    { text: "Runtime Flows", link: "/flows/" },
                     { text: "Data Model", link: "/data-model/" },
                 ],
             },
@@ -90,9 +90,9 @@ export default defineConfig({
                 ],
             },
             {
-                text: "03. Basic Flows",
+                text: "03. Runtime Flows",
                 collapsed: true,
-                items: [{ text: "Flow Map", link: "/flows" }],
+                items: [{ text: "Flow Map", link: "/flows/" }],
             },
             {
                 text: "04. Data & Storage",

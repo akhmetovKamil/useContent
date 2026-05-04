@@ -193,7 +193,6 @@
     text-decoration-thickness: 2px;
     text-underline-offset: 7px;
     color: var(--vp-c-brand-1);
-    font-weight: 750;
 }
 
 .VPFeature {
@@ -311,7 +310,12 @@
 .mermaid-wrapper .edgeLabel p,
 .mermaid-wrapper .edgeLabel foreignObject,
 .mermaid-wrapper .edgeLabel div,
-.mermaid-wrapper .edgeLabel span {
+.mermaid-wrapper .edgeLabel span,
+.mermaid-modal-content .edgeLabel,
+.mermaid-modal-content .edgeLabel p,
+.mermaid-modal-content .edgeLabel foreignObject,
+.mermaid-modal-content .edgeLabel div,
+.mermaid-modal-content .edgeLabel span {
     background: transparent !important;
     color: var(--vp-c-brand-1) !important;
 }
@@ -321,15 +325,30 @@
 .mermaid-wrapper .labelBkg,
 .mermaid-wrapper .relationLabelBox,
 .mermaid-wrapper g.edgeLabel rect,
-.mermaid-wrapper g.label rect {
+.mermaid-wrapper g.label rect,
+.mermaid-modal-content .edgeLabel rect,
+.mermaid-modal-content .edgeLabels rect,
+.mermaid-modal-content .labelBkg,
+.mermaid-modal-content .relationLabelBox,
+.mermaid-modal-content g.edgeLabel rect,
+.mermaid-modal-content g.label rect {
     fill: transparent !important;
     opacity: 0 !important;
 }
 
 .mermaid-wrapper .relationshipLabelBox,
 .mermaid-wrapper .er.relationshipLabelBox,
-.mermaid-wrapper .stateLabel rect {
+.mermaid-wrapper .stateLabel rect,
+.mermaid-modal-content .relationshipLabelBox,
+.mermaid-modal-content .er.relationshipLabelBox,
+.mermaid-modal-content .stateLabel rect {
     fill: transparent !important;
+}
+
+.adr-table td:first-child,
+.adr-table th:first-child {
+    min-width: 104px;
+    white-space: nowrap;
 }
 
 .vp-doc table {
@@ -501,7 +520,6 @@
 .VPDocAsideOutline .outline-link:hover,
 .VPDocAsideOutline .outline-link.active {
     color: var(--vp-c-brand-1);
-    font-weight: 750;
 }
 
 .VPDocAsideOutline .outline-marker {

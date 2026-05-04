@@ -41,7 +41,9 @@ flowchart TD
     CoolifyDocs --> DocsStatic["Serve docs.usecontent.app"]
 
     Manual["Manual contract workflow"] --> Hardhat["Hardhat deploy script"]
-    Hardhat --> Registry["Backend deployment registry"]
+    Hardhat --> RPC["RPC provider"]
+    RPC --> Chains["EVM chains"]
+    Hardhat -.-> Registry["Sync deployment registry"]
 ```
 
 ## Runtime routing

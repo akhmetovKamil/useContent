@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useData } from "vitepress";
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const props = defineProps<{
     code: string;
@@ -148,6 +148,20 @@ const renderDiagram = async () => {
 };
 
 onMounted(renderDiagram);
+
+const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+        isExpanded.value = false;
+    }
+};
+
+onMounted(() => {
+    window.addEventListener("keydown", handleKeyDown);
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener("keydown", handleKeyDown);
+});
 
 watch([source, isDark], renderDiagram);
 </script>

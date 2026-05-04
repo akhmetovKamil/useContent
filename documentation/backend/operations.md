@@ -61,18 +61,3 @@ flowchart TD
     Bundle --> MinIO
 ```
 
-## Failure taxonomy
-
-Backend failures are represented as API errors instead of leaking raw exceptions to the frontend.
-
-| Failure | Typical response | UI behavior |
-| --- | --- | --- |
-| Expired session | `unauthenticated` | Clear session and ask for wallet signature. |
-| Invalid form input | `invalid_argument` | Show field-level validation or inline message. |
-| Missing author/content | `not_found` | Show empty or not-found state. |
-| Missing plan/feature | `failed_precondition` | Show upgrade or plan-required state. |
-| Storage quota exceeded | `failed_precondition` | Block upload and show quota message. |
-| Contract verification failed | `invalid_argument` / `failed_precondition` | Keep access locked and show transaction error. |
-
-The frontend then decides how to display those failures: inline query states for page loads, toasts for user actions and field errors for validation.
-

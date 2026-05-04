@@ -62,6 +62,21 @@ flowchart TD
 
 Backend services return domain-specific API errors such as unauthenticated, invalid argument, not found and failed precondition. Operational failure categories and request flow are described in [Backend Operations](./operations).
 
+## Backend error model
+
+Backend failures are represented as API errors instead of leaking raw exceptions to the frontend.
+
+| Failure | Typical response | UI behavior |
+| --- | --- | --- |
+| Expired session | `unauthenticated` | Clear session and ask for wallet signature. |
+| Invalid form input | `invalid_argument` | Show field-level validation or inline message. |
+| Missing author/content | `not_found` | Show empty or not-found state. |
+| Missing plan/feature | `failed_precondition` | Show upgrade or plan-required state. |
+| Storage quota exceeded | `failed_precondition` | Block upload and show quota message. |
+| Contract verification failed | `invalid_argument` / `failed_precondition` | Keep access locked and show transaction error. |
+
+The frontend then decides how to display those failures: inline query states for page loads, toasts for user actions and field errors for validation.
+
 ## Repository and storage boundaries
 
 Domain services use repositories for MongoDB access and storage helpers for MinIO operations. File bytes are never treated as normal MongoDB fields. Instead, services persist object keys and file metadata, then call the storage layer when upload, download or cleanup operations are required.

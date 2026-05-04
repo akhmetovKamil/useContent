@@ -38,7 +38,7 @@ The documentation is intentionally focused on implemented behavior. Potential fu
         <strong>Architecture Overview</strong>
         <span>See how the browser, backend, MongoDB, MinIO and EVM networks interact.</span>
     </a>
-    <a class="doc-card" href="/flows">
+    <a class="doc-card" href="/flows/">
         <span class="doc-badge">Flow</span>
         <strong>Runtime Flows</strong>
         <span>Follow file upload, subscription confirmation, billing and promoted feed paths.</span>

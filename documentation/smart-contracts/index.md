@@ -70,10 +70,10 @@ This contract does not split revenue with creators. It represents author-to-plat
 
 <div class="doc-grid compact">
     <div class="doc-copy-card">
-        <p><strong>SubscriptionManager</strong><br>Reader pays an author plan. The contract stores plan data and paid-until state, splits payment between author and platform treasury, and emits `SubscriptionPaid`.</p>
+        <p><strong>SubscriptionManager</strong><br>Reader pays an author plan. The contract stores plan data and paid-until state, splits payment between author and platform treasury, and emits <code>SubscriptionPaid</code>.</p>
     </div>
     <div class="doc-copy-card">
-        <p><strong>PlatformSubscriptionManager</strong><br>Author pays the platform for a tier and extra storage. The contract transfers the full amount to the treasury and emits `PlatformSubscriptionPaid`.</p>
+        <p><strong>PlatformSubscriptionManager</strong><br>Author pays the platform for a tier and extra storage. The contract transfers the full amount to the treasury and emits <code>PlatformSubscriptionPaid</code>.</p>
     </div>
 </div>
 
