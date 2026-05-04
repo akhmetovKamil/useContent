@@ -4,14 +4,14 @@ import { useEffect, useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 
 import { projectsApi } from "@/api/ProjectsApi"
-import { ProjectBreadcrumbs } from "@/components/project-tree/ProjectBreadcrumbs"
 import { CreateFolderModal } from "@/components/project-tree/CreateFolderModal"
 import { DeleteNodeModal } from "@/components/project-tree/DeleteNodeModal"
 import { PreviewNodeModal } from "@/components/project-tree/PreviewNodeModal"
-import { RenameNodeModal } from "@/components/project-tree/RenameNodeModal"
+import { ProjectBreadcrumbs } from "@/components/project-tree/ProjectBreadcrumbs"
 import { ProjectTreeDetailsPanel } from "@/components/project-tree/ProjectTreeDetailsPanel"
 import { ProjectTreeSidebar } from "@/components/project-tree/ProjectTreeSidebar"
 import { ProjectTreeToolbar } from "@/components/project-tree/ProjectTreeToolbar"
+import { RenameNodeModal } from "@/components/project-tree/RenameNodeModal"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
     useAuthorProjectNodesQuery,
@@ -36,9 +36,7 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
     const [renameName, setRenameName] = useState("")
     const [renameNodeTarget, setRenameNodeTarget] = useState<ProjectNodeDto | null>(null)
     const [selectedNode, setSelectedNode] = useState<ProjectNodeDto | null>(null)
-    const [treeNodesByParent, setTreeNodesByParent] = useState<Record<string, ProjectNodeDto[]>>(
-        {}
-    )
+    const [treeNodesByParent, setTreeNodesByParent] = useState<Record<string, ProjectNodeDto[]>>({})
     const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(
         () => new Set([rootNodeId])
     )
@@ -108,19 +106,6 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
             return
         }
         setSelectedNode(node)
-    }
-
-    async function toggleFolder(folderId: string) {
-        const nextExpanded = new Set(expandedFolderIds)
-        if (nextExpanded.has(folderId)) {
-            nextExpanded.delete(folderId)
-            setExpandedFolderIds(nextExpanded)
-            return
-        }
-
-        nextExpanded.add(folderId)
-        setExpandedFolderIds(nextExpanded)
-        await loadFolderChildren(folderId)
     }
 
     async function loadFolderChildren(folderId: string) {
@@ -302,11 +287,9 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                         <ProjectTreeSidebar
                             currentFolderId={currentFolderId}
                             expandedFolderIds={expandedFolderIds}
-                            isLoadingFolder={(folderId) => loadingFolderIds.has(folderId)}
                             nodesByParent={treeNodesByParent}
                             onOpenRoot={openRoot}
                             onSelectNode={selectNode}
-                            onToggleFolder={(folderId) => void toggleFolder(folderId)}
                             rootNodeId={rootNodeId}
                             selectedNodeId={selectedNode?.id}
                         />
