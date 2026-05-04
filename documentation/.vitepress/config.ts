@@ -39,7 +39,7 @@ export default defineConfig({
         },
     },
     themeConfig: {
-        logo: "/logo-mark.svg",
+        logo: "/logo.svg",
         siteTitle: "useContent",
         nav: [
             { text: "Home", link: "/" },
