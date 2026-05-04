@@ -1,7 +1,7 @@
 import { defineConfig } from "vitepress";
 
 export default defineConfig({
-    title: "useContent Documentation",
+    title: "Docs useContent",
     description: "Engineering documentation portal for the useContent platform.",
     head: [["meta", { name: "theme-color", content: "#0f766e" }]],
     cleanUrls: true,
@@ -42,7 +42,8 @@ export default defineConfig({
         logo: "/logo-mark.svg",
         siteTitle: "useContent",
         nav: [
-            { text: "Start", link: "/overview/introduction" },
+            { text: "Home", link: "/" },
+            { text: "Overview", link: "/overview/introduction" },
             {
                 text: "Architecture",
                 items: [
@@ -70,7 +71,7 @@ export default defineConfig({
         ],
         sidebar: [
             {
-                text: "01. Product Context",
+                text: "01. Overview",
                 collapsed: false,
                 items: [
                     { text: "Introduction", link: "/overview/introduction" },
@@ -89,13 +90,13 @@ export default defineConfig({
                 ],
             },
             {
-                text: "03. Runtime Flows",
-                collapsed: false,
+                text: "03. Basic Flows",
+                collapsed: true,
                 items: [{ text: "Flow Map", link: "/flows" }],
             },
             {
                 text: "04. Data & Storage",
-                collapsed: false,
+                collapsed: true,
                 items: [
                     { text: "Domain Model", link: "/data-model/" },
                     { text: "Storage Model", link: "/data-model/storage" },
@@ -103,8 +104,8 @@ export default defineConfig({
                 ],
             },
             {
-                text: "05. Implementation",
-                collapsed: false,
+                text: "05. Code",
+                collapsed: true,
                 items: [
                     { text: "Frontend", link: "/frontend/" },
                     { text: "Frontend Data Flow", link: "/frontend/data-flow" },
@@ -115,12 +116,12 @@ export default defineConfig({
             },
             {
                 text: "06. Testing",
-                collapsed: false,
+                collapsed: true,
                 items: [{ text: "Testing Strategy", link: "/testing/" }],
             },
             {
                 text: "07. Deployment",
-                collapsed: false,
+                collapsed: true,
                 items: [
                     { text: "Deployment Overview", link: "/deployment/" },
                     { text: "Secrets & Environments", link: "/deployment/secrets-environments" },
@@ -128,7 +129,7 @@ export default defineConfig({
                 ],
             },
             {
-                text: "08. Architecture Decisions",
+                text: "08. ADRs",
                 collapsed: true,
                 items: [
                     { text: "ADR List", link: "/adr/" },
