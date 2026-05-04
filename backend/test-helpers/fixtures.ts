@@ -12,6 +12,7 @@ export function createAuthorProfileDoc(
     displayName: "Kamil",
     bio: "",
     tags: [],
+    socialLinks: [],
     avatarFileId: null,
     defaultPolicy: {
       version: 1,

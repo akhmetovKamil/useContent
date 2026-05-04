@@ -30,6 +30,7 @@ export interface PostCommentDto extends AuthorOwnedDto {
   postId: EntityId;
   walletAddress: WalletAddress;
   displayName: string;
+  avatarFileId: Maybe<EntityId>;
   content: string;
   createdAt: string;
   updatedAt: string;
@@ -75,12 +76,21 @@ export interface PostPromotionDto {
   promotedAt: NullableDateString;
 }
 
+export type PostMediaLayout = "carousel" | "resizable_grid";
+
+export interface PostMediaGridLayoutDto {
+  variant: "two" | "three" | "four";
+  sizes: number[];
+}
+
 export interface PostDto extends ContentBaseDto {
   content: string;
   status: ContentStatus;
   policyMode: PolicyMode;
   policy: Maybe<AccessPolicy>;
   accessPolicyId: Maybe<EntityId>;
+  mediaLayout: PostMediaLayout;
+  mediaGridLayout: Maybe<PostMediaGridLayoutDto>;
   attachmentIds: EntityId[];
   attachments: PostAttachmentDto[];
   linkedProjectIds: EntityId[];
@@ -94,6 +104,7 @@ export interface PostDto extends ContentBaseDto {
 export interface FeedPostDto extends PostDto {
   authorSlug: string;
   authorDisplayName: string;
+  authorAvatarFileId: Maybe<EntityId>;
   accessLabel: Maybe<string>;
   hasAccess: boolean;
   feedSource: FeedSource;
@@ -113,6 +124,8 @@ export interface CreatePostInput {
   policy?: Maybe<AccessPolicy>;
   policyInput?: AccessPolicyInput;
   accessPolicyId?: Maybe<EntityId>;
+  mediaLayout?: PostMediaLayout;
+  mediaGridLayout?: Maybe<PostMediaGridLayoutDto>;
   attachmentIds?: EntityId[];
   linkedProjectIds?: EntityId[];
 }

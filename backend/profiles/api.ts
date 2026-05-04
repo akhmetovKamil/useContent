@@ -1,5 +1,8 @@
 import { api } from "encore.dev/api";
-import { getRequiredWallet } from "../lib/api-helpers";
+import {
+  getRequiredWallet,
+  readRequestBody,
+} from "../lib/api-helpers";
 import {
   toAuthorProfileResponse,
   toUserProfileResponse,
@@ -33,6 +36,20 @@ export const updateMe = api(
     const walletAddress = getRequiredWallet();
     const user = await service.updateMyProfile(walletAddress, req);
     return toUserProfileResponse(user);
+  },
+);
+
+export const uploadMyProfileAvatar = api.raw(
+  { method: "POST", path: "/me/avatar", expose: true, auth: true },
+  async (req, resp) => {
+    const walletAddress = getRequiredWallet();
+    const user = await service.uploadMyProfileAvatar(walletAddress, {
+      body: await readRequestBody(req),
+      contentType: String(req.headers["content-type"] ?? "application/octet-stream"),
+    });
+
+    resp.writeHead(200, { "Content-Type": "application/json" });
+    resp.end(JSON.stringify(toUserProfileResponse(user)));
   },
 );
 
@@ -71,6 +88,20 @@ export const updateMyAuthorProfile = api(
   },
 );
 
+export const uploadMyAuthorAvatar = api.raw(
+  { method: "POST", path: "/me/author/avatar", expose: true, auth: true },
+  async (req, resp) => {
+    const walletAddress = getRequiredWallet();
+    const author = await service.uploadMyAuthorAvatar(walletAddress, {
+      body: await readRequestBody(req),
+      contentType: String(req.headers["content-type"] ?? "application/octet-stream"),
+    });
+
+    resp.writeHead(200, { "Content-Type": "application/json" });
+    resp.end(JSON.stringify(toAuthorProfileResponse(author)));
+  },
+);
+
 export const deleteMyAuthorProfile = api(
   { method: "DELETE", path: "/me/author", expose: true, auth: true },
   async (): Promise<void> => {
@@ -92,5 +123,22 @@ export const getAuthorProfile = api(
   async ({ slug }: GetAuthorProfileRequest): Promise<AuthorProfileResponse> => {
     const author = await service.getAuthorProfileBySlug(slug);
     return toAuthorProfileResponse(author);
+  },
+);
+
+export const downloadProfileAvatar = api.raw(
+  { method: "GET", path: "/profile-avatars/*avatarFileId", expose: true },
+  async (req, resp) => {
+    const avatarFileId = new URL(req.url ?? "", "http://localhost").pathname
+      .split("/")
+      .filter(Boolean)
+      .at(-1);
+    const file = await service.getProfileAvatar(avatarFileId ?? "");
+    resp.writeHead(200, {
+      "Content-Type": file.contentType,
+      "Content-Length": String(file.body.length),
+      "Content-Disposition": `inline; filename="${encodeURIComponent(file.fileName)}"`,
+    });
+    resp.end(file.body);
   },
 );

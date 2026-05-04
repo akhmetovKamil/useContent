@@ -8,6 +8,7 @@ import {
     getData,
     patchData,
     postData,
+    uploadData,
 } from "@/utils/api/http"
 import { unwrapResponseKey } from "@/utils/api/response"
 import type { CursorPageInput } from "@/types/api"
@@ -21,6 +22,12 @@ class ProfileApi {
         return patchData<UserProfileDto>("/me", input)
     }
 
+    async uploadMyProfileAvatar(file: File) {
+        return uploadData<UserProfileDto>("/me/avatar", file, {
+            headers: { "Content-Type": file.type || "application/octet-stream" },
+        })
+    }
+
     async getMyAuthorProfile() {
         return getData<AuthorProfileDto>("/me/author")
     }
@@ -31,6 +38,12 @@ class ProfileApi {
 
     async updateMyAuthorProfile(input: UpdateAuthorProfileInput) {
         return patchData<AuthorProfileDto>("/me/author", input)
+    }
+
+    async uploadMyAuthorAvatar(file: File) {
+        return uploadData<AuthorProfileDto>("/me/author/avatar", file, {
+            headers: { "Content-Type": file.type || "application/octet-stream" },
+        })
     }
 
     async deleteMyAuthorProfile() {

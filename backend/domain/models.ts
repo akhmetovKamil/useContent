@@ -38,6 +38,7 @@ export interface AuthorProfile {
   displayName: string;
   bio: string;
   tags: string[];
+  socialLinks: { label: string; url: string }[];
   avatarFileId: string | null;
   defaultPolicy: AccessPolicy;
   defaultPolicyId: string | null;
@@ -66,6 +67,8 @@ export interface Post {
   policyMode: PolicyMode;
   policy: AccessPolicy | null;
   accessPolicyId: string | null;
+  mediaLayout: "carousel" | "resizable_grid";
+  mediaGridLayout: { variant: "two" | "three" | "four"; sizes: number[] } | null;
   attachmentIds: string[];
   linkedProjectIds: string[];
   publishedAt: Date | null;

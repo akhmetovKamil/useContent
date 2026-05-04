@@ -5,7 +5,8 @@ import { getOrCreateBrowserId } from "@/utils/local-id"
 export function toAuthorFeedPost(
     post: PostDto,
     authorDisplayName: string,
-    authorSlug: string
+    authorSlug: string,
+    authorAvatarFileId: string | null = null
 ): FeedPostDto {
     return {
         ...post,
@@ -16,6 +17,7 @@ export function toAuthorFeedPost(
                   ? "Custom tier"
                   : "Default tier",
         authorDisplayName,
+        authorAvatarFileId,
         authorSlug,
         commentsPreview: [],
         feedReason: `From @${authorSlug}`,

@@ -6,6 +6,7 @@ import { WorkspaceModeToggle } from "@/components/layout/WorkspaceModeToggle"
 import { Dock } from "@/components/ui/dock"
 import { WalletStatus } from "@/components/wallet/WalletStatus"
 import { authorNavItems, publicNavItems, readerNavItems } from "@/constants/navigation"
+import { useMyAuthorPlatformBillingQuery } from "@/queries/platform"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 import { useWorkspaceStore } from "@/stores/workspace-store"
@@ -21,10 +22,22 @@ export function RootLayout() {
     const hasAuthorProfile = Boolean(authorQuery.data)
     const readerProfilePath = authorQuery.data ? `/authors/${authorQuery.data.slug}` : "/me/profile"
     const visibleMode = token && (hasAuthorProfile || hasAuthorProfileHint) ? mode : "reader"
+    const billingQuery = useMyAuthorPlatformBillingQuery(
+        Boolean(token && hasAuthorProfile && visibleMode === "author")
+    )
+    const projectsLocked =
+        visibleMode === "author" &&
+        billingQuery.isSuccess &&
+        Boolean(
+            !billingQuery.data.features.includes("projects") ||
+                !billingQuery.data.isProjectCreationAllowed
+        )
     const navItems = !token
         ? publicNavItems
         : visibleMode === "author"
-          ? authorNavItems
+          ? authorNavItems.map((item) =>
+                item.to === "/me/projects" ? { ...item, locked: projectsLocked } : item
+            )
           : readerNavItems.map((item) =>
                 item.label === "Profile" ? { ...item, to: readerProfilePath } : item
             )

@@ -183,6 +183,8 @@ export function PostCard({
                         <PostMediaGallery
                             attachments={post.attachments ?? []}
                             getDownloadUrl={getDownloadUrl}
+                            mediaGridLayout={post.mediaGridLayout}
+                            mediaLayout={post.mediaLayout}
                             onDownload={downloadAttachment}
                         />
                         {author && post.linkedProjectIds.length ? (

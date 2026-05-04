@@ -17,6 +17,8 @@ export interface PostDoc {
   policyMode: PolicyMode;
   policy: AccessPolicy | null;
   accessPolicyId: ObjectId | null;
+  mediaLayout?: "carousel" | "resizable_grid";
+  mediaGridLayout?: PostMediaGridLayoutDoc | null;
   attachmentIds: ObjectId[];
   linkedProjectIds: ObjectId[];
   promoted?: boolean;
@@ -25,6 +27,11 @@ export interface PostDoc {
   publishedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface PostMediaGridLayoutDoc {
+  variant: "two" | "three" | "four";
+  sizes: number[];
 }
 
 export interface PostLikeDoc {
@@ -41,6 +48,7 @@ export interface PostCommentDoc {
   authorId: ObjectId;
   walletAddress: string;
   displayName: string;
+  avatarFileId?: ObjectId | null;
   content: string;
   createdAt: Date;
   updatedAt: Date;

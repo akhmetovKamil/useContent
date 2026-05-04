@@ -31,7 +31,10 @@ export function PostPage() {
     const viewerKey = useMemo(() => getPostViewerKey(), [])
     const author = authorQuery.data
     const post = postQuery.data
-    const feedPost = post && author ? toAuthorFeedPost(post, author.displayName, author.slug) : null
+    const feedPost =
+        post && author
+            ? toAuthorFeedPost(post, author.displayName, author.slug, author.avatarFileId)
+            : null
     const relatedPosts = relatedPostsQuery.items
         .filter((item) => item.id !== postId)
         .slice(0, 3)

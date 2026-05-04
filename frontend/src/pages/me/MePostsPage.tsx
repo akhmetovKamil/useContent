@@ -46,10 +46,12 @@ export function MePostsPage() {
     )
     const authorSlug = authorQuery.data?.slug ?? ""
     const authorDisplayName = authorQuery.data?.displayName ?? "Author"
+    const authorAvatarFileId = authorQuery.data?.avatarFileId ?? null
     const activePosts = authorSlug
         ? postsQuery.data?.map((post) => ({
               ...post,
               authorDisplayName,
+              authorAvatarFileId,
               authorSlug,
               accessLabel: null,
               hasAccess: true,
@@ -59,6 +61,7 @@ export function MePostsPage() {
         ? archivedPostsQuery.data?.map((post) => ({
               ...post,
               authorDisplayName,
+              authorAvatarFileId,
               authorSlug,
               accessLabel: null,
               hasAccess: true,
@@ -119,11 +122,21 @@ export function MePostsPage() {
                     projectOptions={projectsQuery.data}
                     onSubmit={async (input, files) => {
                         const post = await createPostMutation.mutateAsync(input)
-                        await Promise.all(
+                        const attachments = await Promise.all(
                             files.map((file) =>
                                 uploadAttachmentMutation.mutateAsync({ file, postId: post.id })
                             )
                         )
+                        if (attachments.length) {
+                            await updatePostMutation.mutateAsync({
+                                postId: post.id,
+                                input: {
+                                    attachmentIds: attachments.map((attachment) => attachment.id),
+                                    mediaGridLayout: input.mediaGridLayout,
+                                    mediaLayout: input.mediaLayout,
+                                },
+                            })
+                        }
                     }}
                 />
             ) : null}

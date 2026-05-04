@@ -1,4 +1,5 @@
 import type { AuthorProfileDto, CreateAuthorProfileInput } from "@shared/types/profile"
+import { Plus, X } from "lucide-react"
 import { useEffect, useMemo, useState, type FormEvent } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -32,6 +33,7 @@ export function AuthorProfileForm({
     const [slug, setSlug] = useState(author?.slug ?? "")
     const [bio, setBio] = useState(author?.bio ?? "")
     const [tags, setTags] = useState<string[]>(author?.tags ?? [])
+    const [socialLinks, setSocialLinks] = useState(author?.socialLinks ?? [])
     const [customTag, setCustomTag] = useState("")
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
     const apiSlugError = error?.toLowerCase().includes("slug") ? error : null
@@ -49,6 +51,7 @@ export function AuthorProfileForm({
         setSlug(author.slug)
         setBio(author.bio)
         setTags(author.tags ?? [])
+        setSocialLinks(author.socialLinks ?? [])
     }, [author])
 
     function submit(event: FormEvent<HTMLFormElement>) {
@@ -56,6 +59,7 @@ export function AuthorProfileForm({
         const result = validateForm(authorProfileSchema(mode), {
             bio,
             displayName,
+            socialLinks,
             slug,
             tags,
         })
@@ -70,6 +74,7 @@ export function AuthorProfileForm({
             displayName: result.data.displayName,
             bio: result.data.bio,
             tags: result.data.tags,
+            socialLinks: result.data.socialLinks,
         })
     }
 
@@ -205,6 +210,93 @@ export function AuthorProfileForm({
                                 Add
                             </Button>
                         </div>
+                    </div>
+
+                    <div className="grid gap-3">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <div className="text-sm font-medium text-[var(--foreground)]">
+                                    Social links
+                                </div>
+                                <p className="mt-1 text-xs text-[var(--muted)]">
+                                    Add up to 6 public links.
+                                </p>
+                            </div>
+                            <Button
+                                disabled={socialLinks.length >= 6}
+                                onClick={() =>
+                                    setSocialLinks((current) => [
+                                        ...current,
+                                        { label: "", url: "" },
+                                    ])
+                                }
+                                size="sm"
+                                type="button"
+                                variant="outline"
+                            >
+                                <Plus className="size-4" />
+                                Add link
+                            </Button>
+                        </div>
+                        {socialLinks.length ? (
+                            <div className="grid gap-2">
+                                {socialLinks.map((link, index) => (
+                                    <div
+                                        className="grid gap-2 rounded-lg border border-[var(--line)] bg-[var(--surface)] p-3 md:grid-cols-[0.45fr_1fr_auto]"
+                                        key={index}
+                                    >
+                                        <Input
+                                            aria-label={`Social label ${index + 1}`}
+                                            onChange={(event) =>
+                                                setSocialLinks((current) =>
+                                                    current.map((item, itemIndex) =>
+                                                        itemIndex === index
+                                                            ? { ...item, label: event.target.value }
+                                                            : item
+                                                    )
+                                                )
+                                            }
+                                            placeholder="X, GitHub, Website"
+                                            value={link.label}
+                                        />
+                                        <Input
+                                            aria-label={`Social URL ${index + 1}`}
+                                            onChange={(event) =>
+                                                setSocialLinks((current) =>
+                                                    current.map((item, itemIndex) =>
+                                                        itemIndex === index
+                                                            ? { ...item, url: event.target.value }
+                                                            : item
+                                                    )
+                                                )
+                                            }
+                                            placeholder="https://..."
+                                            value={link.url}
+                                        />
+                                        <Button
+                                            aria-label={`Remove social link ${index + 1}`}
+                                            onClick={() =>
+                                                setSocialLinks((current) =>
+                                                    current.filter(
+                                                        (_, itemIndex) => itemIndex !== index
+                                                    )
+                                                )
+                                            }
+                                            size="icon"
+                                            type="button"
+                                            variant="ghost"
+                                        >
+                                            <X className="size-4" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : null}
+                        {fieldErrors.socialLinks ? (
+                            <span className="text-xs text-rose-600">
+                                {fieldErrors.socialLinks}
+                            </span>
+                        ) : null}
                     </div>
 
                     {error && !apiSlugError ? (

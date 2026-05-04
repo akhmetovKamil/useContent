@@ -26,6 +26,27 @@ export function authorProfileSchema(mode: "create" | "update") {
                 }
             }),
         tags: z.array(z.string().trim().toLowerCase()).max(12, "Use 12 tags or fewer."),
+        socialLinks: z
+            .array(
+                z.object({
+                    label: z
+                        .string()
+                        .trim()
+                        .min(1, "Social label is required.")
+                        .max(32, "Social label must be 32 characters or less."),
+                    url: z
+                        .string()
+                        .trim()
+                        .url("Social URL must be valid.")
+                        .refine(
+                            (value) =>
+                                value.startsWith("http://") || value.startsWith("https://"),
+                            "Social URL must use http or https."
+                        ),
+                })
+            )
+            .max(6, "Use 6 social links or fewer.")
+            .default([]),
     })
 }
 

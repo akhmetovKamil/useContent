@@ -98,6 +98,23 @@ export function useUpdateMeMutation() {
     })
 }
 
+export function useUploadMyProfileAvatarMutation() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (file: File) => profileApi.uploadMyProfileAvatar(file),
+        onSuccess: () => {
+            void invalidateMany(queryClient, [
+                queryKeys.me,
+                queryKeys.myAuthor,
+                queryKeys.authors(),
+                queryKeys.myFeedPosts,
+                queryKeys.exploreFeedPostsRoot,
+            ])
+        },
+    })
+}
+
 export function useUpdateMyAuthorProfileMutation() {
     const queryClient = useQueryClient()
 
@@ -105,6 +122,23 @@ export function useUpdateMyAuthorProfileMutation() {
         mutationFn: (input: UpdateAuthorProfileInput) => profileApi.updateMyAuthorProfile(input),
         onSuccess: () => {
             void invalidateMany(queryClient, [queryKeys.myAuthor, queryKeys.authors()])
+        },
+    })
+}
+
+export function useUploadMyAuthorAvatarMutation() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (file: File) => profileApi.uploadMyAuthorAvatar(file),
+        onSuccess: () => {
+            void invalidateMany(queryClient, [
+                queryKeys.me,
+                queryKeys.myAuthor,
+                queryKeys.authors(),
+                queryKeys.myFeedPosts,
+                queryKeys.exploreFeedPostsRoot,
+            ])
         },
     })
 }

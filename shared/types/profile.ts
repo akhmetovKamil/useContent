@@ -24,10 +24,16 @@ export interface AuthorProfileDto extends BaseEntityDto {
   displayName: string;
   bio: string;
   tags: string[];
+  socialLinks: AuthorSocialLinkDto[];
   avatarFileId: Maybe<EntityId>;
   defaultPolicy: AccessPolicy;
   defaultPolicyId: Maybe<EntityId>;
   subscriptionPlanId: Maybe<EntityId>;
+}
+
+export interface AuthorSocialLinkDto {
+  label: string;
+  url: string;
 }
 
 export interface AuthorCatalogItemDto extends AuthorProfileDto {
@@ -53,6 +59,7 @@ export interface CreateAuthorProfileInput {
   displayName: string;
   bio?: string;
   tags?: string[];
+  socialLinks?: AuthorSocialLinkDto[];
   defaultPolicy?: AccessPolicy;
   defaultPolicyInput?: AccessPolicyInput;
 }
@@ -61,6 +68,7 @@ export interface UpdateAuthorProfileInput {
   displayName?: string;
   bio?: string;
   tags?: string[];
+  socialLinks?: AuthorSocialLinkDto[];
   defaultPolicy?: AccessPolicy;
   defaultPolicyInput?: AccessPolicyInput;
   defaultPolicyId?: Maybe<EntityId>;

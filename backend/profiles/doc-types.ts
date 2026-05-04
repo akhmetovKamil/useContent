@@ -28,10 +28,16 @@ export interface AuthorProfileDoc {
   displayName: string;
   bio: string;
   tags: string[];
+  socialLinks?: AuthorSocialLinkDoc[];
   avatarFileId: ObjectId | null;
   defaultPolicy: AccessPolicy;
   defaultPolicyId: ObjectId | null;
   subscriptionPlanId: ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface AuthorSocialLinkDoc {
+  label: string;
+  url: string;
 }

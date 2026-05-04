@@ -2,6 +2,7 @@ import type { FeedProjectDto, ProjectDto } from "@shared/types/projects"
 import { FileText, FolderKanban, HardDrive, LockKeyhole } from "lucide-react"
 import { Link } from "react-router-dom"
 
+import { ProfileAvatar } from "@/components/common/ProfileAvatar"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatFileSize } from "@/utils/format"
@@ -23,6 +24,11 @@ export function ProjectCard({ project, showAuthor }: ProjectCardProps) {
             <CardHeader className="gap-3">
                 {showAuthor && author ? (
                     <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--muted)]">
+                        <ProfileAvatar
+                            avatarFileId={author.authorAvatarFileId}
+                            className="size-8"
+                            label={author.authorDisplayName || author.authorSlug}
+                        />
                         <span>{author.authorDisplayName}</span>
                         <Link
                             className="font-mono underline-offset-4 hover:underline"

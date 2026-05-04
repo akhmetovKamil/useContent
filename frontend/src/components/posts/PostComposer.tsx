@@ -1,15 +1,28 @@
 import { CONTENT_STATUS, POLICY_MODE } from "@shared/consts"
 import type { PolicyMode } from "@shared/types/access"
-import type { ContentStatus, CreatePostInput } from "@shared/types/posts"
-import { FolderKanban, ImagePlus, X } from "lucide-react"
+import type {
+    ContentStatus,
+    CreatePostInput,
+    PostMediaGridLayoutDto,
+    PostMediaLayout,
+} from "@shared/types/posts"
+import { FolderKanban, Images, ImagePlus, LayoutGrid, X } from "lucide-react"
 import type { DragEvent } from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+    CarouselNext,
+    CarouselPrevious,
+} from "@/components/ui/carousel"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import {
     Select,
     SelectContent,
@@ -56,6 +69,8 @@ export function PostComposer({
     const [accessPolicyId, setAccessPolicyId] = useState("")
     const [linkedProjectIds, setLinkedProjectIds] = useState<string[]>([])
     const [files, setFiles] = useState<File[]>([])
+    const [mediaLayout, setMediaLayout] = useState<PostMediaLayout>("carousel")
+    const [gridSizes, setGridSizes] = useState<number[]>([])
     const [isDragging, setIsDragging] = useState(false)
     const selectedProjects = useMemo(
         () => projectOptions.filter((project) => linkedProjectIds.includes(project.id)),
@@ -72,6 +87,23 @@ export function PostComposer({
             })),
         [files]
     )
+    const canUseResizableGrid =
+        mediaPreviews.length >= 2 &&
+        mediaPreviews.length <= 4 &&
+        mediaPreviews.every((preview) => preview.isImage)
+    const effectiveMediaLayout = canUseResizableGrid ? mediaLayout : "carousel"
+    const mediaGridLayout: PostMediaGridLayoutDto | null =
+        effectiveMediaLayout === "resizable_grid"
+            ? {
+                  variant:
+                      mediaPreviews.length === 2
+                          ? "two"
+                          : mediaPreviews.length === 3
+                            ? "three"
+                            : "four",
+                  sizes: normalizeGridSizes(gridSizes, mediaPreviews.length),
+              }
+            : null
 
     useEffect(
         () => () => {
@@ -79,6 +111,16 @@ export function PostComposer({
         },
         [mediaPreviews]
     )
+
+    useEffect(() => {
+        if (!canUseResizableGrid && mediaLayout === "resizable_grid") {
+            setMediaLayout("carousel")
+        }
+    }, [canUseResizableGrid, mediaLayout])
+
+    useEffect(() => {
+        setGridSizes((current) => normalizeGridSizes(current, mediaPreviews.length))
+    }, [mediaPreviews.length])
 
     function addFiles(nextFiles: File[]) {
         setFiles((current) => {
@@ -115,6 +157,8 @@ export function PostComposer({
                                     policyMode === POLICY_MODE.CUSTOM ? accessPolicyId : null,
                                 content,
                                 linkedProjectIds,
+                                mediaGridLayout,
+                                mediaLayout: effectiveMediaLayout,
                                 policyMode,
                                 status,
                                 title,
@@ -128,6 +172,8 @@ export function PostComposer({
                             setAccessPolicyId("")
                             setLinkedProjectIds([])
                             setFiles([])
+                            setMediaLayout("carousel")
+                            setGridSizes([])
                         })
                     }}
                 >
@@ -182,55 +228,90 @@ export function PostComposer({
                         </div>
 
                         {mediaPreviews.length ? (
-                            <div className="grid gap-2 sm:grid-cols-2">
-                                {mediaPreviews.map(({ file, isAudio, isImage, isVideo, url }) => (
-                                    <div
-                                        className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]"
-                                        key={`${file.name}-${file.size}`}
-                                    >
-                                        {isImage ? (
-                                            <img
-                                                alt={file.name}
-                                                className="h-36 w-full object-cover"
-                                                src={url}
-                                            />
-                                        ) : isVideo ? (
-                                            <video
-                                                className="h-36 w-full object-cover"
-                                                controls
-                                                src={url}
-                                            />
-                                        ) : isAudio ? (
-                                            <div className="grid h-36 place-items-center bg-[var(--accent-soft)] p-4">
-                                                <audio className="w-full" controls src={url} />
-                                            </div>
-                                        ) : null}
-                                        <div className="flex items-center justify-between gap-3 p-3">
-                                            <div className="min-w-0">
-                                                <div className="truncate text-sm font-medium text-[var(--foreground)]">
-                                                    {file.name}
-                                                </div>
-                                                <div className="mt-1 text-xs text-[var(--muted)]">
-                                                    {file.type || "file"} ·{" "}
-                                                    {formatFileSize(file.size)}
-                                                </div>
-                                            </div>
+                            <div className="grid gap-3">
+                                {mediaPreviews.length > 1 ? (
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <div className="text-sm font-medium text-[var(--foreground)]">
+                                            Media layout
+                                        </div>
+                                        <div className="flex rounded-full border border-[var(--line)] bg-[var(--surface)] p-1">
                                             <Button
-                                                aria-label={`Remove ${file.name}`}
-                                                onClick={() =>
-                                                    setFiles((current) =>
-                                                        current.filter((item) => item !== file)
-                                                    )
-                                                }
-                                                size="icon"
+                                                className="rounded-full"
+                                                onClick={() => setMediaLayout("carousel")}
+                                                size="sm"
                                                 type="button"
-                                                variant="ghost"
+                                                variant={
+                                                    effectiveMediaLayout === "carousel"
+                                                        ? "default"
+                                                        : "ghost"
+                                                }
                                             >
-                                                <X className="size-4" />
+                                                <Images className="size-4" />
+                                                Carousel
                                             </Button>
+                                            {canUseResizableGrid ? (
+                                                <Button
+                                                    className="rounded-full"
+                                                    onClick={() =>
+                                                        setMediaLayout("resizable_grid")
+                                                    }
+                                                    size="sm"
+                                                    type="button"
+                                                    variant={
+                                                        effectiveMediaLayout === "resizable_grid"
+                                                            ? "default"
+                                                            : "ghost"
+                                                    }
+                                                >
+                                                    <LayoutGrid className="size-4" />
+                                                    Grid
+                                                </Button>
+                                            ) : null}
                                         </div>
                                     </div>
-                                ))}
+                                ) : null}
+                                {mediaPreviews.length > 1 &&
+                                effectiveMediaLayout === "carousel" ? (
+                                <Carousel className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
+                                    <CarouselContent className="-ml-0">
+                                        {mediaPreviews.map((preview) => (
+                                            <CarouselItem
+                                                className="pl-0"
+                                                key={`${preview.file.name}-${preview.file.size}`}
+                                            >
+                                                <ComposerMediaPreview
+                                                    onRemove={() =>
+                                                        setFiles((current) =>
+                                                            current.filter(
+                                                                (item) => item !== preview.file
+                                                            )
+                                                        )
+                                                    }
+                                                    preview={preview}
+                                                />
+                                            </CarouselItem>
+                                        ))}
+                                    </CarouselContent>
+                                    <CarouselPrevious className="left-3" />
+                                    <CarouselNext className="right-3" />
+                                </Carousel>
+                                ) : mediaPreviews.length > 1 ? (
+                                    <ComposerResizableGrid
+                                        onLayout={setGridSizes}
+                                        onRemove={(file) =>
+                                            setFiles((current) =>
+                                                current.filter((item) => item !== file)
+                                            )
+                                        }
+                                        previews={mediaPreviews}
+                                        sizes={mediaGridLayout?.sizes ?? []}
+                                    />
+                                ) : (
+                                <ComposerMediaPreview
+                                    onRemove={() => setFiles([])}
+                                    preview={mediaPreviews[0]}
+                                />
+                                )}
                             </div>
                         ) : null}
                     </div>
@@ -370,4 +451,161 @@ export function PostComposer({
             </CardContent>
         </Card>
     )
+}
+
+interface ComposerMediaPreviewProps {
+    onRemove: () => void
+    preview: {
+        file: File
+        isAudio: boolean
+        isImage: boolean
+        isVideo: boolean
+        url: string
+    }
+}
+
+function ComposerMediaPreview({ onRemove, preview }: ComposerMediaPreviewProps) {
+    const { file, isAudio, isImage, isVideo, url } = preview
+
+    return (
+        <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
+            {isImage ? (
+                <img alt={file.name} className="h-72 w-full object-cover" src={url} />
+            ) : isVideo ? (
+                <video className="h-72 w-full object-cover" controls src={url} />
+            ) : isAudio ? (
+                <div className="grid h-72 place-items-center bg-[var(--accent-soft)] p-4">
+                    <audio className="w-full" controls src={url} />
+                </div>
+            ) : null}
+            <div className="flex items-center justify-between gap-3 p-3">
+                <div className="min-w-0">
+                    <div className="truncate text-sm font-medium text-[var(--foreground)]">
+                        {file.name}
+                    </div>
+                    <div className="mt-1 text-xs text-[var(--muted)]">
+                        {file.type || "file"} · {formatFileSize(file.size)}
+                    </div>
+                </div>
+                <Button
+                    aria-label={`Remove ${file.name}`}
+                    onClick={onRemove}
+                    size="icon"
+                    type="button"
+                    variant="ghost"
+                >
+                    <X className="size-4" />
+                </Button>
+            </div>
+        </div>
+    )
+}
+
+interface ComposerResizableGridProps {
+    onLayout: (sizes: number[]) => void
+    onRemove: (file: File) => void
+    previews: ComposerMediaPreviewProps["preview"][]
+    sizes: number[]
+}
+
+function ComposerResizableGrid({
+    onLayout,
+    onRemove,
+    previews,
+    sizes,
+}: ComposerResizableGridProps) {
+    return (
+        <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
+            <ResizablePanelGroup
+                className="min-h-80"
+                defaultLayout={toResizableLayout(sizes)}
+                direction="horizontal"
+                onLayoutChanged={(nextLayout) =>
+                    onLayout(
+                        previews.map((_, index) =>
+                            Math.round(nextLayout[`media-${index}`] ?? sizes[index] ?? 0)
+                        )
+                    )
+                }
+            >
+                {previews.map((preview, index) => (
+                    <FragmentedResizableMediaPanel
+                        defaultSize={sizes[index]}
+                        index={index}
+                        key={`${preview.file.name}-${preview.file.size}`}
+                        onRemove={() => onRemove(preview.file)}
+                        preview={preview}
+                        showHandle={index < previews.length - 1}
+                    />
+                ))}
+            </ResizablePanelGroup>
+        </div>
+    )
+}
+
+interface FragmentedResizableMediaPanelProps {
+    defaultSize: number
+    index: number
+    onRemove: () => void
+    preview: ComposerMediaPreviewProps["preview"]
+    showHandle: boolean
+}
+
+function FragmentedResizableMediaPanel({
+    defaultSize,
+    index,
+    onRemove,
+    preview,
+    showHandle,
+}: FragmentedResizableMediaPanelProps) {
+    const panelId = `media-${index}`
+    return (
+        <>
+            <ResizablePanel defaultSize={defaultSize} id={panelId} minSize={20}>
+                <div className="relative h-full min-h-80">
+                    <img
+                        alt={preview.file.name}
+                        className="h-full min-h-80 w-full object-cover"
+                        src={preview.url}
+                    />
+                    <Button
+                        aria-label={`Remove ${preview.file.name}`}
+                        className="absolute top-3 right-3 rounded-full shadow-[var(--shadow)]"
+                        onClick={onRemove}
+                        size="icon"
+                        type="button"
+                        variant="secondary"
+                    >
+                        <X className="size-4" />
+                    </Button>
+                    <div className="absolute right-0 bottom-0 left-0 bg-[linear-gradient(180deg,transparent,rgba(0,0,0,0.58))] p-3 text-white">
+                        <div className="truncate text-sm font-medium">{preview.file.name}</div>
+                        <div className="mt-1 text-xs text-white/75">
+                            {formatFileSize(preview.file.size)}
+                        </div>
+                    </div>
+                </div>
+            </ResizablePanel>
+            {showHandle ? <ResizableHandle withHandle /> : null}
+        </>
+    )
+}
+
+function normalizeGridSizes(sizes: number[], count: number) {
+    if (count < 2 || count > 4) {
+        return []
+    }
+
+    if (sizes.length === count) {
+        return sizes.map((size) => Math.min(80, Math.max(20, Math.round(size))))
+    }
+
+    return Array.from({ length: count }, () => Math.round(100 / count))
+}
+
+function toResizableLayout(sizes: number[]) {
+    return sizes.reduce<Record<string, number>>((layout, size, index) => {
+        layout[`media-${index}`] = size
+        return layout
+    }, {})
 }

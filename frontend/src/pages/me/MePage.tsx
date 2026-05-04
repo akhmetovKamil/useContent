@@ -1,18 +1,24 @@
 import { useEffect, useState } from "react"
 
 import { AppearancePicker } from "@/components/settings/AppearancePicker"
+import { ProfileAvatarPicker } from "@/components/common/ProfileAvatarPicker"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Eyebrow, PageSection } from "@/components/ui/page"
 import { Textarea } from "@/components/ui/textarea"
-import { useMeQuery, useUpdateMeMutation } from "@/queries/profile"
+import {
+    useMeQuery,
+    useUpdateMeMutation,
+    useUploadMyProfileAvatarMutation,
+} from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 
 export function MePage() {
     const token = useAuthStore((state) => state.token)
     const meQuery = useMeQuery(Boolean(token))
     const updateMeMutation = useUpdateMeMutation()
+    const uploadAvatarMutation = useUploadMyProfileAvatarMutation()
     const [username, setUsername] = useState("")
     const [displayName, setDisplayName] = useState("")
     const [bio, setBio] = useState("")
@@ -47,6 +53,13 @@ export function MePage() {
             ) : meQuery.data ? (
                 <div className="mt-6 grid gap-6">
                     <AppearancePicker />
+                    <ProfileAvatarPicker
+                        avatarFileId={meQuery.data.avatarFileId}
+                        error={uploadAvatarMutation.error?.message ?? null}
+                        isPending={uploadAvatarMutation.isPending}
+                        label={displayName || username || "User"}
+                        onChange={(file) => uploadAvatarMutation.mutate(file)}
+                    />
 
                     <form
                         className="grid gap-4 rounded-lg border border-[var(--line)] bg-[var(--surface)] p-5"

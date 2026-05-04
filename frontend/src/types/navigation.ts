@@ -5,6 +5,7 @@ export interface NavItemConfig {
     end?: boolean
     icon: LucideIcon
     label: string
+    locked?: boolean
     separatorAfter?: boolean
     to: string
 }

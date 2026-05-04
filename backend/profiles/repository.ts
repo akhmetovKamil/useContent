@@ -133,6 +133,18 @@ export async function updateAuthorProfile(
   );
 }
 
+export async function updateAuthorProfileByUserId(
+  userId: string,
+  update: Partial<Omit<AuthorProfileDoc, "_id" | "userId" | "createdAt">>,
+): Promise<AuthorProfileDoc | null> {
+  const authorProfiles = await getAuthorProfilesCollection();
+  return authorProfiles.findOneAndUpdate(
+    { userId },
+    { $set: update },
+    { returnDocument: "after" },
+  );
+}
+
 export async function deleteAuthorProfileByIdAndUserId(
   id: ObjectId,
   userId: string,

@@ -1,4 +1,4 @@
-import { ShieldCheck } from "lucide-react"
+import { ExternalLink, ShieldCheck } from "lucide-react"
 import { useCallback, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 
@@ -6,6 +6,7 @@ import { LoadMorePostsButton } from "@/components/posts/LoadMorePostsButton"
 import { PostFeed } from "@/components/posts/PostFeed"
 import { PostFeedSkeleton } from "@/components/posts/PostFeedSkeleton"
 import { ProjectList } from "@/components/projects/ProjectList"
+import { ProfileAvatar } from "@/components/common/ProfileAvatar"
 import { PublicTierCard } from "@/components/public-author/PublicTierCard"
 import { TierCard } from "@/components/public-author/TierCard"
 import { TierDrawer } from "@/components/public-author/TierDrawer"
@@ -60,13 +61,24 @@ export function AuthorPage() {
                 <>
                     <Card className="overflow-hidden rounded-[32px]">
                         <CardHeader className="bg-[var(--accent-soft)]">
-                            <div className="font-mono text-xs uppercase tracking-[0.35em] text-[var(--muted)]">
-                                author profile
+                            <div className="flex flex-wrap items-start gap-4">
+                                <ProfileAvatar
+                                    avatarFileId={authorQuery.data.avatarFileId}
+                                    className="size-20"
+                                    label={authorQuery.data.displayName || authorSlug}
+                                />
+                                <div className="min-w-0">
+                                    <div className="font-mono text-xs uppercase tracking-[0.35em] text-[var(--muted)]">
+                                        author profile
+                                    </div>
+                                    <CardTitle className="mt-2 font-[var(--serif)] text-4xl">
+                                        {authorQuery.data.displayName}
+                                    </CardTitle>
+                                    <CardDescription className="font-mono">
+                                        @{authorSlug}
+                                    </CardDescription>
+                                </div>
                             </div>
-                            <CardTitle className="mt-2 font-[var(--serif)] text-4xl">
-                                {authorQuery.data.displayName}
-                            </CardTitle>
-                            <CardDescription className="font-mono">@{authorSlug}</CardDescription>
                         </CardHeader>
                         <CardContent className="pt-6">
                             <p className="max-w-3xl text-[var(--muted)]">
@@ -79,6 +91,28 @@ export function AuthorPage() {
                                         <Badge className="rounded-full" key={tag}>
                                             {tag}
                                         </Badge>
+                                    ))}
+                                </div>
+                            ) : null}
+                            {authorQuery.data.socialLinks.length ? (
+                                <div className="mt-5 flex flex-wrap gap-2">
+                                    {authorQuery.data.socialLinks.map((link) => (
+                                        <Button
+                                            asChild
+                                            className="rounded-full"
+                                            key={link.url}
+                                            size="sm"
+                                            variant="outline"
+                                        >
+                                            <a
+                                                href={link.url}
+                                                rel="noreferrer"
+                                                target="_blank"
+                                            >
+                                                {link.label}
+                                                <ExternalLink className="size-3.5" />
+                                            </a>
+                                        </Button>
                                     ))}
                                 </div>
                             ) : null}

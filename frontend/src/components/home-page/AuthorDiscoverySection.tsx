@@ -2,6 +2,7 @@ import type { AuthorCatalogItemDto } from "@shared/types/profile"
 import { ArrowUpRight, Search, UsersRound } from "lucide-react"
 import { Link } from "react-router-dom"
 
+import { ProfileAvatar } from "@/components/common/ProfileAvatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -62,12 +63,19 @@ export function AuthorDiscoverySection({
                                 to={`/authors/${author.slug}`}
                             >
                                 <div className="flex items-start justify-between gap-3">
-                                    <div>
-                                        <div className="text-lg font-medium text-[var(--foreground)]">
-                                            {author.displayName}
-                                        </div>
-                                        <div className="mt-1 font-mono text-sm text-[var(--muted)]">
-                                            @{author.slug}
+                                    <div className="flex min-w-0 items-center gap-3">
+                                        <ProfileAvatar
+                                            avatarFileId={author.avatarFileId}
+                                            className="size-11"
+                                            label={author.displayName || author.slug}
+                                        />
+                                        <div className="min-w-0">
+                                            <div className="truncate text-lg font-medium text-[var(--foreground)]">
+                                                {author.displayName}
+                                            </div>
+                                            <div className="mt-1 truncate font-mono text-sm text-[var(--muted)]">
+                                                @{author.slug}
+                                            </div>
                                         </div>
                                     </div>
                                     <ArrowUpRight className="size-5 text-[var(--muted)] transition group-hover:text-[var(--foreground)]" />

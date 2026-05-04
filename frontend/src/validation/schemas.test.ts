@@ -17,6 +17,7 @@ describe("form validation schemas", () => {
             expect(result.data).toEqual({
                 bio: "hello",
                 displayName: "Kamil",
+                socialLinks: [],
                 slug: "kamil-23",
                 tags: ["crypto"],
             })

@@ -1,12 +1,16 @@
 import { CONTENT_STATUS } from "@shared/consts"
 import type { ProjectDto } from "@shared/types/projects"
+import { LockKeyhole } from "lucide-react"
 import { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 
 import { ContentManager } from "@/components/content-manager/ContentManager"
 import { ProjectFileTree } from "@/components/project-tree/ProjectFileTree"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useMyAccessPoliciesQuery } from "@/queries/access-policies"
+import { useMyAuthorPlatformBillingQuery } from "@/queries/platform"
 import {
     useCreateMyProjectMutation,
     useDeleteMyProjectMutation,
@@ -20,9 +24,17 @@ export function MeProjectsPage() {
     const token = useAuthStore((state) => state.token)
     const [selectedProject, setSelectedProject] = useState<ProjectDto | null>(null)
     const [showArchive, setShowArchive] = useState(false)
-    const projectsQuery = useMyProjectsQuery(Boolean(token))
+    const billingQuery = useMyAuthorPlatformBillingQuery(Boolean(token))
+    const projectsLocked =
+        billingQuery.isSuccess &&
+        Boolean(
+            !billingQuery.data.features.includes("projects") ||
+                !billingQuery.data.isProjectCreationAllowed
+        )
+    const projectsEnabled = Boolean(token) && billingQuery.isSuccess && !projectsLocked
+    const projectsQuery = useMyProjectsQuery(projectsEnabled)
     const archivedProjectsQuery = useMyProjectsQuery(
-        Boolean(token) && showArchive,
+        projectsEnabled && showArchive,
         CONTENT_STATUS.ARCHIVED
     )
     const policiesQuery = useMyAccessPoliciesQuery(Boolean(token))
@@ -45,6 +57,39 @@ export function MeProjectsPage() {
             setSelectedProject(freshProject)
         }
     }, [projectsQuery.data, selectedProject])
+
+    if (billingQuery.isLoading) {
+        return (
+            <Card className="rounded-[28px]">
+                <CardContent className="pt-6 text-sm text-[var(--muted)]">
+                    Checking project access...
+                </CardContent>
+            </Card>
+        )
+    }
+
+    if (projectsLocked) {
+        return (
+            <Card className="overflow-hidden rounded-[28px]">
+                <CardContent className="grid gap-5 p-6 md:p-8">
+                    <div className="grid size-12 place-items-center rounded-2xl bg-[var(--accent-soft)]">
+                        <LockKeyhole className="size-6 text-[var(--foreground)]" />
+                    </div>
+                    <div>
+                        <CardTitle>Projects are available on Basic</CardTitle>
+                        <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
+                            Your current platform plan keeps project spaces locked. Upgrade to Basic
+                            to create projects, upload structured files, and attach project spaces
+                            to posts.
+                        </p>
+                    </div>
+                    <Button asChild className="w-fit rounded-full">
+                        <Link to="/me/platform-billing">Open billing</Link>
+                    </Button>
+                </CardContent>
+            </Card>
+        )
+    }
 
     return (
         <div className="grid gap-6">

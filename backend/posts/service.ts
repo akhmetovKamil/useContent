@@ -19,6 +19,7 @@ import {
   normalizeAttachmentIds,
   normalizeContentPolicy,
   normalizeLinkedProjectIds,
+  normalizePostMediaLayout,
   normalizePostCommentContent,
   normalizePostContent,
   normalizePostTitle,
@@ -318,6 +319,11 @@ export async function createMyPost(
     policyMode,
   );
   const attachmentIds = normalizeAttachmentIds(input.attachmentIds ?? []);
+  const mediaSelection = normalizePostMediaLayout({
+    attachmentIds: input.attachmentIds ?? [],
+    mediaGridLayout: input.mediaGridLayout,
+    mediaLayout: input.mediaLayout,
+  });
   const linkedProjectIds = await normalizeLinkedProjectIds(
     author,
     input.linkedProjectIds ?? [],
@@ -333,6 +339,8 @@ export async function createMyPost(
     policyMode,
     policy: policySelection.policy,
     accessPolicyId: policySelection.accessPolicyId,
+    mediaLayout: mediaSelection.mediaLayout,
+    mediaGridLayout: mediaSelection.mediaGridLayout,
     attachmentIds,
     linkedProjectIds,
     promoted: false,
@@ -403,6 +411,18 @@ export async function updateMyPost(
     policyMode: nextPolicyMode,
     policy: nextPolicySelection.policy,
     accessPolicyId: nextPolicySelection.accessPolicyId,
+    ...normalizePostMediaLayout({
+      attachmentIds:
+        input.attachmentIds === undefined
+          ? existing.attachmentIds.map((id) => id.toHexString())
+          : input.attachmentIds,
+      mediaGridLayout:
+        input.mediaGridLayout === undefined
+          ? existing.mediaGridLayout
+          : input.mediaGridLayout,
+      mediaLayout:
+        input.mediaLayout === undefined ? existing.mediaLayout : input.mediaLayout,
+    }),
     attachmentIds:
       input.attachmentIds === undefined
         ? existing.attachmentIds
@@ -594,6 +614,7 @@ export async function createPostCommentBySlug(
     authorId: post.authorId,
     walletAddress: viewerWallet,
     displayName: user.displayName,
+    avatarFileId: user.avatarFileId,
     content: normalizePostCommentContent(input.content),
     createdAt: now,
     updatedAt: now,

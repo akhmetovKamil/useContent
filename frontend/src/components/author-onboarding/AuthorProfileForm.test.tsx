@@ -77,6 +77,7 @@ describe("AuthorProfileForm", () => {
             displayName: "Kamil",
             bio: "",
             tags: ["security"],
+            socialLinks: [],
         })
     })
 

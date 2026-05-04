@@ -4,6 +4,7 @@ import type { FormEvent } from "react"
 import { useMemo, useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
+import { ProfileAvatar } from "@/components/common/ProfileAvatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/utils/cn"
@@ -55,6 +56,7 @@ export function InlineComments({
             postId: "",
             walletAddress: "",
             displayName: "You",
+            avatarFileId: null,
             content: nextContent,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
@@ -91,28 +93,35 @@ export function InlineComments({
                         return (
                             <article
                                 className={cn(
-                                    "rounded-2xl border border-[var(--line)] bg-[var(--surface-strong)] p-3",
+                                    "flex gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-strong)] p-3",
                                     isAuthorComment
                                         ? "border-[var(--accent)] bg-[var(--accent-soft)]"
                                         : ""
                                 )}
                                 key={item.id}
                             >
-                                <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--muted)]">
-                                    <span className="font-medium text-[var(--foreground)]">
-                                        {item.displayName}
-                                    </span>
-                                    {isAuthorComment ? (
-                                        <Badge className="rounded-full">Author</Badge>
-                                    ) : null}
-                                    {isOptimistic ? (
-                                        <Badge className="rounded-full">Sending</Badge>
-                                    ) : null}
-                                    <span>{formatPostDate(item.createdAt)}</span>
+                                <ProfileAvatar
+                                    avatarFileId={item.avatarFileId}
+                                    className="size-8"
+                                    label={item.displayName}
+                                />
+                                <div className="min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--muted)]">
+                                        <span className="font-medium text-[var(--foreground)]">
+                                            {item.displayName}
+                                        </span>
+                                        {isAuthorComment ? (
+                                            <Badge className="rounded-full">Author</Badge>
+                                        ) : null}
+                                        {isOptimistic ? (
+                                            <Badge className="rounded-full">Sending</Badge>
+                                        ) : null}
+                                        <span>{formatPostDate(item.createdAt)}</span>
+                                    </div>
+                                    <p className="mt-1 text-sm leading-6 text-[var(--foreground)]">
+                                        {item.content}
+                                    </p>
                                 </div>
-                                <p className="mt-1 text-sm leading-6 text-[var(--foreground)]">
-                                    {item.content}
-                                </p>
                             </article>
                         )
                     })}

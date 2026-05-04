@@ -139,6 +139,7 @@ export function toAuthorProfileResponse(
     displayName: author.displayName,
     bio: author.bio,
     tags: author.tags ?? [],
+    socialLinks: author.socialLinks ?? [],
     avatarFileId: author.avatarFileId?.toHexString() ?? null,
     defaultPolicy: author.defaultPolicy,
     defaultPolicyId: author.defaultPolicyId?.toHexString() ?? null,
@@ -341,6 +342,8 @@ export function toPostResponse(
     policyMode: post.policyMode,
     policy: post.policy,
     accessPolicyId: post.accessPolicyId?.toHexString() ?? null,
+    mediaLayout: post.mediaLayout ?? "carousel",
+    mediaGridLayout: post.mediaGridLayout ?? null,
     attachmentIds: (post.attachmentIds ?? []).map((id) => id.toHexString()),
     attachments: (stats?.attachments ?? []).map(toPostAttachmentResponse),
     linkedProjectIds: (post.linkedProjectIds ?? []).map((id) =>
@@ -387,6 +390,7 @@ export function toPostCommentResponse(
     authorId: comment.authorId.toHexString(),
     walletAddress: comment.walletAddress,
     displayName: comment.displayName,
+    avatarFileId: comment.avatarFileId?.toHexString() ?? null,
     content: comment.content,
     createdAt: comment.createdAt.toISOString(),
     updatedAt: comment.updatedAt.toISOString(),
@@ -438,6 +442,7 @@ export function toFeedPostResponse(
     ...toPostResponse(post, access?.stats),
     authorSlug: author.slug,
     authorDisplayName: author.displayName,
+    authorAvatarFileId: author.avatarFileId?.toHexString() ?? null,
     accessLabel: access?.accessLabel ?? null,
     hasAccess: access?.hasAccess ?? true,
     feedSource: access?.feedSource ?? "author",
@@ -607,6 +612,7 @@ export function toFeedProjectResponse(
     ...toProjectResponse(project, access?.stats),
     authorSlug: author.slug,
     authorDisplayName: author.displayName,
+    authorAvatarFileId: author.avatarFileId?.toHexString() ?? null,
     accessLabel: access?.accessLabel ?? null,
     hasAccess: access?.hasAccess ?? true,
   };
@@ -731,6 +737,53 @@ export function normalizeAuthorTags(tags: string[]): string[] {
   return normalized;
 }
 
+export function normalizeAuthorSocialLinks(
+  links: { label?: unknown; url?: unknown }[] | undefined,
+): { label: string; url: string }[] {
+  if (links === undefined) {
+    return [];
+  }
+
+  if (!Array.isArray(links)) {
+    throw APIError.invalidArgument("social links must be an array");
+  }
+
+  if (links.length > 6) {
+    throw APIError.invalidArgument("author can have up to 6 social links");
+  }
+
+  const normalized = links
+    .map((link) => ({
+      label: typeof link.label === "string" ? link.label.trim() : "",
+      url: typeof link.url === "string" ? link.url.trim() : "",
+    }))
+    .filter((link) => link.label || link.url);
+
+  for (const link of normalized) {
+    if (!link.label || link.label.length > 32) {
+      throw APIError.invalidArgument("social link label must be 1-32 chars");
+    }
+
+    let url: URL;
+    try {
+      url = new URL(link.url);
+    } catch {
+      throw APIError.invalidArgument("social link url must be valid");
+    }
+
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      throw APIError.invalidArgument("social link url must use http or https");
+    }
+
+    link.url = url.toString();
+  }
+
+  return normalized.filter(
+    (link, index, list) =>
+      list.findIndex((item) => item.url === link.url) === index,
+  );
+}
+
 export function normalizeSlug(slug: string): string {
   const value = slug.trim().toLowerCase();
   if (!/^[a-z0-9-]{3,50}$/.test(value)) {
@@ -818,6 +871,49 @@ export function normalizePostContent(content: string): string {
     throw APIError.invalidArgument("post content is too long");
   }
   return value;
+}
+
+export function normalizePostMediaLayout(input: {
+  attachmentIds?: string[];
+  mediaGridLayout?: {
+    variant?: unknown;
+    sizes?: unknown;
+  } | null;
+  mediaLayout?: unknown;
+}): {
+  mediaGridLayout: {
+    variant: "two" | "three" | "four";
+    sizes: number[];
+  } | null;
+  mediaLayout: "carousel" | "resizable_grid";
+} {
+  const attachmentCount = input.attachmentIds?.length ?? 0;
+  const requestedLayout =
+    input.mediaLayout === "resizable_grid" ? "resizable_grid" : "carousel";
+  if (requestedLayout !== "resizable_grid" || attachmentCount < 2 || attachmentCount > 4) {
+    return { mediaLayout: "carousel", mediaGridLayout: null };
+  }
+
+  const variant =
+    attachmentCount === 2 ? "two" : attachmentCount === 3 ? "three" : "four";
+  const expectedSizeCount = variant === "two" ? 2 : variant === "three" ? 3 : 4;
+  const rawSizes = Array.isArray(input.mediaGridLayout?.sizes)
+    ? input.mediaGridLayout.sizes
+    : [];
+  const fallbackSizes =
+    variant === "two" ? [50, 50] : variant === "three" ? [60, 50, 50] : [50, 50, 50, 50];
+  const sizes = fallbackSizes.map((fallback, index) => {
+    const value = rawSizes[index];
+    return typeof value === "number" && Number.isFinite(value)
+      ? Math.min(80, Math.max(20, Math.round(value)))
+      : fallback;
+  });
+
+  if (sizes.length !== expectedSizeCount) {
+    throw APIError.invalidArgument("media grid layout is invalid");
+  }
+
+  return { mediaLayout: "resizable_grid", mediaGridLayout: { variant, sizes } };
 }
 
 export function normalizePostCommentContent(content: string): string {

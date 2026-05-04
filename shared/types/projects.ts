@@ -26,6 +26,7 @@ export interface ProjectDto extends ContentBaseDto {
 export interface FeedProjectDto extends ProjectDto {
   authorSlug: string;
   authorDisplayName: string;
+  authorAvatarFileId: Maybe<EntityId>;
   accessLabel: Maybe<string>;
   hasAccess: boolean;
 }

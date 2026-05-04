@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link, Navigate, useNavigate } from "react-router-dom"
 
 import { AuthorProfileForm } from "@/components/author-onboarding/AuthorProfileForm"
+import { ProfileAvatarPicker } from "@/components/common/ProfileAvatarPicker"
 import { AppearancePicker } from "@/components/settings/AppearancePicker"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -11,6 +12,7 @@ import {
     useDeleteMyAuthorProfileMutation,
     useMyAuthorProfileQuery,
     useUpdateMyAuthorProfileMutation,
+    useUploadMyAuthorAvatarMutation,
 } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 import { useWorkspaceStore } from "@/stores/workspace-store"
@@ -21,6 +23,7 @@ export function MeAuthorPage() {
     const setMode = useWorkspaceStore((state) => state.setMode)
     const authorQuery = useMyAuthorProfileQuery(Boolean(token))
     const updateAuthorMutation = useUpdateMyAuthorProfileMutation()
+    const uploadAvatarMutation = useUploadMyAuthorAvatarMutation()
     const deleteAuthorMutation = useDeleteMyAuthorProfileMutation()
     const [deleteModalOpen, setDeleteModalOpen] = useState(false)
 
@@ -52,6 +55,13 @@ export function MeAuthorPage() {
             ) : authorQuery.data ? (
                 <div className="grid gap-6">
                     <AppearancePicker />
+                    <ProfileAvatarPicker
+                        avatarFileId={authorQuery.data.avatarFileId}
+                        error={uploadAvatarMutation.error?.message ?? null}
+                        isPending={uploadAvatarMutation.isPending}
+                        label={authorQuery.data.displayName || authorQuery.data.slug}
+                        onChange={(file) => uploadAvatarMutation.mutate(file)}
+                    />
 
                     <AuthorProfileForm
                         author={authorQuery.data}
@@ -63,6 +73,7 @@ export function MeAuthorPage() {
                                 displayName: input.displayName,
                                 bio: input.bio,
                                 tags: input.tags,
+                                socialLinks: input.socialLinks,
                             })
                         }}
                     />

@@ -1,8 +1,10 @@
 import { APIError } from "encore.dev/api";
+import { ObjectId } from "mongodb";
 import { shortenWalletAddress } from "../../shared/utils/web3";
 import * as accessRepo from "../access/repository";
 import {
   isMongoDuplicateKeyError,
+  normalizeAuthorSocialLinks,
   normalizeAuthorTags,
   normalizeBio,
   normalizeDisplayName,
@@ -15,6 +17,11 @@ import {
   toAuthorProfileResponse,
   toAuthorStorageUsageResponse,
 } from "../lib/content-common";
+import {
+  assertAvatarFile,
+  readProfileAvatarFile,
+  uploadProfileAvatarFile,
+} from "./avatar-storage";
 import type {
   AuthorCatalogItemResponse,
   AuthorProfileDoc,
@@ -182,6 +189,10 @@ export async function updateMyAuthorProfile(
     update.tags === undefined
       ? (author.tags ?? [])
       : normalizeAuthorTags(update.tags);
+  const nextSocialLinks =
+    update.socialLinks === undefined
+      ? (author.socialLinks ?? [])
+      : normalizeAuthorSocialLinks(update.socialLinks);
   const nextDefaultPolicy =
     update.defaultPolicyId !== undefined
       ? await resolveDefaultPolicyFromPreset(author, update.defaultPolicyId)
@@ -198,6 +209,7 @@ export async function updateMyAuthorProfile(
     displayName: nextDisplayName,
     bio: nextBio,
     tags: nextTags,
+    socialLinks: nextSocialLinks,
     defaultPolicy: nextDefaultPolicy,
     defaultPolicyId:
       update.defaultPolicyId === undefined
@@ -260,6 +272,7 @@ export async function createAuthorProfile(
   const displayName = normalizeDisplayName(input.displayName);
   const bio = normalizeBio(input.bio ?? "");
   const tags = normalizeAuthorTags(input.tags ?? []);
+  const socialLinks = normalizeAuthorSocialLinks(input.socialLinks);
   const defaultPolicy = await normalizeRequestedAuthorDefaultPolicy(
     null,
     input.defaultPolicy,
@@ -273,6 +286,7 @@ export async function createAuthorProfile(
     displayName,
     bio,
     tags,
+    socialLinks,
     avatarFileId: user.avatarFileId,
     defaultPolicy,
     defaultPolicyId: null,
@@ -297,6 +311,65 @@ export async function createAuthorProfile(
   });
 
   return updated ?? { ...author, defaultPolicyId: preset._id };
+}
+
+export async function uploadMyProfileAvatar(
+  walletAddress: string,
+  input: { body: Buffer; contentType: string },
+): Promise<UserDoc> {
+  const user = await getOrCreateUserByWallet(walletAddress);
+  const avatarFileId = new ObjectId();
+  assertAvatarFile(input.body, input.contentType);
+  await uploadProfileAvatarFile(avatarFileId, input.body, input.contentType);
+
+  const now = new Date();
+  const updatedUser = await repo.updateUser(user._id, {
+    avatarFileId,
+    updatedAt: now,
+  });
+  if (!updatedUser) {
+    throw APIError.notFound("user not found");
+  }
+
+  await repo.updateAuthorProfileByUserId(user._id.toHexString(), {
+    avatarFileId,
+    updatedAt: now,
+  });
+
+  return updatedUser;
+}
+
+export async function uploadMyAuthorAvatar(
+  walletAddress: string,
+  input: { body: Buffer; contentType: string },
+): Promise<AuthorProfileDoc> {
+  const user = await getOrCreateUserByWallet(walletAddress);
+  const author = await getMyAuthorProfile(walletAddress);
+  const avatarFileId = new ObjectId();
+  assertAvatarFile(input.body, input.contentType);
+  await uploadProfileAvatarFile(avatarFileId, input.body, input.contentType);
+
+  const now = new Date();
+  await repo.updateUser(user._id, {
+    avatarFileId,
+    updatedAt: now,
+  });
+
+  const updatedAuthor = await repo.updateAuthorProfile(author._id, {
+    avatarFileId,
+    updatedAt: now,
+  });
+  if (!updatedAuthor) {
+    throw APIError.notFound("author profile not found");
+  }
+
+  return updatedAuthor;
+}
+
+export async function getProfileAvatar(
+  avatarFileId: string,
+): Promise<{ body: Buffer; contentType: string; fileName: string }> {
+  return readProfileAvatarFile(parseObjectId(avatarFileId, "avatarFileId"));
 }
 
 async function createAuthorProfileOrThrowConflict(
