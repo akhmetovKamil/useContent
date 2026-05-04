@@ -1,6 +1,7 @@
 import { useCallback, useRef } from "react"
 import { Link, useParams } from "react-router-dom"
 
+import { LoadMorePostsButton } from "@/components/posts/LoadMorePostsButton"
 import { PostFeed } from "@/components/posts/PostFeed"
 import { PostFeedSkeleton } from "@/components/posts/PostFeedSkeleton"
 import { Button } from "@/components/ui/button"
@@ -69,6 +70,11 @@ export function AuthorFeedPage() {
                     )}
                     <div ref={sentinelRef} />
                     {postsQuery.isLoadingMore ? <PostFeedSkeleton count={1} /> : null}
+                    <LoadMorePostsButton
+                        hasMore={postsQuery.hasMore}
+                        isLoadingMore={postsQuery.isLoadingMore}
+                        onLoadMore={postsQuery.loadMore}
+                    />
                 </CardContent>
             </Card>
         </section>

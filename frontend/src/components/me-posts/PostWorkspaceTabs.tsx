@@ -1,5 +1,7 @@
 import type { PostDto } from "@shared/types/posts"
+import { useEffect, useMemo, useState } from "react"
 
+import { LoadMorePostsButton } from "@/components/posts/LoadMorePostsButton"
 import { PostFeed } from "@/components/posts/PostFeed"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { postEmptyLabels, postTabs } from "@/constants/posts"
@@ -28,6 +30,8 @@ interface PostWorkspaceTabsProps {
     visiblePosts?: PostDto[]
 }
 
+const POSTS_PER_PAGE = 6
+
 export function PostWorkspaceTabs({
     activeListError,
     activeTab,
@@ -48,6 +52,24 @@ export function PostWorkspaceTabs({
     publishedCount,
     visiblePosts,
 }: PostWorkspaceTabsProps) {
+    const [page, setPage] = useState(1)
+    const posts = visiblePosts ?? []
+    const totalPages = Math.max(1, Math.ceil(posts.length / POSTS_PER_PAGE))
+    const paginatedPosts = useMemo(
+        () => posts.slice(0, page * POSTS_PER_PAGE),
+        [page, posts]
+    )
+
+    useEffect(() => {
+        setPage(1)
+    }, [activeTab])
+
+    useEffect(() => {
+        if (page > totalPages) {
+            setPage(totalPages)
+        }
+    }, [page, totalPages])
+
     return (
         <Card className="overflow-hidden rounded-[28px]">
             <CardHeader>
@@ -103,9 +125,23 @@ export function PostWorkspaceTabs({
                         onRestoreDraft={onRestoreDraft}
                         onStopPromotion={onStopPromotion}
                         onUnarchive={onUnarchive}
-                        posts={visiblePosts}
+                        posts={paginatedPosts}
                     />
                 )}
+                {!isActiveListLoading && !isActiveListError ? (
+                    <>
+                        {posts.length > POSTS_PER_PAGE ? (
+                            <p className="mt-4 text-center text-sm text-[var(--muted)]">
+                                Showing {paginatedPosts.length} of {posts.length} posts
+                            </p>
+                        ) : null}
+                        <LoadMorePostsButton
+                            hasMore={paginatedPosts.length < posts.length}
+                            isLoadingMore={false}
+                            onLoadMore={() => setPage((value) => Math.min(value + 1, totalPages))}
+                        />
+                    </>
+                ) : null}
             </CardContent>
         </Card>
     )

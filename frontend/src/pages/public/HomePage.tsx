@@ -43,10 +43,12 @@ export function HomePage() {
             <HomeFeedSection
                 deferredSearch={deferredFeedSearch.trim()}
                 errorMessage={feedQuery.error?.message}
+                hasMore={feedQuery.hasMore}
                 isError={feedQuery.isError}
                 isLoading={feedQuery.isLoading}
                 isLoadingMore={feedQuery.isLoadingMore}
                 isSignedIn={Boolean(token)}
+                onLoadMore={feedQuery.loadMore}
                 onRetry={() => void feedQuery.refetch()}
                 onSearchChange={setFeedSearch}
                 onSourceChange={setFeedSource}

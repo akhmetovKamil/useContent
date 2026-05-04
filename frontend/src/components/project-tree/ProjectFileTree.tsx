@@ -1,18 +1,17 @@
-import { CONTENT_VISIBILITY } from "@shared/consts"
+import { CONTENT_VISIBILITY, PROJECT_NODE_KIND } from "@shared/consts"
 import type { ProjectNodeDto } from "@shared/types/projects"
-import { PackageOpen } from "lucide-react"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 
 import { projectsApi } from "@/api/ProjectsApi"
 import { ProjectBreadcrumbs } from "@/components/project-tree/ProjectBreadcrumbs"
-import { ProjectNodeRow } from "@/components/project-tree/ProjectNodeRow"
 import { CreateFolderModal } from "@/components/project-tree/CreateFolderModal"
 import { DeleteNodeModal } from "@/components/project-tree/DeleteNodeModal"
 import { PreviewNodeModal } from "@/components/project-tree/PreviewNodeModal"
 import { RenameNodeModal } from "@/components/project-tree/RenameNodeModal"
+import { ProjectTreeDetailsPanel } from "@/components/project-tree/ProjectTreeDetailsPanel"
+import { ProjectTreeSidebar } from "@/components/project-tree/ProjectTreeSidebar"
 import { ProjectTreeToolbar } from "@/components/project-tree/ProjectTreeToolbar"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
     useAuthorProjectNodesQuery,
@@ -36,6 +35,14 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
     const [previewNode, setPreviewNode] = useState<ProjectNodeDto | null>(null)
     const [renameName, setRenameName] = useState("")
     const [renameNodeTarget, setRenameNodeTarget] = useState<ProjectNodeDto | null>(null)
+    const [selectedNode, setSelectedNode] = useState<ProjectNodeDto | null>(null)
+    const [treeNodesByParent, setTreeNodesByParent] = useState<Record<string, ProjectNodeDto[]>>(
+        {}
+    )
+    const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(
+        () => new Set([rootNodeId])
+    )
+    const [loadingFolderIds, setLoadingFolderIds] = useState<Set<string>>(() => new Set())
     const fileInputRef = useRef<HTMLInputElement>(null)
     const folderInputRef = useRef<HTMLInputElement>(null)
     const queryClient = useQueryClient()
@@ -61,9 +68,82 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
     const folders = nodesQuery.data?.nodes.filter((node) => node.kind === "folder") ?? []
     const files = nodesQuery.data?.nodes.filter((node) => node.kind === "file") ?? []
     const orderedNodes = [...folders, ...files]
+    const currentFolder =
+        nodesQuery.data?.breadcrumbs.find((breadcrumb) => breadcrumb.id === currentFolderId) ?? null
+    const selectedFileDownloadUrl =
+        selectedNode?.kind === PROJECT_NODE_KIND.FILE
+            ? isAuthor
+                ? `/me/project-files/download/${projectId}/${selectedNode.id}`
+                : `/project-files/download/${slug}/${projectId}/${selectedNode.id}`
+            : ""
+
+    useEffect(() => {
+        if (!nodesQuery.data) {
+            return
+        }
+
+        const folderId = nodesQuery.data.currentFolderId || currentFolderId || rootNodeId
+        setTreeNodesByParent((previous) => ({
+            ...previous,
+            [folderId]: nodesQuery.data.nodes,
+        }))
+    }, [currentFolderId, nodesQuery.data, rootNodeId])
 
     function openFolder(node: ProjectNodeDto) {
         setCurrentFolderId(node.id)
+        setSelectedNode(null)
+        setExpandedFolderIds((previous) => new Set(previous).add(node.id))
+        void loadFolderChildren(node.id)
+    }
+
+    function openRoot() {
+        setCurrentFolderId(rootNodeId)
+        setSelectedNode(null)
+        setExpandedFolderIds((previous) => new Set(previous).add(rootNodeId))
+    }
+
+    function selectNode(node: ProjectNodeDto) {
+        if (node.kind === PROJECT_NODE_KIND.FOLDER) {
+            openFolder(node)
+            return
+        }
+        setSelectedNode(node)
+    }
+
+    async function toggleFolder(folderId: string) {
+        const nextExpanded = new Set(expandedFolderIds)
+        if (nextExpanded.has(folderId)) {
+            nextExpanded.delete(folderId)
+            setExpandedFolderIds(nextExpanded)
+            return
+        }
+
+        nextExpanded.add(folderId)
+        setExpandedFolderIds(nextExpanded)
+        await loadFolderChildren(folderId)
+    }
+
+    async function loadFolderChildren(folderId: string) {
+        if (treeNodesByParent[folderId] || loadingFolderIds.has(folderId)) {
+            return
+        }
+
+        setLoadingFolderIds((previous) => new Set(previous).add(folderId))
+        try {
+            const data = isAuthor
+                ? await projectsApi.listMyProjectNodes(projectId, folderId)
+                : await projectsApi.listAuthorProjectNodes(slug, projectId, folderId)
+            setTreeNodesByParent((previous) => ({
+                ...previous,
+                [folderId]: data.nodes,
+            }))
+        } finally {
+            setLoadingFolderIds((previous) => {
+                const next = new Set(previous)
+                next.delete(folderId)
+                return next
+            })
+        }
     }
 
     async function createFolder() {
@@ -104,6 +184,9 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
 
     async function deleteNode(node: ProjectNodeDto) {
         await deleteNodeMutation.mutateAsync(node.id)
+        if (selectedNode?.id === node.id) {
+            setSelectedNode(null)
+        }
         setDeleteNodeTarget(null)
     }
 
@@ -200,55 +283,52 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
             </CardHeader>
 
             <CardContent>
-                <div className="mb-4 flex flex-wrap gap-2">
-                    <Button
-                        className="rounded-full"
-                        disabled={bulkDownloadPending}
-                        onClick={() => void downloadFolder()}
-                        size="sm"
-                        type="button"
-                        variant="outline"
-                    >
-                        <PackageOpen className="size-4" />
-                        {bulkDownloadPending ? "Downloading..." : "Download current folder"}
-                    </Button>
-                </div>
                 <ProjectBreadcrumbs
                     breadcrumbs={nodesQuery.data?.breadcrumbs ?? []}
                     currentFolderId={currentFolderId}
-                    onOpenFolder={setCurrentFolderId}
+                    onOpenFolder={(folderId) => {
+                        setCurrentFolderId(folderId)
+                        setSelectedNode(null)
+                        setExpandedFolderIds((previous) => new Set(previous).add(folderId))
+                    }}
                 />
 
-                {nodesQuery.isLoading ? (
-                    <p className="text-sm text-[var(--muted)]">Loading files...</p>
-                ) : nodesQuery.isError ? (
+                {nodesQuery.isError ? (
                     <p className="text-sm text-rose-600">
                         Failed to load project files: {nodesQuery.error.message}
                     </p>
-                ) : orderedNodes.length ? (
-                    <div className="overflow-hidden rounded-2xl border border-[var(--line)]">
-                        {orderedNodes.map((node) => (
-                            <ProjectNodeRow
-                                bulkDownloadPending={bulkDownloadPending}
-                                isAuthor={isAuthor}
-                                key={node.id}
-                                node={node}
-                                onDelete={setDeleteNodeTarget}
-                                onDownloadFile={(target) => void downloadFile(target)}
-                                onDownloadFolder={(folderId) => void downloadFolder(folderId)}
-                                onOpenFolder={openFolder}
-                                onPreview={setPreviewNode}
-                                onRename={(target) => {
-                                    setRenameNodeTarget(target)
-                                    setRenameName(target.name)
-                                }}
-                                onToggleVisibility={(target) => void toggleVisibility(target)}
-                            />
-                        ))}
-                    </div>
                 ) : (
-                    <div className="rounded-2xl border border-dashed border-[var(--line)] p-6 text-sm text-[var(--muted)]">
-                        This folder is empty.
+                    <div className="grid gap-4 lg:grid-cols-[minmax(240px,320px)_1fr]">
+                        <ProjectTreeSidebar
+                            currentFolderId={currentFolderId}
+                            expandedFolderIds={expandedFolderIds}
+                            isLoadingFolder={(folderId) => loadingFolderIds.has(folderId)}
+                            nodesByParent={treeNodesByParent}
+                            onOpenRoot={openRoot}
+                            onSelectNode={selectNode}
+                            onToggleFolder={(folderId) => void toggleFolder(folderId)}
+                            rootNodeId={rootNodeId}
+                            selectedNodeId={selectedNode?.id}
+                        />
+                        <ProjectTreeDetailsPanel
+                            bulkDownloadPending={bulkDownloadPending}
+                            currentFolder={currentFolder}
+                            downloadUrl={selectedFileDownloadUrl}
+                            isAuthor={isAuthor}
+                            isLoading={nodesQuery.isLoading}
+                            nodes={orderedNodes}
+                            onDelete={setDeleteNodeTarget}
+                            onDownloadFile={(target) => void downloadFile(target)}
+                            onDownloadFolder={(folderId) => void downloadFolder(folderId)}
+                            onOpenFolder={openFolder}
+                            onPreview={setPreviewNode}
+                            onRename={(target) => {
+                                setRenameNodeTarget(target)
+                                setRenameName(target.name)
+                            }}
+                            onToggleVisibility={(target) => void toggleVisibility(target)}
+                            selectedNode={selectedNode}
+                        />
                     </div>
                 )}
             </CardContent>

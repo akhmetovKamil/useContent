@@ -2,6 +2,7 @@ import type { FeedPostDto } from "@shared/types/posts"
 import { Search } from "lucide-react"
 import type { RefObject } from "react"
 
+import { LoadMorePostsButton } from "@/components/posts/LoadMorePostsButton"
 import { PostFeed } from "@/components/posts/PostFeed"
 import { PostFeedSkeleton } from "@/components/posts/PostFeedSkeleton"
 import { Badge } from "@/components/ui/badge"
@@ -20,12 +21,14 @@ interface HomeFeedSectionProps {
     isSignedIn: boolean
     isLoading: boolean
     isError: boolean
+    hasMore: boolean
     isLoadingMore: boolean
     errorMessage?: string
     sentinelRef: RefObject<HTMLDivElement | null>
     onSearchChange: (value: string) => void
     onSourceChange: (value: FeedSourceFilter) => void
     onRetry: () => void
+    onLoadMore: () => void
 }
 
 export function HomeFeedSection({
@@ -36,12 +39,14 @@ export function HomeFeedSection({
     isSignedIn,
     isLoading,
     isError,
+    hasMore,
     isLoadingMore,
     errorMessage,
     sentinelRef,
     onSearchChange,
     onSourceChange,
     onRetry,
+    onLoadMore,
 }: HomeFeedSectionProps) {
     const hasActiveFilter = Boolean(deferredSearch) || source !== "all"
 
@@ -106,6 +111,11 @@ export function HomeFeedSection({
                         <PostFeedSkeleton count={1} />
                     </div>
                 ) : null}
+                <LoadMorePostsButton
+                    hasMore={hasMore}
+                    isLoadingMore={isLoadingMore}
+                    onLoadMore={onLoadMore}
+                />
             </CardContent>
         </Card>
     )

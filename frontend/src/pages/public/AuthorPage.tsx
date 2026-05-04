@@ -2,6 +2,7 @@ import { ShieldCheck } from "lucide-react"
 import { useCallback, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 
+import { LoadMorePostsButton } from "@/components/posts/LoadMorePostsButton"
 import { PostFeed } from "@/components/posts/PostFeed"
 import { PostFeedSkeleton } from "@/components/posts/PostFeedSkeleton"
 import { ProjectList } from "@/components/projects/ProjectList"
@@ -142,6 +143,11 @@ export function AuthorPage() {
                                     <PostFeedSkeleton count={1} />
                                 </div>
                             ) : null}
+                            <LoadMorePostsButton
+                                hasMore={postsQuery.hasMore}
+                                isLoadingMore={postsQuery.isLoadingMore}
+                                onLoadMore={postsQuery.loadMore}
+                            />
                         </CardContent>
                     </Card>
 

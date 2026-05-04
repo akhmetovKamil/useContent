@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 
+import { LoadMorePostsButton } from "@/components/posts/LoadMorePostsButton"
 import { PostFeed } from "@/components/posts/PostFeed"
 import { PostFeedSkeleton } from "@/components/posts/PostFeedSkeleton"
 import { Badge } from "@/components/ui/badge"
@@ -155,17 +156,11 @@ export function MeFeedPage() {
                             showAuthor
                         />
                     )}
-                    {feedQuery.hasMore ? (
-                        <Button
-                            className="mt-5 rounded-full"
-                            disabled={feedQuery.isLoadingMore}
-                            onClick={feedQuery.loadMore}
-                            type="button"
-                            variant="outline"
-                        >
-                            {feedQuery.isLoadingMore ? "Loading..." : "Load more"}
-                        </Button>
-                    ) : null}
+                    <LoadMorePostsButton
+                        hasMore={feedQuery.hasMore}
+                        isLoadingMore={feedQuery.isLoadingMore}
+                        onLoadMore={feedQuery.loadMore}
+                    />
                 </CardContent>
             </Card>
         </section>

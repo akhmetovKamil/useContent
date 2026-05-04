@@ -1,7 +1,5 @@
 import type { ProjectNodeDto } from "@shared/types/projects"
 
-import { Button } from "@/components/ui/button"
-
 export function ProjectBreadcrumbs({
     breadcrumbs,
     currentFolderId,
@@ -12,18 +10,26 @@ export function ProjectBreadcrumbs({
     onOpenFolder: (folderId: string) => void
 }) {
     return (
-        <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-[var(--muted)]">
+        <nav
+            aria-label="Project path"
+            className="mb-4 flex min-w-0 flex-wrap items-center gap-1 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 font-mono text-sm text-[var(--muted)]"
+        >
             {breadcrumbs.map((breadcrumb, index) => (
-                <Button
-                    className="h-8 rounded-full px-3"
-                    key={breadcrumb.id}
-                    onClick={() => onOpenFolder(breadcrumb.id)}
-                    type="button"
-                    variant={breadcrumb.id === currentFolderId ? "default" : "outline"}
-                >
-                    {index === 0 ? "Root" : breadcrumb.name}
-                </Button>
+                <span className="flex min-w-0 items-center" key={breadcrumb.id}>
+                    <button
+                        className={
+                            breadcrumb.id === currentFolderId
+                                ? "max-w-[14rem] truncate text-[var(--foreground)] underline decoration-[var(--accent)] decoration-2 underline-offset-4"
+                                : "max-w-[14rem] truncate transition hover:text-[var(--foreground)]"
+                        }
+                        onClick={() => onOpenFolder(breadcrumb.id)}
+                        type="button"
+                    >
+                        {index === 0 ? "root" : breadcrumb.name}
+                    </button>
+                    <span className="mx-1 text-[var(--muted)]">/</span>
+                </span>
             ))}
-        </div>
+        </nav>
     )
 }
