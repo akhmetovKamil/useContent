@@ -1,118 +1,179 @@
-import { SUBSCRIPTION_ENTITLEMENT_STATUS } from "@shared/consts"
 import { Link } from "react-router-dom"
+import { SUBSCRIPTION_ENTITLEMENT_STATUS } from "@shared/consts"
 
-import { ActionCard } from "@/components/ui/action-card"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
 import { StatusPill } from "@/components/ui/status-pill"
-import { useMyReaderSubscriptionsQuery } from "@/queries/profile"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
+import { useMyReaderDashboardQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 import { formatDisplayDate } from "@/utils/date"
 
 export function MeSubscriptionsPage() {
     const token = useAuthStore((state) => state.token)
-    const subscriptionsQuery = useMyReaderSubscriptionsQuery(Boolean(token))
-    const subscriptions = subscriptionsQuery.data ?? []
+    const dashboardQuery = useMyReaderDashboardQuery(Boolean(token))
+    const dashboard = dashboardQuery.data
+    const subscriptions = dashboard?.subscriptionsByAuthor ?? []
 
     return (
-        <section className="grid gap-6">
-            <PageSection>
-                <Eyebrow>subscriptions</Eyebrow>
-                <PageTitle>Your active and historical access grants.</PageTitle>
-                <p className="mt-4 max-w-2xl text-[var(--muted)]">
-                    This page will become the reader-side hub for renewals, author pages, and access
-                    history.
-                </p>
-                <Button asChild className="mt-5 rounded-full">
-                    <Link to="/me/feed">Open post feed</Link>
-                </Button>
+        <section className="grid gap-5">
+            <PageSection className="p-5 md:p-6">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                        <Eyebrow>subscriptions</Eyebrow>
+                        <PageTitle className="text-3xl md:text-4xl">
+                            Authors, tiers, prices, and access dates.
+                        </PageTitle>
+                    </div>
+                    <Button asChild size="sm" variant="secondary">
+                        <Link to="/me/feed">Open post feed</Link>
+                    </Button>
+                </div>
             </PageSection>
 
-            <Card className="rounded-[28px]">
+            <div className="grid gap-3 sm:grid-cols-3">
+                <Metric
+                    label="Active"
+                    value={String(dashboard?.counts.activeSubscriptions ?? 0)}
+                />
+                <Metric
+                    label="Expired/history"
+                    value={String(dashboard?.counts.expiredSubscriptions ?? 0)}
+                />
+                <Metric label="Paid authors" value={String(dashboard?.counts.paidAuthors ?? 0)} />
+            </div>
+
+            <Card>
                 <CardHeader>
-                    <Eyebrow className="tracking-[0.3em]">total subscriptions</Eyebrow>
-                    <CardTitle className="text-4xl">{subscriptions.length}</CardTitle>
+                    <CardTitle>Subscription table</CardTitle>
+                    <CardDescription>
+                        Amounts stay grouped by token and chain; no USD conversion is applied.
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {subscriptionsQuery.isLoading ? (
+                    {dashboardQuery.isLoading ? (
                         <p className="text-sm text-[var(--muted)]">Loading subscriptions...</p>
-                    ) : subscriptions.length ? (
-                        <div className="grid gap-3">
-                            {subscriptions.map((subscription) => (
-                                <ActionCard
-                                    className="grid gap-3 md:grid-cols-[1fr_1fr_auto]"
-                                    key={subscription.id}
-                                >
-                                    <div>
-                                        <div className="text-xs uppercase tracking-[0.25em] text-[var(--muted)]">
-                                            author
-                                        </div>
-                                        <Link
-                                            className="mt-2 block text-sm font-medium underline-offset-4 hover:underline"
-                                            to={`/authors/${subscription.authorSlug}/feed`}
-                                        >
-                                            {subscription.authorDisplayName}
-                                        </Link>
-                                        <div className="mt-1 font-mono text-xs text-[var(--muted)]">
-                                            @{subscription.authorSlug}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div className="text-xs uppercase tracking-[0.25em] text-[var(--muted)]">
-                                            plan
-                                        </div>
-                                        <div className="mt-2 text-sm">
-                                            {subscription.planTitle ??
-                                                subscription.planCode ??
-                                                "Subscription"}
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <StatusPill
-                                            label={subscription.status}
-                                            variant={
-                                                subscription.status ===
-                                                SUBSCRIPTION_ENTITLEMENT_STATUS.ACTIVE
-                                                    ? "success"
-                                                    : "warning"
-                                            }
-                                        />
-                                        <span className="text-sm text-[var(--muted)]">
-                                            until {formatDisplayDate(subscription.validUntil)}
-                                        </span>
-                                        <Button
-                                            asChild
-                                            className="rounded-full"
-                                            size="sm"
-                                            variant="outline"
-                                        >
-                                            <Link to={`/me/feed?author=${subscription.authorSlug}`}>
-                                                Feed
-                                            </Link>
-                                        </Button>
-                                        <Button
-                                            asChild
-                                            className="rounded-full"
-                                            size="sm"
-                                            variant="outline"
-                                        >
-                                            <Link to={`/authors/${subscription.authorSlug}`}>
-                                                Author
-                                            </Link>
-                                        </Button>
-                                    </div>
-                                </ActionCard>
-                            ))}
-                        </div>
                     ) : (
-                        <p className="text-sm text-[var(--muted)]">
-                            You do not have subscriptions yet. Open an author page and subscribe to
-                            unlock private content.
-                        </p>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Author</TableHead>
+                                    <TableHead>Tier</TableHead>
+                                    <TableHead>Price</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Valid until</TableHead>
+                                    <TableHead>Last payment</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {subscriptions.length ? (
+                                    subscriptions.map((subscription) => (
+                                        <TableRow key={subscription.id}>
+                                            <TableCell>
+                                                <Link
+                                                    className="font-medium underline-offset-4 hover:underline"
+                                                    to={`/authors/${subscription.authorSlug}`}
+                                                >
+                                                    {subscription.authorDisplayName}
+                                                </Link>
+                                                <div className="text-xs text-[var(--muted)]">
+                                                    @{subscription.authorSlug}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="font-medium">
+                                                    {subscription.planTitle ??
+                                                        subscription.planCode ??
+                                                        "Subscription"}
+                                                </div>
+                                                <div className="text-xs text-[var(--muted)]">
+                                                    {subscription.billingPeriodDays
+                                                        ? `${subscription.billingPeriodDays} days`
+                                                        : "Period unknown"}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                {subscription.price &&
+                                                subscription.paymentAsset &&
+                                                subscription.chainId
+                                                    ? `${subscription.price} ${subscription.paymentAsset.toUpperCase()} · ${subscription.chainId}`
+                                                    : "—"}
+                                            </TableCell>
+                                            <TableCell>
+                                                <StatusPill
+                                                    label={subscription.status}
+                                                    variant={
+                                                        subscription.status ===
+                                                        SUBSCRIPTION_ENTITLEMENT_STATUS.ACTIVE
+                                                            ? "success"
+                                                            : "warning"
+                                                    }
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                {formatDisplayDate(subscription.validUntil)}
+                                            </TableCell>
+                                            <TableCell>
+                                                {subscription.lastPaymentAt
+                                                    ? formatDisplayDate(subscription.lastPaymentAt)
+                                                    : "—"}
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex justify-end gap-2">
+                                                    <Button asChild size="sm" variant="outline">
+                                                        <Link
+                                                            to={`/authors/${subscription.authorSlug}`}
+                                                        >
+                                                            Author
+                                                        </Link>
+                                                    </Button>
+                                                    <Button asChild size="sm" variant="outline">
+                                                        <Link
+                                                            to={`/me/feed?author=${subscription.authorSlug}`}
+                                                        >
+                                                            Feed
+                                                        </Link>
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell
+                                            className="text-center text-[var(--muted)]"
+                                            colSpan={7}
+                                        >
+                                            You do not have subscriptions yet. Open an author page
+                                            and subscribe to unlock private content.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
                     )}
                 </CardContent>
             </Card>
         </section>
+    )
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+    return (
+        <Card>
+            <CardHeader className="p-4">
+                <CardDescription>{label}</CardDescription>
+                <CardTitle className="text-2xl">{value}</CardTitle>
+            </CardHeader>
+        </Card>
     )
 }
