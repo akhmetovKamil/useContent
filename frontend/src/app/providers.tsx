@@ -14,6 +14,7 @@ import {
 import { injected } from "wagmi/connectors"
 
 import { Toaster } from "@/components/ui/sonner"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { supportedChains } from "@/utils/config/chains"
 import { getFrontendRpcUrl } from "@/utils/config/env"
 import { SESSION_EXPIRED_EVENT } from "@/utils/session-events"
@@ -50,8 +51,10 @@ export function AppProviders({ children }: AppProvidersProps) {
     return (
         <WagmiProvider config={wagmiConfig}>
             <QueryClientProvider client={queryClient}>
-                {children}
-                <Toaster />
+                <TooltipProvider>
+                    {children}
+                    <Toaster />
+                </TooltipProvider>
             </QueryClientProvider>
         </WagmiProvider>
     )
