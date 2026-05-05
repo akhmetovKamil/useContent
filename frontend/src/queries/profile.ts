@@ -50,6 +50,14 @@ export function useMyReaderSubscriptionsQuery(enabled = true) {
     })
 }
 
+export function useMyReaderDashboardQuery(enabled = true) {
+    return useQuery({
+        queryKey: queryKeys.myReaderDashboard,
+        queryFn: () => profileApi.getMyReaderDashboard(),
+        enabled,
+    })
+}
+
 export function useMyFeedPostsQuery(enabled = true) {
     const query = useInfiniteQuery({
         queryKey: queryKeys.myFeedPosts,
@@ -66,6 +74,14 @@ export function useMyAuthorSubscribersQuery(enabled = true) {
     return useQuery({
         queryKey: queryKeys.myAuthorSubscribers,
         queryFn: () => profileApi.getMyAuthorSubscribers(),
+        enabled,
+    })
+}
+
+export function useMyAuthorDashboardQuery(enabled = true) {
+    return useQuery({
+        queryKey: queryKeys.myAuthorDashboard,
+        queryFn: () => profileApi.getMyAuthorDashboard(),
         enabled,
     })
 }

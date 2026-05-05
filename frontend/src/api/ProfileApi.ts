@@ -1,6 +1,6 @@
 import type { AuthorProfileDto, CreateAuthorProfileInput, UpdateAuthorProfileInput, UpdateMyProfileInput, UserProfileDto } from "@shared/types/profile"
 import type { FeedPostDto } from "@shared/types/posts"
-import type { ListAuthorSubscribersResponseDto, ListEntitlementsResponseDto, ListReaderSubscriptionsResponseDto } from "@shared/types/responses"
+import type { AuthorDashboardResponseDto, ListAuthorSubscribersResponseDto, ListEntitlementsResponseDto, ListReaderSubscriptionsResponseDto, ReaderDashboardResponseDto } from "@shared/types/responses"
 import type { PaginatedResponse } from "@shared/types/common"
 
 import {
@@ -64,6 +64,11 @@ class ProfileApi {
         return unwrapResponseKey(response, "subscriptions")
     }
 
+    async getMyReaderDashboard() {
+        const response = await getData<ReaderDashboardResponseDto>("/me/dashboard")
+        return unwrapResponseKey(response, "dashboard")
+    }
+
     async getMyFeedPosts(cursor?: string | null, limit = 12) {
         return getData<PaginatedResponse<FeedPostDto>, CursorPageInput>("/me/feed", {
             params: { cursor, limit },
@@ -75,6 +80,13 @@ class ProfileApi {
             "/me/author/subscribers"
         )
         return unwrapResponseKey(response, "subscribers")
+    }
+
+    async getMyAuthorDashboard() {
+        const response = await getData<AuthorDashboardResponseDto>(
+            "/me/author/dashboard"
+        )
+        return unwrapResponseKey(response, "dashboard")
     }
 }
 
