@@ -4,6 +4,7 @@ import { Download, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogDescription,
     DialogTitle,
@@ -27,7 +28,7 @@ export function PostMediaLightbox({
     return (
         <Dialog onOpenChange={onOpenChange} open={open}>
             <DialogContent
-                className="grid h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-none grid-rows-[auto_1fr] overflow-hidden border-0 bg-black/90 p-4 text-white shadow-none backdrop-blur-md sm:max-w-none"
+                className="w-auto max-w-[92vw] border-0 bg-transparent p-0 text-white shadow-none sm:max-w-[92vw]"
                 showCloseButton={false}
             >
                 <DialogTitle className="sr-only">
@@ -37,8 +38,8 @@ export function PostMediaLightbox({
                     Fullscreen post media preview.
                 </DialogDescription>
                 {attachment && objectUrl ? (
-                    <>
-                        <div className="flex min-w-0 items-center justify-between gap-3">
+                    <div className="grid max-h-[90dvh] max-w-[92vw] gap-4">
+                        <div className="flex min-w-0 items-center justify-between gap-3 rounded-2xl bg-black/45 px-4 py-3 shadow-lg backdrop-blur-md">
                             <div className="min-w-0">
                                 <div className="truncate text-sm font-medium">
                                     {attachment.fileName}
@@ -57,35 +58,36 @@ export function PostMediaLightbox({
                                     <Download className="size-4" />
                                     Download
                                 </Button>
-                                <Button
-                                    aria-label="Close"
-                                    className="rounded-full bg-white/10 text-white hover:bg-white/20"
-                                    onClick={() => onOpenChange(false)}
-                                    size="icon"
-                                    type="button"
-                                    variant="ghost"
-                                >
-                                    <X className="size-5" />
-                                </Button>
+                                <DialogClose asChild>
+                                    <Button
+                                        aria-label="Close"
+                                        className="rounded-full bg-white/10 text-white hover:bg-white/20"
+                                        size="icon"
+                                        type="button"
+                                        variant="ghost"
+                                    >
+                                        <X className="size-5" />
+                                    </Button>
+                                </DialogClose>
                             </div>
                         </div>
-                        <div className="grid min-h-0 place-items-center py-4">
+                        <div className="grid min-h-0 place-items-center">
                             {attachment.kind === "image" ? (
                                 <img
                                     alt={attachment.fileName}
-                                    className="max-h-full max-w-full object-contain"
+                                    className="max-h-[75dvh] max-w-[75vw] rounded-2xl object-contain shadow-[0_24px_90px_rgba(0,0,0,0.35)]"
                                     src={objectUrl}
                                 />
                             ) : null}
                             {attachment.kind === "video" ? (
                                 <video
-                                    className="max-h-full max-w-full"
+                                    className="max-h-[75dvh] max-w-[75vw] rounded-2xl shadow-[0_24px_90px_rgba(0,0,0,0.35)]"
                                     controls
                                     src={objectUrl}
                                 />
                             ) : null}
                         </div>
-                    </>
+                    </div>
                 ) : null}
             </DialogContent>
         </Dialog>
