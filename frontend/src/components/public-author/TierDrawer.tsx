@@ -33,7 +33,6 @@ export function TierDrawer({
         <Drawer onOpenChange={onOpenChange} open={open}>
             <DrawerContent
                 className="mx-auto max-w-4xl md:right-6 md:bottom-6 md:left-6 md:max-h-[86vh] md:rounded-[36px]"
-                onClose={() => onOpenChange(false)}
             >
                 <DrawerHeader className="text-center">
                     <Badge className="w-fit" variant={tier.hasAccess ? "success" : "warning"}>

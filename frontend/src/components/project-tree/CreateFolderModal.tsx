@@ -1,6 +1,12 @@
 import { Button } from "@/components/ui/button"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Modal } from "@/components/ui/modal"
 
 interface CreateFolderModalProps {
     folderName: string
@@ -20,34 +26,37 @@ export function CreateFolderModal({
     open,
 }: CreateFolderModalProps) {
     return (
-        <Modal
-            description="Create a folder inside the current project location."
-            onOpenChange={onOpenChange}
-            open={open}
-            title="New folder"
-        >
-            <form
-                className="grid gap-4"
-                onSubmit={(event) => {
-                    event.preventDefault()
-                    onCreate()
-                }}
-            >
-                <Input
-                    autoFocus
-                    onChange={(event) => onFolderNameChange(event.target.value)}
-                    placeholder="Folder name"
-                    value={folderName}
-                />
-                <div className="flex justify-end gap-2">
-                    <Button onClick={() => onOpenChange(false)} type="button" variant="outline">
-                        Cancel
-                    </Button>
-                    <Button disabled={isPending} type="submit">
-                        Create folder
-                    </Button>
-                </div>
-            </form>
-        </Modal>
+        <Dialog onOpenChange={onOpenChange} open={open}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>New folder</DialogTitle>
+                    <DialogDescription>
+                        Create a folder inside the current project location.
+                    </DialogDescription>
+                </DialogHeader>
+                <form
+                    className="grid gap-4"
+                    onSubmit={(event) => {
+                        event.preventDefault()
+                        onCreate()
+                    }}
+                >
+                    <Input
+                        autoFocus
+                        onChange={(event) => onFolderNameChange(event.target.value)}
+                        placeholder="Folder name"
+                        value={folderName}
+                    />
+                    <div className="flex justify-end gap-2">
+                        <Button onClick={() => onOpenChange(false)} type="button" variant="outline">
+                            Cancel
+                        </Button>
+                        <Button disabled={isPending} type="submit">
+                            Create folder
+                        </Button>
+                    </div>
+                </form>
+            </DialogContent>
+        </Dialog>
     )
 }

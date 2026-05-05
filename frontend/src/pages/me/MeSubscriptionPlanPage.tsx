@@ -13,6 +13,13 @@ import { AccessPolicyEditor } from "@/components/access/AccessPolicyEditor"
 import { OnChainPlanPublisher } from "@/components/subscriptions/OnChainPlanPublisher"
 import { Button } from "@/components/ui/button"
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import {
     Drawer,
     DrawerContent,
     DrawerDescription,
@@ -21,7 +28,6 @@ import {
 } from "@/components/ui/drawer"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Modal } from "@/components/ui/modal"
 import { Eyebrow, PageSection } from "@/components/ui/page"
 import { Textarea } from "@/components/ui/textarea"
 import { ChainPicker } from "@/components/web3/pickers/ChainPicker"
@@ -360,9 +366,7 @@ export function MeSubscriptionPlanPage() {
 
             <Drawer direction="right" onOpenChange={setPolicyModalOpen} open={policyModalOpen}>
                 <DrawerContent
-                    className="max-w-5xl"
-                    onClose={() => setPolicyModalOpen(false)}
-                    side="right"
+                    className="w-full max-w-5xl sm:max-w-5xl"
                 >
                     <DrawerHeader>
                         <DrawerTitle>
@@ -451,9 +455,7 @@ export function MeSubscriptionPlanPage() {
 
             <Drawer direction="right" onOpenChange={setPlanModalOpen} open={planModalOpen}>
                 <DrawerContent
-                    className="max-w-5xl"
-                    onClose={() => setPlanModalOpen(false)}
-                    side="right"
+                    className="w-full max-w-5xl sm:max-w-5xl"
                 >
                     <DrawerHeader>
                         <DrawerTitle>
@@ -604,37 +606,48 @@ export function MeSubscriptionPlanPage() {
                 </DrawerContent>
             </Drawer>
 
-            <Modal
-                description="Posts and projects using this policy should be moved to another policy first."
+            <Dialog
                 onOpenChange={(open) => {
                     if (!open) {
                         setDeletePolicyId(null)
                     }
                 }}
                 open={Boolean(deletePolicyId)}
-                title="Delete access policy?"
             >
-                <div className="flex justify-end gap-2">
-                    <Button onClick={() => setDeletePolicyId(null)} type="button" variant="outline">
-                        Cancel
-                    </Button>
-                    <Button
-                        disabled={deletePolicyMutation.isPending}
-                        onClick={() => {
-                            if (!deletePolicyId) {
-                                return
-                            }
-                            void deletePolicyMutation
-                                .mutateAsync(deletePolicyId)
-                                .then(() => setDeletePolicyId(null))
-                        }}
-                        type="button"
-                        variant="destructive"
-                    >
-                        Delete policy
-                    </Button>
-                </div>
-            </Modal>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete access policy?</DialogTitle>
+                        <DialogDescription>
+                            Posts and projects using this policy should be moved to another policy
+                            first.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            onClick={() => setDeletePolicyId(null)}
+                            type="button"
+                            variant="outline"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            disabled={deletePolicyMutation.isPending}
+                            onClick={() => {
+                                if (!deletePolicyId) {
+                                    return
+                                }
+                                void deletePolicyMutation
+                                    .mutateAsync(deletePolicyId)
+                                    .then(() => setDeletePolicyId(null))
+                            }}
+                            type="button"
+                            variant="destructive"
+                        >
+                            Delete policy
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </PageSection>
     )
 }

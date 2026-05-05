@@ -1,7 +1,7 @@
 import type { ProjectNodeDto } from "@shared/types/projects"
 
 import { ProjectFilePreview } from "@/components/project-tree/ProjectFilePreview"
-import { Modal } from "@/components/ui/modal"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface PreviewNodeModalProps {
     downloadUrl: string
@@ -17,15 +17,19 @@ export function PreviewNodeModal({
     onOpenChange,
 }: PreviewNodeModalProps) {
     return (
-        <Modal
-            className="max-w-5xl"
-            onOpenChange={onOpenChange}
-            open={Boolean(node)}
-            title="File preview"
-        >
-            {node ? (
-                <ProjectFilePreview downloadUrl={downloadUrl} node={node} onDownload={onDownload} />
-            ) : null}
-        </Modal>
+        <Dialog onOpenChange={onOpenChange} open={Boolean(node)}>
+            <DialogContent className="max-w-5xl">
+                <DialogHeader>
+                    <DialogTitle>File preview</DialogTitle>
+                </DialogHeader>
+                {node ? (
+                    <ProjectFilePreview
+                        downloadUrl={downloadUrl}
+                        node={node}
+                        onDownload={onDownload}
+                    />
+                ) : null}
+            </DialogContent>
+        </Dialog>
     )
 }

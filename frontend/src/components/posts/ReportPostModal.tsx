@@ -1,7 +1,13 @@
 import type { PostReportReason } from "@shared/types/posts"
 
 import { Button } from "@/components/ui/button"
-import { Modal } from "@/components/ui/modal"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 import {
     Select,
     SelectContent,
@@ -48,19 +54,21 @@ export function ReportPostModal({
     }
 
     return (
-        <Modal
-            description="Reports help keep promoted and public posts safe. The post will not be hidden automatically."
-            onOpenChange={onOpenChange}
-            open={open}
-            title="Report post"
-        >
-            <form
-                className="grid gap-4"
-                onSubmit={(event) => {
-                    event.preventDefault()
-                    submit()
-                }}
-            >
+        <Dialog onOpenChange={onOpenChange} open={open}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Report post</DialogTitle>
+                    <DialogDescription>
+                        Reports help keep promoted and public posts safe. The post will not be hidden automatically.
+                    </DialogDescription>
+                </DialogHeader>
+                <form
+                    className="grid gap-4"
+                    onSubmit={(event) => {
+                        event.preventDefault()
+                        submit()
+                    }}
+                >
                 <Select
                     onValueChange={(value) => onReasonChange(value as PostReportReason)}
                     value={reason}
@@ -99,7 +107,8 @@ export function ReportPostModal({
                         {isPending ? "Saving..." : "Submit report"}
                     </Button>
                 </div>
-            </form>
-        </Modal>
+                </form>
+            </DialogContent>
+        </Dialog>
     )
 }

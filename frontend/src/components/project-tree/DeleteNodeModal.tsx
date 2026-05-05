@@ -1,7 +1,13 @@
 import type { ProjectNodeDto } from "@shared/types/projects"
 
 import { Button } from "@/components/ui/button"
-import { Modal } from "@/components/ui/modal"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 
 interface DeleteNodeModalProps {
     isPending: boolean
@@ -17,25 +23,30 @@ export function DeleteNodeModal({
     onOpenChange,
 }: DeleteNodeModalProps) {
     return (
-        <Modal
-            description={node ? `This will delete "${node.name}" from the project.` : undefined}
-            onOpenChange={onOpenChange}
-            open={Boolean(node)}
-            title="Delete item?"
-        >
-            <div className="flex justify-end gap-2">
-                <Button onClick={() => onOpenChange(false)} type="button" variant="outline">
-                    Cancel
-                </Button>
-                <Button
-                    disabled={isPending}
-                    onClick={onDelete}
-                    type="button"
-                    variant="destructive"
-                >
-                    Delete
-                </Button>
-            </div>
-        </Modal>
+        <Dialog onOpenChange={onOpenChange} open={Boolean(node)}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Delete item?</DialogTitle>
+                    {node ? (
+                        <DialogDescription>
+                            This will delete "{node.name}" from the project.
+                        </DialogDescription>
+                    ) : null}
+                </DialogHeader>
+                <div className="flex justify-end gap-2">
+                    <Button onClick={() => onOpenChange(false)} type="button" variant="outline">
+                        Cancel
+                    </Button>
+                    <Button
+                        disabled={isPending}
+                        onClick={onDelete}
+                        type="button"
+                        variant="destructive"
+                    >
+                        Delete
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
     )
 }

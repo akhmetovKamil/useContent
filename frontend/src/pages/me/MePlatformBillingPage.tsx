@@ -115,7 +115,7 @@ export function MePlatformBillingPage() {
                 onOpenChange={(open) => !open && setCheckoutPlan(null)}
                 open={Boolean(checkoutPlan)}
             >
-                <DrawerContent onClose={() => setCheckoutPlan(null)} side="right">
+                <DrawerContent className="w-full max-w-3xl sm:max-w-3xl">
                     {checkoutPlan ? (
                         <CheckoutPreview
                             chainId={paymentChainId}

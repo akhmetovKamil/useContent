@@ -1,4 +1,10 @@
-import { Modal } from "@/components/ui/modal"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 
 interface Web3HelpModalProps {
     description: string
@@ -9,7 +15,12 @@ interface Web3HelpModalProps {
 
 export function Web3HelpModal({ description, onOpenChange, open, title }: Web3HelpModalProps) {
     return (
-        <Modal description={description} onOpenChange={onOpenChange} open={open} title={title}>
+        <Dialog onOpenChange={onOpenChange} open={open}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{title}</DialogTitle>
+                    <DialogDescription>{description}</DialogDescription>
+                </DialogHeader>
             <div className="grid gap-3 text-sm leading-6 text-[var(--muted)]">
                 <p>
                     For token rules, the backend reads `balanceOf(wallet)` through the configured
@@ -21,6 +32,7 @@ export function Web3HelpModal({ description, onOpenChange, open, title }: Web3He
                     and locked content remains hidden.
                 </p>
             </div>
-        </Modal>
+            </DialogContent>
+        </Dialog>
     )
 }

@@ -6,7 +6,13 @@ import { ProfileAvatarPicker } from "@/components/common/ProfileAvatarPicker"
 import { AppearancePicker } from "@/components/settings/AppearancePicker"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Modal } from "@/components/ui/modal"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 import { Eyebrow, PageSection, PageTitle } from "@/components/ui/page"
 import {
     useDeleteMyAuthorProfileMutation,
@@ -108,36 +114,41 @@ export function MeAuthorPage() {
                     </CardContent>
                 </Card>
             )}
-            <Modal
-                description="Your user wallet account will stay active, but the author profile, posts, projects, access policies, subscription plans, payment intents, and entitlements will be removed from the database."
-                onOpenChange={setDeleteModalOpen}
-                open={deleteModalOpen}
-                title="Delete author account?"
-            >
-                <div className="flex justify-end gap-2">
-                    <Button
-                        onClick={() => setDeleteModalOpen(false)}
-                        type="button"
-                        variant="outline"
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        disabled={deleteAuthorMutation.isPending}
-                        onClick={() => {
-                            void deleteAuthorMutation.mutateAsync().then(() => {
-                                setDeleteModalOpen(false)
-                                setMode("reader")
-                                navigate("/")
-                            })
-                        }}
-                        type="button"
-                        variant="destructive"
-                    >
-                        Delete author account
-                    </Button>
-                </div>
-            </Modal>
+            <Dialog onOpenChange={setDeleteModalOpen} open={deleteModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete author account?</DialogTitle>
+                        <DialogDescription>
+                            Your user wallet account will stay active, but the author profile,
+                            posts, projects, access policies, subscription plans, payment intents,
+                            and entitlements will be removed from the database.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            onClick={() => setDeleteModalOpen(false)}
+                            type="button"
+                            variant="outline"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            disabled={deleteAuthorMutation.isPending}
+                            onClick={() => {
+                                void deleteAuthorMutation.mutateAsync().then(() => {
+                                    setDeleteModalOpen(false)
+                                    setMode("reader")
+                                    navigate("/")
+                                })
+                            }}
+                            type="button"
+                            variant="destructive"
+                        >
+                            Delete author account
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </section>
     )
 }

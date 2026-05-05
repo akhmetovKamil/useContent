@@ -1,5 +1,11 @@
 import { Button } from "@/components/ui/button"
-import { Modal } from "@/components/ui/modal"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 import type { ContentManagerKind, ManagedContentItem } from "@/types/content-manager"
 
 interface DeleteContentModalProps {
@@ -16,18 +22,23 @@ export function DeleteContentModal({
     onTargetChange,
 }: DeleteContentModalProps) {
     return (
-        <Modal
-            description={
-                deleteTarget ? `This will permanently delete "${deleteTarget.title}".` : undefined
-            }
+        <Dialog
             onOpenChange={(open) => {
                 if (!open) {
                     onTargetChange(null)
                 }
             }}
             open={Boolean(deleteTarget)}
-            title={`Delete ${kind}?`}
         >
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{`Delete ${kind}?`}</DialogTitle>
+                    {deleteTarget ? (
+                        <DialogDescription>
+                            This will permanently delete "{deleteTarget.title}".
+                        </DialogDescription>
+                    ) : null}
+                </DialogHeader>
             <div className="flex justify-end gap-2">
                 <Button onClick={() => onTargetChange(null)} type="button" variant="outline">
                     Cancel
@@ -45,6 +56,7 @@ export function DeleteContentModal({
                     Delete
                 </Button>
             </div>
-        </Modal>
+            </DialogContent>
+        </Dialog>
     )
 }
