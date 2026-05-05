@@ -3,9 +3,10 @@ import type {
     PostMediaGridLayoutDto,
     PostMediaLayout,
 } from "@shared/types/posts"
-import { Fragment } from "react"
+import { Fragment, useState } from "react"
 
 import { PostFileAttachmentButton } from "@/components/posts/PostFileAttachmentButton"
+import { PostMediaLightbox } from "@/components/posts/PostMediaLightbox"
 import { PostMediaTile } from "@/components/posts/PostMediaTile"
 import {
     Carousel,
@@ -32,6 +33,11 @@ export function PostMediaGallery({
     mediaLayout = "carousel",
     onDownload,
 }: PostMediaGalleryProps) {
+    const [preview, setPreview] = useState<{
+        attachment: PostAttachmentDto
+        objectUrl: string
+    } | null>(null)
+
     if (!attachments.length) {
         return null
     }
@@ -69,6 +75,9 @@ export function PostMediaGallery({
                                         className="h-full"
                                         downloadUrl={getDownloadUrl(attachment)}
                                         onDownload={() => onDownload(attachment)}
+                                        onPreview={(objectUrl) =>
+                                            setPreview({ attachment, objectUrl })
+                                        }
                                     />
                                 </ResizablePanel>
                                 {index < media.length - 1 ? <ResizableHandle /> : null}
@@ -84,6 +93,9 @@ export function PostMediaGallery({
                                         attachment={attachment}
                                         downloadUrl={getDownloadUrl(attachment)}
                                         onDownload={() => onDownload(attachment)}
+                                        onPreview={(objectUrl) =>
+                                            setPreview({ attachment, objectUrl })
+                                        }
                                     />
                                 </CarouselItem>
                             ))}
@@ -104,6 +116,9 @@ export function PostMediaGallery({
                                 downloadUrl={getDownloadUrl(attachment)}
                                 key={attachment.id}
                                 onDownload={() => onDownload(attachment)}
+                                onPreview={(objectUrl) =>
+                                    setPreview({ attachment, objectUrl })
+                                }
                             />
                         ))}
                     </div>
@@ -121,6 +136,21 @@ export function PostMediaGallery({
                     ))}
                 </div>
             ) : null}
+            <PostMediaLightbox
+                attachment={preview?.attachment ?? null}
+                objectUrl={preview?.objectUrl ?? null}
+                onDownload={() => {
+                    if (preview) {
+                        onDownload(preview.attachment)
+                    }
+                }}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPreview(null)
+                    }
+                }}
+                open={Boolean(preview)}
+            />
         </div>
     )
 }

@@ -16,6 +16,7 @@ import {
   buildAccessEvaluationContext,
   buildFeedPostResponse,
   getReadablePostContext,
+  hydratePostComments,
   normalizeAttachmentIds,
   normalizeContentPolicy,
   normalizeLinkedProjectIds,
@@ -594,7 +595,7 @@ export async function listPostCommentsBySlug(
   viewerWallet?: string,
 ): Promise<PostCommentDoc[]> {
   const { post } = await getReadablePostContext(slug, postId, viewerWallet);
-  return repo.listPostComments(post._id);
+  return hydratePostComments(await repo.listPostComments(post._id));
 }
 
 export async function createPostCommentBySlug(

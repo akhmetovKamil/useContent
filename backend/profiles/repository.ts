@@ -18,6 +18,17 @@ export async function findUserByPrimaryWallet(
   return users.findOne({ primaryWallet });
 }
 
+export async function findUsersByPrimaryWallets(
+  primaryWallets: string[],
+): Promise<UserDoc[]> {
+  if (!primaryWallets.length) {
+    return [];
+  }
+
+  const users = await getUsersCollection();
+  return users.find({ primaryWallet: { $in: primaryWallets } }).toArray();
+}
+
 export async function findUserById(id: ObjectId): Promise<UserDoc | null> {
   const users = await getUsersCollection();
   return users.findOne({ _id: id });

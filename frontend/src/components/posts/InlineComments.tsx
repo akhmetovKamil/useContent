@@ -16,6 +16,8 @@ interface InlineCommentsProps {
     authorId: string
     comments?: PostCommentDto[]
     commentsPreview?: PostCommentDto[]
+    currentUserAvatarFileId?: string | null
+    currentUserDisplayName?: string
     isError?: boolean
     isLoading?: boolean
     isPending?: boolean
@@ -27,6 +29,8 @@ export function InlineComments({
     authorId,
     comments,
     commentsPreview = [],
+    currentUserAvatarFileId = null,
+    currentUserDisplayName = "You",
     isError = false,
     isLoading = false,
     isPending = false,
@@ -55,8 +59,8 @@ export function InlineComments({
             authorId,
             postId: "",
             walletAddress: "",
-            displayName: "You",
-            avatarFileId: null,
+            displayName: currentUserDisplayName,
+            avatarFileId: currentUserAvatarFileId,
             content: nextContent,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),

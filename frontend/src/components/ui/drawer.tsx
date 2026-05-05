@@ -1,6 +1,7 @@
 import { X } from "lucide-react"
 import type * as React from "react"
 
+import { useOverlayEffects } from "@/hooks/useOverlayEffects"
 import { cn } from "@/utils/cn"
 import { Button } from "./button"
 
@@ -11,12 +12,14 @@ interface DrawerProps {
 }
 
 export function Drawer({ children, onOpenChange, open }: DrawerProps) {
+    useOverlayEffects(open, onOpenChange)
+
     if (!open) {
         return null
     }
 
     return (
-        <div className="fixed inset-0 z-[95] overflow-hidden">
+        <div className="fixed inset-0 z-[120] h-[100dvh] w-[100dvw] overflow-hidden">
             <button
                 aria-label="Close drawer"
                 className="absolute inset-0 cursor-default bg-black/40 backdrop-blur-md"
@@ -42,7 +45,7 @@ export function DrawerContent({
             className={cn(
                 "absolute z-10 overflow-y-auto border border-[var(--line)] bg-[var(--surface)] shadow-2xl",
                 side === "bottom" &&
-                    "right-0 bottom-0 left-0 max-h-[88vh] rounded-t-[36px] p-5 animate-in slide-in-from-bottom-12 md:p-7",
+                    "right-0 bottom-0 left-0 max-h-[88dvh] rounded-t-[36px] p-5 animate-in slide-in-from-bottom-12 md:p-7",
                 side === "right" &&
                     "top-0 right-0 h-full w-full max-w-3xl rounded-l-[36px] p-5 animate-in slide-in-from-right-12 md:p-7",
                 className

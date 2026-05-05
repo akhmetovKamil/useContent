@@ -1,4 +1,4 @@
-import { Eye, Heart, MessageCircle, MoreHorizontal } from "lucide-react"
+import { Eye, Heart, MessageCircle } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -26,44 +26,32 @@ export function PostEngagementBar({
     viewsCount,
 }: PostEngagementBarProps) {
     return (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-4">
-            <div className="flex flex-wrap items-center gap-2">
-                <Button
-                    className="rounded-full"
-                    disabled={isLikeDisabled}
-                    onClick={onLike}
-                    size="sm"
-                    type="button"
-                    variant={likedByMe ? "default" : "outline"}
-                >
-                    <Heart className={cn("size-4", likedByMe ? "fill-current" : "")} />
-                    {likesCount}
-                </Button>
-                <Button
-                    className="rounded-full"
-                    onClick={onCommentsToggle}
-                    size="sm"
-                    type="button"
-                    variant={commentsOpen ? "default" : "outline"}
-                >
-                    <MessageCircle className="size-4" />
-                    {commentsCount}
-                </Button>
-                <Badge className="rounded-full border border-[var(--line)] bg-transparent">
-                    <Eye className="size-3.5" />
-                    {viewsCount} views
-                </Badge>
-            </div>
+        <div className="flex flex-wrap items-center gap-2 border-t border-[var(--line)] pt-4">
             <Button
-                aria-label="More post actions"
                 className="rounded-full"
-                disabled
-                size="icon"
+                disabled={isLikeDisabled}
+                onClick={onLike}
+                size="sm"
                 type="button"
-                variant="ghost"
+                variant={likedByMe ? "default" : "outline"}
             >
-                <MoreHorizontal className="size-4" />
+                <Heart className={cn("size-4", likedByMe ? "fill-current" : "")} />
+                {likesCount}
             </Button>
+            <Button
+                className="rounded-full"
+                onClick={onCommentsToggle}
+                size="sm"
+                type="button"
+                variant={commentsOpen ? "default" : "outline"}
+            >
+                <MessageCircle className="size-4" />
+                {commentsCount}
+            </Button>
+            <Badge className="rounded-full border border-[var(--line)] bg-transparent">
+                <Eye className="size-3.5" />
+                {viewsCount} views
+            </Badge>
         </div>
     )
 }

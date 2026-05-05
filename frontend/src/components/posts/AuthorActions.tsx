@@ -1,16 +1,18 @@
 import { CONTENT_STATUS } from "@shared/consts"
 import type { PostDto } from "@shared/types/posts"
-import { Archive, ExternalLink, Megaphone, Pencil, RotateCcw, Send, Trash2 } from "lucide-react"
+import { Archive, ExternalLink, LockKeyhole, Megaphone, Pencil, RotateCcw, Send, Trash2 } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import { IconAction } from "@/components/common/IconAction"
 import type { AuthorPostActions, FeedPost } from "@/components/posts/types"
 import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 export function AuthorActions({
     onArchive,
     onDelete,
     onEdit,
+    isPromoteLocked = false,
     onPublish,
     onPromote,
     onRestoreDraft,
@@ -41,13 +43,33 @@ export function AuthorActions({
                 </>
             ) : null}
             <IconAction icon={Pencil} label="Edit" onClick={() => onEdit?.(editablePost)} />
-            {post.status === CONTENT_STATUS.PUBLISHED && (onPromote || onStopPromotion) ? (
+            {post.status === CONTENT_STATUS.PUBLISHED && (onPromote || onStopPromotion || isPromoteLocked) ? (
                 isPromoted && onStopPromotion ? (
                     <IconAction
                         icon={Megaphone}
                         label="Pause promo"
                         onClick={() => onStopPromotion?.(editablePost)}
                     />
+                ) : isPromoteLocked ? (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <span className="inline-flex">
+                                <Button
+                                    className="rounded-full"
+                                    disabled
+                                    size="sm"
+                                    type="button"
+                                    variant="outline"
+                                >
+                                    <LockKeyhole className="size-4" />
+                                    Promote
+                                </Button>
+                            </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            Upgrade billing to unlock homepage promotion.
+                        </TooltipContent>
+                    </Tooltip>
                 ) : onPromote ? (
                     <IconAction
                         icon={Megaphone}

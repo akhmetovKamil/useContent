@@ -11,6 +11,7 @@ interface PostMediaTileProps {
     className?: string
     downloadUrl: string | null
     onDownload: () => void
+    onPreview?: (objectUrl: string) => void
 }
 
 export function PostMediaTile({
@@ -18,6 +19,7 @@ export function PostMediaTile({
     className,
     downloadUrl,
     onDownload,
+    onPreview,
 }: PostMediaTileProps) {
     const [objectUrl, setObjectUrl] = useState<string | null>(null)
 
@@ -61,14 +63,16 @@ export function PostMediaTile({
             {attachment.kind === "image" && objectUrl ? (
                 <img
                     alt={attachment.fileName}
-                    className="h-full max-h-[520px] min-h-44 w-full object-cover"
+                    className="h-full max-h-[520px] min-h-44 w-full cursor-zoom-in object-cover"
+                    onClick={() => onPreview?.(objectUrl)}
                     src={objectUrl}
                 />
             ) : null}
             {attachment.kind === "video" && objectUrl ? (
                 <video
-                    className="h-full max-h-[520px] min-h-44 w-full object-cover"
+                    className="h-full max-h-[520px] min-h-44 w-full cursor-zoom-in object-cover"
                     controls
+                    onClick={() => onPreview?.(objectUrl)}
                     src={objectUrl}
                 />
             ) : null}
@@ -91,7 +95,10 @@ export function PostMediaTile({
                     </div>
                 </div>
             ) : null}
-            <div className="absolute right-3 bottom-3 opacity-0 transition group-hover:opacity-100">
+            <div
+                className="absolute right-3 bottom-3 opacity-0 transition group-hover:opacity-100"
+                onClick={(event) => event.stopPropagation()}
+            >
                 <Button
                     className="rounded-full shadow-[var(--shadow)]"
                     onClick={onDownload}

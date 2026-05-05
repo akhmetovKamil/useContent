@@ -397,6 +397,35 @@ export function toPostCommentResponse(
   };
 }
 
+export async function hydratePostComments(
+  comments: PostCommentDoc[],
+): Promise<PostCommentDoc[]> {
+  if (!comments.length) {
+    return comments;
+  }
+
+  const wallets = Array.from(
+    new Set(comments.map((comment) => normalizeWallet(comment.walletAddress))),
+  );
+  const users = await repo.findUsersByPrimaryWallets(wallets);
+  const usersByWallet = new Map(
+    users.map((user) => [normalizeWallet(user.primaryWallet), user]),
+  );
+
+  return comments.map((comment) => {
+    const user = usersByWallet.get(normalizeWallet(comment.walletAddress));
+    if (!user) {
+      return comment;
+    }
+
+    return {
+      ...comment,
+      avatarFileId: user.avatarFileId ?? null,
+      displayName: user.displayName,
+    };
+  });
+}
+
 export function toPostReportResponse(
   report: PostReportDoc,
 ): PostReportResponse {
@@ -477,6 +506,8 @@ export async function buildFeedPostResponse(
     repo.listPostCommentsPreview(post._id, 3),
   ]);
   const visibleStats = hasAccess ? stats : { ...stats, attachments: [] };
+  const visibleCommentsPreview =
+    hasAccess ? await hydratePostComments(commentsPreview) : [];
 
   return toFeedPostResponse(
     {
@@ -486,7 +517,7 @@ export async function buildFeedPostResponse(
     author,
     {
       accessLabel: describeAccessPolicy(resolvedPolicy.root, plans),
-      commentsPreview: hasAccess ? commentsPreview : [],
+      commentsPreview: visibleCommentsPreview,
       feedReason: feed?.reason ?? null,
       feedSource: feed?.source ?? "author",
       hasAccess,

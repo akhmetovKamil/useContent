@@ -3,6 +3,7 @@ import type { FeedPostDto, PostDto } from "@shared/types/posts"
 export type FeedPost = PostDto | FeedPostDto
 
 export interface AuthorPostActions {
+    isPromoteLocked?: boolean
     onArchive?: (post: PostDto) => void
     onDelete?: (post: PostDto) => void
     onEdit?: (post: PostDto) => void

@@ -16,6 +16,7 @@ interface PostWorkspaceTabsProps {
     draftCount: number
     isActiveListError: boolean
     isActiveListLoading: boolean
+    isPromoteLocked?: boolean
     onArchive: (post: PostDto) => void
     onDelete: (post: PostDto) => void
     onEdit: (post: PostDto) => void
@@ -39,6 +40,7 @@ export function PostWorkspaceTabs({
     draftCount,
     isActiveListError,
     isActiveListLoading,
+    isPromoteLocked = false,
     onArchive,
     onDelete,
     onEdit,
@@ -116,6 +118,7 @@ export function PostWorkspaceTabs({
                 ) : (
                     <PostFeed
                         emptyLabel={postEmptyLabels[activeTab]}
+                        isPromoteLocked={isPromoteLocked}
                         isAuthorView
                         onArchive={onArchive}
                         onDelete={onDelete}

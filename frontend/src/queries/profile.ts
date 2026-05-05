@@ -111,6 +111,7 @@ export function useUploadMyProfileAvatarMutation() {
                 queryKeys.myFeedPosts,
                 queryKeys.exploreFeedPostsRoot,
             ])
+            void queryClient.invalidateQueries({ queryKey: ["authors"] })
         },
     })
 }
@@ -139,6 +140,7 @@ export function useUploadMyAuthorAvatarMutation() {
                 queryKeys.myFeedPosts,
                 queryKeys.exploreFeedPostsRoot,
             ])
+            void queryClient.invalidateQueries({ queryKey: ["authors"] })
         },
     })
 }

@@ -1,0 +1,26 @@
+@mixin variables {
+    --background: #edf9f7;
+    --foreground: #10293a;
+    --card: rgba(250, 255, 253, 0.84);
+    --card-foreground: #10293a;
+    --popover: #f5fffc;
+    --popover-foreground: #10293a;
+    --primary: #2f9fd8;
+    --primary-foreground: #f6fcff;
+    --secondary: rgba(40, 167, 153, 0.14);
+    --secondary-foreground: #10293a;
+    --muted: #557280;
+    --muted-background: #dff2f0;
+    --accent: #2f9fd8;
+    --accent-foreground: #f6fcff;
+    --accent-soft: rgba(47, 159, 216, 0.15);
+    --destructive: #d93f56;
+    --border: rgba(25, 89, 117, 0.16);
+    --input: rgba(25, 89, 117, 0.2);
+    --ring: rgba(47, 159, 216, 0.45);
+    --shadow: 0 24px 90px rgba(24, 85, 105, 0.13);
+    background:
+        radial-gradient(circle at 17% 14%, rgba(79, 190, 223, 0.28), transparent 30%),
+        radial-gradient(circle at 82% 18%, rgba(109, 225, 185, 0.32), transparent 28%),
+        linear-gradient(180deg, #f2fffb 0%, #e4f3ff 100%);
+}

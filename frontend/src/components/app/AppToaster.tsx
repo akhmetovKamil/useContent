@@ -1,6 +1,6 @@
 import { useEffect } from "react"
-import { toast, Toaster } from "sonner"
 
+import { toast, Toaster } from "@/components/ui/sonner"
 import { SESSION_EXPIRED_EVENT } from "@/utils/session-events"
 
 export function AppToaster() {
@@ -13,5 +13,5 @@ export function AppToaster() {
         return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired)
     }, [])
 
-    return <Toaster closeButton position="top-right" richColors />
+    return <Toaster />
 }

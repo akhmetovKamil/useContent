@@ -10,6 +10,7 @@ interface PostFeedProps extends AuthorPostActions {
 
 export function PostFeed({
     emptyLabel,
+    isPromoteLocked,
     isAuthorView = false,
     onArchive,
     onDelete,
@@ -31,6 +32,7 @@ export function PostFeed({
             {posts.map((post) => (
                 <PostCard
                     isAuthorView={isAuthorView}
+                    isPromoteLocked={isPromoteLocked}
                     key={post.id}
                     onArchive={onArchive}
                     onDelete={onDelete}

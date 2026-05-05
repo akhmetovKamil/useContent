@@ -50,13 +50,7 @@ export function PlanCard({
                         active={plan.features.includes("homepage_promo")}
                     />
                 </div>
-                <InfoMetric label="Included storage" value={formatFileSize(plan.baseStorageBytes)}>
-                    {plan.maxExtraStorageBytes ? (
-                        <p className="mt-1 text-xs text-[var(--muted)]">
-                            Up to {formatFileSize(plan.maxExtraStorageBytes)} extra storage
-                        </p>
-                    ) : null}
-                </InfoMetric>
+                <InfoMetric label="Included storage" value={formatFileSize(plan.baseStorageBytes)} />
                 <Button
                     className="rounded-full"
                     disabled={isFree || isCurrent}

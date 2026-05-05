@@ -6,9 +6,10 @@ import type {
     PostMediaGridLayoutDto,
     PostMediaLayout,
 } from "@shared/types/posts"
-import { FolderKanban, Images, ImagePlus, LayoutGrid, X } from "lucide-react"
+import { FolderKanban, Images, ImagePlus, LayoutGrid, LockKeyhole, X } from "lucide-react"
 import type { DragEvent } from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
+import { Link } from "react-router-dom"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -50,6 +51,7 @@ interface PostComposerProps {
     accessPolicies?: SavedAccessPolicyOption[]
     createError?: Error | null
     isPending: boolean
+    projectsLocked?: boolean
     projectOptions?: ProjectOption[]
     onSubmit: (input: CreatePostInput, files: File[]) => Promise<unknown>
 }
@@ -59,6 +61,7 @@ export function PostComposer({
     createError,
     isPending,
     onSubmit,
+    projectsLocked = false,
     projectOptions = [],
 }: PostComposerProps) {
     const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -156,7 +159,7 @@ export function PostComposer({
                                 accessPolicyId:
                                     policyMode === POLICY_MODE.CUSTOM ? accessPolicyId : null,
                                 content,
-                                linkedProjectIds,
+                                linkedProjectIds: projectsLocked ? [] : linkedProjectIds,
                                 mediaGridLayout,
                                 mediaLayout: effectiveMediaLayout,
                                 policyMode,
@@ -377,55 +380,77 @@ export function PostComposer({
                             </Label>
                         ) : null}
 
-                        <div className="grid gap-3">
+                        <div className="relative grid gap-3 overflow-hidden rounded-2xl">
                             <div className="text-sm font-medium text-[var(--foreground)]">
                                 Attached projects
                             </div>
-                            {projectOptions.length ? (
-                                <div className="grid gap-2">
-                                    {projectOptions.map((project) => {
-                                        const selected = linkedProjectIds.includes(project.id)
-                                        return (
-                                            <button
-                                                className={cn(
-                                                    "flex items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3 text-left transition",
-                                                    selected
-                                                        ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                                                        : "hover:border-[var(--accent)]"
-                                                )}
-                                                key={project.id}
-                                                onClick={() =>
-                                                    setLinkedProjectIds((current) =>
+                            <div className={projectsLocked ? "pointer-events-none blur-sm" : ""}>
+                                {projectOptions.length ? (
+                                    <div className="grid gap-2">
+                                        {projectOptions.map((project) => {
+                                            const selected = linkedProjectIds.includes(project.id)
+                                            return (
+                                                <button
+                                                    className={cn(
+                                                        "flex items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3 text-left transition",
                                                         selected
-                                                            ? current.filter(
-                                                                  (item) => item !== project.id
-                                                              )
-                                                            : [...current, project.id]
-                                                    )
-                                                }
-                                                type="button"
-                                            >
-                                                <span className="flex min-w-0 items-center gap-3">
-                                                    <FolderKanban className="size-4 shrink-0 text-[var(--muted)]" />
-                                                    <span className="min-w-0">
-                                                        <span className="block truncate text-sm font-medium">
-                                                            {project.title}
-                                                        </span>
-                                                        <span className="text-xs text-[var(--muted)]">
-                                                            {project.status}
+                                                            ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                                                            : "hover:border-[var(--accent)]"
+                                                    )}
+                                                    key={project.id}
+                                                    onClick={() =>
+                                                        setLinkedProjectIds((current) =>
+                                                            selected
+                                                                ? current.filter(
+                                                                      (item) => item !== project.id
+                                                                  )
+                                                                : [...current, project.id]
+                                                        )
+                                                    }
+                                                    type="button"
+                                                >
+                                                    <span className="flex min-w-0 items-center gap-3">
+                                                        <FolderKanban className="size-4 shrink-0 text-[var(--muted)]" />
+                                                        <span className="min-w-0">
+                                                            <span className="block truncate text-sm font-medium">
+                                                                {project.title}
+                                                            </span>
+                                                            <span className="text-xs text-[var(--muted)]">
+                                                                {project.status}
+                                                            </span>
                                                         </span>
                                                     </span>
-                                                </span>
-                                                {selected ? <Badge>Selected</Badge> : null}
-                                            </button>
-                                        )
-                                    })}
+                                                    {selected ? <Badge>Selected</Badge> : null}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                ) : (
+                                    <p className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3 text-sm text-[var(--muted)]">
+                                        Create a project to attach it to posts.
+                                    </p>
+                                )}
+                            </div>
+                            {projectsLocked ? (
+                                <div className="absolute inset-0 grid place-items-center rounded-2xl border border-[var(--line)] bg-[var(--surface)]/80 p-4 text-center backdrop-blur-sm">
+                                    <div className="grid justify-items-center gap-3">
+                                        <span className="grid size-10 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                                            <LockKeyhole className="size-5" />
+                                        </span>
+                                        <div>
+                                            <div className="font-medium text-[var(--foreground)]">
+                                                Projects are locked
+                                            </div>
+                                            <p className="mt-1 text-sm text-[var(--muted)]">
+                                                Upgrade billing to attach project spaces to posts.
+                                            </p>
+                                        </div>
+                                        <Button asChild className="rounded-full" size="sm">
+                                            <Link to="/me/platform-billing">Open billing</Link>
+                                        </Button>
+                                    </div>
                                 </div>
-                            ) : (
-                                <p className="text-sm text-[var(--muted)]">
-                                    Create a project to attach it to posts.
-                                </p>
-                            )}
+                            ) : null}
                         </div>
 
                         {selectedProjects.length ? (
@@ -441,7 +466,9 @@ export function PostComposer({
 
                         <Button className="w-fit rounded-full" disabled={isPending} type="submit">
                             {isPending
-                                ? "Publishing..."
+                                ? status === CONTENT_STATUS.DRAFT
+                                    ? "Saving..."
+                                    : "Publishing..."
                                 : status === CONTENT_STATUS.DRAFT
                                   ? "Save draft"
                                   : "Publish post"}

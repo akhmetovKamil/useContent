@@ -17,6 +17,7 @@ import type { AuthorPostActions, FeedPost } from "@/components/posts/types"
 import { getFeedAuthor, getPostAccess } from "@/components/posts/types"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { toast } from "@/components/ui/sonner"
 import {
     useCreatePostCommentMutation,
     useCreatePostReportMutation,
@@ -36,6 +37,7 @@ interface PostCardProps extends AuthorPostActions {
 
 export function PostCard({
     commentsMode = "inline",
+    isPromoteLocked = false,
     isAuthorView = false,
     onArchive,
     onDelete,
@@ -54,7 +56,6 @@ export function PostCard({
     const [reportOpen, setReportOpen] = useState(false)
     const [reportReason, setReportReason] = useState<PostReportReason>("spam")
     const [reportComment, setReportComment] = useState("")
-    const [reportSubmitted, setReportSubmitted] = useState(false)
     const [optimisticLiked, setOptimisticLiked] = useState(post.likedByMe)
     const [optimisticLikesCount, setOptimisticLikesCount] = useState(post.likesCount)
     const author = getFeedAuthor(post)
@@ -150,6 +151,7 @@ export function PostCard({
                             onArchive={onArchive}
                             onDelete={onDelete}
                             onEdit={onEdit}
+                            isPromoteLocked={isPromoteLocked}
                             onPublish={onPublish}
                             onPromote={onPromote}
                             onRestoreDraft={onRestoreDraft}
@@ -237,12 +239,7 @@ export function PostCard({
                     error={reportMutation.error}
                     isPending={reportMutation.isPending}
                     onCommentChange={setReportComment}
-                    onOpenChange={(open) => {
-                        setReportOpen(open)
-                        if (!open) {
-                            setReportSubmitted(false)
-                        }
-                    }}
+                    onOpenChange={setReportOpen}
                     onReasonChange={setReportReason}
                     onSubmit={() =>
                         void reportMutation
@@ -251,13 +248,13 @@ export function PostCard({
                                 reason: reportReason,
                             })
                             .then(() => {
-                                setReportSubmitted(true)
                                 setReportComment("")
+                                setReportOpen(false)
+                                toast.info("Report sent to moderation.")
                             })
                     }
                     open={reportOpen}
                     reason={reportReason}
-                    submitted={reportSubmitted}
                 />
             ) : null}
         </Card>

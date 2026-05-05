@@ -18,6 +18,7 @@ import {
     useUpdateMyPostMutation,
     useUploadMyPostAttachmentMutation,
 } from "@/queries/posts"
+import { useMyAuthorPlatformBillingQuery } from "@/queries/platform"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useMyProjectsQuery } from "@/queries/projects"
 import { useAuthStore } from "@/stores/auth-store"
@@ -28,7 +29,16 @@ export function MePostsPage() {
     const postsQuery = useMyPostsQuery(Boolean(token))
     const authorQuery = useMyAuthorProfileQuery(Boolean(token))
     const policiesQuery = useMyAccessPoliciesQuery(Boolean(token))
-    const projectsQuery = useMyProjectsQuery(Boolean(token))
+    const billingQuery = useMyAuthorPlatformBillingQuery(Boolean(token && authorQuery.data))
+    const projectsLocked =
+        billingQuery.isSuccess &&
+        (!billingQuery.data.features.includes("projects") ||
+            !billingQuery.data.isProjectCreationAllowed)
+    const promoteLocked =
+        billingQuery.isSuccess && !billingQuery.data.features.includes("homepage_promo")
+    const projectsQuery = useMyProjectsQuery(
+        Boolean(token) && billingQuery.isSuccess && !projectsLocked
+    )
     const createPostMutation = useCreateMyPostMutation()
     const updatePostMutation = useUpdateMyPostMutation()
     const deletePostMutation = useDeleteMyPostMutation()
@@ -120,6 +130,7 @@ export function MePostsPage() {
                     createError={createPostMutation.error}
                     isPending={createPostMutation.isPending || uploadAttachmentMutation.isPending}
                     projectOptions={projectsQuery.data}
+                    projectsLocked={projectsLocked}
                     onSubmit={async (input, files) => {
                         const post = await createPostMutation.mutateAsync(input)
                         const attachments = await Promise.all(
@@ -146,6 +157,7 @@ export function MePostsPage() {
                 activeTab={activeTab}
                 archivedCount={archivedPosts?.length ?? 0}
                 draftCount={draftPosts.length}
+                isPromoteLocked={promoteLocked}
                 isActiveListError={isActiveListError}
                 isActiveListLoading={isActiveListLoading}
                 onArchive={(post) => updatePostStatus(post, CONTENT_STATUS.ARCHIVED)}

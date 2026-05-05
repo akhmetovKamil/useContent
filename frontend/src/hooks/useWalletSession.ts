@@ -1,5 +1,5 @@
 import { normalizeAddressLike } from "@shared/utils/web3"
-import { useEffect } from "react"
+import { useCallback, useEffect } from "react"
 import { useMutation } from "@tanstack/react-query"
 import { useAccount, useDisconnect, useSignMessage } from "wagmi"
 
@@ -12,7 +12,7 @@ import { emitSessionExpired } from "@/utils/session-events"
 export function useWalletSession() {
     const { address, isConnected, status } = useAccount()
     const { signMessageAsync } = useSignMessage()
-    const { disconnect } = useDisconnect()
+    const { disconnectAsync } = useDisconnect()
     const setSession = useAuthStore((state) => state.setSession)
     const clearSession = useAuthStore((state) => state.clearSession)
     const clearExpiredSession = useAuthStore((state) => state.clearExpiredSession)
@@ -101,11 +101,16 @@ export function useWalletSession() {
         },
     })
 
-    function signOut() {
+    const signOut = useCallback(async () => {
         clearSession()
         setMode("reader")
-        disconnect()
-    }
+        queryClient.clear()
+        try {
+            await disconnectAsync()
+        } catch {
+            // Some injected connectors report disconnected without exposing a disconnect method.
+        }
+    }, [clearSession, disconnectAsync, setMode])
 
     return {
         address,
