@@ -43,6 +43,16 @@ export async function listPublishedProjectsByAuthorId(
     .toArray();
 }
 
+export async function countProjectsByAuthorId(
+  authorId: ObjectId,
+): Promise<number> {
+  const projects = await getProjectsCollection();
+  return projects.countDocuments({
+    authorId,
+    status: { $ne: CONTENT_STATUS.ARCHIVED },
+  });
+}
+
 export async function findPublishedProjectByIdAndAuthorId(
   id: ObjectId,
   authorId: ObjectId,

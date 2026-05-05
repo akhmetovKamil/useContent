@@ -26,11 +26,13 @@ import {
   uniqueObjectIds,
 } from "../lib/content-common";
 import type {
+  AuthorDashboardResponse,
   AuthorSubscriberResponse,
   ConfirmSubscriptionPaymentRequest,
   ContractDeploymentDoc,
   CreateSubscriptionPaymentIntentRequest,
   FeedPostResponse,
+  ReaderDashboardResponse,
   ReaderSubscriptionResponse,
   SubscriptionEntitlementDoc,
   SubscriptionPaymentIntentDoc,
@@ -70,16 +72,18 @@ export async function listMyEntitlements(
 export async function listMyReaderSubscriptions(
   walletAddress: string,
 ): Promise<ReaderSubscriptionResponse[]> {
-  const entitlements = await listMyEntitlements(walletAddress);
+  const normalizedWallet = normalizeWallet(walletAddress);
+  const entitlements = await listMyEntitlements(normalizedWallet);
   const authorIds = uniqueObjectIds(
     entitlements.map((entitlement) => entitlement.authorId),
   );
   const planIds = uniqueObjectIds(
     entitlements.map((entitlement) => entitlement.planId),
   );
-  const [authors, plans] = await Promise.all([
+  const [authors, plans, confirmedPayments] = await Promise.all([
     repo.findAuthorProfilesByIds(authorIds),
     Promise.all(planIds.map((planId) => repo.findSubscriptionPlanById(planId))),
+    repo.listConfirmedSubscriptionPaymentIntentsByWallet(normalizedWallet),
   ]);
   const authorById = new Map(
     authors.map((author) => [author._id.toHexString(), author]),
@@ -89,6 +93,14 @@ export async function listMyReaderSubscriptions(
       .filter((plan): plan is SubscriptionPlanDoc => Boolean(plan))
       .map((plan) => [plan._id.toHexString(), plan]),
   );
+  const lastPaymentByPlanId = new Map<string, SubscriptionPaymentIntentDoc>();
+  for (const payment of confirmedPayments) {
+    const planId = payment.planId.toHexString();
+    const existing = lastPaymentByPlanId.get(planId);
+    if (!existing || existing.updatedAt.getTime() < payment.updatedAt.getTime()) {
+      lastPaymentByPlanId.set(planId, payment);
+    }
+  }
 
   return entitlements
     .map((entitlement) => {
@@ -97,6 +109,8 @@ export async function listMyReaderSubscriptions(
         return null;
       }
       const plan = planById.get(entitlement.planId.toHexString()) ?? null;
+      const lastPayment =
+        lastPaymentByPlanId.get(entitlement.planId.toHexString()) ?? null;
 
       return {
         ...toSubscriptionEntitlementResponse(entitlement),
@@ -104,6 +118,12 @@ export async function listMyReaderSubscriptions(
         authorDisplayName: author.displayName,
         planCode: plan?.code ?? null,
         planTitle: plan?.title ?? null,
+        paymentAsset: plan?.paymentAsset ?? null,
+        chainId: plan?.chainId ?? null,
+        tokenAddress: plan?.tokenAddress ?? null,
+        price: plan?.price ?? null,
+        billingPeriodDays: plan?.billingPeriodDays ?? null,
+        lastPaymentAt: lastPayment?.updatedAt.toISOString() ?? null,
       };
     })
     .filter((subscription): subscription is ReaderSubscriptionResponse =>
@@ -151,6 +171,47 @@ export async function listMyFeedPosts(
   return feedPosts.filter((post): post is FeedPostResponse => Boolean(post));
 }
 
+export async function getMyReaderDashboard(
+  walletAddress: string,
+): Promise<ReaderDashboardResponse> {
+  const normalizedWallet = normalizeWallet(walletAddress);
+  const [subscriptions, confirmedPayments] = await Promise.all([
+    listMyReaderSubscriptions(normalizedWallet),
+    repo.listConfirmedSubscriptionPaymentIntentsByWallet(normalizedWallet),
+  ]);
+  const now = new Date();
+  const expiringSoonAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const activeSubscriptions = subscriptions.filter((subscription) =>
+    isEntitlementActive(subscription.status, subscription.validUntil, now),
+  );
+  const expiredSubscriptions = subscriptions.filter(
+    (subscription) =>
+      !isEntitlementActive(subscription.status, subscription.validUntil, now),
+  );
+  const upcomingExpirations = activeSubscriptions
+    .filter((subscription) => new Date(subscription.validUntil) <= expiringSoonAt)
+    .sort(
+      (left, right) =>
+        new Date(left.validUntil).getTime() -
+        new Date(right.validUntil).getTime(),
+    )
+    .slice(0, 6);
+
+  return {
+    counts: {
+      activeSubscriptions: activeSubscriptions.length,
+      expiredSubscriptions: expiredSubscriptions.length,
+      paidAuthors: new Set(
+        subscriptions.map((subscription) => subscription.authorId),
+      ).size,
+      expiringSoon: upcomingExpirations.length,
+    },
+    spendByAsset: buildRevenueAssets(confirmedPayments),
+    upcomingExpirations,
+    subscriptionsByAuthor: subscriptions,
+  };
+}
+
 export async function listMyAuthorSubscribers(
   walletAddress: string,
 ): Promise<AuthorSubscriberResponse[]> {
@@ -186,6 +247,11 @@ export async function listMyAuthorSubscribers(
         planId,
         planCode,
         planTitle: plan?.title ?? null,
+        paymentAsset: plan?.paymentAsset ?? null,
+        chainId: plan?.chainId ?? null,
+        tokenAddress: plan?.tokenAddress ?? null,
+        price: plan?.price ?? null,
+        billingPeriodDays: plan?.billingPeriodDays ?? null,
         accessPolicyNames,
         status:
           entitlement.status === SUBSCRIPTION_ENTITLEMENT_STATUS.ACTIVE &&
@@ -198,6 +264,119 @@ export async function listMyAuthorSubscribers(
       };
     }),
   );
+}
+
+export async function getMyAuthorDashboard(
+  walletAddress: string,
+): Promise<AuthorDashboardResponse> {
+  const author = await getMyAuthorProfile(walletAddress);
+  const now = new Date();
+  const [
+    entitlements,
+    plans,
+    subscribers,
+    confirmedPayments,
+    postsCount,
+    projectsCount,
+  ] = await Promise.all([
+    repo.listSubscriptionEntitlementsByAuthorId(author._id),
+    repo.listSubscriptionPlansByAuthorId(author._id),
+    listMyAuthorSubscribers(walletAddress),
+    repo.listConfirmedSubscriptionPaymentIntentsByAuthorId(author._id),
+    repo.countPostsByAuthorId(author._id),
+    repo.countProjectsByAuthorId(author._id),
+  ]);
+  const planById = new Map(plans.map((plan) => [plan._id.toHexString(), plan]));
+  const activeEntitlements = entitlements.filter((entitlement) =>
+    isEntitlementActive(
+      entitlement.status,
+      entitlement.validUntil.toISOString(),
+      now,
+    ),
+  );
+  const expiredEntitlements = entitlements.filter(
+    (entitlement) =>
+      !isEntitlementActive(
+        entitlement.status,
+        entitlement.validUntil.toISOString(),
+        now,
+      ),
+  );
+  const activeWallets = new Set(
+    activeEntitlements.map((entitlement) => entitlement.subscriberWallet),
+  );
+  const expiredWallets = new Set(
+    expiredEntitlements.map((entitlement) => entitlement.subscriberWallet),
+  );
+
+  return {
+    counts: {
+      posts: postsCount,
+      projects: projectsCount,
+      uniqueSubscribers: new Set(
+        entitlements.map((entitlement) => entitlement.subscriberWallet),
+      ).size,
+      activeSubscribers: activeWallets.size,
+      expiredSubscribers: Array.from(expiredWallets).filter(
+        (wallet) => !activeWallets.has(wallet),
+      ).length,
+    },
+    planBreakdown: plans.map((plan) => {
+      const planActiveEntitlements = activeEntitlements.filter((entitlement) =>
+        entitlement.planId.equals(plan._id),
+      );
+      const planExpiredEntitlements = expiredEntitlements.filter((entitlement) =>
+        entitlement.planId.equals(plan._id),
+      );
+      const planEntitlements = entitlements.filter((entitlement) =>
+        entitlement.planId.equals(plan._id),
+      );
+
+      return {
+        planId: plan._id.toHexString(),
+        planCode: plan.code,
+        planTitle: plan.title,
+        paymentAsset: plan.paymentAsset,
+        chainId: plan.chainId,
+        tokenAddress: plan.tokenAddress,
+        price: plan.price,
+        billingPeriodDays: plan.billingPeriodDays,
+        activeSubscribers: new Set(
+          planActiveEntitlements.map((entitlement) => entitlement.subscriberWallet),
+        ).size,
+        expiredSubscribers: new Set(
+          planExpiredEntitlements.map((entitlement) => entitlement.subscriberWallet),
+        ).size,
+        totalSubscribers: new Set(
+          planEntitlements.map((entitlement) => entitlement.subscriberWallet),
+        ).size,
+        activeRevenueByAsset: buildActiveRevenueAssets(
+          planActiveEntitlements,
+          planById,
+        ),
+      };
+    }),
+    activeRevenueByAsset: buildActiveRevenueAssets(
+      activeEntitlements,
+      planById,
+    ),
+    revenueSeries: {
+      month: buildRevenueSeries(confirmedPayments, "day", now),
+      year: buildRevenueSeries(confirmedPayments, "month", now),
+    },
+    recentSubscribers: subscribers.slice(0, 8).map((subscriber) => ({
+      id: subscriber.id,
+      subscriberWallet: subscriber.subscriberWallet,
+      subscriberDisplayName: subscriber.subscriberDisplayName,
+      subscriberUsername: subscriber.subscriberUsername,
+      planId: subscriber.planId,
+      planCode: subscriber.planCode,
+      planTitle: subscriber.planTitle,
+      status: subscriber.status,
+      validUntil: subscriber.validUntil,
+      createdAt: subscriber.createdAt,
+    })),
+  };
 }
 
 export async function getSubscriptionManagerDeployment(
@@ -507,4 +686,146 @@ export async function listMySubscriptionPaymentIntents(
   return repo.listSubscriptionPaymentIntentsByWallet(
     normalizeWallet(walletAddress),
   );
+}
+
+function isEntitlementActive(
+  status: string,
+  validUntil: string,
+  now: Date,
+): boolean {
+  return (
+    status === SUBSCRIPTION_ENTITLEMENT_STATUS.ACTIVE &&
+    new Date(validUntil).getTime() > now.getTime()
+  );
+}
+
+function buildRevenueAssets(payments: SubscriptionPaymentIntentDoc[]) {
+  return buildRevenueAssetBuckets(payments);
+}
+
+function buildActiveRevenueAssets(
+  entitlements: SubscriptionEntitlementDoc[],
+  plansById: Map<string, SubscriptionPlanDoc>,
+) {
+  const payments = entitlements
+    .map((entitlement) => {
+      const plan = plansById.get(entitlement.planId.toHexString());
+      if (!plan) {
+        return null;
+      }
+
+      return {
+        chainId: plan.chainId,
+        paymentAsset: plan.paymentAsset,
+        tokenAddress: plan.tokenAddress,
+        price: plan.price,
+      };
+    })
+    .filter(
+      (
+        payment,
+      ): payment is Pick<
+        SubscriptionPaymentIntentDoc,
+        "chainId" | "paymentAsset" | "tokenAddress" | "price"
+      > => Boolean(payment),
+    );
+
+  return buildRevenueAssetBuckets(payments);
+}
+
+function buildRevenueAssetBuckets(
+  payments: Array<
+    Pick<
+      SubscriptionPaymentIntentDoc,
+      "chainId" | "paymentAsset" | "tokenAddress" | "price"
+    >
+  >,
+) {
+  const buckets = new Map<
+    string,
+    {
+      chainId: number;
+      paymentAsset: SubscriptionPaymentIntentDoc["paymentAsset"];
+      tokenAddress: string;
+      gross: bigint;
+      confirmedPayments: number;
+    }
+  >();
+
+  for (const payment of payments) {
+    const key = getAssetKey(payment);
+    const existing =
+      buckets.get(key) ??
+      {
+        chainId: payment.chainId,
+        paymentAsset: payment.paymentAsset ?? PAYMENT_ASSET.ERC20,
+        tokenAddress: payment.tokenAddress,
+        gross: 0n,
+        confirmedPayments: 0,
+      };
+    existing.gross += BigInt(payment.price);
+    existing.confirmedPayments += 1;
+    buckets.set(key, existing);
+  }
+
+  return Array.from(buckets.values()).map((bucket) => {
+    const platformFee = (bucket.gross * 20n) / 100n;
+    const net = bucket.gross - platformFee;
+
+    return {
+      chainId: bucket.chainId,
+      paymentAsset: bucket.paymentAsset,
+      tokenAddress: bucket.tokenAddress,
+      grossAmount: bucket.gross.toString(),
+      netAmount: net.toString(),
+      platformFeeAmount: platformFee.toString(),
+      confirmedPayments: bucket.confirmedPayments,
+    };
+  });
+}
+
+function buildRevenueSeries(
+  payments: SubscriptionPaymentIntentDoc[],
+  bucket: "day" | "month",
+  now: Date,
+) {
+  const filteredPayments = payments.filter((payment) => {
+    if (bucket === "month") {
+      return payment.updatedAt.getUTCFullYear() === now.getUTCFullYear();
+    }
+
+    const start = new Date(now);
+    start.setUTCDate(now.getUTCDate() - 29);
+    start.setUTCHours(0, 0, 0, 0);
+    return payment.updatedAt >= start;
+  });
+  const periodMap = new Map<string, SubscriptionPaymentIntentDoc[]>();
+
+  for (const payment of filteredPayments) {
+    const period =
+      bucket === "month"
+        ? payment.updatedAt.toISOString().slice(0, 7)
+        : payment.updatedAt.toISOString().slice(0, 10);
+    periodMap.set(period, [...(periodMap.get(period) ?? []), payment]);
+  }
+
+  return Array.from(periodMap.entries())
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([period, periodPayments]) => ({
+      period,
+      assets: buildRevenueAssets(periodPayments),
+    }));
+}
+
+function getAssetKey(
+  payment: Pick<
+    SubscriptionPaymentIntentDoc,
+    "chainId" | "paymentAsset" | "tokenAddress"
+  >,
+): string {
+  return [
+    payment.chainId,
+    payment.paymentAsset ?? PAYMENT_ASSET.ERC20,
+    payment.tokenAddress.toLowerCase(),
+  ].join(":");
 }

@@ -46,6 +46,12 @@ export interface ReaderSubscriptionDto extends SubscriptionEntitlementDto {
   authorDisplayName: string;
   planCode: Maybe<string>;
   planTitle: Maybe<string>;
+  paymentAsset: Maybe<SubscriptionPaymentAsset>;
+  chainId: Maybe<ChainId>;
+  tokenAddress: Maybe<WalletAddress>;
+  price: Maybe<string>;
+  billingPeriodDays: Maybe<number>;
+  lastPaymentAt: Maybe<string>;
 }
 
 export interface AuthorSubscriberDto extends BaseEntityDto {
@@ -55,9 +61,88 @@ export interface AuthorSubscriberDto extends BaseEntityDto {
   planId: EntityId;
   planCode: Maybe<string>;
   planTitle: Maybe<string>;
+  paymentAsset: Maybe<SubscriptionPaymentAsset>;
+  chainId: Maybe<ChainId>;
+  tokenAddress: Maybe<WalletAddress>;
+  price: Maybe<string>;
+  billingPeriodDays: Maybe<number>;
   accessPolicyNames: string[];
   status: SubscriptionEntitlementStatus;
   validUntil: string;
+}
+
+export interface SubscriptionRevenueAssetDto {
+  chainId: ChainId;
+  paymentAsset: SubscriptionPaymentAsset;
+  tokenAddress: WalletAddress;
+  grossAmount: string;
+  netAmount: string;
+  platformFeeAmount: string;
+  confirmedPayments: number;
+}
+
+export interface SubscriptionRevenueSeriesPointDto {
+  period: string;
+  assets: SubscriptionRevenueAssetDto[];
+}
+
+export interface AuthorDashboardPlanBreakdownDto {
+  planId: EntityId;
+  planCode: string;
+  planTitle: string;
+  paymentAsset: SubscriptionPaymentAsset;
+  chainId: ChainId;
+  tokenAddress: WalletAddress;
+  price: string;
+  billingPeriodDays: number;
+  activeSubscribers: number;
+  expiredSubscribers: number;
+  totalSubscribers: number;
+  activeRevenueByAsset: SubscriptionRevenueAssetDto[];
+}
+
+export interface AuthorDashboardRecentSubscriberDto {
+  id: EntityId;
+  subscriberWallet: WalletAddress;
+  subscriberDisplayName: Maybe<string>;
+  subscriberUsername: Maybe<string>;
+  planId: EntityId;
+  planCode: Maybe<string>;
+  planTitle: Maybe<string>;
+  status: SubscriptionEntitlementStatus;
+  validUntil: string;
+  createdAt: string;
+}
+
+export interface AuthorDashboardDto {
+  counts: {
+    posts: number;
+    projects: number;
+    uniqueSubscribers: number;
+    activeSubscribers: number;
+    expiredSubscribers: number;
+  };
+  planBreakdown: AuthorDashboardPlanBreakdownDto[];
+  activeRevenueByAsset: SubscriptionRevenueAssetDto[];
+  revenueSeries: {
+    month: SubscriptionRevenueSeriesPointDto[];
+    year: SubscriptionRevenueSeriesPointDto[];
+  };
+  recentSubscribers: AuthorDashboardRecentSubscriberDto[];
+}
+
+export interface ReaderDashboardSubscriptionDto extends ReaderSubscriptionDto {}
+
+export interface ReaderDashboardDto {
+  counts: {
+    activeSubscriptions: number;
+    expiredSubscriptions: number;
+    paidAuthors: number;
+    expiringSoon: number;
+  };
+  spendByAsset: SubscriptionRevenueAssetDto[];
+  upcomingExpirations: ReaderDashboardSubscriptionDto[];
+  subscriptionsByAuthor: ReaderDashboardSubscriptionDto[];
 }
 
 export interface SubscriptionPaymentIntentDto extends BaseEntityDto {

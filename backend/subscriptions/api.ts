@@ -27,7 +27,7 @@ import type {
   UpsertContractDeploymentRegistryRequest,
   UpsertSubscriptionPlanRequest,
 } from "./types";
-import type { ListAuthorSubscribersResponseDto, ListEntitlementsResponseDto, ListReaderSubscriptionsResponseDto, ListSubscriptionPaymentIntentsResponseDto, ListSubscriptionPlansResponseDto } from "../../shared/types/responses"
+import type { AuthorDashboardResponseDto, ListAuthorSubscribersResponseDto, ListEntitlementsResponseDto, ListReaderSubscriptionsResponseDto, ListSubscriptionPaymentIntentsResponseDto, ListSubscriptionPlansResponseDto, ReaderDashboardResponseDto } from "../../shared/types/responses"
 
 const deploymentRegistryTokenSecret = secret("DeploymentRegistryToken");
 
@@ -52,12 +52,30 @@ export const listMyReaderSubscriptions = api(
   },
 );
 
+export const getMyReaderDashboard = api(
+  { method: "GET", path: "/me/dashboard", expose: true, auth: true },
+  async (): Promise<ReaderDashboardResponseDto> => {
+    const walletAddress = getRequiredWallet();
+    const dashboard = await service.getMyReaderDashboard(walletAddress);
+    return { dashboard };
+  },
+);
+
 export const listMyAuthorSubscribers = api(
   { method: "GET", path: "/me/author/subscribers", expose: true, auth: true },
   async (): Promise<ListAuthorSubscribersResponseDto> => {
     const walletAddress = getRequiredWallet();
     const subscribers = await service.listMyAuthorSubscribers(walletAddress);
     return { subscribers };
+  },
+);
+
+export const getMyAuthorDashboard = api(
+  { method: "GET", path: "/me/author/dashboard", expose: true, auth: true },
+  async (): Promise<AuthorDashboardResponseDto> => {
+    const walletAddress = getRequiredWallet();
+    const dashboard = await service.getMyAuthorDashboard(walletAddress);
+    return { dashboard };
   },
 );
 

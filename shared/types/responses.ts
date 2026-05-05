@@ -13,7 +13,9 @@ import type {
 } from "./platform";
 import type {
   ReaderSubscriptionDto,
+  AuthorDashboardDto,
   AuthorSubscriberDto,
+  ReaderDashboardDto,
   SubscriptionEntitlementDto,
   SubscriptionPaymentIntentDto,
   SubscriptionPlanDto,
@@ -68,6 +70,14 @@ export interface ListEntitlementsResponseDto {
 
 export interface ListReaderSubscriptionsResponseDto {
   subscriptions: ReaderSubscriptionDto[];
+}
+
+export interface AuthorDashboardResponseDto {
+  dashboard: AuthorDashboardDto;
+}
+
+export interface ReaderDashboardResponseDto {
+  dashboard: ReaderDashboardDto;
 }
 
 export interface ListAuthorSubscribersResponseDto {

@@ -115,6 +115,14 @@ export async function countPublishedPostsByAuthorId(
   return posts.countDocuments({ authorId, status: CONTENT_STATUS.PUBLISHED });
 }
 
+export async function countPostsByAuthorId(authorId: ObjectId): Promise<number> {
+  const posts = await getPostsCollection();
+  return posts.countDocuments({
+    authorId,
+    status: { $ne: CONTENT_STATUS.ARCHIVED },
+  });
+}
+
 export async function listPublishedPostsByAuthorIds(
   authorIds: ObjectId[],
 ): Promise<PostDoc[]> {

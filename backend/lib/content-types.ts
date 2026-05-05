@@ -2,7 +2,7 @@ import type { AccessPolicyConditionDto, AccessPolicyPresetDto, AuthorAccessPolic
 import type { ActivityDto, CreatePostCommentInput, CreatePostInput, CreatePostReportInput, FeedPostDto, PostAttachmentDto, PostCommentDto, PostDto, PostReportDto, RecordPostViewInput, UpdatePostInput } from "../../shared/types/posts"
 import type { AuthorCatalogItemDto, AuthorProfileDto, AuthorStorageUsageDto, CreateAuthorProfileInput, UpdateAuthorProfileInput, UpdateMyProfileInput, UserProfileDto } from "../../shared/types/profile"
 import type { AuthorPlatformBillingDto, AuthorPlatformCleanupItemDto, AuthorPlatformCleanupPreviewDto, AuthorPlatformCleanupRunDto, CreatePlatformSubscriptionPaymentIntentInput, PlatformPlanDto, PlatformSubscriptionPaymentIntentDto } from "../../shared/types/platform"
-import type { AuthorSubscriberDto, ConfirmSubscriptionPaymentInput, CreateSubscriptionPaymentIntentInput, ReaderSubscriptionDto, SubscriptionEntitlementDto, SubscriptionPaymentIntentDto, SubscriptionPlanDto, UpsertSubscriptionPlanInput } from "../../shared/types/subscriptions"
+import type { AuthorDashboardDto, AuthorSubscriberDto, ConfirmSubscriptionPaymentInput, CreateSubscriptionPaymentIntentInput, ReaderDashboardDto, ReaderSubscriptionDto, SubscriptionEntitlementDto, SubscriptionPaymentIntentDto, SubscriptionPlanDto, UpsertSubscriptionPlanInput } from "../../shared/types/subscriptions"
 import type { ContractDeploymentDto, ContractDeploymentLookupDto, UpsertContractDeploymentInput } from "../../shared/types/contracts"
 import type { CreateProjectFolderInput, CreateProjectInput, FeedProjectDto, ProjectBundleDto, ProjectDto, ProjectNodeDto, ProjectNodeListDto, UpdateProjectInput, UpdateProjectNodeInput } from "../../shared/types/projects"
 import type { PlatformFeature } from "../../shared/consts"
@@ -56,6 +56,8 @@ export type AuthorCatalogItemResponse = AuthorCatalogItemDto;
 export type AuthorAccessPolicyResponse = AuthorAccessPolicyDto;
 export type AccessPolicyConditionResponse = AccessPolicyConditionDto;
 export type AuthorSubscriberResponse = AuthorSubscriberDto;
+export type AuthorDashboardResponse = AuthorDashboardDto;
+export type ReaderDashboardResponse = ReaderDashboardDto;
 export type AccessPolicyPresetResponse = AccessPolicyPresetDto;
 export type SubscriptionEntitlementResponse = SubscriptionEntitlementDto;
 export type ReaderSubscriptionResponse = ReaderSubscriptionDto;

@@ -1,5 +1,6 @@
 import { ObjectId, type Collection } from "mongodb";
 import {
+  PAYMENT_INTENT_STATUS,
   SUBSCRIPTION_ENTITLEMENT_SOURCE,
   SUBSCRIPTION_ENTITLEMENT_STATUS,
 } from "../../shared/consts";
@@ -267,5 +268,25 @@ export async function listSubscriptionPaymentIntentsByWallet(
     .find({ subscriberWallet })
     .sort({ createdAt: -1 })
     .limit(50)
+    .toArray();
+}
+
+export async function listConfirmedSubscriptionPaymentIntentsByAuthorId(
+  authorId: ObjectId,
+): Promise<SubscriptionPaymentIntentDoc[]> {
+  const intents = await getSubscriptionPaymentIntentsCollection();
+  return intents
+    .find({ authorId, status: PAYMENT_INTENT_STATUS.CONFIRMED })
+    .sort({ updatedAt: -1 })
+    .toArray();
+}
+
+export async function listConfirmedSubscriptionPaymentIntentsByWallet(
+  subscriberWallet: string,
+): Promise<SubscriptionPaymentIntentDoc[]> {
+  const intents = await getSubscriptionPaymentIntentsCollection();
+  return intents
+    .find({ subscriberWallet, status: PAYMENT_INTENT_STATUS.CONFIRMED })
+    .sort({ updatedAt: -1 })
     .toArray();
 }
