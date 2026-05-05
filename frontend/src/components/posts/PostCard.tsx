@@ -214,7 +214,7 @@ export function PostCard({
                             onLike={() => void handleLike()}
                             viewsCount={post.viewsCount}
                         />
-                        {commentsMode === "inline" && author && (commentsOpen || commentsPreview.length) ? (
+                        {commentsMode === "inline" && author && commentsOpen ? (
                             <InlineComments
                                 authorId={post.authorId}
                                 comments={commentsOpen ? commentsQuery.data : undefined}

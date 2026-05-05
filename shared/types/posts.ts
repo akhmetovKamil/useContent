@@ -31,6 +31,7 @@ export interface PostCommentDto extends AuthorOwnedDto {
   walletAddress: WalletAddress;
   displayName: string;
   avatarFileId: Maybe<EntityId>;
+  isAuthorComment: boolean;
   content: string;
   createdAt: string;
   updatedAt: string;

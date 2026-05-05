@@ -49,6 +49,7 @@ export interface PostCommentDoc {
   walletAddress: string;
   displayName: string;
   avatarFileId?: ObjectId | null;
+  isAuthorComment?: boolean;
   content: string;
   createdAt: Date;
   updatedAt: Date;

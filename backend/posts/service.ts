@@ -621,7 +621,8 @@ export async function createPostCommentBySlug(
     updatedAt: now,
   });
   await recordPostCommentedActivity(post, viewerWallet);
-  return comment;
+  const [hydratedComment] = await hydratePostComments([comment]);
+  return hydratedComment ?? comment;
 }
 
 export async function createPostReportBySlug(

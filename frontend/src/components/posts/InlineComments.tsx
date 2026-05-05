@@ -61,6 +61,7 @@ export function InlineComments({
             walletAddress: "",
             displayName: currentUserDisplayName,
             avatarFileId: currentUserAvatarFileId,
+            isAuthorComment: false,
             content: nextContent,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
@@ -91,7 +92,7 @@ export function InlineComments({
             ) : visibleComments.length ? (
                 <div className="grid gap-3">
                     {visibleComments.map((item) => {
-                        const isAuthorComment = item.authorId === authorId
+                        const isAuthorComment = item.isAuthorComment
                         const isOptimistic = item.id.startsWith("optimistic-")
 
                         return (

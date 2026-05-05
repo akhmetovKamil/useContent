@@ -391,6 +391,7 @@ export function toPostCommentResponse(
     walletAddress: comment.walletAddress,
     displayName: comment.displayName,
     avatarFileId: comment.avatarFileId?.toHexString() ?? null,
+    isAuthorComment: Boolean(comment.isAuthorComment),
     content: comment.content,
     createdAt: comment.createdAt.toISOString(),
     updatedAt: comment.updatedAt.toISOString(),
@@ -407,21 +408,51 @@ export async function hydratePostComments(
   const wallets = Array.from(
     new Set(comments.map((comment) => normalizeWallet(comment.walletAddress))),
   );
-  const users = await repo.findUsersByPrimaryWallets(wallets);
+  const authorIds = uniqueObjectIds(comments.map((comment) => comment.authorId));
+  const [users, authors] = await Promise.all([
+    repo.findUsersByPrimaryWallets(wallets),
+    repo.findAuthorProfilesByIds(authorIds),
+  ]);
   const usersByWallet = new Map(
     users.map((user) => [normalizeWallet(user.primaryWallet), user]),
   );
+  const authorOwnerUsers = await Promise.all(
+    authors.map(async (author) => {
+      const user = await repo.findUserById(new ObjectId(author.userId));
+      return user ? { author, user } : null;
+    }),
+  );
+  const authorById = new Map(
+    authorOwnerUsers
+      .filter((item): item is NonNullable<typeof item> => Boolean(item))
+      .map((item) => [item.author._id.toHexString(), item]),
+  );
 
   return comments.map((comment) => {
+    const authorOwner = authorById.get(comment.authorId.toHexString());
+    if (
+      authorOwner &&
+      normalizeWallet(authorOwner.user.primaryWallet) ===
+        normalizeWallet(comment.walletAddress)
+    ) {
+      return {
+        ...comment,
+        avatarFileId: authorOwner.author.avatarFileId ?? null,
+        displayName: authorOwner.author.displayName,
+        isAuthorComment: true,
+      };
+    }
+
     const user = usersByWallet.get(normalizeWallet(comment.walletAddress));
     if (!user) {
-      return comment;
+      return { ...comment, isAuthorComment: false };
     }
 
     return {
       ...comment,
       avatarFileId: user.avatarFileId ?? null,
       displayName: user.displayName,
+      isAuthorComment: false,
     };
   });
 }
