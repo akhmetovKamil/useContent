@@ -1,15 +1,17 @@
 import { useEffect } from "react"
-import { Outlet, useLocation } from "react-router-dom"
+import { NavLink, Outlet, useLocation } from "react-router-dom"
+import { LockKeyhole } from "lucide-react"
 
-import { NavItem } from "@/components/layout/NavItem"
 import { WorkspaceModeToggle } from "@/components/layout/WorkspaceModeToggle"
-import { Dock } from "@/components/ui/dock"
+import { Dock, DockIcon } from "@/components/ui/dock"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { WalletStatus } from "@/components/wallet/WalletStatus"
 import { authorNavItems, publicNavItems, readerNavItems } from "@/constants/navigation"
 import { useMyAuthorPlatformBillingQuery } from "@/queries/platform"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 import { useWorkspaceStore } from "@/stores/workspace-store"
+import { cn } from "@/utils/cn"
 
 export function RootLayout() {
     const location = useLocation()
@@ -88,10 +90,51 @@ export function RootLayout() {
                 </main>
             </div>
             {showDock ? (
-                <nav className="fixed bottom-4 left-1/2 z-[100] w-[min(calc(100vw-1rem),720px)] -translate-x-1/2 px-2">
-                    <Dock>
+                <nav className="fixed bottom-4 left-1/2 z-40 w-[min(calc(100vw-1rem),720px)] -translate-x-1/2 px-2">
+                    <Dock
+                        className="mt-0 border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)]"
+                        iconMagnification={56}
+                        iconSize={44}
+                    >
                         {navItems.map((item) => (
-                            <NavItem item={item} key={item.to} />
+                            <DockIcon
+                                className={cn(
+                                    "relative text-[var(--foreground)]",
+                                    item.separatorAfter
+                                        ? "after:pointer-events-none after:absolute after:-right-2 after:top-1/2 after:h-10 after:w-px after:-translate-y-1/2 after:bg-[var(--line)]"
+                                        : ""
+                                )}
+                                key={item.to}
+                            >
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <NavLink
+                                            aria-label={item.label}
+                                            className={({ isActive }) =>
+                                                cn(
+                                                    "relative grid size-full place-items-center rounded-2xl text-[var(--foreground)] transition-colors",
+                                                    isActive ? "bg-[var(--accent-soft)]" : "hover:bg-[var(--accent-soft)]"
+                                                )
+                                            }
+                                            end={item.end}
+                                            to={item.to}
+                                        >
+                                            <span className="relative">
+                                                <item.icon className="size-6" strokeWidth={2.2} />
+                                                {item.locked ? (
+                                                    <span className="absolute -right-2 -bottom-2 grid size-4 place-items-center rounded-full bg-[var(--foreground)] text-[var(--surface)]">
+                                                        <LockKeyhole
+                                                            className="size-2.5"
+                                                            strokeWidth={2.4}
+                                                        />
+                                                    </span>
+                                                ) : null}
+                                            </span>
+                                        </NavLink>
+                                    </TooltipTrigger>
+                                    <TooltipContent>{item.label}</TooltipContent>
+                                </Tooltip>
+                            </DockIcon>
                         ))}
                     </Dock>
                 </nav>
