@@ -30,11 +30,11 @@ export function TierDrawer({
     }
 
     return (
-        <Drawer onOpenChange={onOpenChange} open={open}>
+        <Drawer direction="right" onOpenChange={onOpenChange} open={open}>
             <DrawerContent
-                className="mx-auto max-w-4xl md:right-6 md:bottom-6 md:left-6 md:max-h-[86vh] md:rounded-[36px]"
+                className="!w-[min(100vw,920px)] !max-w-none overflow-y-auto rounded-l-[32px] border-[var(--line)] bg-[var(--surface)] p-5 shadow-[var(--shadow)] sm:p-8"
             >
-                <DrawerHeader className="text-center">
+                <DrawerHeader className="px-0 pt-0 text-left">
                     <Badge className="w-fit" variant={tier.hasAccess ? "success" : "warning"}>
                         {tier.hasAccess ? "Unlocked" : "Locked"}
                     </Badge>

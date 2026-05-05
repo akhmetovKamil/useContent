@@ -92,7 +92,7 @@ export function RootLayout() {
             {showDock ? (
                 <nav className="fixed bottom-4 left-1/2 z-40 w-[min(calc(100vw-1rem),720px)] -translate-x-1/2 px-2">
                     <Dock
-                        className="mt-0 border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)]"
+                        className="border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)]"
                         iconMagnification={56}
                         iconSize={44}
                     >
@@ -112,8 +112,10 @@ export function RootLayout() {
                                             aria-label={item.label}
                                             className={({ isActive }) =>
                                                 cn(
-                                                    "relative grid size-full place-items-center rounded-2xl text-[var(--foreground)] transition-colors",
-                                                    isActive ? "bg-[var(--accent-soft)]" : "hover:bg-[var(--accent-soft)]"
+                                                    "relative grid size-full place-items-center rounded-2xl text-[var(--foreground)] transition-colors duration-150 ease-out",
+                                                    isActive
+                                                        ? "bg-[var(--accent-soft)]"
+                                                        : "hover:bg-[var(--accent-soft)]"
                                                 )
                                             }
                                             end={item.end}
