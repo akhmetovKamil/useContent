@@ -30,7 +30,7 @@ export function AccessPolicyEditor({
     const canAddRule = builder.composer !== "single" && builder.rules.length < 4
 
     return (
-        <div className="grid gap-4 rounded-[32px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
+        <div className="grid min-w-0 gap-4 rounded-[32px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
             <div className="grid gap-4 md:grid-cols-[220px_1fr]">
                 <Label>
                     <TooltipProvider>

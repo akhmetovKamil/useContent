@@ -380,7 +380,12 @@ export function PostComposer({
                             </Label>
                         ) : null}
 
-                        <div className="relative grid gap-3 overflow-hidden rounded-2xl">
+                        <div
+                            className={cn(
+                                "relative grid gap-3 overflow-hidden rounded-2xl",
+                                projectsLocked ? "min-h-[250px]" : ""
+                            )}
+                        >
                             <div className="text-sm font-medium text-[var(--foreground)]">
                                 Attached projects
                             </div>
@@ -432,7 +437,7 @@ export function PostComposer({
                                 )}
                             </div>
                             {projectsLocked ? (
-                                <div className="absolute inset-0 grid place-items-center rounded-2xl border border-[var(--line)] bg-[var(--surface)]/80 p-4 text-center backdrop-blur-sm">
+                                <div className="absolute inset-0 grid place-items-center overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]/80 p-4 text-center backdrop-blur-sm">
                                     <div className="grid justify-items-center gap-3">
                                         <span className="grid size-10 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
                                             <LockKeyhole className="size-5" />
@@ -445,7 +450,11 @@ export function PostComposer({
                                                 Upgrade billing to attach project spaces to posts.
                                             </p>
                                         </div>
-                                        <Button asChild className="rounded-full" size="sm">
+                                        <Button
+                                            asChild
+                                            className="max-w-full rounded-full px-5"
+                                            size="sm"
+                                        >
                                             <Link to="/me/platform-billing">Open billing</Link>
                                         </Button>
                                     </div>

@@ -40,7 +40,7 @@ export function RuleCard({
     }
 
     return (
-        <div className="grid gap-5 rounded-[28px] border border-[var(--line)] bg-[var(--surface-strong)] p-4">
+        <div className="grid min-w-0 gap-5 rounded-[28px] border border-[var(--line)] bg-[var(--surface-strong)] p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <div className="text-xs uppercase tracking-[0.25em] text-[var(--muted)]">
@@ -72,7 +72,7 @@ export function RuleCard({
                 ) : null}
             </div>
 
-            <div className="grid gap-3 lg:grid-cols-3">
+            <div className="grid min-w-0 gap-3 min-[760px]:grid-cols-3">
                 {ruleTypeOptions.map((option) => {
                     const Icon = option.icon
                     const selected = rule.type === option.value
@@ -80,7 +80,7 @@ export function RuleCard({
                     return (
                         <button
                             className={cn(
-                                "rounded-[24px] border p-4 text-left transition hover:-translate-y-0.5",
+                                "min-w-0 rounded-[24px] border p-4 text-left transition hover:-translate-y-0.5",
                                 selected
                                     ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-[var(--shadow)]"
                                     : "border-[var(--line)] bg-[var(--surface)] hover:border-[var(--accent)]"
@@ -99,7 +99,7 @@ export function RuleCard({
                                 <span className="grid size-10 place-items-center rounded-full bg-[var(--foreground)] text-[var(--surface)]">
                                     <Icon className="size-4" />
                                 </span>
-                                <div>
+                                <div className="min-w-0">
                                     <div className="font-medium text-[var(--foreground)]">
                                         {option.label}
                                     </div>

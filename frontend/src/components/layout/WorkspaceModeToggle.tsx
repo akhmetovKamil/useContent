@@ -1,3 +1,4 @@
+import { PenTool, UserRound } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
@@ -43,7 +44,13 @@ export function WorkspaceModeToggle() {
                     setMode("author")
                     navigate(authorQuery.data ? "/author" : "/author/onboarding")
                 }}
-            />
+            >
+                {isAuthor ? (
+                    <PenTool className="size-5 text-white" />
+                ) : (
+                    <UserRound className="size-5 text-white" />
+                )}
+            </AnimatedThemeToggler>
         </div>
     )
 }

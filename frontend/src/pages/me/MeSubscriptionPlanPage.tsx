@@ -365,10 +365,8 @@ export function MeSubscriptionPlanPage() {
             )}
 
             <Drawer direction="right" onOpenChange={setPolicyModalOpen} open={policyModalOpen}>
-                <DrawerContent
-                    className="w-full max-w-5xl sm:max-w-5xl"
-                >
-                    <DrawerHeader>
+                <DrawerContent className="!w-[min(100vw,920px)] !max-w-none overflow-y-auto rounded-l-[32px] border-[var(--line)] bg-[var(--surface)] p-5 shadow-[var(--shadow)] sm:p-8">
+                    <DrawerHeader className="px-0 pt-0">
                         <DrawerTitle>
                             {editingPolicyId ? "Edit access policy" : "Create access policy"}
                         </DrawerTitle>
@@ -383,7 +381,7 @@ export function MeSubscriptionPlanPage() {
                             submitPolicy()
                         }}
                     >
-                        <div className="grid gap-4 md:grid-cols-2">
+                        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(220px,0.65fr)]">
                             <Label>
                                 Policy name
                                 <Input
@@ -454,10 +452,8 @@ export function MeSubscriptionPlanPage() {
             </Drawer>
 
             <Drawer direction="right" onOpenChange={setPlanModalOpen} open={planModalOpen}>
-                <DrawerContent
-                    className="w-full max-w-5xl sm:max-w-5xl"
-                >
-                    <DrawerHeader>
+                <DrawerContent className="!w-[min(100vw,860px)] !max-w-none overflow-y-auto rounded-l-[32px] border-[var(--line)] bg-[var(--surface)] p-5 shadow-[var(--shadow)] sm:p-8">
+                    <DrawerHeader className="px-0 pt-0">
                         <DrawerTitle>
                             {selectedPlan ? "Edit subscription plan" : "Create subscription plan"}
                         </DrawerTitle>
