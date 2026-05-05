@@ -1,4 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query"
+import { useEffect } from "react"
+import { toast } from "sonner"
 import { createConfig, http, WagmiProvider } from "wagmi"
 import {
     arbitrum,
@@ -11,9 +13,10 @@ import {
 } from "wagmi/chains"
 import { injected } from "wagmi/connectors"
 
+import { Toaster } from "@/components/ui/sonner"
 import { supportedChains } from "@/utils/config/chains"
 import { getFrontendRpcUrl } from "@/utils/config/env"
-import { AppToaster } from "@/components/app/AppToaster"
+import { SESSION_EXPIRED_EVENT } from "@/utils/session-events"
 import { queryClient } from "./query-client"
 
 const wagmiConfig = createConfig({
@@ -35,11 +38,20 @@ interface AppProvidersProps {
 }
 
 export function AppProviders({ children }: AppProvidersProps) {
+    useEffect(() => {
+        function handleSessionExpired() {
+            toast.warning("Session expired. Please sign in again.")
+        }
+
+        window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired)
+        return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired)
+    }, [])
+
     return (
         <WagmiProvider config={wagmiConfig}>
             <QueryClientProvider client={queryClient}>
                 {children}
-                <AppToaster />
+                <Toaster />
             </QueryClientProvider>
         </WagmiProvider>
     )

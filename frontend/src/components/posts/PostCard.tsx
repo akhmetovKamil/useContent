@@ -2,6 +2,7 @@ import type { PostAttachmentDto, PostReportReason } from "@shared/types/posts"
 import { Flag } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
+import { toast } from "sonner"
 
 import { AttachedProjectCard } from "@/components/posts/AttachedProjectCard"
 import { AuthorActions } from "@/components/posts/AuthorActions"
@@ -17,7 +18,6 @@ import type { AuthorPostActions, FeedPost } from "@/components/posts/types"
 import { getFeedAuthor, getPostAccess } from "@/components/posts/types"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { toast } from "@/components/ui/sonner"
 import {
     useCreatePostCommentMutation,
     useCreatePostReportMutation,

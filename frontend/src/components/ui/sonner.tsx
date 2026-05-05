@@ -1,24 +1,35 @@
-import { Toaster as Sonner, toast } from "sonner"
-import type { ToasterProps } from "sonner"
+import {
+  CircleCheckIcon,
+  InfoIcon,
+  Loader2Icon,
+  OctagonXIcon,
+  TriangleAlertIcon,
+} from "lucide-react"
+import { Toaster as Sonner, type ToasterProps } from "sonner"
 
-export { toast }
-
-export function Toaster(props: ToasterProps) {
-    return (
-        <Sonner
-            className="toaster group"
-            closeButton
-            position="top-right"
-            richColors
-            toastOptions={{
-                classNames: {
-                    actionButton: "group-[.toaster]:bg-[var(--primary)] group-[.toaster]:text-[var(--primary-foreground)]",
-                    cancelButton: "group-[.toaster]:bg-[var(--muted-background)] group-[.toaster]:text-[var(--muted)]",
-                    description: "group-[.toast]:text-[var(--muted)]",
-                    toast: "group toast group-[.toaster]:border-[var(--line)] group-[.toaster]:bg-[var(--surface)] group-[.toaster]:text-[var(--foreground)]",
-                },
-            }}
-            {...props}
-        />
-    )
+const Toaster = ({ ...props }: ToasterProps) => {
+  return (
+    <Sonner
+      className="toaster group"
+      closeButton
+      icons={{
+        success: <CircleCheckIcon className="size-4" />,
+        info: <InfoIcon className="size-4" />,
+        warning: <TriangleAlertIcon className="size-4" />,
+        error: <OctagonXIcon className="size-4" />,
+        loading: <Loader2Icon className="size-4 animate-spin" />,
+      }}
+      style={
+        {
+          "--normal-bg": "var(--popover)",
+          "--normal-text": "var(--popover-foreground)",
+          "--normal-border": "var(--border)",
+          "--border-radius": "var(--radius)",
+        } as React.CSSProperties
+      }
+      {...props}
+    />
+  )
 }
+
+export { Toaster }
