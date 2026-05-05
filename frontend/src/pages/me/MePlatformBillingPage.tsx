@@ -111,6 +111,7 @@ export function MePlatformBillingPage() {
             </div>
 
             <Drawer
+                direction="right"
                 onOpenChange={(open) => !open && setCheckoutPlan(null)}
                 open={Boolean(checkoutPlan)}
             >

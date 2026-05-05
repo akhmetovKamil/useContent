@@ -358,7 +358,7 @@ export function MeSubscriptionPlanPage() {
                 </div>
             )}
 
-            <Drawer onOpenChange={setPolicyModalOpen} open={policyModalOpen}>
+            <Drawer direction="right" onOpenChange={setPolicyModalOpen} open={policyModalOpen}>
                 <DrawerContent
                     className="max-w-5xl"
                     onClose={() => setPolicyModalOpen(false)}
@@ -449,7 +449,7 @@ export function MeSubscriptionPlanPage() {
                 </DrawerContent>
             </Drawer>
 
-            <Drawer onOpenChange={setPlanModalOpen} open={planModalOpen}>
+            <Drawer direction="right" onOpenChange={setPlanModalOpen} open={planModalOpen}>
                 <DrawerContent
                     className="max-w-5xl"
                     onClose={() => setPlanModalOpen(false)}
