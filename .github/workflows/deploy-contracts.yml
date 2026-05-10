@@ -1,4 +1,4 @@
-name: Deploy Contracts
+name: Reader Contracts
 
 on:
   workflow_dispatch:
@@ -19,6 +19,7 @@ on:
 
 jobs:
   deploy-subscription-manager:
+    name: Deploy reader subscription manager
     runs-on: ubuntu-latest
     permissions:
       contents: read

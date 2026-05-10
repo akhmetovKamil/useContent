@@ -22,17 +22,23 @@ interface PlatformSubscriptionManagerContract {
   ): Promise<{ wait(): Promise<unknown> }>;
 }
 
+const knownUsdcByChainId = new Map<number, string>([
+  [11155111, "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238"],
+  [84532, "0x036CbD53842c5426634e7929541eC2318f3dCF7e"],
+  [11155420, "0x5fd84259d66Cd46123540766Be93DFE6D43130D7"],
+  [421614, "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d"],
+  [8453, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"],
+  [10, "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85"],
+  [42161, "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"],
+]);
+
 async function main() {
   const { ethers } = await hre.network.connect();
   const [deployer] = await ethers.getSigners();
+  const network = await ethers.provider.getNetwork();
+  const chainId = Number(network.chainId);
   const platformTreasury = process.env.PLATFORM_TREASURY ?? deployer.address;
-  const paymentToken = process.env.PLATFORM_PAYMENT_TOKEN;
-
-  if (!paymentToken || paymentToken === "NONE") {
-    throw new Error(
-      "PLATFORM_PAYMENT_TOKEN must be configured for PlatformSubscriptionManager",
-    );
-  }
+  const paymentToken = resolvePlatformPaymentToken(chainId);
 
   const manager = await ethers.deployContract("PlatformSubscriptionManager", [
     deployer.address,
@@ -43,19 +49,18 @@ async function main() {
 
   const address = await manager.getAddress();
   const deploymentTxHash = manager.deploymentTransaction()?.hash ?? null;
-  const network = await ethers.provider.getNetwork();
-  const chainId = network.chainId.toString();
+  const chainIdString = network.chainId.toString();
   const deploymentPath = resolve(
     import.meta.dirname,
     "../../shared/deployments",
-    `${chainId}.json`,
+    `${chainIdString}.json`,
   );
 
   await registerDefaultBasicTier(
     manager as unknown as PlatformSubscriptionManagerContract,
   );
   await writeDeploymentFile(deploymentPath, {
-    chainId: Number(chainId),
+    chainId,
     platformSubscriptionManager: address,
     platformTreasury,
     platformPaymentToken: paymentToken,
@@ -64,7 +69,7 @@ async function main() {
   });
 
   const deployment = {
-    chainId: Number(chainId),
+    chainId,
     address,
     platformTreasury,
     paymentToken,
@@ -77,6 +82,24 @@ async function main() {
   );
   console.log(`Deployment metadata saved to ${deploymentPath}`);
   await trySyncDeploymentRegistry(deployment);
+}
+
+function resolvePlatformPaymentToken(chainId: number): string {
+  const configured = process.env.PLATFORM_PAYMENT_TOKEN?.trim();
+  if (configured && configured !== "NONE") {
+    console.log(`Using platform payment token from secret override: ${configured}`);
+    return configured;
+  }
+
+  const knownUsdc = knownUsdcByChainId.get(chainId);
+  if (knownUsdc) {
+    console.log(`Using known USDC default for chain ${chainId}: ${knownUsdc}`);
+    return knownUsdc;
+  }
+
+  throw new Error(
+    `PLATFORM_PAYMENT_TOKEN is not configured and no known USDC default exists for chain ${chainId}. Add a token mapping or configure the PLATFORM_PAYMENT_TOKEN secret.`,
+  );
 }
 
 async function registerDefaultBasicTier(

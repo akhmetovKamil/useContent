@@ -1,4 +1,4 @@
-name: Deploy Platform Contracts
+name: Platform Billing Contracts
 
 on:
   workflow_dispatch:
@@ -19,6 +19,7 @@ on:
 
 jobs:
   deploy-platform-subscription-manager:
+    name: Deploy platform billing manager
     runs-on: ubuntu-latest
     permissions:
       contents: read
