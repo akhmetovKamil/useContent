@@ -21,10 +21,17 @@ The production setup is hosted behind the Coolify proxy on the `usecontent.app` 
 </div>
 
 ```mermaid
-flowchart LR
-    ManualE2E["Manual E2E workflow<br/>workflow_dispatch"] --> Health["Public health checks<br/>/healthz + /health"]
+flowchart TD
+    subgraph Triggers["Deployment triggers"]
+        direction LR
+        Push["Push to master"]
+        ManualE2E["Manual E2E workflow<br/>workflow_dispatch"]
+        Manual["Manual contract workflow"]
+    end
 
-    Push["Push to master"] --> Actions["GitHub Actions"]
+    Push --> Actions["GitHub Actions"]
+    Manual --> Hardhat["Hardhat deploy script"]
+
     Actions --> Gate["Quality gate<br/>frontend/backend/contracts/docs"]
 
     Gate --> BackendImage["Build backend Docker image<br/>Encore.ts"]
@@ -38,18 +45,20 @@ flowchart LR
     CoolifyDocs --> DocsStatic["Serve docs.usecontent.app"]
 
     CoolifyApp --> Frontend["Frontend container<br/>React static files + nginx"]
-    CoolifyApp --> Backend["Backend runtime<br/>Encore.ts container"]
     CoolifyApp --> Mongo["MongoDB container"]
+    CoolifyApp --> Backend["Backend runtime<br/>Encore.ts container"]
     CoolifyApp --> MinIO["MinIO container"]
     Backend -.->|pulls image| GHCR
     Frontend --> Health
     Backend --> Health
     Health --> Smoke["Post-deploy Playwright<br/>GitHub runner, production URL"]
 
-    Manual["Manual contract workflow"] --> Hardhat["Hardhat deploy script"]
     Hardhat --> RPC["RPC provider"]
-    RPC --> Chains["EVM chains"]
     Hardhat -.-> Registry["Sync deployment registry"]
+    RPC --> Chains["EVM chains"]
+    ManualE2E --> Health
+
+    style Triggers fill:transparent,stroke:transparent,color:transparent
 ```
 
 ## Runtime routing

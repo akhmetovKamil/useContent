@@ -347,12 +347,12 @@
 
 .dark .mermaid-wrapper .er.attributeBoxOdd,
 .dark .mermaid-modal-content .er.attributeBoxOdd {
-    fill: #10211f !important;
+    fill: #0d4f47 !important;
 }
 
 .dark .mermaid-wrapper .er.attributeBoxEven,
 .dark .mermaid-modal-content .er.attributeBoxEven {
-    fill: #17342f !important;
+    fill: #14695f !important;
 }
 
 .dark .mermaid-wrapper .er.entityBox,
@@ -363,12 +363,12 @@
 
 .dark .mermaid-wrapper svg.erDiagram rect,
 .dark .mermaid-modal-content svg.erDiagram rect {
-    fill: #10211f !important;
+    fill: #0d4f47 !important;
 }
 
 .dark .mermaid-wrapper svg.erDiagram rect:nth-of-type(even),
 .dark .mermaid-modal-content svg.erDiagram rect:nth-of-type(even) {
-    fill: #17342f !important;
+    fill: #14695f !important;
 }
 
 .dark .mermaid-wrapper svg.erDiagram rect.label-container,
@@ -390,36 +390,22 @@
     color: var(--vp-c-text-1) !important;
 }
 
-.dark .mermaid-wrapper svg.erDiagram foreignObject .labelBkg,
-.dark .mermaid-modal-content svg.erDiagram foreignObject .labelBkg {
-    background-color: #10211f !important;
-    color: var(--vp-c-text-1) !important;
-}
-
-.dark .mermaid-wrapper svg.erDiagram foreignObject p,
-.dark .mermaid-modal-content svg.erDiagram foreignObject p {
-    background-color: #10211f !important;
-    color: var(--vp-c-text-1) !important;
-}
-
-.dark .mermaid-wrapper svg.erDiagram foreignObject:nth-of-type(even) .labelBkg,
-.dark .mermaid-modal-content svg.erDiagram foreignObject:nth-of-type(even) .labelBkg {
-    background-color: #17342f !important;
-}
-
-.dark .mermaid-wrapper svg.erDiagram foreignObject:nth-of-type(even) p,
-.dark .mermaid-modal-content svg.erDiagram foreignObject:nth-of-type(even) p {
-    background-color: #17342f !important;
-}
-
 .dark .mermaid-wrapper svg.erDiagram foreignObject tr:nth-child(odd),
 .dark .mermaid-modal-content svg.erDiagram foreignObject tr:nth-child(odd) {
-    background: #10211f !important;
+    background: transparent !important;
 }
 
 .dark .mermaid-wrapper svg.erDiagram foreignObject tr:nth-child(even),
 .dark .mermaid-modal-content svg.erDiagram foreignObject tr:nth-child(even) {
-    background: #17342f !important;
+    background: transparent !important;
+}
+
+.dark .mermaid-wrapper svg.erDiagram foreignObject .labelBkg,
+.dark .mermaid-wrapper svg.erDiagram foreignObject p,
+.dark .mermaid-modal-content svg.erDiagram foreignObject .labelBkg,
+.dark .mermaid-modal-content svg.erDiagram foreignObject p {
+    background: transparent !important;
+    color: var(--vp-c-text-1) !important;
 }
 
 .dark .mermaid-wrapper svg.erDiagram foreignObject td,
