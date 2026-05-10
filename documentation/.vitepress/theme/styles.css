@@ -345,17 +345,23 @@
     fill: transparent !important;
 }
 
+.dark .mermaid-wrapper .attributeBoxOdd,
 .dark .mermaid-wrapper .er.attributeBoxOdd,
+.dark .mermaid-modal-content .attributeBoxOdd,
 .dark .mermaid-modal-content .er.attributeBoxOdd {
     fill: #0d4f47 !important;
 }
 
+.dark .mermaid-wrapper .attributeBoxEven,
 .dark .mermaid-wrapper .er.attributeBoxEven,
+.dark .mermaid-modal-content .attributeBoxEven,
 .dark .mermaid-modal-content .er.attributeBoxEven {
     fill: #14695f !important;
 }
 
+.dark .mermaid-wrapper .entityBox,
 .dark .mermaid-wrapper .er.entityBox,
+.dark .mermaid-modal-content .entityBox,
 .dark .mermaid-modal-content .er.entityBox {
     fill: #0f3d38 !important;
     stroke: var(--vp-c-brand-1) !important;
@@ -392,12 +398,26 @@
 
 .dark .mermaid-wrapper svg.erDiagram foreignObject tr:nth-child(odd),
 .dark .mermaid-modal-content svg.erDiagram foreignObject tr:nth-child(odd) {
-    background: transparent !important;
+    background: #0d4f47 !important;
 }
 
 .dark .mermaid-wrapper svg.erDiagram foreignObject tr:nth-child(even),
 .dark .mermaid-modal-content svg.erDiagram foreignObject tr:nth-child(even) {
-    background: transparent !important;
+    background: #14695f !important;
+}
+
+.dark .mermaid-wrapper svg.erDiagram foreignObject tr:nth-child(odd) td,
+.dark .mermaid-wrapper svg.erDiagram foreignObject tr:nth-child(odd) th,
+.dark .mermaid-modal-content svg.erDiagram foreignObject tr:nth-child(odd) td,
+.dark .mermaid-modal-content svg.erDiagram foreignObject tr:nth-child(odd) th {
+    background: #0d4f47 !important;
+}
+
+.dark .mermaid-wrapper svg.erDiagram foreignObject tr:nth-child(even) td,
+.dark .mermaid-wrapper svg.erDiagram foreignObject tr:nth-child(even) th,
+.dark .mermaid-modal-content svg.erDiagram foreignObject tr:nth-child(even) td,
+.dark .mermaid-modal-content svg.erDiagram foreignObject tr:nth-child(even) th {
+    background: #14695f !important;
 }
 
 .dark .mermaid-wrapper svg.erDiagram foreignObject .labelBkg,
