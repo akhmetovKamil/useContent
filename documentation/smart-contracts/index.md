@@ -112,4 +112,4 @@ This makes MongoDB an operational projection of verified on-chain events rather 
 
 Contracts are deployed through manual GitHub Actions workflows. This keeps private deploy keys and RPC configuration outside runtime application containers.
 
-The deployed manager addresses are synced to the backend registry so the application can resolve the active manager per chain.
+The deployed manager addresses are synced to the backend registry so the application can resolve the active manager per chain. Platform billing deploys write two registry records, `PlatformTierManager` and `PlatformStorageManager`, and the deploy workflow verifies both with a read-back request before it succeeds.

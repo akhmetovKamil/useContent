@@ -54,7 +54,8 @@ flowchart TD
     Health --> Smoke["Post-deploy Playwright<br/>GitHub runner, production URL"]
 
     Hardhat --> RPC["RPC provider"]
-    Hardhat -.-> Registry["Sync deployment registry"]
+    Hardhat --> Registry["Sync deployment registry<br/>required in Actions"]
+    Registry --> RegistryCheck["Read-back registry check"]
     RPC --> Chains["EVM chains"]
     ManualE2E --> Health
 
@@ -148,6 +149,8 @@ A separate manual workflow can run the same production E2E suite without deployi
 Smart contract deployment is manual. GitHub Actions workflows run Hardhat deployment scripts for selected networks and sync deployed manager addresses into the backend deployment registry.
 
 Manual workflows are used because contract deployment requires private keys and RPC endpoints. Those secrets should be scoped to GitHub Actions and not mounted into the runtime backend or frontend containers.
+
+The platform billing workflow deploys `PlatformTierManager` and `PlatformStorageManager` together, writes both records to the backend registry, then reads both public lookup endpoints back. In GitHub Actions the registry sync is required: missing `API_BASE_URL` or `DEPLOYMENT_REGISTRY_TOKEN` fails the workflow instead of silently producing an address the frontend cannot see. Local manual deploys may opt out only with `SKIP_DEPLOYMENT_REGISTRY_SYNC=true`.
 
 ## Documentation deployment
 

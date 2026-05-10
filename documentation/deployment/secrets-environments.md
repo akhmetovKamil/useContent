@@ -52,6 +52,8 @@ Backend image build is handled by GitHub Actions. The workflow injects MinIO-rel
 
 Contract deployment is intentionally separate from normal application deployment. Manual GitHub Actions workflows receive deployer private keys, treasury addresses, RPC URLs and registry token only for the duration of the deployment job. Runtime containers only read the resulting deployment registry records.
 
+For platform billing deployments, `API_BASE_URL` and `DEPLOYMENT_REGISTRY_TOKEN` are mandatory in GitHub Actions. The deploy script registers both `PlatformTierManager` and `PlatformStorageManager` and then performs a public read-back check against the backend lookup endpoints. Local deploys can intentionally skip this with `SKIP_DEPLOYMENT_REGISTRY_SYNC=true`, but CI should not.
+
 ## Domain layout
 
 - `https://usecontent.app` for the main useContent frontend;
@@ -59,4 +61,3 @@ Contract deployment is intentionally separate from normal application deployment
 - `https://docs.usecontent.app` for the VitePress documentation portal.
 
 Keeping these origins explicit makes CORS, certificate routing and deployment ownership easier to reason about.
-

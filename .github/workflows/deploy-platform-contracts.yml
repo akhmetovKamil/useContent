@@ -18,8 +18,8 @@ on:
           - arbitrum
 
 jobs:
-  deploy-platform-subscription-manager:
-    name: Deploy platform billing manager
+  deploy-platform-billing-managers:
+    name: Deploy platform billing managers
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -41,7 +41,7 @@ jobs:
         working-directory: ./solidity
         run: npm test
 
-      - name: Deploy PlatformSubscriptionManager
+      - name: Deploy PlatformTierManager and PlatformStorageManager
         working-directory: ./solidity
         env:
           DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
@@ -56,10 +56,10 @@ jobs:
           RPC_URL_8453: ${{ secrets.RPC_URL_8453 }}
           RPC_URL_10: ${{ secrets.RPC_URL_10 }}
           RPC_URL_42161: ${{ secrets.RPC_URL_42161 }}
-        run: npx hardhat run scripts/deploy-platform-subscription-manager.ts --network ${{ inputs.network }}
+        run: npx hardhat run scripts/deploy-platform-billing-managers.ts --network ${{ inputs.network }}
 
       - uses: actions/upload-artifact@v4
         with:
-          name: platform-subscription-manager-deployment-${{ inputs.network }}
+          name: platform-billing-managers-deployment-${{ inputs.network }}
           path: shared/deployments/*.json
           if-no-files-found: error
