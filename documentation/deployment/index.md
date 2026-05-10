@@ -23,7 +23,8 @@ The production setup is hosted behind the Coolify proxy on the `usecontent.app` 
 ```mermaid
 flowchart TD
     Push["Push to master"] --> Actions["GitHub Actions"]
-    Actions --> BackendImage["Build backend Docker image<br/>Encore.ts"]
+    Actions --> Gate["Quality gate<br/>frontend/backend/contracts/docs"]
+    Gate --> BackendImage["Build backend Docker image<br/>Encore.ts"]
     BackendImage --> GHCR["Push backend image<br/>to GHCR"]
     Actions --> AppWebhook["Trigger application<br/>Coolify webhook"]
     Actions --> DocsWebhook["Trigger documentation<br/>Coolify webhook"]
@@ -36,6 +37,7 @@ flowchart TD
     Backend -.->|pulls image| GHCR
     CoolifyApp --> Mongo["MongoDB container"]
     CoolifyApp --> MinIO["MinIO container"]
+    CoolifyApp --> Smoke["Post-deploy Playwright<br/>production smoke"]
 
     CoolifyDocs --> DocsBuild["Build VitePress<br/>static files"]
     CoolifyDocs --> DocsStatic["Serve docs.usecontent.app"]
@@ -106,6 +108,7 @@ sequenceDiagram
 
     Dev->>GH: Push to master
     GH->>Actions: Start workflow
+    Actions->>Actions: Run frontend/backend/contract/docs checks
     Actions->>Actions: Build backend image with Encore
     Actions->>Registry: Push versioned and latest tags
     Actions->>Coolify: Trigger application deploy webhook
@@ -113,9 +116,12 @@ sequenceDiagram
     Coolify->>Registry: Pull backend image
     Coolify->>Server: Recreate frontend/backend/MongoDB/MinIO
     Docs->>Server: Build and publish VitePress static output
+    Actions->>Server: Wait for health URLs and run production E2E
 ```
 
 The frontend is built by Coolify from the repository using the frontend Dockerfile. The backend is prebuilt in GitHub Actions because the Encore Docker build is part of the CI workflow. Documentation is built by a separate Coolify Static App from the `documentation` directory.
+
+Before either Coolify webhook is called, GitHub Actions runs the frontend lint/test/build, backend tests/typecheck, Hardhat tests and documentation build. After the Coolify webhooks are triggered, the workflow waits for `https://usecontent.app/healthz` and `https://api.usecontent.app/health`, then runs the Playwright production smoke suite. A separate manual workflow can run the same production E2E suite without deploying.
 
 ## Contract deployment
 

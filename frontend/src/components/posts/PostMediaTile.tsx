@@ -59,6 +59,7 @@ export function PostMediaTile({
                 "group relative min-h-44 overflow-hidden bg-[var(--surface-strong)]",
                 className
             )}
+            data-testid="post-media-tile"
         >
             {attachment.kind === "image" && objectUrl ? (
                 <img

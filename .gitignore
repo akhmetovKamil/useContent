@@ -16,6 +16,8 @@ CLAUDE.md
 documentation/.vitepress/cache/
 documentation/.vitepress/dist/
 documentation/dist/
+**/playwright-report/
+**/test-results/
 shared/deployments/
 /docs/
 

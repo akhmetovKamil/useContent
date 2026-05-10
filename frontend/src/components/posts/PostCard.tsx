@@ -130,7 +130,10 @@ export function PostCard({
     }
 
     return (
-        <Card className="overflow-hidden rounded-2xl border-[var(--line)] bg-[var(--surface)] shadow-[0_12px_40px_rgba(15,23,42,0.04)] transition-colors hover:bg-[var(--surface-strong)]">
+        <Card
+            className="overflow-hidden rounded-2xl border-[var(--line)] bg-[var(--surface)] shadow-[0_12px_40px_rgba(15,23,42,0.04)] transition-colors hover:bg-[var(--surface-strong)]"
+            data-testid="post-card"
+        >
             <CardHeader className="gap-4 pb-3">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0">

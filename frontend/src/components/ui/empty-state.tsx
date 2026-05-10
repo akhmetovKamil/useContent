@@ -17,7 +17,10 @@ export function EmptyState({
     title: string
 }) {
     return (
-        <div className="rounded-[28px] border border-dashed border-[var(--line)] bg-[var(--surface-strong)] p-8 text-center">
+        <div
+            className="rounded-[28px] border border-dashed border-[var(--line)] bg-[var(--surface-strong)] p-8 text-center"
+            data-testid="empty-state"
+        >
             <div className="mx-auto grid size-12 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
                 <Icon className="size-5" />
             </div>

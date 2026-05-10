@@ -36,6 +36,10 @@ jobs:
         working-directory: ./solidity
         run: npm ci
 
+      - name: Test
+        working-directory: ./solidity
+        run: npm test
+
       - name: Deploy PlatformSubscriptionManager
         working-directory: ./solidity
         env:

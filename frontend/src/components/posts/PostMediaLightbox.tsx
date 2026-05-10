@@ -29,6 +29,7 @@ export function PostMediaLightbox({
         <Dialog onOpenChange={onOpenChange} open={open}>
             <DialogContent
                 className="w-auto max-w-[92vw] border-0 bg-transparent p-0 text-white shadow-none sm:max-w-[92vw]"
+                data-testid="post-media-lightbox"
                 showCloseButton={false}
             >
                 <DialogTitle className="sr-only">

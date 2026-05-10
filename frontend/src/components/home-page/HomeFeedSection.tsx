@@ -51,7 +51,7 @@ export function HomeFeedSection({
     const hasActiveFilter = Boolean(deferredSearch) || source !== "all"
 
     return (
-        <Card className="rounded-[32px]">
+        <Card className="rounded-[32px]" data-testid="public-feed">
             <CardHeader className="grid gap-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div>
@@ -87,7 +87,10 @@ export function HomeFeedSection({
                 {isLoading ? (
                     <PostFeedSkeleton />
                 ) : isError ? (
-                    <div className="mx-auto max-w-3xl rounded-2xl border border-rose-200 bg-rose-50/60 p-5">
+                    <div
+                        className="mx-auto max-w-3xl rounded-2xl border border-rose-200 bg-rose-50/60 p-5"
+                        data-testid="public-feed-error"
+                    >
                         <p className="text-sm text-rose-700">{errorMessage}</p>
                         <Button className="mt-4 rounded-full" onClick={onRetry} type="button" variant="outline">
                             Retry

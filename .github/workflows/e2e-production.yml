@@ -1,0 +1,45 @@
+name: Production E2E
+
+on:
+  workflow_dispatch:
+
+jobs:
+  e2e-production:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Install Playwright browser
+        working-directory: ./frontend
+        run: npm run e2e:install
+
+      - name: Wait for frontend health
+        run: |
+          for i in {1..30}; do
+            curl -fsS https://usecontent.app/healthz && exit 0
+            sleep 10
+          done
+          exit 1
+
+      - name: Wait for backend health
+        run: |
+          for i in {1..30}; do
+            curl -fsS https://api.usecontent.app/health && exit 0
+            sleep 10
+          done
+          exit 1
+
+      - name: Run production E2E
+        working-directory: ./frontend
+        run: npm run e2e:prod

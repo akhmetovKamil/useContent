@@ -66,10 +66,21 @@ Then the backend rejects the upload with a quota error
 
 | Area | Command |
 | --- | --- |
-| Backend tests | `cd backend && npm test -- --run` |
+| Backend tests | `cd backend && npm test` |
 | Frontend tests | `cd frontend && npm test -- --run` |
 | Frontend build | `cd frontend && npm run build` |
+| Frontend E2E local | `cd frontend && npm run e2e:install && npm run e2e` |
+| Frontend E2E production | `cd frontend && PLAYWRIGHT_BASE_URL=https://usecontent.app npm run e2e` |
 | Smart contracts | `cd solidity && npx hardhat test` |
 | Documentation build | `cd documentation && npm run docs:build` |
 
 The commands intentionally target each workspace separately because the repository is not a single root package workspace.
+
+## E2E modes
+
+Playwright smoke tests have two execution modes:
+
+- local mode runs without production secrets and starts the frontend preview server automatically;
+- production mode targets `https://usecontent.app` and is used by post-deploy and manual GitHub Actions workflows.
+
+The smoke suite is intentionally tolerant of missing public content. It verifies that the public shell and discovery feed render, accepts an empty or recoverable feed state, and opens the media lightbox only when public media exists.
