@@ -26,8 +26,8 @@ flowchart TD
     Actions --> Gate["Quality gate<br/>frontend/backend/contracts/docs"]
     Gate --> BackendImage["Build backend Docker image<br/>Encore.ts"]
     BackendImage --> GHCR["Push backend image<br/>to GHCR"]
-    Actions --> AppWebhook["Trigger application<br/>Coolify webhook"]
-    Actions --> DocsWebhook["Trigger documentation<br/>Coolify webhook"]
+    GHCR --> AppWebhook["Trigger application<br/>Coolify webhook"]
+    Gate --> DocsWebhook["Trigger documentation<br/>Coolify webhook"]
 
     AppWebhook --> CoolifyApp["Coolify application resource"]
     DocsWebhook --> CoolifyDocs["Coolify Static App<br/>documentation"]
@@ -37,7 +37,9 @@ flowchart TD
     Backend -.->|pulls image| GHCR
     CoolifyApp --> Mongo["MongoDB container"]
     CoolifyApp --> MinIO["MinIO container"]
-    CoolifyApp --> Smoke["Post-deploy Playwright<br/>production smoke"]
+    CoolifyApp --> Health["Public health checks<br/>/healthz + /health"]
+    Health --> Smoke["Post-deploy Playwright<br/>GitHub runner, production URL"]
+    ManualE2E["Manual E2E workflow<br/>workflow_dispatch"] --> Health
 
     CoolifyDocs --> DocsBuild["Build VitePress<br/>static files"]
     CoolifyDocs --> DocsStatic["Serve docs.usecontent.app"]
@@ -116,12 +118,19 @@ sequenceDiagram
     Coolify->>Registry: Pull backend image
     Coolify->>Server: Recreate frontend/backend/MongoDB/MinIO
     Docs->>Server: Build and publish VitePress static output
-    Actions->>Server: Wait for health URLs and run production E2E
+    Actions->>Server: Poll public health URLs
+    Server-->>Actions: 200 from /healthz and /health
+    Actions->>Actions: Run Playwright against production URLs
+    Dev->>Actions: Optionally start manual production E2E workflow
 ```
 
 The frontend is built by Coolify from the repository using the frontend Dockerfile. The backend is prebuilt in GitHub Actions because the Encore Docker build is part of the CI workflow. Documentation is built by a separate Coolify Static App from the `documentation` directory.
 
-Before either Coolify webhook is called, GitHub Actions runs the frontend lint/test/build, backend tests/typecheck, Hardhat tests and documentation build. After the Coolify webhooks are triggered, the workflow waits for `https://usecontent.app/healthz` and `https://api.usecontent.app/health`, then runs the Playwright production smoke suite. A separate manual workflow can run the same production E2E suite without deploying.
+Before either Coolify webhook is called, GitHub Actions runs the frontend lint/test/build, backend tests/typecheck, Hardhat tests and documentation build. If the quality gate fails, the backend image is not pushed and Coolify is not asked to deploy.
+
+After the Coolify webhooks are triggered, GitHub Actions keeps running on its own runner. It does not SSH into the server and does not run Playwright inside Coolify. The post-deploy job polls `https://usecontent.app/healthz` from the frontend nginx container and `https://api.usecontent.app/health` from the backend container. Once both URLs return success, the same GitHub runner installs Playwright Chromium and runs the production smoke suite against the public site.
+
+A separate manual workflow can run the same production E2E suite without deploying. This is useful for checking the current production version after DNS, proxy or runtime configuration changes.
 
 ## Contract deployment
 
