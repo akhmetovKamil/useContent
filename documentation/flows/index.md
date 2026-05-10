@@ -77,7 +77,8 @@ sequenceDiagram
     participant DB as MongoDB
 
     Author->>UI: Select Basic plan and extra storage
-    UI->>API: Create payment intent
+    UI->>API: Create payment intent for selected chain
+    API->>API: Resolve platform USDC token
     UI->>Wallet: Approve USDC allowance
     Wallet->>Manager: approve(manager, amount)
     UI->>Wallet: Confirm platform subscribe
@@ -88,7 +89,7 @@ sequenceDiagram
     API->>DB: Update quota, features and validUntil
 ```
 
-This flow is separate from reader subscriptions because the payer, receiver and backend projection are different. Reader payments create entitlements; author platform billing changes storage quota and feature gates.
+This flow is separate from reader subscriptions because the payer, receiver and backend projection are different. Reader payments create entitlements and keep author-configured token settings; author platform billing changes storage quota and feature gates and is paid only in USDC on the selected chain.
 
 </details>
 

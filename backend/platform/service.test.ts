@@ -334,13 +334,13 @@ describe("platform/service", () => {
         planCode: "basic",
         extraStorageGb: 2,
         chainId: 11155111,
-        tokenAddress: "0xtoken000000000000000000000000000000000000",
       },
     );
 
     expect(intent).toMatchObject({
       planCode: "basic",
       extraStorageGb: 2,
+      tokenAddress: "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238",
       contractAddress: "0xmanager",
       amount: "7000000",
       status: "pending",

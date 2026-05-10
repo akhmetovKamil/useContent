@@ -1,7 +1,7 @@
 import { platformSubscriptionManagerAbi } from "@shared/abi/platform-subscription-manager.abi"
-import { PAYMENT_ASSET } from "@shared/consts"
 import type { PlatformPlanDto } from "@shared/types/platform"
-import { isSameAddressLike, shortenWalletAddress } from "@shared/utils/web3"
+import { getPlatformUsdcToken } from "@shared/utils/platform-usdc"
+import { shortenWalletAddress } from "@shared/utils/web3"
 import { CreditCard } from "lucide-react"
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
@@ -12,13 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Eyebrow } from "@/components/ui/page"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
     useConfirmPlatformSubscriptionPaymentMutation,
     useCreatePlatformSubscriptionPaymentIntentMutation,
@@ -26,7 +20,6 @@ import {
 } from "@/queries/platform"
 import { queryKeys } from "@/queries/queryKeys"
 import { supportedChainOptions } from "@/utils/config/chains"
-import { getTokenPresets } from "@/utils/config/tokens"
 import { formatFileSize, formatUsdCents } from "@/utils/format"
 import { GIB } from "@/utils/platform-billing"
 import { erc20Abi } from "@/utils/web3/erc20"
@@ -38,7 +31,6 @@ export function CheckoutPreview({
     monthlyEstimateCents,
     onChainIdChange,
     onSuccess,
-    onTokenAddressChange,
     plan,
     tokenAddress,
 }: {
@@ -47,7 +39,6 @@ export function CheckoutPreview({
     monthlyEstimateCents: number
     onChainIdChange: (chainId: number) => void
     onSuccess: () => void
-    onTokenAddressChange: (address: `0x${string}`) => void
     plan: PlatformPlanDto
     tokenAddress: `0x${string}`
 }) {
@@ -60,19 +51,12 @@ export function CheckoutPreview({
     const deploymentQuery = usePlatformSubscriptionManagerDeploymentQuery(chainId)
     const [status, setStatus] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
-    const tokenOptions = getTokenPresets(chainId).filter(
-        (
-            preset
-        ): preset is ReturnType<typeof getTokenPresets>[number] & { address: `0x${string}` } =>
-            preset.kind === PAYMENT_ASSET.ERC20 && Boolean(preset.address)
-    )
-    const selectedToken = tokenOptions.find((token) =>
-        isSameAddressLike(token.address, tokenAddress)
-    )
+    const selectedToken = getPlatformUsdcToken(chainId)
     const disabled =
         !address ||
         !publicClient ||
         !deploymentQuery.data ||
+        !selectedToken ||
         createIntentMutation.isPending ||
         confirmPaymentMutation.isPending
 
@@ -89,7 +73,6 @@ export function CheckoutPreview({
                 planCode: plan.code,
                 extraStorageGb: extraGb,
                 chainId,
-                tokenAddress,
             })
             const managerAddress = toAddress(intent.contractAddress)
             const token = toAddress(intent.tokenAddress)
@@ -171,24 +154,19 @@ export function CheckoutPreview({
                         </SelectContent>
                     </Select>
                 </label>
-                <label className="grid gap-2 text-sm">
+                <div className="grid gap-2 text-sm">
                     Payment token
-                    <Select
-                        onValueChange={(value) => onTokenAddressChange(value as `0x${string}`)}
-                        value={tokenAddress}
-                    >
-                        <SelectTrigger>
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {tokenOptions.map((token) => (
-                                <SelectItem key={token.address} value={token.address}>
-                                    {token.symbol} · {token.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </label>
+                    <Card className="rounded-[20px] border-[var(--line)] bg-[var(--surface)]">
+                        <CardContent className="grid gap-1 p-4">
+                            <div className="font-medium text-[var(--foreground)]">USDC only</div>
+                            <div className="text-xs text-[var(--muted)]">
+                                {selectedToken
+                                    ? `${selectedToken.name} · ${shortenWalletAddress(tokenAddress)}`
+                                    : "USDC is not configured for this network"}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
             {deploymentQuery.data ? (
                 <Card className="rounded-[24px] bg-[var(--accent-soft)]">

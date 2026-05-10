@@ -11,6 +11,7 @@ import {
   PLATFORM_PLAN_CODE,
   type PlatformBillingStatus,
 } from "../../shared/consts";
+import { getPlatformUsdcToken } from "../../shared/utils/platform-usdc";
 import { shortenWalletAddress } from "../../shared/utils/web3";
 import * as accessRepo from "../access/repository";
 import * as contractDeploymentsRepo from "../contracts/repository";
@@ -250,10 +251,7 @@ export async function createPlatformSubscriptionPaymentIntent(
 
   const extraStorageGb = normalizeExtraStorageGb(input.extraStorageGb, plan);
   const chainId = normalizeChainId(input.chainId);
-  const tokenAddress = normalizePlanTokenAddress(
-    PAYMENT_ASSET.ERC20,
-    input.tokenAddress,
-  );
+  const tokenAddress = resolvePlatformPaymentToken(chainId);
   const deployment = await repo.findContractDeployment(
     chainId,
     "PlatformSubscriptionManager",
@@ -677,6 +675,17 @@ function calculatePlatformPlanAmount(
     BigInt(plan.priceUsdCents) * 10_000n +
       BigInt(extraStorageGb) * BigInt(plan.pricePerExtraGbUsdCents) * 10_000n,
   );
+}
+
+function resolvePlatformPaymentToken(chainId: number): string {
+  const token = getPlatformUsdcToken(chainId);
+  if (!token) {
+    throw APIError.failedPrecondition(
+      `USDC is not configured for platform billing on chain ${chainId}`,
+    );
+  }
+
+  return normalizePlanTokenAddress(PAYMENT_ASSET.ERC20, token.address);
 }
 
 function normalizeExtraStorageGb(value: number, plan: PlatformPlanDoc): number {

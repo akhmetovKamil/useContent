@@ -27,9 +27,6 @@ export function MePlatformBillingPage() {
     const [extraGb, setExtraGb] = useState(0)
     const [checkoutPlan, setCheckoutPlan] = useState<PlatformPlanDto | null>(null)
     const [paymentChainId, setPaymentChainId] = useState<number>(defaultSubscriptionChain.id)
-    const [paymentTokenAddress, setPaymentTokenAddress] = useState(() =>
-        getDefaultTokenAddress(defaultSubscriptionChain.id)
-    )
     const plans = plansQuery.data ?? []
     const basicPlan = plans.find((plan) => plan.code === "basic")
     const selectedPlan = checkoutPlan ?? basicPlan ?? null
@@ -40,7 +37,6 @@ export function MePlatformBillingPage() {
     function openCheckout(plan: PlatformPlanDto) {
         setCheckoutPlan(plan)
         setExtraGb(0)
-        setPaymentTokenAddress(getDefaultTokenAddress(paymentChainId))
     }
 
     return (
@@ -103,7 +99,6 @@ export function MePlatformBillingPage() {
                     onOpenCheckout={() => {
                         if (selectedPlan) {
                             setCheckoutPlan(selectedPlan)
-                            setPaymentTokenAddress(getDefaultTokenAddress(paymentChainId))
                         }
                     }}
                     plan={selectedPlan}
@@ -123,12 +118,10 @@ export function MePlatformBillingPage() {
                             monthlyEstimateCents={estimateCents}
                             onChainIdChange={(chainId) => {
                                 setPaymentChainId(chainId)
-                                setPaymentTokenAddress(getDefaultTokenAddress(chainId))
                             }}
                             onSuccess={() => setCheckoutPlan(null)}
-                            onTokenAddressChange={setPaymentTokenAddress}
                             plan={checkoutPlan}
-                            tokenAddress={paymentTokenAddress}
+                            tokenAddress={getDefaultTokenAddress(paymentChainId)}
                         />
                     ) : null}
                 </DrawerContent>

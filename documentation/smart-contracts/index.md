@@ -64,7 +64,7 @@ flowchart TD
     Backend --> Billing["Author platform subscription<br/>quota and features"]
 ```
 
-This contract does not split revenue with creators. It represents author-to-platform billing: plan tier, extra storage and paid-until state.
+This contract does not split revenue with creators. It represents author-to-platform billing: plan tier, extra storage and paid-until state. Platform billing always uses USDC on the selected network; reader subscription plans remain configurable by authors and can use native token or ERC-20 payment settings.
 
 ## Contract responsibilities
 
@@ -84,7 +84,7 @@ This contract does not split revenue with creators. It represents author-to-plat
 | Native token | Call payable `subscribe` with `msg.value` | Contract validates the sent value and transfers native funds. |
 | ERC-20 token | Approve manager, then call `subscribe` | Contract uses `transferFrom` to move tokens. |
 
-Reader subscription plans may accept native token or ERC-20 payments depending on the author configuration. Platform billing v1 uses ERC-20 payment flow because author billing needs predictable pricing semantics for tiers and extra storage.
+Reader subscription plans may accept native token or ERC-20 payments depending on the author configuration. Platform billing v1 uses ERC-20 payment flow with USDC only because author billing needs predictable pricing semantics for tiers and extra storage.
 
 ## Backend confirmation rules
 

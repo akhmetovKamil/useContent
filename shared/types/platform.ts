@@ -104,5 +104,4 @@ export interface CreatePlatformSubscriptionPaymentIntentInput {
   planCode: PlatformPlanCode;
   extraStorageGb: number;
   chainId: ChainId;
-  tokenAddress: WalletAddress;
 }

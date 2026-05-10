@@ -1,6 +1,5 @@
-import { PAYMENT_ASSET, ZERO_ADDRESS } from "@shared/consts"
-
-import { getTokenPresets } from "@/utils/config/tokens"
+import { ZERO_ADDRESS } from "@shared/consts"
+import { getPlatformUsdcToken } from "@shared/utils/platform-usdc"
 
 export const GIB = 1024 * 1024 * 1024
 
@@ -9,10 +8,7 @@ export function bytesToGb(bytes: number) {
 }
 
 export function getDefaultTokenAddress(chainId: number): `0x${string}` {
-    return (
-        getTokenPresets(chainId).find((preset) => preset.kind === PAYMENT_ASSET.ERC20)?.address ??
-        ZERO_ADDRESS
-    )
+    return (getPlatformUsdcToken(chainId)?.address ?? ZERO_ADDRESS) as `0x${string}`
 }
 
 export function formatBillingDate(value: string | null) {
