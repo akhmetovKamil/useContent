@@ -383,16 +383,28 @@
     stroke: var(--vp-c-brand-1) !important;
 }
 
+.mermaid-wrapper svg.erDiagram path[fill="#e6fffb"],
+.mermaid-modal-content svg.erDiagram path[fill="#e6fffb"],
 .dark .mermaid-wrapper svg path[fill="#e6fffb"],
 .dark .mermaid-modal-content svg path[fill="#e6fffb"] {
     fill: #0d4f47 !important;
 }
 
+.mermaid-wrapper svg.erDiagram path[fill="hsl(170.4, 100%, 100%)"],
+.mermaid-modal-content svg.erDiagram path[fill="hsl(170.4, 100%, 100%)"],
 .dark .mermaid-wrapper svg path[fill="hsl(170.4, 100%, 100%)"],
 .dark .mermaid-modal-content svg path[fill="hsl(170.4, 100%, 100%)"] {
     fill: #14695f !important;
 }
 
+.mermaid-wrapper svg.erDiagram .label.attribute-type,
+.mermaid-wrapper svg.erDiagram .label.attribute-name,
+.mermaid-wrapper svg.erDiagram .label.attribute-keys,
+.mermaid-wrapper svg.erDiagram .label.attribute-comment,
+.mermaid-modal-content svg.erDiagram .label.attribute-type,
+.mermaid-modal-content svg.erDiagram .label.attribute-name,
+.mermaid-modal-content svg.erDiagram .label.attribute-keys,
+.mermaid-modal-content svg.erDiagram .label.attribute-comment,
 .dark .mermaid-wrapper .er.entityLabel,
 .dark .mermaid-wrapper .er.attributeLabel,
 .dark .mermaid-wrapper .label.attribute-type,
@@ -409,6 +421,14 @@
     color: var(--vp-c-text-1) !important;
 }
 
+.mermaid-wrapper svg.erDiagram .label.attribute-type *,
+.mermaid-wrapper svg.erDiagram .label.attribute-name *,
+.mermaid-wrapper svg.erDiagram .label.attribute-keys *,
+.mermaid-wrapper svg.erDiagram .label.attribute-comment *,
+.mermaid-modal-content svg.erDiagram .label.attribute-type *,
+.mermaid-modal-content svg.erDiagram .label.attribute-name *,
+.mermaid-modal-content svg.erDiagram .label.attribute-keys *,
+.mermaid-modal-content svg.erDiagram .label.attribute-comment *,
 .dark .mermaid-wrapper .label.attribute-type *,
 .dark .mermaid-wrapper .label.attribute-name *,
 .dark .mermaid-wrapper .label.attribute-keys *,

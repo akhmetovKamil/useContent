@@ -13,8 +13,13 @@ const source = computed(() => decodeURIComponent(props.code));
 let mermaidModule: typeof import("mermaid").default | null = null;
 const { isDark } = useData();
 
+const isDocumentDark = () =>
+    typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+
+const shouldUseDarkTheme = () => isDark.value || isDocumentDark();
+
 const mermaidThemeVariables = computed(() => {
-    if (isDark.value) {
+    if (shouldUseDarkTheme()) {
         return {
             background: "transparent",
             primaryColor: "#123f3a",
@@ -133,6 +138,46 @@ const configureMermaid = async () => {
     return mermaid;
 };
 
+const applyDarkErDiagramFix = () => {
+    if (!container.value) {
+        return;
+    }
+
+    const svg = container.value.querySelector("svg");
+    if (!svg || svg.getAttribute("aria-roledescription") !== "er") {
+        return;
+    }
+
+    const darkOdd = "#0d4f47";
+    const darkEven = "#14695f";
+    const text = "#f8fafc";
+
+    svg.querySelectorAll<SVGPathElement>("path[fill]").forEach((path) => {
+        const fill = path.getAttribute("fill")?.replace(/\s+/g, "").toLowerCase();
+        if (fill === "#e6fffb") {
+            path.setAttribute("fill", darkOdd);
+            path.style.fill = darkOdd;
+        }
+        if (fill === "hsl(170.4,100%,100%)" || fill === "#ffffff") {
+            path.setAttribute("fill", darkEven);
+            path.style.fill = darkEven;
+        }
+    });
+
+    svg
+        .querySelectorAll<SVGGElement>(
+            ".label.attribute-type, .label.attribute-name, .label.attribute-keys, .label.attribute-comment",
+        )
+        .forEach((label) => {
+            label.style.color = text;
+            label.style.fill = text;
+            label.querySelectorAll<SVGElement>("*").forEach((child) => {
+                child.style.color = text;
+                child.style.fill = text;
+            });
+        });
+};
+
 const renderDiagram = async () => {
     await nextTick();
 
@@ -144,6 +189,7 @@ const renderDiagram = async () => {
     container.value.removeAttribute("data-processed");
     const mermaid = await configureMermaid();
     await mermaid.run({ nodes: [container.value] });
+    applyDarkErDiagramFix();
     renderedHtml.value = container.value.innerHTML;
 };
 
