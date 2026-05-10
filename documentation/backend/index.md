@@ -5,42 +5,27 @@ The backend is implemented with Encore.ts and TypeScript. It exposes domain-orie
 ```mermaid
 flowchart TD
     Gateway["Encore API Gateway"]
-    Auth["auth"]
-    Profiles["profiles"]
-    Access["access"]
-    Subscriptions["subscriptions"]
-    Platform["platform"]
-    Posts["posts"]
-    Projects["projects"]
-    Activity["activity"]
+    Identity["auth + profiles"]
+    AccessBilling["access + subscriptions + platform"]
+    Content["posts + projects + activity"]
     Onchain["onchain helpers"]
     Storage["storage infrastructure"]
     Mongo[("MongoDB")]
     MinIO[("MinIO")]
     RPC["EVM RPC"]
 
-    Gateway --> Auth
-    Gateway --> Profiles
-    Gateway --> Access
-    Gateway --> Subscriptions
-    Gateway --> Platform
-    Gateway --> Posts
-    Gateway --> Projects
-    Gateway --> Activity
+    Gateway --> Identity
+    Gateway --> AccessBilling
+    Gateway --> Content
 
-    Access --> Mongo
-    Access --> RPC
-    Subscriptions --> Onchain
-    Platform --> Onchain
-    Posts --> Storage
-    Projects --> Storage
+    Identity --> Mongo
+    AccessBilling --> Mongo
+    Content --> Mongo
+
+    AccessBilling --> Onchain
+    Content --> Storage
     Storage --> MinIO
     Onchain --> RPC
-    Auth --> Mongo
-    Profiles --> Mongo
-    Posts --> Mongo
-    Projects --> Mongo
-    Activity --> Mongo
 ```
 
 ## Domain services

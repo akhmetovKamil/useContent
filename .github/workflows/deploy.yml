@@ -43,11 +43,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Encore CLI
-        run: |
-          curl -L https://encore.dev/install.sh | bash
-          echo "$HOME/.encore/bin" >> $GITHUB_PATH
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -60,7 +55,7 @@ jobs:
 
       - name: Test
         working-directory: ./backend
-        run: encore test
+        run: npm test
 
       - name: Typecheck
         working-directory: ./backend

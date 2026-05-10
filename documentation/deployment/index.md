@@ -21,28 +21,30 @@ The production setup is hosted behind the Coolify proxy on the `usecontent.app` 
 </div>
 
 ```mermaid
-flowchart TD
+flowchart LR
+    ManualE2E["Manual E2E workflow<br/>workflow_dispatch"] --> Health["Public health checks<br/>/healthz + /health"]
+
     Push["Push to master"] --> Actions["GitHub Actions"]
     Actions --> Gate["Quality gate<br/>frontend/backend/contracts/docs"]
+
     Gate --> BackendImage["Build backend Docker image<br/>Encore.ts"]
     BackendImage --> GHCR["Push backend image<br/>to GHCR"]
     GHCR --> AppWebhook["Trigger application<br/>Coolify webhook"]
-    Gate --> DocsWebhook["Trigger documentation<br/>Coolify webhook"]
-
     AppWebhook --> CoolifyApp["Coolify application resource"]
+
+    Gate --> DocsWebhook["Trigger documentation<br/>Coolify webhook"]
     DocsWebhook --> CoolifyDocs["Coolify Static App<br/>documentation"]
-
-    CoolifyApp --> Frontend["Build frontend container<br/>React static files + nginx"]
-    CoolifyApp --> Backend["Backend runtime<br/>Encore.ts container"]
-    Backend -.->|pulls image| GHCR
-    CoolifyApp --> Mongo["MongoDB container"]
-    CoolifyApp --> MinIO["MinIO container"]
-    CoolifyApp --> Health["Public health checks<br/>/healthz + /health"]
-    Health --> Smoke["Post-deploy Playwright<br/>GitHub runner, production URL"]
-    ManualE2E["Manual E2E workflow<br/>workflow_dispatch"] --> Health
-
     CoolifyDocs --> DocsBuild["Build VitePress<br/>static files"]
     CoolifyDocs --> DocsStatic["Serve docs.usecontent.app"]
+
+    CoolifyApp --> Frontend["Frontend container<br/>React static files + nginx"]
+    CoolifyApp --> Backend["Backend runtime<br/>Encore.ts container"]
+    CoolifyApp --> Mongo["MongoDB container"]
+    CoolifyApp --> MinIO["MinIO container"]
+    Backend -.->|pulls image| GHCR
+    Frontend --> Health
+    Backend --> Health
+    Health --> Smoke["Post-deploy Playwright<br/>GitHub runner, production URL"]
 
     Manual["Manual contract workflow"] --> Hardhat["Hardhat deploy script"]
     Hardhat --> RPC["RPC provider"]

@@ -6,7 +6,7 @@ Testing is organized as a deployment gate, not as a loose checklist. Fast determ
 flowchart BT
     Local["Local verification<br/>developer laptop"]
     FrontendUnit["Frontend unit/component tests<br/>Vitest + Testing Library"]
-    BackendUnit["Backend service tests<br/>Encore test + Vitest"]
+    BackendUnit["Backend service tests<br/>Vitest"]
     Contracts["Smart contract tests<br/>Hardhat"]
     Static["Static checks and builds<br/>lint, typecheck, frontend build, docs build"]
     Gate["GitHub Actions quality gate<br/>blocks deploy on failure"]
@@ -38,10 +38,11 @@ Unit and service tests protect the business rules before a build is allowed to r
 | --- | --- | --- |
 | Frontend | component states, validation, error rendering, session behavior, cards and formatting helpers | `cd frontend && npm test -- --run` |
 | Backend | access evaluation, subscriptions, platform billing, posts, projects, activity, profile/avatar behavior | `cd backend && npm test` |
-| Backend Encore runtime | service tests through Encore's test runner | `cd backend && encore test` |
 | Smart contracts | plan registration, ERC-20/native subscription payment, platform fee split, paidUntil extension, owner-only methods | `cd solidity && npm test` |
 
 The deployment workflow also runs `cd frontend && npm run lint`, `cd frontend && npm run build`, `cd backend && npx tsc -p tsconfig.json --noEmit`, and `cd documentation && npm run docs:build`. If any of these checks fail, the backend image is not pushed and Coolify webhooks are not called.
+
+CI intentionally uses `cd backend && npm test` for backend service tests instead of `encore test`. `encore test` fetches Encore Cloud development secrets and requires an authenticated Encore session, which is not available on a clean GitHub runner. The Encore CLI remains part of deployment where it is needed for `encore build docker`.
 
 ## E2E / Acceptance Tests
 
@@ -100,7 +101,6 @@ Run these locally before pushing a risky change:
 | Area | Command |
 | --- | --- |
 | Backend tests | `cd backend && npm test` |
-| Backend Encore tests | `cd backend && encore test` |
 | Backend typecheck | `cd backend && npx tsc -p tsconfig.json --noEmit` |
 | Frontend lint | `cd frontend && npm run lint` |
 | Frontend tests | `cd frontend && npm test -- --run` |
