@@ -1,9 +1,10 @@
 import { APIError, type Header } from "encore.dev/api";
-import { getAuthData } from "~encore/auth";
+import { getAuthData } from "encore.dev/internal/codegen/auth";
 import { validateToken } from "../auth/auth.service";
+import type { AuthUser } from "../auth/types";
 
 export function getRequiredWallet(): string {
-  return getAuthData()!.walletAddress;
+  return getAuthData<AuthUser>()!.walletAddress;
 }
 
 export async function getOptionalViewerWallet(
