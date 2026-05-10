@@ -17,9 +17,17 @@ test("public discovery feed renders a stable state", async ({ page }) => {
     const cards = page.getByTestId("post-card")
     const emptyState = page.getByTestId("empty-state")
     const errorState = page.getByTestId("public-feed-error")
-    const cardCount = await cards.count()
+    await expect
+        .poll(
+            async () => (await cards.count()) + (await emptyState.count()) + (await errorState.count()),
+            {
+                message: "public feed should settle into cards, empty state, or error state",
+                timeout: 15_000,
+            },
+        )
+        .toBeGreaterThan(0)
 
-    if (cardCount > 0) {
+    if ((await cards.count()) > 0) {
         await expect(cards.first()).toBeVisible()
     } else if ((await emptyState.count()) > 0) {
         await expect(emptyState.first()).toBeVisible()
