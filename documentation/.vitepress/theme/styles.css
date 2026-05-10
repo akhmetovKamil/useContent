@@ -383,12 +383,42 @@
     stroke: var(--vp-c-brand-1) !important;
 }
 
+.dark .mermaid-wrapper svg path[fill="#e6fffb"],
+.dark .mermaid-modal-content svg path[fill="#e6fffb"] {
+    fill: #0d4f47 !important;
+}
+
+.dark .mermaid-wrapper svg path[fill="hsl(170.4, 100%, 100%)"],
+.dark .mermaid-modal-content svg path[fill="hsl(170.4, 100%, 100%)"] {
+    fill: #14695f !important;
+}
+
 .dark .mermaid-wrapper .er.entityLabel,
 .dark .mermaid-wrapper .er.attributeLabel,
+.dark .mermaid-wrapper .label.attribute-type,
+.dark .mermaid-wrapper .label.attribute-name,
+.dark .mermaid-wrapper .label.attribute-keys,
+.dark .mermaid-wrapper .label.attribute-comment,
 .dark .mermaid-modal-content .er.entityLabel,
-.dark .mermaid-modal-content .er.attributeLabel {
+.dark .mermaid-modal-content .er.attributeLabel,
+.dark .mermaid-modal-content .label.attribute-type,
+.dark .mermaid-modal-content .label.attribute-name,
+.dark .mermaid-modal-content .label.attribute-keys,
+.dark .mermaid-modal-content .label.attribute-comment {
     fill: var(--vp-c-text-1) !important;
     color: var(--vp-c-text-1) !important;
+}
+
+.dark .mermaid-wrapper .label.attribute-type *,
+.dark .mermaid-wrapper .label.attribute-name *,
+.dark .mermaid-wrapper .label.attribute-keys *,
+.dark .mermaid-wrapper .label.attribute-comment *,
+.dark .mermaid-modal-content .label.attribute-type *,
+.dark .mermaid-modal-content .label.attribute-name *,
+.dark .mermaid-modal-content .label.attribute-keys *,
+.dark .mermaid-modal-content .label.attribute-comment * {
+    color: var(--vp-c-text-1) !important;
+    fill: var(--vp-c-text-1) !important;
 }
 
 .dark .mermaid-wrapper svg.erDiagram foreignObject table,
