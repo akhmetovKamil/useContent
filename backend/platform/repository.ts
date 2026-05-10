@@ -3,7 +3,9 @@ import { ensureIndexes, getCollection } from "../storage/repository-base";
 import type {
   AuthorPlatformCleanupLogDoc,
   AuthorPlatformSubscriptionDoc,
-  PlatformSubscriptionPaymentIntentDoc,
+  AuthorPlatformStorageSubscriptionDoc,
+  PlatformStoragePaymentIntentDoc,
+  PlatformTierPaymentIntentDoc,
 } from "./doc-types";
 
 export async function getAuthorPlatformSubscriptionsCollection(): Promise<
@@ -48,8 +50,6 @@ export async function upsertAuthorPlatformSubscription(
         planCode: doc.planCode,
         status: doc.status,
         baseStorageBytes: doc.baseStorageBytes,
-        extraStorageBytes: doc.extraStorageBytes,
-        totalStorageBytes: doc.totalStorageBytes,
         features: doc.features,
         validUntil: doc.validUntil,
         graceUntil: doc.graceUntil,
@@ -65,6 +65,51 @@ export async function upsertAuthorPlatformSubscription(
     },
     { upsert: true, returnDocument: "after" },
   ) as Promise<AuthorPlatformSubscriptionDoc>;
+}
+
+export async function getAuthorPlatformStorageSubscriptionsCollection(): Promise<
+  Collection<AuthorPlatformStorageSubscriptionDoc>
+> {
+  await ensureIndexes();
+  return getCollection<AuthorPlatformStorageSubscriptionDoc>(
+    "author_platform_storage_subscriptions",
+  );
+}
+
+export async function findAuthorPlatformStorageSubscriptionByAuthorId(
+  authorId: ObjectId,
+): Promise<AuthorPlatformStorageSubscriptionDoc | null> {
+  const subscriptions = await getAuthorPlatformStorageSubscriptionsCollection();
+  return subscriptions.findOne({ authorId });
+}
+
+export async function upsertAuthorPlatformStorageSubscription(
+  doc: Omit<
+    AuthorPlatformStorageSubscriptionDoc,
+    "_id" | "createdAt" | "updatedAt"
+  >,
+  now: Date,
+): Promise<AuthorPlatformStorageSubscriptionDoc> {
+  const subscriptions = await getAuthorPlatformStorageSubscriptionsCollection();
+  return subscriptions.findOneAndUpdate(
+    { authorId: doc.authorId },
+    {
+      $set: {
+        walletAddress: doc.walletAddress,
+        status: doc.status,
+        extraStorageBytes: doc.extraStorageBytes,
+        validUntil: doc.validUntil,
+        graceUntil: doc.graceUntil,
+        lastTxHash: doc.lastTxHash,
+        updatedAt: now,
+      },
+      $setOnInsert: {
+        authorId: doc.authorId,
+        createdAt: now,
+      },
+    },
+    { upsert: true, returnDocument: "after" },
+  ) as Promise<AuthorPlatformStorageSubscriptionDoc>;
 }
 
 export async function getAuthorPlatformCleanupLogsCollection(): Promise<
@@ -85,52 +130,101 @@ export async function createAuthorPlatformCleanupLog(
 }
 
 
-export async function getPlatformSubscriptionPaymentIntentsCollection(): Promise<
-  Collection<PlatformSubscriptionPaymentIntentDoc>
+export async function getPlatformTierPaymentIntentsCollection(): Promise<
+  Collection<PlatformTierPaymentIntentDoc>
 > {
   await ensureIndexes();
-  return getCollection<PlatformSubscriptionPaymentIntentDoc>(
-    "platform_subscription_payment_intents",
+  return getCollection<PlatformTierPaymentIntentDoc>(
+    "platform_tier_payment_intents",
   );
 }
 
-export async function createPlatformSubscriptionPaymentIntent(
-  doc: Omit<PlatformSubscriptionPaymentIntentDoc, "_id">,
-): Promise<PlatformSubscriptionPaymentIntentDoc> {
-  const intents = await getPlatformSubscriptionPaymentIntentsCollection();
-  const insertDoc = { ...doc } as Partial<PlatformSubscriptionPaymentIntentDoc>;
+export async function createPlatformTierPaymentIntent(
+  doc: Omit<PlatformTierPaymentIntentDoc, "_id">,
+): Promise<PlatformTierPaymentIntentDoc> {
+  const intents = await getPlatformTierPaymentIntentsCollection();
+  const insertDoc = { ...doc } as Partial<PlatformTierPaymentIntentDoc>;
   if (insertDoc.txHash === null) {
     delete insertDoc.txHash;
   }
 
   const result = await intents.insertOne(
-    insertDoc as PlatformSubscriptionPaymentIntentDoc,
+    insertDoc as PlatformTierPaymentIntentDoc,
   );
   return { _id: result.insertedId, ...doc };
 }
 
-export async function findPlatformSubscriptionPaymentIntentByIdAndWallet(
+export async function findPlatformTierPaymentIntentByIdAndWallet(
   id: ObjectId,
   walletAddress: string,
-): Promise<PlatformSubscriptionPaymentIntentDoc | null> {
-  const intents = await getPlatformSubscriptionPaymentIntentsCollection();
+): Promise<PlatformTierPaymentIntentDoc | null> {
+  const intents = await getPlatformTierPaymentIntentsCollection();
   return intents.findOne({ _id: id, walletAddress });
 }
 
-export async function findPlatformSubscriptionPaymentIntentByTxHash(
+export async function findPlatformTierPaymentIntentByTxHash(
   txHash: string,
-): Promise<PlatformSubscriptionPaymentIntentDoc | null> {
-  const intents = await getPlatformSubscriptionPaymentIntentsCollection();
+): Promise<PlatformTierPaymentIntentDoc | null> {
+  const intents = await getPlatformTierPaymentIntentsCollection();
   return intents.findOne({ txHash });
 }
 
-export async function updatePlatformSubscriptionPaymentIntent(
+export async function updatePlatformTierPaymentIntent(
   id: ObjectId,
-  update: Partial<
-    Omit<PlatformSubscriptionPaymentIntentDoc, "_id" | "createdAt">
-  >,
-): Promise<PlatformSubscriptionPaymentIntentDoc | null> {
-  const intents = await getPlatformSubscriptionPaymentIntentsCollection();
+  update: Partial<Omit<PlatformTierPaymentIntentDoc, "_id" | "createdAt">>,
+): Promise<PlatformTierPaymentIntentDoc | null> {
+  const intents = await getPlatformTierPaymentIntentsCollection();
+  return intents.findOneAndUpdate(
+    { _id: id },
+    { $set: update },
+    { returnDocument: "after" },
+  );
+}
+
+export async function getPlatformStoragePaymentIntentsCollection(): Promise<
+  Collection<PlatformStoragePaymentIntentDoc>
+> {
+  await ensureIndexes();
+  return getCollection<PlatformStoragePaymentIntentDoc>(
+    "platform_storage_payment_intents",
+  );
+}
+
+export async function createPlatformStoragePaymentIntent(
+  doc: Omit<PlatformStoragePaymentIntentDoc, "_id">,
+): Promise<PlatformStoragePaymentIntentDoc> {
+  const intents = await getPlatformStoragePaymentIntentsCollection();
+  const insertDoc = { ...doc } as Partial<PlatformStoragePaymentIntentDoc>;
+  if (insertDoc.txHash === null) {
+    delete insertDoc.txHash;
+  }
+
+  const result = await intents.insertOne(
+    insertDoc as PlatformStoragePaymentIntentDoc,
+  );
+  return { _id: result.insertedId, ...doc };
+}
+
+export async function findPlatformStoragePaymentIntentByIdAndWallet(
+  id: ObjectId,
+  walletAddress: string,
+): Promise<PlatformStoragePaymentIntentDoc | null> {
+  const intents = await getPlatformStoragePaymentIntentsCollection();
+  return intents.findOne({ _id: id, walletAddress });
+}
+
+export async function findPlatformStoragePaymentIntentByTxHash(
+  txHash: string,
+): Promise<PlatformStoragePaymentIntentDoc | null> {
+  const intents = await getPlatformStoragePaymentIntentsCollection();
+  return intents.findOne({ txHash });
+}
+
+export async function updatePlatformStoragePaymentIntent(
+  id: ObjectId,
+  update: Partial<Omit<PlatformStoragePaymentIntentDoc, "_id" | "createdAt">>,
+): Promise<PlatformStoragePaymentIntentDoc | null> {
+  const intents = await getPlatformStoragePaymentIntentsCollection();
   return intents.findOneAndUpdate(
     { _id: id },
     { $set: update },

@@ -1,4 +1,5 @@
-import { platformSubscriptionManagerAbi } from "@shared/abi/platform-subscription-manager.abi"
+import { platformStorageManagerAbi } from "@shared/abi/platform-storage-manager.abi"
+import { platformTierManagerAbi } from "@shared/abi/platform-tier-manager.abi"
 import type { PlatformPlanDto } from "@shared/types/platform"
 import { getPlatformUsdcToken } from "@shared/utils/platform-usdc"
 import { shortenWalletAddress } from "@shared/utils/web3"
@@ -14,9 +15,12 @@ import { DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/dr
 import { Eyebrow } from "@/components/ui/page"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
-    useConfirmPlatformSubscriptionPaymentMutation,
-    useCreatePlatformSubscriptionPaymentIntentMutation,
-    usePlatformSubscriptionManagerDeploymentQuery,
+    useConfirmPlatformStoragePaymentMutation,
+    useConfirmPlatformTierPaymentMutation,
+    useCreatePlatformStoragePaymentIntentMutation,
+    useCreatePlatformTierPaymentIntentMutation,
+    usePlatformStorageManagerDeploymentQuery,
+    usePlatformTierManagerDeploymentQuery,
 } from "@/queries/platform"
 import { queryKeys } from "@/queries/queryKeys"
 import { supportedChainOptions } from "@/utils/config/chains"
@@ -28,6 +32,7 @@ import { toAddress } from "@/utils/web3/subscriptions"
 export function CheckoutPreview({
     chainId,
     extraGb,
+    kind,
     monthlyEstimateCents,
     onChainIdChange,
     onSuccess,
@@ -36,6 +41,7 @@ export function CheckoutPreview({
 }: {
     chainId: number
     extraGb: number
+    kind: "tier" | "storage"
     monthlyEstimateCents: number
     onChainIdChange: (chainId: number) => void
     onSuccess: () => void
@@ -46,19 +52,27 @@ export function CheckoutPreview({
     const queryClient = useQueryClient()
     const publicClient = usePublicClient({ chainId })
     const { writeContractAsync } = useWriteContract()
-    const createIntentMutation = useCreatePlatformSubscriptionPaymentIntentMutation()
-    const confirmPaymentMutation = useConfirmPlatformSubscriptionPaymentMutation()
-    const deploymentQuery = usePlatformSubscriptionManagerDeploymentQuery(chainId)
+    const createTierIntentMutation = useCreatePlatformTierPaymentIntentMutation()
+    const confirmTierPaymentMutation = useConfirmPlatformTierPaymentMutation()
+    const createStorageIntentMutation = useCreatePlatformStoragePaymentIntentMutation()
+    const confirmStoragePaymentMutation = useConfirmPlatformStoragePaymentMutation()
+    const tierDeploymentQuery = usePlatformTierManagerDeploymentQuery(chainId)
+    const storageDeploymentQuery = usePlatformStorageManagerDeploymentQuery(chainId)
     const [status, setStatus] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
     const selectedToken = getPlatformUsdcToken(chainId)
+    const deploymentQuery = kind === "tier" ? tierDeploymentQuery : storageDeploymentQuery
+    const isPending =
+        createTierIntentMutation.isPending ||
+        confirmTierPaymentMutation.isPending ||
+        createStorageIntentMutation.isPending ||
+        confirmStoragePaymentMutation.isPending
     const disabled =
         !address ||
         !publicClient ||
         !deploymentQuery.data ||
         !selectedToken ||
-        createIntentMutation.isPending ||
-        confirmPaymentMutation.isPending
+        isPending
 
     async function pay() {
         if (!address || !publicClient) {
@@ -66,14 +80,23 @@ export function CheckoutPreview({
         }
 
         setError(null)
-        setStatus("Creating platform payment intent...")
+        setStatus(
+            kind === "tier"
+                ? "Creating platform tier payment intent..."
+                : "Creating extra storage payment intent..."
+        )
 
         try {
-            const intent = await createIntentMutation.mutateAsync({
-                planCode: plan.code,
-                extraStorageGb: extraGb,
-                chainId,
-            })
+            const intent =
+                kind === "tier"
+                    ? await createTierIntentMutation.mutateAsync({
+                          planCode: plan.code,
+                          chainId,
+                      })
+                    : await createStorageIntentMutation.mutateAsync({
+                          extraStorageGb: extraGb,
+                          chainId,
+                      })
             const managerAddress = toAddress(intent.contractAddress)
             const token = toAddress(intent.tokenAddress)
             const amount = BigInt(intent.amount)
@@ -98,26 +121,47 @@ export function CheckoutPreview({
                 await publicClient.waitForTransactionReceipt({ hash: approveHash })
             }
 
-            setStatus("Paying platform subscription...")
-            const paymentHash = await writeContractAsync({
-                address: managerAddress,
-                abi: platformSubscriptionManagerAbi,
-                functionName: "subscribe",
-                chainId,
-                args: [intent.tierKey as `0x${string}`, intent.extraStorageGb],
-            })
+            setStatus(kind === "tier" ? "Paying creator plan..." : "Paying extra storage...")
+            const paymentHash =
+                kind === "tier" && "tierKey" in intent
+                    ? await writeContractAsync({
+                          address: managerAddress,
+                          abi: platformTierManagerAbi,
+                          functionName: "subscribe",
+                          chainId,
+                          args: [intent.tierKey as `0x${string}`],
+                      })
+                    : "extraStorageGb" in intent
+                      ? await writeContractAsync({
+                            address: managerAddress,
+                            abi: platformStorageManagerAbi,
+                            functionName: "subscribeStorage",
+                            chainId,
+                            args: [intent.extraStorageGb],
+                        })
+                      : null
+            if (!paymentHash) {
+                throw new Error("Invalid platform checkout intent")
+            }
 
             setStatus("Confirming billing state...")
             await publicClient.waitForTransactionReceipt({ hash: paymentHash })
-            await confirmPaymentMutation.mutateAsync({
-                intentId: intent.id,
-                input: { txHash: paymentHash },
-            })
+            if (kind === "tier") {
+                await confirmTierPaymentMutation.mutateAsync({
+                    intentId: intent.id,
+                    input: { txHash: paymentHash },
+                })
+            } else {
+                await confirmStoragePaymentMutation.mutateAsync({
+                    intentId: intent.id,
+                    input: { txHash: paymentHash },
+                })
+            }
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: queryKeys.myAuthorPlatformBilling }),
                 queryClient.invalidateQueries({ queryKey: queryKeys.myProjects() }),
             ])
-            setStatus("Platform subscription active")
+            setStatus(kind === "tier" ? "Creator plan active" : "Extra storage active")
             onSuccess()
         } catch (caught) {
             setError(caught instanceof Error ? caught.message : "Failed to activate billing")
@@ -129,10 +173,13 @@ export function CheckoutPreview({
         <div className="grid gap-6">
             <DrawerHeader>
                 <Eyebrow>platform checkout</Eyebrow>
-                <DrawerTitle>{plan.title} creator plan</DrawerTitle>
+                <DrawerTitle>
+                    {kind === "tier" ? `${plan.title} creator plan` : "Extra storage"}
+                </DrawerTitle>
                 <DrawerDescription>
-                    Pay the platform subscription from your connected wallet. This unlocks project
-                    creation and updates your storage quota after backend confirmation.
+                    {kind === "tier"
+                        ? "Pay the creator plan from your connected wallet. This unlocks feature gates and base storage after backend confirmation."
+                        : "Pay extra storage from your connected wallet. This is independent from the creator plan and updates quota after backend confirmation."}
                 </DrawerDescription>
             </DrawerHeader>
             <div className="grid gap-4 md:grid-cols-2">
@@ -184,24 +231,31 @@ export function CheckoutPreview({
             ) : (
                 <Card className="rounded-[24px] border-amber-200 bg-amber-50 text-slate-950">
                     <CardContent className="p-4 text-sm leading-6">
-                        Deploy `PlatformSubscriptionManager` for this network first. The address is
-                        loaded from backend registry.
+                        {kind === "tier"
+                            ? "PlatformTierManager is not registered for this network."
+                            : "PlatformStorageManager is not registered for this network."}{" "}
+                        The address is loaded from backend registry.
                     </CardContent>
                 </Card>
             )}
             <Card className="rounded-[28px]">
                 <CardContent className="grid gap-4 p-5">
-                    <SummaryRow label="Base plan" value={formatUsdCents(plan.priceUsdCents)} />
-                    <SummaryRow
-                        label="Extra storage"
-                        value={`${extraGb} GB · ${formatUsdCents(
-                            extraGb * plan.pricePerExtraGbUsdCents
-                        )}`}
-                    />
+                    {kind === "tier" ? (
+                        <SummaryRow label="Creator plan" value={formatUsdCents(plan.priceUsdCents)} />
+                    ) : (
+                        <SummaryRow
+                            label="Extra storage"
+                            value={`${extraGb} GB · ${formatUsdCents(
+                                extraGb * plan.pricePerExtraGbUsdCents
+                            )}`}
+                        />
+                    )}
                     <SummaryRow label="Total estimate" value={formatUsdCents(monthlyEstimateCents)} />
                     <SummaryRow
                         label="Quota after upgrade"
-                        value={formatFileSize(plan.baseStorageBytes + extraGb * GIB)}
+                        value={formatFileSize(
+                            kind === "tier" ? plan.baseStorageBytes : extraGb * GIB
+                        )}
                     />
                 </CardContent>
             </Card>

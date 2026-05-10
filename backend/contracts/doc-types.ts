@@ -1,9 +1,10 @@
 import type { ObjectId } from "mongodb";
+import type { ContractName } from "../../shared/consts";
 
 export interface ContractDeploymentDoc {
   _id: ObjectId;
   chainId: number;
-  contractName: "SubscriptionManager" | "PlatformSubscriptionManager";
+  contractName: ContractName;
   address: string;
   platformTreasury: string;
   deployedBy: string;

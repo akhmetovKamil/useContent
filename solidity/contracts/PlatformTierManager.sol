@@ -5,7 +5,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract PlatformSubscriptionManager is Ownable {
+contract PlatformTierManager is Ownable {
     using SafeERC20 for IERC20;
 
     IERC20 public paymentToken;
@@ -14,8 +14,6 @@ contract PlatformSubscriptionManager is Ownable {
     struct Tier {
         uint256 price;
         uint16 baseStorageGb;
-        uint16 maxExtraStorageGb;
-        uint256 pricePerExtraGb;
         uint64 periodSeconds;
         bool active;
     }
@@ -23,34 +21,15 @@ contract PlatformSubscriptionManager is Ownable {
     mapping(bytes32 tierKey => Tier tier) public tiers;
     mapping(address author => mapping(bytes32 tierKey => uint256 paidUntil)) public paidUntil;
 
-    event TierRegistered(
-        bytes32 indexed tierKey,
-        uint256 price,
-        uint16 baseStorageGb,
-        uint16 maxExtraStorageGb,
-        uint256 pricePerExtraGb,
-        uint64 periodSeconds
-    );
-
-    event TierUpdated(
-        bytes32 indexed tierKey,
-        uint256 price,
-        uint16 baseStorageGb,
-        uint16 maxExtraStorageGb,
-        uint256 pricePerExtraGb,
-        uint64 periodSeconds,
-        bool active
-    );
-
-    event PlatformSubscriptionPaid(
+    event TierRegistered(bytes32 indexed tierKey, uint256 price, uint16 baseStorageGb, uint64 periodSeconds);
+    event TierUpdated(bytes32 indexed tierKey, uint256 price, uint16 baseStorageGb, uint64 periodSeconds, bool active);
+    event PlatformTierPaid(
         address indexed author,
         bytes32 indexed tierKey,
-        uint16 extraStorageGb,
-        uint16 totalStorageGb,
+        uint16 baseStorageGb,
         uint256 amount,
         uint256 paidUntil
     );
-
     event PlatformTreasuryUpdated(address indexed platformTreasury);
     event PaymentTokenUpdated(address indexed paymentToken);
 
@@ -60,7 +39,6 @@ contract PlatformSubscriptionManager is Ownable {
     error TierAlreadyExists();
     error TierNotFound();
     error TierInactive();
-    error ExtraStorageTooHigh();
 
     constructor(address initialOwner, address initialPlatformTreasury, address initialPaymentToken)
         Ownable(initialOwner)
@@ -76,43 +54,24 @@ contract PlatformSubscriptionManager is Ownable {
         paymentToken = IERC20(initialPaymentToken);
     }
 
-    function registerTier(
-        bytes32 tierKey,
-        uint256 price,
-        uint16 baseStorageGb,
-        uint16 maxExtraStorageGb,
-        uint256 pricePerExtraGb,
-        uint64 periodSeconds
-    ) external onlyOwner {
+    function registerTier(bytes32 tierKey, uint256 price, uint16 baseStorageGb, uint64 periodSeconds)
+        external
+        onlyOwner
+    {
         _validateTierInput(tierKey, periodSeconds);
-
         if (tiers[tierKey].periodSeconds != 0) {
             revert TierAlreadyExists();
         }
 
-        tiers[tierKey] = Tier({
-            price: price,
-            baseStorageGb: baseStorageGb,
-            maxExtraStorageGb: maxExtraStorageGb,
-            pricePerExtraGb: pricePerExtraGb,
-            periodSeconds: periodSeconds,
-            active: true
-        });
-
-        emit TierRegistered(tierKey, price, baseStorageGb, maxExtraStorageGb, pricePerExtraGb, periodSeconds);
+        tiers[tierKey] = Tier({price: price, baseStorageGb: baseStorageGb, periodSeconds: periodSeconds, active: true});
+        emit TierRegistered(tierKey, price, baseStorageGb, periodSeconds);
     }
 
-    function updateTier(
-        bytes32 tierKey,
-        uint256 price,
-        uint16 baseStorageGb,
-        uint16 maxExtraStorageGb,
-        uint256 pricePerExtraGb,
-        uint64 periodSeconds,
-        bool active
-    ) external onlyOwner {
+    function updateTier(bytes32 tierKey, uint256 price, uint16 baseStorageGb, uint64 periodSeconds, bool active)
+        external
+        onlyOwner
+    {
         _validateTierInput(tierKey, periodSeconds);
-
         Tier storage tier = tiers[tierKey];
         if (tier.periodSeconds == 0) {
             revert TierNotFound();
@@ -120,15 +79,12 @@ contract PlatformSubscriptionManager is Ownable {
 
         tier.price = price;
         tier.baseStorageGb = baseStorageGb;
-        tier.maxExtraStorageGb = maxExtraStorageGb;
-        tier.pricePerExtraGb = pricePerExtraGb;
         tier.periodSeconds = periodSeconds;
         tier.active = active;
-
-        emit TierUpdated(tierKey, price, baseStorageGb, maxExtraStorageGb, pricePerExtraGb, periodSeconds, active);
+        emit TierUpdated(tierKey, price, baseStorageGb, periodSeconds, active);
     }
 
-    function subscribe(bytes32 tierKey, uint16 extraStorageGb) external returns (uint256 nextPaidUntil) {
+    function subscribe(bytes32 tierKey) external returns (uint256 nextPaidUntil) {
         Tier memory tier = tiers[tierKey];
         if (tier.periodSeconds == 0) {
             revert TierNotFound();
@@ -136,13 +92,9 @@ contract PlatformSubscriptionManager is Ownable {
         if (!tier.active) {
             revert TierInactive();
         }
-        if (extraStorageGb > tier.maxExtraStorageGb) {
-            revert ExtraStorageTooHigh();
-        }
 
-        uint256 amount = calculateAmount(tierKey, extraStorageGb);
-        if (amount > 0) {
-            paymentToken.safeTransferFrom(msg.sender, platformTreasury, amount);
+        if (tier.price > 0) {
+            paymentToken.safeTransferFrom(msg.sender, platformTreasury, tier.price);
         }
 
         uint256 currentPaidUntil = paidUntil[msg.sender][tierKey];
@@ -150,26 +102,7 @@ contract PlatformSubscriptionManager is Ownable {
         nextPaidUntil = startsAt + tier.periodSeconds;
         paidUntil[msg.sender][tierKey] = nextPaidUntil;
 
-        emit PlatformSubscriptionPaid(
-            msg.sender,
-            tierKey,
-            extraStorageGb,
-            tier.baseStorageGb + extraStorageGb,
-            amount,
-            nextPaidUntil
-        );
-    }
-
-    function calculateAmount(bytes32 tierKey, uint16 extraStorageGb) public view returns (uint256) {
-        Tier memory tier = tiers[tierKey];
-        if (tier.periodSeconds == 0) {
-            revert TierNotFound();
-        }
-        if (extraStorageGb > tier.maxExtraStorageGb) {
-            revert ExtraStorageTooHigh();
-        }
-
-        return tier.price + (uint256(extraStorageGb) * tier.pricePerExtraGb);
+        emit PlatformTierPaid(msg.sender, tierKey, tier.baseStorageGb, tier.price, nextPaidUntil);
     }
 
     function setPlatformTreasury(address nextPlatformTreasury) external onlyOwner {

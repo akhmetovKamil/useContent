@@ -18,8 +18,10 @@ export const queryKeys = {
     platformPlans: ["platform", "plans"] as const,
     myAuthorPlatformBilling: ["me", "author", "platform-billing"] as const,
     myAuthorPlatformCleanupPreview: ["me", "author", "platform-cleanup-preview"] as const,
-    platformSubscriptionManagerDeployment: (chainId: number) =>
-        ["contract-deployments", "platform-subscription-manager", chainId] as const,
+    platformTierManagerDeployment: (chainId: number) =>
+        ["contract-deployments", "platform-tier-manager", chainId] as const,
+    platformStorageManagerDeployment: (chainId: number) =>
+        ["contract-deployments", "platform-storage-manager", chainId] as const,
     myAccessPolicies: ["me", "access-policies"] as const,
     mySubscriptionPlans: ["me", "subscription-plans"] as const,
     authors: (search = "") => ["authors", search] as const,

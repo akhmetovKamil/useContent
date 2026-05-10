@@ -264,11 +264,13 @@ export const FEED_SOURCE = {
 
 export type ContractName =
   | "SubscriptionManager"
-  | "PlatformSubscriptionManager";
+  | "PlatformTierManager"
+  | "PlatformStorageManager";
 
 export const CONTRACT_NAME = {
   SUBSCRIPTION_MANAGER: "SubscriptionManager",
-  PLATFORM_SUBSCRIPTION_MANAGER: "PlatformSubscriptionManager",
+  PLATFORM_TIER_MANAGER: "PlatformTierManager",
+  PLATFORM_STORAGE_MANAGER: "PlatformStorageManager",
 } as const satisfies Record<string, ContractName>;
 
 export type SupportedEvmChainId =

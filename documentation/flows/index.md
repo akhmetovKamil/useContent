@@ -71,22 +71,26 @@ sequenceDiagram
     actor Author
     participant UI as Billing page
     participant Wallet
-    participant Manager as PlatformSubscriptionManager
+    participant Tier as PlatformTierManager
+    participant Storage as PlatformStorageManager
     participant API as Backend API
     participant RPC
     participant DB as MongoDB
 
-    Author->>UI: Select Basic plan and extra storage
-    UI->>API: Create payment intent for selected chain
+    Author->>UI: Select creator plan or extra storage
+    UI->>API: Create tier or storage payment intent
     API->>API: Resolve platform USDC token
     UI->>Wallet: Approve USDC allowance
-    Wallet->>Manager: approve(manager, amount)
-    UI->>Wallet: Confirm platform subscribe
-    Wallet->>Manager: subscribe(tierKey, extraStorageGb)
-    Manager-->>RPC: PlatformSubscriptionPaid event
+    Wallet->>Tier: approve(manager, amount)
+    Wallet->>Storage: approve(manager, amount)
+    UI->>Wallet: Confirm tier or storage subscribe
+    Wallet->>Tier: subscribe(tierKey)
+    Wallet->>Storage: subscribeStorage(extraStorageGb)
+    Tier-->>RPC: PlatformTierPaid event
+    Storage-->>RPC: PlatformStoragePaid event
     UI->>API: Confirm platform payment
     API->>RPC: Verify event fields
-    API->>DB: Update quota, features and validUntil
+    API->>DB: Update tier features or extra storage quota
 ```
 
 This flow is separate from reader subscriptions because the payer, receiver and backend projection are different. Reader payments create entitlements and keep author-configured token settings; author platform billing changes storage quota and feature gates and is paid only in USDC on the selected chain.

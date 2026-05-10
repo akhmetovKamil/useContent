@@ -1,13 +1,16 @@
 import { Interface } from "ethers";
-import { platformSubscriptionManagerAbi } from "../../shared/abi/platform-subscription-manager.abi";
+import { platformStorageManagerAbi } from "../../shared/abi/platform-storage-manager.abi";
+import { platformTierManagerAbi } from "../../shared/abi/platform-tier-manager.abi";
 import { subscriptionManagerAbi } from "../../shared/abi/subscription-manager.abi";
 
 export const subscriptionManagerInterface = new Interface(
   subscriptionManagerAbi,
 );
 
-export const platformSubscriptionManagerInterface = new Interface(
-  platformSubscriptionManagerAbi,
+export const platformTierManagerInterface = new Interface(platformTierManagerAbi);
+
+export const platformStorageManagerInterface = new Interface(
+  platformStorageManagerAbi,
 );
 
 export const erc20ReadAbi = [

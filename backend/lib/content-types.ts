@@ -1,7 +1,7 @@
 import type { AccessPolicyConditionDto, AccessPolicyPresetDto, AuthorAccessPolicyDto, CreateAccessPolicyPresetInput, UpdateAccessPolicyPresetInput } from "../../shared/types/access"
 import type { ActivityDto, CreatePostCommentInput, CreatePostInput, CreatePostReportInput, FeedPostDto, PostAttachmentDto, PostCommentDto, PostDto, PostReportDto, RecordPostViewInput, UpdatePostInput } from "../../shared/types/posts"
 import type { AuthorCatalogItemDto, AuthorProfileDto, AuthorStorageUsageDto, CreateAuthorProfileInput, UpdateAuthorProfileInput, UpdateMyProfileInput, UserProfileDto } from "../../shared/types/profile"
-import type { AuthorPlatformBillingDto, AuthorPlatformCleanupItemDto, AuthorPlatformCleanupPreviewDto, AuthorPlatformCleanupRunDto, CreatePlatformSubscriptionPaymentIntentInput, PlatformPlanDto, PlatformSubscriptionPaymentIntentDto } from "../../shared/types/platform"
+import type { AuthorPlatformBillingDto, AuthorPlatformCleanupItemDto, AuthorPlatformCleanupPreviewDto, AuthorPlatformCleanupRunDto, CreatePlatformStoragePaymentIntentInput, CreatePlatformTierPaymentIntentInput, PlatformPlanDto, PlatformStoragePaymentIntentDto, PlatformTierPaymentIntentDto } from "../../shared/types/platform"
 import type { AuthorDashboardDto, AuthorSubscriberDto, ConfirmSubscriptionPaymentInput, CreateSubscriptionPaymentIntentInput, ReaderDashboardDto, ReaderSubscriptionDto, SubscriptionEntitlementDto, SubscriptionPaymentIntentDto, SubscriptionPlanDto, UpsertSubscriptionPlanInput } from "../../shared/types/subscriptions"
 import type { ContractDeploymentDto, ContractDeploymentLookupDto, UpsertContractDeploymentInput } from "../../shared/types/contracts"
 import type { CreateProjectFolderInput, CreateProjectInput, FeedProjectDto, ProjectBundleDto, ProjectDto, ProjectNodeDto, ProjectNodeListDto, UpdateProjectInput, UpdateProjectNodeInput } from "../../shared/types/projects"
@@ -18,9 +18,11 @@ export type { ContractDeploymentDoc } from "../contracts/doc-types";
 export type {
   AuthorPlatformCleanupLogDoc,
   AuthorPlatformSubscriptionDoc,
+  AuthorPlatformStorageSubscriptionDoc,
   AuthorStorageUsageStats,
   PlatformPlanDoc,
-  PlatformSubscriptionPaymentIntentDoc,
+  PlatformStoragePaymentIntentDoc,
+  PlatformTierPaymentIntentDoc,
 } from "../platform/doc-types";
 export type {
   AuthorProfileDoc,
@@ -69,8 +71,8 @@ export type FeedProjectResponse = FeedProjectDto;
 export type ContractDeploymentResponse = ContractDeploymentDto;
 export type ContractDeploymentLookupResponse = ContractDeploymentLookupDto;
 export type SubscriptionPaymentIntentResponse = SubscriptionPaymentIntentDto;
-export type PlatformSubscriptionPaymentIntentResponse =
-  PlatformSubscriptionPaymentIntentDto;
+export type PlatformTierPaymentIntentResponse = PlatformTierPaymentIntentDto;
+export type PlatformStoragePaymentIntentResponse = PlatformStoragePaymentIntentDto;
 export type SubscriptionPlanResponse = SubscriptionPlanDto;
 export type PostResponse = PostDto;
 export type ProjectResponse = ProjectDto;
@@ -94,8 +96,10 @@ export type CreateProjectFolderRequest = CreateProjectFolderInput;
 export type UpdateProjectNodeRequest = UpdateProjectNodeInput;
 export type CreateSubscriptionPaymentIntentRequest =
   CreateSubscriptionPaymentIntentInput;
-export type CreatePlatformSubscriptionPaymentIntentRequest =
-  CreatePlatformSubscriptionPaymentIntentInput;
+export type CreatePlatformTierPaymentIntentRequest =
+  CreatePlatformTierPaymentIntentInput;
+export type CreatePlatformStoragePaymentIntentRequest =
+  CreatePlatformStoragePaymentIntentInput;
 export type ConfirmSubscriptionPaymentRequest = ConfirmSubscriptionPaymentInput;
 export type UpsertContractDeploymentRequest = UpsertContractDeploymentInput;
 export type PlatformPlanCode = PlatformPlanDto["code"];

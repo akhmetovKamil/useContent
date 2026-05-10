@@ -1,6 +1,7 @@
 import { APIError } from "encore.dev/api";
 import { Contract, type JsonRpcProvider } from "ethers";
-import { platformSubscriptionManagerAbi } from "../../shared/abi/platform-subscription-manager.abi";
+import { platformStorageManagerAbi } from "../../shared/abi/platform-storage-manager.abi";
+import { platformTierManagerAbi } from "../../shared/abi/platform-tier-manager.abi";
 import { subscriptionManagerAbi } from "../../shared/abi/subscription-manager.abi";
 import {
   ACCESS_POLICY_NODE_TYPE,
@@ -13,25 +14,28 @@ import {
   erc1155ReadAbi,
   erc20ReadAbi,
   erc721ReadAbi,
-  platformSubscriptionManagerInterface,
+  platformStorageManagerInterface,
+  platformTierManagerInterface,
   subscriptionManagerInterface,
 } from "./abi";
 import { normalizeAddress, tryNormalizeAddress } from "./address";
 import { getProvider } from "./provider";
 import type {
   OnChainAccessGrants,
-  VerifiedPlatformSubscriptionPayment,
+  VerifiedPlatformPayment,
   VerifiedSubscriptionPayment,
-  VerifyPlatformSubscriptionPaymentInput,
+  VerifyPlatformStoragePaymentInput,
+  VerifyPlatformTierPaymentInput,
   VerifyPlanRegistrationInput,
   VerifySubscriptionPaymentInput,
 } from "./types";
 
 export type {
   OnChainAccessGrants,
-  VerifiedPlatformSubscriptionPayment,
+  VerifiedPlatformPayment,
   VerifiedSubscriptionPayment,
-  VerifyPlatformSubscriptionPaymentInput,
+  VerifyPlatformStoragePaymentInput,
+  VerifyPlatformTierPaymentInput,
   VerifyPlanRegistrationInput,
   VerifySubscriptionPaymentInput,
 } from "./types";
@@ -191,61 +195,104 @@ export async function verifySubscriptionPayment(
   };
 }
 
-export async function verifyPlatformSubscriptionPayment(
-  input: VerifyPlatformSubscriptionPaymentInput,
-): Promise<VerifiedPlatformSubscriptionPayment> {
+export async function verifyPlatformTierPayment(
+  input: VerifyPlatformTierPaymentInput,
+): Promise<VerifiedPlatformPayment> {
   const provider = getProvider(input.chainId);
   const contractAddress = normalizeAddress(input.contractAddress);
   const receipt = await getReceipt(provider, input.txHash);
 
   if (receipt.status !== 1) {
-    throw APIError.failedPrecondition(
-      "platform subscription transaction failed",
-    );
+    throw APIError.failedPrecondition("platform tier transaction failed");
   }
   const manager = new Contract(
     contractAddress,
-    platformSubscriptionManagerAbi,
+    platformTierManagerAbi,
     provider,
   );
   const paymentToken = await manager.paymentToken();
   if (normalizeAddress(paymentToken) !== normalizeAddress(input.tokenAddress)) {
     throw APIError.failedPrecondition(
-      "platform subscription manager token does not match intent",
+      "platform tier manager token does not match intent",
     );
   }
 
   const event = receipt.logs
     .filter((log) => normalizeAddress(log.address) === contractAddress)
-    .map((log) => tryParsePlatformManagerLog(log))
+    .map((log) => tryParsePlatformTierManagerLog(log))
     .find(
       (log) =>
         log &&
-        log.name === "PlatformSubscriptionPaid" &&
+        log.name === "PlatformTierPaid" &&
         normalizeHexString(String(log.args.tierKey)) === input.tierKey,
     );
 
   if (!event) {
-    throw APIError.failedPrecondition(
-      "platform subscription payment event not found",
-    );
+    throw APIError.failedPrecondition("platform tier payment event not found");
   }
 
   if (
     normalizeAddress(event.args.author) !== normalizeAddress(input.authorWallet)
   ) {
     throw APIError.failedPrecondition(
-      "platform subscription event author does not match wallet",
+      "platform tier event author does not match wallet",
+    );
+  }
+  if (event.args.amount.toString() !== input.amount) {
+    throw APIError.failedPrecondition("platform tier event amount does not match intent");
+  }
+
+  return {
+    paidUntil: new Date(Number(event.args.paidUntil) * 1000),
+  };
+}
+
+export async function verifyPlatformStoragePayment(
+  input: VerifyPlatformStoragePaymentInput,
+): Promise<VerifiedPlatformPayment> {
+  const provider = getProvider(input.chainId);
+  const contractAddress = normalizeAddress(input.contractAddress);
+  const receipt = await getReceipt(provider, input.txHash);
+
+  if (receipt.status !== 1) {
+    throw APIError.failedPrecondition("platform storage transaction failed");
+  }
+  const manager = new Contract(
+    contractAddress,
+    platformStorageManagerAbi,
+    provider,
+  );
+  const paymentToken = await manager.paymentToken();
+  if (normalizeAddress(paymentToken) !== normalizeAddress(input.tokenAddress)) {
+    throw APIError.failedPrecondition(
+      "platform storage manager token does not match intent",
+    );
+  }
+
+  const event = receipt.logs
+    .filter((log) => normalizeAddress(log.address) === contractAddress)
+    .map((log) => tryParsePlatformStorageManagerLog(log))
+    .find((log) => log && log.name === "PlatformStoragePaid");
+
+  if (!event) {
+    throw APIError.failedPrecondition("platform storage payment event not found");
+  }
+
+  if (
+    normalizeAddress(event.args.author) !== normalizeAddress(input.authorWallet)
+  ) {
+    throw APIError.failedPrecondition(
+      "platform storage event author does not match wallet",
     );
   }
   if (Number(event.args.extraStorageGb) !== input.extraStorageGb) {
     throw APIError.failedPrecondition(
-      "platform subscription event extra storage does not match intent",
+      "platform storage event extra storage does not match intent",
     );
   }
   if (event.args.amount.toString() !== input.amount) {
     throw APIError.failedPrecondition(
-      "platform subscription event amount does not match intent",
+      "platform storage event amount does not match intent",
     );
   }
 
@@ -444,12 +491,26 @@ function tryParseManagerLog(log: { topics: readonly string[]; data: string }) {
   }
 }
 
-function tryParsePlatformManagerLog(log: {
+function tryParsePlatformTierManagerLog(log: {
   topics: readonly string[];
   data: string;
 }) {
   try {
-    return platformSubscriptionManagerInterface.parseLog({
+    return platformTierManagerInterface.parseLog({
+      topics: [...log.topics],
+      data: log.data,
+    });
+  } catch {
+    return null;
+  }
+}
+
+function tryParsePlatformStorageManagerLog(log: {
+  topics: readonly string[];
+  data: string;
+}) {
+  try {
+    return platformStorageManagerInterface.parseLog({
       topics: [...log.topics],
       data: log.data,
     });

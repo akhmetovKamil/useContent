@@ -67,7 +67,8 @@ vi.mock("../profiles/service", () => profileMocks);
 vi.mock("../platform/service", () => platformMocks);
 vi.mock("../onchain", () => ({
   readOnChainAccessGrants: vi.fn(),
-  verifyPlatformSubscriptionPayment: vi.fn(),
+  verifyPlatformTierPayment: vi.fn(),
+  verifyPlatformStoragePayment: vi.fn(),
   verifyPlanRegistration: vi.fn(),
   verifySubscriptionPayment: vi.fn(),
 }));

@@ -46,7 +46,8 @@ import type {
   CreateProjectRequest,
   FeedPostResponse,
   FeedProjectResponse,
-  PlatformSubscriptionPaymentIntentResponse,
+  PlatformStoragePaymentIntentResponse,
+  PlatformTierPaymentIntentResponse,
   PostAttachmentResponse,
   PostCommentResponse,
   PostReportResponse,
@@ -66,7 +67,8 @@ import type {
 import { readOnChainAccessGrants } from "../onchain";
 import type {
   AuthorStorageUsageStats,
-  PlatformSubscriptionPaymentIntentDoc,
+  PlatformStoragePaymentIntentDoc,
+  PlatformTierPaymentIntentDoc,
 } from "../platform/doc-types";
 import * as platformRepo from "../platform/repository";
 import type {
@@ -262,15 +264,35 @@ export function toSubscriptionPaymentIntentResponse(
   };
 }
 
-export function toPlatformSubscriptionPaymentIntentResponse(
-  intent: PlatformSubscriptionPaymentIntentDoc,
-): PlatformSubscriptionPaymentIntentResponse {
+export function toPlatformTierPaymentIntentResponse(
+  intent: PlatformTierPaymentIntentDoc,
+): PlatformTierPaymentIntentResponse {
   return {
     id: intent._id.toHexString(),
     authorId: intent.authorId.toHexString(),
     walletAddress: intent.walletAddress,
     planCode: intent.planCode,
     tierKey: intent.tierKey,
+    chainId: intent.chainId,
+    tokenAddress: intent.tokenAddress,
+    contractAddress: intent.contractAddress,
+    amount: intent.amount,
+    status: intent.status,
+    txHash: intent.txHash,
+    validUntil: intent.validUntil?.toISOString() ?? null,
+    expiresAt: intent.expiresAt.toISOString(),
+    createdAt: intent.createdAt.toISOString(),
+    updatedAt: intent.updatedAt.toISOString(),
+  };
+}
+
+export function toPlatformStoragePaymentIntentResponse(
+  intent: PlatformStoragePaymentIntentDoc,
+): PlatformStoragePaymentIntentResponse {
+  return {
+    id: intent._id.toHexString(),
+    authorId: intent.authorId.toHexString(),
+    walletAddress: intent.walletAddress,
     extraStorageGb: intent.extraStorageGb,
     chainId: intent.chainId,
     tokenAddress: intent.tokenAddress,

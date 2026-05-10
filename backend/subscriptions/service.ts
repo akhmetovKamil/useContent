@@ -388,15 +388,6 @@ export async function getSubscriptionManagerDeployment(
   );
 }
 
-export async function getPlatformSubscriptionManagerDeployment(
-  chainId: number,
-): Promise<ContractDeploymentDoc | null> {
-  return repo.findContractDeployment(
-    normalizeChainId(chainId),
-    "PlatformSubscriptionManager",
-  );
-}
-
 export async function upsertContractDeployment(
   input: UpsertContractDeploymentRequest,
 ): Promise<ContractDeploymentDoc> {

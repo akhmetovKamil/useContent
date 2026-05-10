@@ -1,5 +1,5 @@
 import type { ConfirmSubscriptionPaymentInput } from "@shared/types/subscriptions"
-import type { CreatePlatformSubscriptionPaymentIntentInput } from "@shared/types/platform"
+import type { CreatePlatformStoragePaymentIntentInput, CreatePlatformTierPaymentIntentInput } from "@shared/types/platform"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { platformApi } from "@/api/PlatformApi"
@@ -29,22 +29,30 @@ export function useMyAuthorPlatformCleanupPreviewQuery(enabled = true) {
     })
 }
 
-export function usePlatformSubscriptionManagerDeploymentQuery(chainId: number) {
+export function usePlatformTierManagerDeploymentQuery(chainId: number) {
     return useQuery({
-        queryKey: queryKeys.platformSubscriptionManagerDeployment(chainId),
-        queryFn: () => platformApi.getPlatformSubscriptionManagerDeployment(chainId),
+        queryKey: queryKeys.platformTierManagerDeployment(chainId),
+        queryFn: () => platformApi.getPlatformTierManagerDeployment(chainId),
         enabled: Number.isInteger(chainId) && chainId > 0,
     })
 }
 
-export function useCreatePlatformSubscriptionPaymentIntentMutation() {
-    return useMutation({
-        mutationFn: (input: CreatePlatformSubscriptionPaymentIntentInput) =>
-            platformApi.createPlatformSubscriptionPaymentIntent(input),
+export function usePlatformStorageManagerDeploymentQuery(chainId: number) {
+    return useQuery({
+        queryKey: queryKeys.platformStorageManagerDeployment(chainId),
+        queryFn: () => platformApi.getPlatformStorageManagerDeployment(chainId),
+        enabled: Number.isInteger(chainId) && chainId > 0,
     })
 }
 
-export function useConfirmPlatformSubscriptionPaymentMutation() {
+export function useCreatePlatformTierPaymentIntentMutation() {
+    return useMutation({
+        mutationFn: (input: CreatePlatformTierPaymentIntentInput) =>
+            platformApi.createPlatformTierPaymentIntent(input),
+    })
+}
+
+export function useConfirmPlatformTierPaymentMutation() {
     const queryClient = useQueryClient()
 
     return useMutation({
@@ -54,7 +62,35 @@ export function useConfirmPlatformSubscriptionPaymentMutation() {
         }: {
             input: ConfirmSubscriptionPaymentInput
             intentId: string
-        }) => platformApi.confirmPlatformSubscriptionPayment(intentId, input),
+        }) => platformApi.confirmPlatformTierPayment(intentId, input),
+        onSuccess: () => {
+            void invalidateMany(queryClient, [
+                queryKeys.myAuthorPlatformBilling,
+                queryKeys.myProjects(),
+                queryKeys.platformPlans,
+            ])
+        },
+    })
+}
+
+export function useCreatePlatformStoragePaymentIntentMutation() {
+    return useMutation({
+        mutationFn: (input: CreatePlatformStoragePaymentIntentInput) =>
+            platformApi.createPlatformStoragePaymentIntent(input),
+    })
+}
+
+export function useConfirmPlatformStoragePaymentMutation() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: ({
+            input,
+            intentId,
+        }: {
+            input: ConfirmSubscriptionPaymentInput
+            intentId: string
+        }) => platformApi.confirmPlatformStoragePayment(intentId, input),
         onSuccess: () => {
             void invalidateMany(queryClient, [
                 queryKeys.myAuthorPlatformBilling,

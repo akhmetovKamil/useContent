@@ -1,4 +1,4 @@
-import type { AuthorPlatformBillingDto, AuthorPlatformCleanupPreviewDto, AuthorPlatformCleanupRunDto, CreatePlatformSubscriptionPaymentIntentInput, PlatformSubscriptionPaymentIntentDto } from "@shared/types/platform"
+import type { AuthorPlatformBillingDto, AuthorPlatformCleanupPreviewDto, AuthorPlatformCleanupRunDto, CreatePlatformStoragePaymentIntentInput, CreatePlatformTierPaymentIntentInput, PlatformStoragePaymentIntentDto, PlatformTierPaymentIntentDto } from "@shared/types/platform"
 import type { ConfirmSubscriptionPaymentInput } from "@shared/types/subscriptions"
 import type { ContractDeploymentLookupDto } from "@shared/types/contracts"
 import type { ListPlatformPlansResponseDto } from "@shared/types/responses"
@@ -26,28 +26,54 @@ class PlatformApi {
         return postData<AuthorPlatformCleanupRunDto>("/me/author/platform-cleanup")
     }
 
-    async getPlatformSubscriptionManagerDeployment(chainId: number) {
+    async getPlatformTierManagerDeployment(chainId: number) {
         const response = await getData<ContractDeploymentLookupDto>(
-            `/contract-deployments/platform-subscription-manager/${chainId}`
+            `/contract-deployments/platform-tier-manager/${chainId}`
         )
         return unwrapResponseKey(response, "deployment")
     }
 
-    async createPlatformSubscriptionPaymentIntent(
-        input: CreatePlatformSubscriptionPaymentIntentInput
+    async getPlatformStorageManagerDeployment(chainId: number) {
+        const response = await getData<ContractDeploymentLookupDto>(
+            `/contract-deployments/platform-storage-manager/${chainId}`
+        )
+        return unwrapResponseKey(response, "deployment")
+    }
+
+    async createPlatformTierPaymentIntent(
+        input: CreatePlatformTierPaymentIntentInput
     ) {
-        return postData<PlatformSubscriptionPaymentIntentDto>(
-            "/me/author/platform-payment-intents",
+        return postData<PlatformTierPaymentIntentDto>(
+            "/me/author/platform-tier-payment-intents",
             input
         )
     }
 
-    async confirmPlatformSubscriptionPayment(
+    async confirmPlatformTierPayment(
         intentId: string,
         input: ConfirmSubscriptionPaymentInput
     ) {
-        return postData<PlatformSubscriptionPaymentIntentDto>(
-            `/me/author/platform-payment-intents/${intentId}/confirm`,
+        return postData<PlatformTierPaymentIntentDto>(
+            `/me/author/platform-tier-payment-intents/${intentId}/confirm`,
+            input
+        )
+    }
+
+    async createPlatformStoragePaymentIntent(
+        input: CreatePlatformStoragePaymentIntentInput
+    ) {
+        return postData<PlatformStoragePaymentIntentDto>(
+            "/me/author/platform-storage-payment-intents",
+            input
+        )
+    }
+
+    async confirmPlatformStoragePayment(
+        intentId: string,
+        input: ConfirmSubscriptionPaymentInput
+    ) {
+        return postData<PlatformStoragePaymentIntentDto>(
+            `/me/author/platform-storage-payment-intents/${intentId}/confirm`,
             input
         )
     }

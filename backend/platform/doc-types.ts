@@ -21,13 +21,24 @@ export interface AuthorPlatformSubscriptionDoc {
   planCode: PlatformPlanDto["code"];
   status: Exclude<PlatformBillingStatus, "free">;
   baseStorageBytes: number;
-  extraStorageBytes: number;
-  totalStorageBytes: number;
   features: PlatformFeature[];
   validUntil: Date | null;
   graceUntil: Date | null;
   cleanupScheduledAt: Date | null;
   lastCleanupAt: Date | null;
+  lastTxHash: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AuthorPlatformStorageSubscriptionDoc {
+  _id: ObjectId;
+  authorId: ObjectId;
+  walletAddress: string;
+  status: Exclude<PlatformBillingStatus, "free">;
+  extraStorageBytes: number;
+  validUntil: Date | null;
+  graceUntil: Date | null;
   lastTxHash: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -44,12 +55,28 @@ export interface AuthorPlatformCleanupLogDoc {
   createdAt: Date;
 }
 
-export interface PlatformSubscriptionPaymentIntentDoc {
+export interface PlatformTierPaymentIntentDoc {
   _id: ObjectId;
   authorId: ObjectId;
   walletAddress: string;
   planCode: PlatformPlanDto["code"];
   tierKey: string;
+  chainId: number;
+  tokenAddress: string;
+  contractAddress: string;
+  amount: string;
+  status: PaymentIntentStatus;
+  txHash: string | null;
+  validUntil: Date | null;
+  expiresAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PlatformStoragePaymentIntentDoc {
+  _id: ObjectId;
+  authorId: ObjectId;
+  walletAddress: string;
   extraStorageGb: number;
   chainId: number;
   tokenAddress: string;

@@ -5,16 +5,18 @@ export type {
   AuthorPlatformCleanupPreviewResponse,
   AuthorPlatformCleanupRunResponse,
   ContractDeploymentLookupResponse,
-  CreatePlatformSubscriptionPaymentIntentRequest,
+  CreatePlatformStoragePaymentIntentRequest,
+  CreatePlatformTierPaymentIntentRequest,
   PlatformPlanResponse,
-  PlatformSubscriptionPaymentIntentResponse,
+  PlatformStoragePaymentIntentResponse,
+  PlatformTierPaymentIntentResponse,
 } from "../lib/content-types";
 
 export interface ContractDeploymentChainRequest {
   chainId: string;
 }
 
-export type ConfirmPlatformSubscriptionPaymentPathRequest =
+export type ConfirmPlatformPaymentPathRequest =
   ConfirmSubscriptionPaymentRequest & {
     intentId: string;
   };

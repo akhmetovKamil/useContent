@@ -89,19 +89,31 @@ export interface AuthorPlatformCleanupRunDto {
   createdAt: string;
 }
 
-export interface PlatformSubscriptionPaymentIntentDto extends OnChainPaymentBaseDto {
+export interface PlatformTierPaymentIntentDto extends OnChainPaymentBaseDto {
   authorId: EntityId;
   walletAddress: WalletAddress;
   planCode: PlatformPlanCode;
   tierKey: string;
+  status: PaymentIntentStatus;
+  validUntil: NullableDateString;
+  expiresAt: string;
+}
+
+export interface PlatformStoragePaymentIntentDto extends OnChainPaymentBaseDto {
+  authorId: EntityId;
+  walletAddress: WalletAddress;
   extraStorageGb: number;
   status: PaymentIntentStatus;
   validUntil: NullableDateString;
   expiresAt: string;
 }
 
-export interface CreatePlatformSubscriptionPaymentIntentInput {
+export interface CreatePlatformTierPaymentIntentInput {
   planCode: PlatformPlanCode;
+  chainId: ChainId;
+}
+
+export interface CreatePlatformStoragePaymentIntentInput {
   extraStorageGb: number;
   chainId: ChainId;
 }

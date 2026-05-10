@@ -20,7 +20,7 @@ flowchart TD
 
     subgraph Web3["EVM layer"]
         RPC["RPC providers"]
-        Managers["SubscriptionManager<br/>PlatformSubscriptionManager"]
+        Managers["SubscriptionManager<br/>PlatformTierManager<br/>PlatformStorageManager"]
         Tokens["Native / ERC-20 assets"]
     end
 

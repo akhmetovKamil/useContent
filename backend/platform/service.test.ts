@@ -7,11 +7,17 @@ const repositoryMocks = vi.hoisted(() => ({
   findAuthorProfileByUserId: vi.fn(),
   findContractDeployment: vi.fn(),
   findAuthorPlatformSubscriptionByAuthorId: vi.fn(),
-  createPlatformSubscriptionPaymentIntent: vi.fn(),
-  findPlatformSubscriptionPaymentIntentByIdAndWallet: vi.fn(),
-  findPlatformSubscriptionPaymentIntentByTxHash: vi.fn(),
-  updatePlatformSubscriptionPaymentIntent: vi.fn(),
+  findAuthorPlatformStorageSubscriptionByAuthorId: vi.fn(),
+  createPlatformTierPaymentIntent: vi.fn(),
+  findPlatformTierPaymentIntentByIdAndWallet: vi.fn(),
+  findPlatformTierPaymentIntentByTxHash: vi.fn(),
+  updatePlatformTierPaymentIntent: vi.fn(),
+  createPlatformStoragePaymentIntent: vi.fn(),
+  findPlatformStoragePaymentIntentByIdAndWallet: vi.fn(),
+  findPlatformStoragePaymentIntentByTxHash: vi.fn(),
+  updatePlatformStoragePaymentIntent: vi.fn(),
   upsertAuthorPlatformSubscription: vi.fn(),
+  upsertAuthorPlatformStorageSubscription: vi.fn(),
   sumPostAttachmentBytesByAuthorId: vi.fn(),
   sumProjectFileBytesByAuthorId: vi.fn(),
   listPostAttachmentsByAuthorId: vi.fn(),
@@ -29,7 +35,8 @@ const storageMocks = vi.hoisted(() => ({
 }));
 
 const onchainMocks = vi.hoisted(() => ({
-  verifyPlatformSubscriptionPayment: vi.fn(),
+  verifyPlatformTierPayment: vi.fn(),
+  verifyPlatformStoragePayment: vi.fn(),
 }));
 
 vi.mock("encore.dev/api", () => {
@@ -68,7 +75,8 @@ vi.mock("../contracts/repository", () => repositoryMocks);
 vi.mock("../storage/object-storage", () => storageMocks);
 vi.mock("../onchain", () => ({
   readOnChainAccessGrants: vi.fn(),
-  verifyPlatformSubscriptionPayment: onchainMocks.verifyPlatformSubscriptionPayment,
+  verifyPlatformTierPayment: onchainMocks.verifyPlatformTierPayment,
+  verifyPlatformStoragePayment: onchainMocks.verifyPlatformStoragePayment,
   verifyPlanRegistration: vi.fn(),
   verifySubscriptionPayment: vi.fn(),
 }));
@@ -78,15 +86,17 @@ import {
   assertAuthorStorageQuota,
   buildAuthorPlatformBilling,
   cleanupExpiredAuthorPlatformStorage,
-  confirmPlatformSubscriptionPayment,
-  createPlatformSubscriptionPaymentIntent,
+  confirmPlatformStoragePayment,
+  confirmPlatformTierPayment,
+  createPlatformStoragePaymentIntent,
+  createPlatformTierPaymentIntent,
   listPlatformPlans,
   selectCleanupCandidates,
 } from "./service";
 
 describe("platform/service", () => {
   afterEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     vi.useRealTimers();
   });
 
@@ -133,13 +143,25 @@ describe("platform/service", () => {
       planCode: "basic",
       status: "active",
       baseStorageBytes: 3 * 1024 * 1024 * 1024,
-      extraStorageBytes: 2 * 1024 * 1024 * 1024,
-      totalStorageBytes: 5 * 1024 * 1024 * 1024,
       features: ["posts", "projects", "homepage_promo"],
       validUntil: new Date("2026-05-01T00:00:00.000Z"),
       graceUntil: null,
       cleanupScheduledAt: null,
       lastCleanupAt: null,
+      lastTxHash: null,
+      createdAt: new Date("2026-04-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-04-01T00:00:00.000Z"),
+    });
+    vi.mocked(
+      repositoryMocks.findAuthorPlatformStorageSubscriptionByAuthorId,
+    ).mockResolvedValue({
+      _id: new ObjectId("65f222222222222222222223"),
+      authorId: author._id,
+      walletAddress: "0xabc",
+      status: "active",
+      extraStorageBytes: 2 * 1024 * 1024 * 1024,
+      validUntil: new Date("2026-05-01T00:00:00.000Z"),
+      graceUntil: null,
       lastTxHash: null,
       createdAt: new Date("2026-04-01T00:00:00.000Z"),
       updatedAt: new Date("2026-04-01T00:00:00.000Z"),
@@ -174,8 +196,6 @@ describe("platform/service", () => {
       planCode: "basic",
       status: "active",
       baseStorageBytes: 3 * 1024 * 1024 * 1024,
-      extraStorageBytes: 0,
-      totalStorageBytes: 3 * 1024 * 1024 * 1024,
       features: ["posts", "projects", "homepage_promo"],
       validUntil: new Date("2026-04-01T00:00:00.000Z"),
       graceUntil: null,
@@ -213,8 +233,6 @@ describe("platform/service", () => {
       planCode: "basic",
       status: "active",
       baseStorageBytes: 3 * 1024 * 1024 * 1024,
-      extraStorageBytes: 0,
-      totalStorageBytes: 3 * 1024 * 1024 * 1024,
       features: ["posts", "projects", "homepage_promo"],
       validUntil: new Date("2026-04-01T00:00:00.000Z"),
       graceUntil: new Date("2026-04-08T00:00:00.000Z"),
@@ -303,7 +321,7 @@ describe("platform/service", () => {
     );
   });
 
-  test("creates platform payment intent from deployed manager", async () => {
+  test("creates platform tier payment intent from deployed manager", async () => {
     const author = createAuthorProfileDoc();
     vi.mocked(repositoryMocks.findUserByPrimaryWallet).mockResolvedValue(
       createUserDoc({ primaryWallet: "0xabc0000000000000000000000000000000000000" }),
@@ -314,7 +332,7 @@ describe("platform/service", () => {
     vi.mocked(repositoryMocks.findContractDeployment).mockResolvedValue({
       _id: new ObjectId("65f555555555555555555555"),
       chainId: 11155111,
-      contractName: "PlatformSubscriptionManager",
+      contractName: "PlatformTierManager",
       address: "0xmanager",
       platformTreasury: "0xtreasury",
       deployedBy: "0xdeployer",
@@ -322,32 +340,30 @@ describe("platform/service", () => {
       createdAt: new Date("2026-04-01T00:00:00.000Z"),
       updatedAt: new Date("2026-04-01T00:00:00.000Z"),
     });
-    vi.mocked(repositoryMocks.createPlatformSubscriptionPaymentIntent)
+    vi.mocked(repositoryMocks.createPlatformTierPaymentIntent)
       .mockImplementation(async (doc) => ({
         _id: new ObjectId("65f666666666666666666666"),
         ...doc,
       }));
 
-    const intent = await createPlatformSubscriptionPaymentIntent(
+    const intent = await createPlatformTierPaymentIntent(
       "0xabc0000000000000000000000000000000000000",
       {
         planCode: "basic",
-        extraStorageGb: 2,
         chainId: 11155111,
       },
     );
 
     expect(intent).toMatchObject({
       planCode: "basic",
-      extraStorageGb: 2,
       tokenAddress: "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238",
       contractAddress: "0xmanager",
-      amount: "7000000",
+      amount: "5000000",
       status: "pending",
     });
   });
 
-  test("confirms platform payment and updates author subscription", async () => {
+  test("confirms platform tier payment and updates author subscription", async () => {
     const author = createAuthorProfileDoc();
     const intentId = new ObjectId("65f777777777777777777777");
     const intent = {
@@ -356,11 +372,10 @@ describe("platform/service", () => {
       walletAddress: "0xabc0000000000000000000000000000000000000",
       planCode: "basic" as const,
       tierKey: "0xtier",
-      extraStorageGb: 1,
       chainId: 11155111,
       tokenAddress: "0xtoken000000000000000000000000000000000000",
       contractAddress: "0xmanager",
-      amount: "6000000",
+      amount: "5000000",
       status: "pending" as const,
       txHash: null,
       validUntil: null,
@@ -371,20 +386,20 @@ describe("platform/service", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-04-01T00:05:00.000Z"));
     vi.mocked(
-      repositoryMocks.findPlatformSubscriptionPaymentIntentByIdAndWallet,
+      repositoryMocks.findPlatformTierPaymentIntentByIdAndWallet,
     ).mockResolvedValue(intent);
     vi.mocked(
-      repositoryMocks.findPlatformSubscriptionPaymentIntentByTxHash,
+      repositoryMocks.findPlatformTierPaymentIntentByTxHash,
     ).mockResolvedValue(null);
-    vi.mocked(onchainMocks.verifyPlatformSubscriptionPayment).mockResolvedValue(
+    vi.mocked(onchainMocks.verifyPlatformTierPayment).mockResolvedValue(
       {
         paidUntil: new Date("2026-05-01T00:00:00.000Z"),
       },
     );
-    vi.mocked(repositoryMocks.updatePlatformSubscriptionPaymentIntent)
+    vi.mocked(repositoryMocks.updatePlatformTierPaymentIntent)
       .mockImplementation(async (_id, update) => ({ ...intent, ...update }));
 
-    const confirmed = await confirmPlatformSubscriptionPayment(
+    const confirmed = await confirmPlatformTierPayment(
       intent.walletAddress,
       intentId.toHexString(),
       { txHash: "0x" + "a".repeat(64) },
@@ -397,12 +412,74 @@ describe("platform/service", () => {
       expect.objectContaining({
         authorId: author._id,
         planCode: "basic",
-        extraStorageBytes: 1024 * 1024 * 1024,
-        totalStorageBytes: 4 * 1024 * 1024 * 1024,
         lastTxHash: "0x" + "a".repeat(64),
       }),
       expect.any(Date),
     );
+  });
+
+  test("creates and confirms platform storage payment independently", async () => {
+    const author = createAuthorProfileDoc();
+    const wallet = "0xabc0000000000000000000000000000000000000";
+    vi.mocked(repositoryMocks.findUserByPrimaryWallet).mockResolvedValue(
+      createUserDoc({ primaryWallet: wallet }),
+    );
+    vi.mocked(repositoryMocks.findAuthorProfileByUserId).mockResolvedValue(author);
+    vi.mocked(repositoryMocks.findContractDeployment).mockResolvedValue({
+      _id: new ObjectId("65f555555555555555555555"),
+      chainId: 11155111,
+      contractName: "PlatformStorageManager",
+      address: "0xstorage",
+      platformTreasury: "0xtreasury",
+      deployedBy: "0xdeployer",
+      deploymentTxHash: null,
+      createdAt: new Date("2026-04-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-04-01T00:00:00.000Z"),
+    });
+    vi.mocked(repositoryMocks.createPlatformStoragePaymentIntent)
+      .mockImplementation(async (doc) => ({
+        _id: new ObjectId("65f666666666666666666666"),
+        ...doc,
+      }));
+
+    const intent = await createPlatformStoragePaymentIntent(wallet, {
+      extraStorageGb: 2,
+      chainId: 11155111,
+    });
+
+    expect(intent).toMatchObject({
+      extraStorageGb: 2,
+      contractAddress: "0xstorage",
+      amount: "2000000",
+      status: "pending",
+    });
+
+    vi.mocked(repositoryMocks.findPlatformStoragePaymentIntentByIdAndWallet)
+      .mockResolvedValue(intent);
+    vi.mocked(repositoryMocks.findPlatformStoragePaymentIntentByTxHash)
+      .mockResolvedValue(null);
+    vi.mocked(onchainMocks.verifyPlatformStoragePayment).mockResolvedValue({
+      paidUntil: new Date("2026-05-01T00:00:00.000Z"),
+    });
+    vi.mocked(repositoryMocks.updatePlatformStoragePaymentIntent)
+      .mockImplementation(async (_id, update) => ({ ...intent, ...update }));
+
+    const confirmed = await confirmPlatformStoragePayment(
+      wallet,
+      intent._id.toHexString(),
+      { txHash: "0x" + "b".repeat(64) },
+    );
+
+    expect(confirmed.status).toBe("confirmed");
+    expect(repositoryMocks.upsertAuthorPlatformStorageSubscription)
+      .toHaveBeenCalledWith(
+        expect.objectContaining({
+          authorId: author._id,
+          extraStorageBytes: 2 * 1024 * 1024 * 1024,
+          lastTxHash: "0x" + "b".repeat(64),
+        }),
+        expect.any(Date),
+      );
   });
 
   test("cleans up expired storage using oldest selected files", async () => {
@@ -418,8 +495,6 @@ describe("platform/service", () => {
       planCode: "basic",
       status: "expired",
       baseStorageBytes: 3 * 1024 * 1024 * 1024,
-      extraStorageBytes: 0,
-      totalStorageBytes: 3 * 1024 * 1024 * 1024,
       features: ["posts", "projects"],
       validUntil: new Date("2026-04-01T00:00:00.000Z"),
       graceUntil: new Date("2026-04-08T00:00:00.000Z"),

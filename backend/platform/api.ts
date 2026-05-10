@@ -2,19 +2,22 @@ import { api } from "encore.dev/api";
 import { getRequiredWallet } from "../lib/api-helpers";
 import {
   toContractDeploymentResponse,
-  toPlatformSubscriptionPaymentIntentResponse,
+  toPlatformStoragePaymentIntentResponse,
+  toPlatformTierPaymentIntentResponse,
 } from "../lib/content-common";
 import * as service from "./service";
 import type {
   AuthorPlatformBillingResponse,
   AuthorPlatformCleanupPreviewResponse,
   AuthorPlatformCleanupRunResponse,
-  ConfirmPlatformSubscriptionPaymentPathRequest,
-  CreatePlatformSubscriptionPaymentIntentRequest,
+  ConfirmPlatformPaymentPathRequest,
+  CreatePlatformStoragePaymentIntentRequest,
+  CreatePlatformTierPaymentIntentRequest,
   ContractDeploymentChainRequest,
   ContractDeploymentLookupResponse,
   PlatformPlanResponse,
-  PlatformSubscriptionPaymentIntentResponse,
+  PlatformStoragePaymentIntentResponse,
+  PlatformTierPaymentIntentResponse,
 } from "./types";
 import type { ListPlatformPlansResponseDto } from "../../shared/types/responses"
 
@@ -64,16 +67,16 @@ export const runMyAuthorPlatformCleanup = api(
   },
 );
 
-export const getPlatformSubscriptionManagerDeployment = api(
+export const getPlatformTierManagerDeployment = api(
   {
     method: "GET",
-    path: "/contract-deployments/platform-subscription-manager/:chainId",
+    path: "/contract-deployments/platform-tier-manager/:chainId",
     expose: true,
   },
   async ({
     chainId,
   }: ContractDeploymentChainRequest): Promise<ContractDeploymentLookupResponse> => {
-    const deployment = await service.getPlatformSubscriptionManagerDeployment(
+    const deployment = await service.getPlatformTierManagerDeployment(
       Number(chainId),
     );
     return {
@@ -82,42 +85,100 @@ export const getPlatformSubscriptionManagerDeployment = api(
   },
 );
 
-export const createPlatformSubscriptionPaymentIntent = api(
+export const getPlatformStorageManagerDeployment = api(
+  {
+    method: "GET",
+    path: "/contract-deployments/platform-storage-manager/:chainId",
+    expose: true,
+  },
+  async ({
+    chainId,
+  }: ContractDeploymentChainRequest): Promise<ContractDeploymentLookupResponse> => {
+    const deployment = await service.getPlatformStorageManagerDeployment(
+      Number(chainId),
+    );
+    return {
+      deployment: deployment ? toContractDeploymentResponse(deployment) : null,
+    };
+  },
+);
+
+export const createPlatformTierPaymentIntent = api(
   {
     method: "POST",
-    path: "/me/author/platform-payment-intents",
+    path: "/me/author/platform-tier-payment-intents",
     expose: true,
     auth: true,
   },
   async (
-    req: CreatePlatformSubscriptionPaymentIntentRequest,
-  ): Promise<PlatformSubscriptionPaymentIntentResponse> => {
+    req: CreatePlatformTierPaymentIntentRequest,
+  ): Promise<PlatformTierPaymentIntentResponse> => {
     const walletAddress = getRequiredWallet();
-    const intent = await service.createPlatformSubscriptionPaymentIntent(
+    const intent = await service.createPlatformTierPaymentIntent(
       walletAddress,
       req,
     );
-    return toPlatformSubscriptionPaymentIntentResponse(intent);
+    return toPlatformTierPaymentIntentResponse(intent);
   },
 );
 
-export const confirmPlatformSubscriptionPayment = api(
+export const confirmPlatformTierPayment = api(
   {
     method: "POST",
-    path: "/me/author/platform-payment-intents/:intentId/confirm",
+    path: "/me/author/platform-tier-payment-intents/:intentId/confirm",
     expose: true,
     auth: true,
   },
   async ({
     intentId,
     ...req
-  }: ConfirmPlatformSubscriptionPaymentPathRequest): Promise<PlatformSubscriptionPaymentIntentResponse> => {
+  }: ConfirmPlatformPaymentPathRequest): Promise<PlatformTierPaymentIntentResponse> => {
     const walletAddress = getRequiredWallet();
-    const intent = await service.confirmPlatformSubscriptionPayment(
+    const intent = await service.confirmPlatformTierPayment(
       walletAddress,
       intentId,
       req,
     );
-    return toPlatformSubscriptionPaymentIntentResponse(intent);
+    return toPlatformTierPaymentIntentResponse(intent);
+  },
+);
+
+export const createPlatformStoragePaymentIntent = api(
+  {
+    method: "POST",
+    path: "/me/author/platform-storage-payment-intents",
+    expose: true,
+    auth: true,
+  },
+  async (
+    req: CreatePlatformStoragePaymentIntentRequest,
+  ): Promise<PlatformStoragePaymentIntentResponse> => {
+    const walletAddress = getRequiredWallet();
+    const intent = await service.createPlatformStoragePaymentIntent(
+      walletAddress,
+      req,
+    );
+    return toPlatformStoragePaymentIntentResponse(intent);
+  },
+);
+
+export const confirmPlatformStoragePayment = api(
+  {
+    method: "POST",
+    path: "/me/author/platform-storage-payment-intents/:intentId/confirm",
+    expose: true,
+    auth: true,
+  },
+  async ({
+    intentId,
+    ...req
+  }: ConfirmPlatformPaymentPathRequest): Promise<PlatformStoragePaymentIntentResponse> => {
+    const walletAddress = getRequiredWallet();
+    const intent = await service.confirmPlatformStoragePayment(
+      walletAddress,
+      intentId,
+      req,
+    );
+    return toPlatformStoragePaymentIntentResponse(intent);
   },
 );

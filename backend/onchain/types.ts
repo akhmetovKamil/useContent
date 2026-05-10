@@ -28,18 +28,27 @@ export interface VerifiedSubscriptionPayment {
   paidUntil: Date;
 }
 
-export interface VerifyPlatformSubscriptionPaymentInput {
+export interface VerifyPlatformTierPaymentInput {
   authorWallet: string;
   chainId: number;
   contractAddress: string;
   tierKey: string;
+  tokenAddress: string;
+  amount: string;
+  txHash: string;
+}
+
+export interface VerifyPlatformStoragePaymentInput {
+  authorWallet: string;
+  chainId: number;
+  contractAddress: string;
   extraStorageGb: number;
   tokenAddress: string;
   amount: string;
   txHash: string;
 }
 
-export interface VerifiedPlatformSubscriptionPayment {
+export interface VerifiedPlatformPayment {
   paidUntil: Date;
 }
 

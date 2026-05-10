@@ -26,16 +26,20 @@ export function MePlatformBillingPage() {
     const cleanupPreviewQuery = useMyAuthorPlatformCleanupPreviewQuery(Boolean(token))
     const [extraGb, setExtraGb] = useState(0)
     const [checkoutPlan, setCheckoutPlan] = useState<PlatformPlanDto | null>(null)
+    const [checkoutKind, setCheckoutKind] = useState<"tier" | "storage">("tier")
     const [paymentChainId, setPaymentChainId] = useState<number>(defaultSubscriptionChain.id)
     const plans = plansQuery.data ?? []
     const basicPlan = plans.find((plan) => plan.code === "basic")
     const selectedPlan = checkoutPlan ?? basicPlan ?? null
     const maxExtraGb = bytesToGb(selectedPlan?.maxExtraStorageBytes ?? 0)
     const estimateCents =
-        (selectedPlan?.priceUsdCents ?? 0) + extraGb * (selectedPlan?.pricePerExtraGbUsdCents ?? 0)
+        checkoutKind === "tier"
+            ? (selectedPlan?.priceUsdCents ?? 0)
+            : extraGb * (selectedPlan?.pricePerExtraGbUsdCents ?? 0)
 
     function openCheckout(plan: PlatformPlanDto) {
         setCheckoutPlan(plan)
+        setCheckoutKind("tier")
         setExtraGb(0)
     }
 
@@ -99,6 +103,7 @@ export function MePlatformBillingPage() {
                     onOpenCheckout={() => {
                         if (selectedPlan) {
                             setCheckoutPlan(selectedPlan)
+                            setCheckoutKind("storage")
                         }
                     }}
                     plan={selectedPlan}
@@ -115,6 +120,7 @@ export function MePlatformBillingPage() {
                         <CheckoutPreview
                             chainId={paymentChainId}
                             extraGb={extraGb}
+                            kind={checkoutKind}
                             monthlyEstimateCents={estimateCents}
                             onChainIdChange={(chainId) => {
                                 setPaymentChainId(chainId)

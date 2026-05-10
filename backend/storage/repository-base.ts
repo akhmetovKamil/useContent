@@ -7,7 +7,9 @@ import { getDb } from "../lib/mongo";
 import type {
   AuthorPlatformCleanupLogDoc,
   AuthorPlatformSubscriptionDoc,
-  PlatformSubscriptionPaymentIntentDoc,
+  AuthorPlatformStorageSubscriptionDoc,
+  PlatformStoragePaymentIntentDoc,
+  PlatformTierPaymentIntentDoc,
 } from "../platform/doc-types";
 import type { AuthorProfileDoc, UserDoc } from "../profiles/doc-types";
 import type {
@@ -65,8 +67,10 @@ export async function ensureIndexes(): Promise<void> {
     subscriptionPlans,
     subscriptionEntitlements,
     subscriptionPaymentIntents,
-    platformSubscriptionPaymentIntents,
+    platformTierPaymentIntents,
+    platformStoragePaymentIntents,
     authorPlatformSubscriptions,
+    authorPlatformStorageSubscriptions,
     contractDeployments,
   ] = await Promise.all([
     getRawCollection<UserDoc>("users"),
@@ -85,11 +89,17 @@ export async function ensureIndexes(): Promise<void> {
     getRawCollection<SubscriptionPlanDoc>("subscription_plans"),
     getRawCollection<SubscriptionEntitlementDoc>("subscription_entitlements"),
     getRawCollection<SubscriptionPaymentIntentDoc>("subscription_payment_intents"),
-    getRawCollection<PlatformSubscriptionPaymentIntentDoc>(
-      "platform_subscription_payment_intents",
+    getRawCollection<PlatformTierPaymentIntentDoc>(
+      "platform_tier_payment_intents",
+    ),
+    getRawCollection<PlatformStoragePaymentIntentDoc>(
+      "platform_storage_payment_intents",
     ),
     getRawCollection<AuthorPlatformSubscriptionDoc>(
       "author_platform_subscriptions",
+    ),
+    getRawCollection<AuthorPlatformStorageSubscriptionDoc>(
+      "author_platform_storage_subscriptions",
     ),
     getRawCollection<ContractDeploymentDoc>("contract_deployments"),
   ]);
@@ -170,11 +180,22 @@ export async function ensureIndexes(): Promise<void> {
         partialFilterExpression: { txHash: { $type: "string" } },
       },
     ),
-    platformSubscriptionPaymentIntents.createIndex({
+    platformTierPaymentIntents.createIndex({
       walletAddress: 1,
       createdAt: -1,
     }),
-    platformSubscriptionPaymentIntents.createIndex(
+    platformTierPaymentIntents.createIndex(
+      { txHash: 1 },
+      {
+        unique: true,
+        partialFilterExpression: { txHash: { $type: "string" } },
+      },
+    ),
+    platformStoragePaymentIntents.createIndex({
+      walletAddress: 1,
+      createdAt: -1,
+    }),
+    platformStoragePaymentIntents.createIndex(
       { txHash: 1 },
       {
         unique: true,
@@ -182,6 +203,10 @@ export async function ensureIndexes(): Promise<void> {
       },
     ),
     authorPlatformSubscriptions.createIndex({ authorId: 1 }, { unique: true }),
+    authorPlatformStorageSubscriptions.createIndex(
+      { authorId: 1 },
+      { unique: true },
+    ),
     authorPlatformCleanupLogs.createIndex({ authorId: 1, createdAt: -1 }),
     contractDeployments.createIndex(
       { chainId: 1, contractName: 1 },
