@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs"
 import { homedir } from "node:os"
 import { join } from "node:path"
+import { fileURLToPath } from "node:url"
 import { defineConfig } from "vitest/config"
 
 const cacheRuntimePlatform =
@@ -36,6 +37,25 @@ if (!process.env.ENCORE_RUNTIME_LIB) {
 }
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      "encore.dev/api": fileURLToPath(
+        new URL("./test-helpers/encore-api.mock.ts", import.meta.url),
+      ),
+      "encore.dev/auth": fileURLToPath(
+        new URL("./test-helpers/encore-auth.mock.ts", import.meta.url),
+      ),
+      "encore.dev/config": fileURLToPath(
+        new URL("./test-helpers/encore-config.mock.ts", import.meta.url),
+      ),
+      "encore.dev/service": fileURLToPath(
+        new URL("./test-helpers/encore-service.mock.ts", import.meta.url),
+      ),
+      "encore.dev/storage/objects": fileURLToPath(
+        new URL("./test-helpers/encore-objects.mock.ts", import.meta.url),
+      ),
+    },
+  },
   test: {
     environment: "node",
   },
