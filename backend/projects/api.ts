@@ -183,6 +183,27 @@ export const getMyProjectBundle = api(
   },
 );
 
+export const downloadMyProjectBundle = api.raw(
+  {
+    method: "GET",
+    path: "/me/project-bundle/download",
+    expose: true,
+    auth: true,
+  },
+  async (req, resp) => {
+    const walletAddress = getRequiredWallet();
+    const url = new URL(req.url ?? "", "http://localhost");
+    const projectId = url.searchParams.get("projectId") ?? "";
+    const folderId = url.searchParams.get("folderId");
+    const file = await service.getMyProjectBundleArchive(
+      walletAddress,
+      projectId,
+      folderId,
+    );
+    writeFileResponse(resp, file);
+  },
+);
+
 export const uploadMyProjectFile = api.raw(
   {
     method: "POST",
@@ -304,6 +325,32 @@ export const getAuthorProjectBundle = api(
       folderId,
       viewerWallet,
     );
+  },
+);
+
+export const downloadAuthorProjectBundle = api.raw(
+  {
+    method: "GET",
+    path: "/project-bundle/download/*path",
+    expose: true,
+  },
+  async (req, resp) => {
+    const [slug, projectId] = parseFilePath(
+      req.url ?? "",
+      "/project-bundle/download/",
+    );
+    const url = new URL(req.url ?? "", "http://localhost");
+    const folderId = url.searchParams.get("folderId");
+    const viewerWallet = await getOptionalViewerWallet(
+      String(req.headers.authorization ?? ""),
+    );
+    const file = await service.getAuthorProjectBundleArchiveBySlug(
+      slug,
+      projectId,
+      folderId,
+      viewerWallet,
+    );
+    writeFileResponse(resp, file);
   },
 );
 

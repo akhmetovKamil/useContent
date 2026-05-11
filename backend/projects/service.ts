@@ -49,6 +49,7 @@ import {
   deleteProjectFile,
   uploadProjectFile,
 } from "./file-storage";
+import { createStoredZipBuffer } from "../lib/zip";
 
 const repo = {
   ...accessRepo,
@@ -370,6 +371,38 @@ export async function getAuthorProjectBundleBySlug(
   return buildProjectBundle(project, folder, true);
 }
 
+export async function getMyProjectBundleArchive(
+  walletAddress: string,
+  projectId: string,
+  folderId?: string | null,
+): Promise<{ body: Buffer; contentType: string; fileName: string }> {
+  const { project } = await getMyProjectContext(walletAddress, projectId);
+  const folder = await resolveProjectFolder(
+    project,
+    folderId ?? project.rootNodeId.toHexString(),
+  );
+  return buildProjectArchive(project, folder, false);
+}
+
+export async function getAuthorProjectBundleArchiveBySlug(
+  slug: string,
+  projectId: string,
+  folderId?: string | null,
+  viewerWallet?: string,
+): Promise<{ body: Buffer; contentType: string; fileName: string }> {
+  const project = await getAuthorProjectBySlugAndId(
+    slug,
+    projectId,
+    viewerWallet,
+  );
+  const folder = await resolveProjectFolder(
+    project,
+    folderId ?? project.rootNodeId.toHexString(),
+  );
+  await assertPublishedProjectPath(project, folder);
+  return buildProjectArchive(project, folder, true);
+}
+
 export async function createMyProjectFolder(
   walletAddress: string,
   projectId: string,
@@ -577,4 +610,48 @@ async function buildFolderSummary(
 
   await collect(folder);
   return { fileCount, folderCount, totalSize };
+}
+
+async function buildProjectArchive(
+  project: ProjectDoc,
+  folder: ProjectNodeDoc,
+  publishedOnly: boolean,
+): Promise<{ body: Buffer; contentType: string; fileName: string }> {
+  const bundle = await buildProjectBundle(project, folder, publishedOnly);
+  if (!bundle.files.length) {
+    throw APIError.failedPrecondition("folder is empty");
+  }
+
+  const files = [];
+  for (const item of bundle.files) {
+    const node = await resolveProjectNode(project, item.nodeId);
+    if (publishedOnly && node.visibility !== CONTENT_VISIBILITY.PUBLISHED) {
+      continue;
+    }
+    const file = await readProjectFileObject(node);
+    files.push({ body: file.body, path: item.path });
+  }
+
+  if (!files.length) {
+    throw APIError.failedPrecondition("folder is empty");
+  }
+
+  const archiveName =
+    folder._id.equals(project.rootNodeId) ? project.title : folder.name;
+
+  return {
+    body: createStoredZipBuffer(files),
+    contentType: "application/zip",
+    fileName: `${sanitizeArchiveFileName(archiveName || "project-files")}.zip`,
+  };
+}
+
+function sanitizeArchiveFileName(name: string): string {
+  return name
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80) || "project-files";
 }

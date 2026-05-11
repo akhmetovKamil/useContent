@@ -25,9 +25,7 @@ import {
 } from "@/queries/projects"
 import { queryKeys } from "@/queries/queryKeys"
 import type { ProjectFileTreeProps } from "@/types/projects"
-import { downloadBlob } from "@/utils/download-blob"
 import { formatFileSize } from "@/utils/format"
-import { createStoredZip } from "@/utils/zip"
 
 export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: ProjectFileTreeProps) {
     const [currentFolderId, setCurrentFolderId] = useState<string | null>(rootNodeId)
@@ -185,40 +183,25 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
 
     async function downloadFolder(folderId = currentFolderId) {
         setBulkDownloadPending(true)
-        const toastId = toast.loading("Preparing folder archive...", { duration: Infinity })
+        const toastId = toast.loading("Preparing archive...", { duration: Infinity })
         try {
-            const bundle = isAuthor
-                ? await projectsApi.getMyProjectBundle(projectId, folderId)
-                : await projectsApi.getAuthorProjectBundle(slug, projectId, folderId)
-
-            if (!bundle.files.length) {
-                toast.info("This folder is empty.", { id: toastId })
-                return
-            }
-
-            let downloadedCount = 0
-            const files = []
-            for (const file of bundle.files) {
-                const blob = isAuthor
-                    ? await projectsApi.getMyProjectFileBlob(projectId, file.nodeId)
-                    : await projectsApi.getAuthorProjectFileBlob(slug, projectId, file.nodeId)
-                downloadedCount += 1
-                toast.loading(
-                    `Preparing archive... ${downloadedCount}/${bundle.files.length} files`,
-                    { duration: Infinity, id: toastId }
-                )
-                files.push({ blob, path: file.path })
-            }
-
-            const zip = await createStoredZip(files)
             const folderName =
                 currentFolder?.id === folderId
                     ? currentFolder.name
                     : findKnownNodeById(folderId ?? "", treeNodesByParent)?.name
-            downloadBlob(zip, `${sanitizeArchiveName(folderName || "project-files")}.zip`)
-            toast.success(`Downloaded ${bundle.fileCount} file archive.`, { id: toastId })
+            const fileName = `${sanitizeArchiveName(folderName || "project-files")}.zip`
+            toast.loading("Downloading archive...", { duration: Infinity, id: toastId })
+
+            if (isAuthor) {
+                await projectsApi.downloadMyProjectFolderArchive(projectId, folderId, fileName)
+            } else {
+                await projectsApi.downloadAuthorProjectFolderArchive(slug, projectId, folderId, fileName)
+            }
+
+            toast.success("Archive download started.", { id: toastId })
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Folder download failed.", {
+            const message = getFolderDownloadErrorMessage(error)
+            toast[message === "This folder is empty." ? "info" : "error"](message, {
                 id: toastId,
             })
         } finally {
@@ -482,4 +465,12 @@ function findKnownNodeById(nodeId: string, nodesByParent: Record<string, Project
         }
     }
     return null
+}
+
+function getFolderDownloadErrorMessage(error: unknown) {
+    const message = error instanceof Error ? error.message : ""
+    if (/folder is empty/i.test(message)) {
+        return "This folder is empty."
+    }
+    return message || "Folder download failed."
 }

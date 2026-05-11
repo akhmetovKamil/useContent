@@ -102,6 +102,17 @@ class ProjectsApi {
         })
     }
 
+    async downloadMyProjectFolderArchive(
+        projectId: string,
+        folderId: string | null | undefined,
+        fileName: string
+    ) {
+        const archive = await downloadData("/me/project-bundle/download", {
+            params: { folderId, projectId },
+        })
+        downloadBlob(archive, fileName)
+    }
+
     async getAuthorProject(slug: string, projectId: string) {
         return getData<ProjectDto>(`/authors/${slug}/projects/${projectId}`)
     }
@@ -130,6 +141,18 @@ class ProjectsApi {
         return getData<ProjectBundleDto, AuthorProjectBundleInput>("/author-project-bundle", {
             params: { folderId, projectId, slug },
         })
+    }
+
+    async downloadAuthorProjectFolderArchive(
+        slug: string,
+        projectId: string,
+        folderId: string | null | undefined,
+        fileName: string
+    ) {
+        const archive = await downloadData(`/project-bundle/download/${slug}/${projectId}`, {
+            params: { folderId },
+        })
+        downloadBlob(archive, fileName)
     }
 }
 
