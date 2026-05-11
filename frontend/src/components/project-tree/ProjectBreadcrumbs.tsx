@@ -4,10 +4,12 @@ export function ProjectBreadcrumbs({
     breadcrumbs,
     currentFolderId,
     onOpenFolder,
+    rootLabel = "Project files",
 }: {
     breadcrumbs: ProjectNodeDto[]
     currentFolderId: string | null
     onOpenFolder: (folderId: string) => void
+    rootLabel?: string
 }) {
     return (
         <nav
@@ -25,7 +27,7 @@ export function ProjectBreadcrumbs({
                         onClick={() => onOpenFolder(breadcrumb.id)}
                         type="button"
                     >
-                        {index === 0 ? "root" : breadcrumb.name}
+                        {index === 0 ? rootLabel : breadcrumb.name}
                     </button>
                     <span className="mx-1 text-[var(--muted)]">/</span>
                 </span>

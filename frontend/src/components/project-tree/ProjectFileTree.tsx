@@ -27,7 +27,13 @@ import { queryKeys } from "@/queries/queryKeys"
 import type { ProjectFileTreeProps } from "@/types/projects"
 import { formatFileSize } from "@/utils/format"
 
-export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: ProjectFileTreeProps) {
+export function ProjectFileTree({
+    mode,
+    projectId,
+    rootLabel = "Project files",
+    rootNodeId,
+    slug = "",
+}: ProjectFileTreeProps) {
     const [currentFolderId, setCurrentFolderId] = useState<string | null>(rootNodeId)
     const [deleteNodeTarget, setDeleteNodeTarget] = useState<ProjectNodeDto | null>(null)
     const [folderName, setFolderName] = useState("")
@@ -37,6 +43,7 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
     const [renameName, setRenameName] = useState("")
     const [renameNodeTarget, setRenameNodeTarget] = useState<ProjectNodeDto | null>(null)
     const [selectedNode, setSelectedNode] = useState<ProjectNodeDto | null>(null)
+    const [lastBreadcrumbs, setLastBreadcrumbs] = useState<ProjectNodeDto[]>([])
     const [treeNodesByParent, setTreeNodesByParent] = useState<Record<string, ProjectNodeDto[]>>({})
     const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(
         () => new Set([rootNodeId])
@@ -66,8 +73,9 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
     const folders = nodesQuery.data?.nodes.filter((node) => node.kind === "folder") ?? []
     const files = nodesQuery.data?.nodes.filter((node) => node.kind === "file") ?? []
     const orderedNodes = [...folders, ...files]
+    const breadcrumbs = nodesQuery.data?.breadcrumbs ?? lastBreadcrumbs
     const currentFolder =
-        nodesQuery.data?.breadcrumbs.find((breadcrumb) => breadcrumb.id === currentFolderId) ?? null
+        breadcrumbs.find((breadcrumb) => breadcrumb.id === currentFolderId) ?? null
     const currentFolderSummary = nodesQuery.data?.currentFolderSummary ?? {
         fileCount: orderedNodes.filter((node) => node.kind === PROJECT_NODE_KIND.FILE).length,
         folderCount: orderedNodes.filter((node) => node.kind === PROJECT_NODE_KIND.FOLDER).length,
@@ -81,11 +89,21 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
             : ""
 
     useEffect(() => {
+        setCurrentFolderId(rootNodeId)
+        setSelectedNode(null)
+        setTreeNodesByParent({})
+        setExpandedFolderIds(new Set([rootNodeId]))
+        setLoadingFolderIds(new Set())
+        setLastBreadcrumbs([])
+    }, [projectId, rootNodeId])
+
+    useEffect(() => {
         if (!nodesQuery.data) {
             return
         }
 
         const folderId = nodesQuery.data.currentFolderId || currentFolderId || rootNodeId
+        setLastBreadcrumbs(nodesQuery.data.breadcrumbs)
         setTreeNodesByParent((previous) => ({
             ...previous,
             [folderId]: nodesQuery.data.nodes,
@@ -95,6 +113,7 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
     function openFolder(node: ProjectNodeDto) {
         setCurrentFolderId(node.id)
         setSelectedNode(null)
+        setLastBreadcrumbs((current) => appendBreadcrumb(current, node))
         setExpandedFolderIds((previous) => new Set(previous).add(node.id))
         void loadFolderChildren(node.id)
     }
@@ -332,13 +351,15 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
 
             <CardContent>
                 <ProjectBreadcrumbs
-                    breadcrumbs={nodesQuery.data?.breadcrumbs ?? []}
+                    breadcrumbs={breadcrumbs}
                     currentFolderId={currentFolderId}
                     onOpenFolder={(folderId) => {
                         setCurrentFolderId(folderId)
                         setSelectedNode(null)
+                        setLastBreadcrumbs((current) => trimBreadcrumbs(current, folderId))
                         setExpandedFolderIds((previous) => new Set(previous).add(folderId))
                     }}
+                    rootLabel={rootLabel}
                 />
 
                 {nodesQuery.isError ? (
@@ -473,4 +494,17 @@ function getFolderDownloadErrorMessage(error: unknown) {
         return "This folder is empty."
     }
     return message || "Folder download failed."
+}
+
+function appendBreadcrumb(breadcrumbs: ProjectNodeDto[], node: ProjectNodeDto) {
+    const existingIndex = breadcrumbs.findIndex((breadcrumb) => breadcrumb.id === node.id)
+    if (existingIndex >= 0) {
+        return breadcrumbs.slice(0, existingIndex + 1)
+    }
+    return [...breadcrumbs, node]
+}
+
+function trimBreadcrumbs(breadcrumbs: ProjectNodeDto[], folderId: string) {
+    const index = breadcrumbs.findIndex((breadcrumb) => breadcrumb.id === folderId)
+    return index >= 0 ? breadcrumbs.slice(0, index + 1) : breadcrumbs
 }

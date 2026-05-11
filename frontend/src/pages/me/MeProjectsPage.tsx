@@ -196,6 +196,7 @@ export function MeProjectsPage() {
                         <ProjectFileTree
                             mode="author"
                             projectId={selectedProject.id}
+                            rootLabel={selectedProject.title}
                             rootNodeId={selectedProject.rootNodeId}
                         />
                     </CardContent>

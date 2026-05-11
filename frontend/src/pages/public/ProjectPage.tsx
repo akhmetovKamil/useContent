@@ -46,6 +46,7 @@ export function ProjectPage() {
                     <ProjectFileTree
                         mode="reader"
                         projectId={projectQuery.data.id}
+                        rootLabel={projectQuery.data.title}
                         rootNodeId={projectQuery.data.rootNodeId}
                         slug={slug}
                     />

@@ -4,5 +4,6 @@ export interface ProjectFileTreeProps {
     mode: ProjectTreeMode
     projectId: string
     rootNodeId: string
+    rootLabel?: string
     slug?: string
 }
