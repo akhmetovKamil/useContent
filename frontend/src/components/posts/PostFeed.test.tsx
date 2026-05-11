@@ -107,7 +107,7 @@ describe("PostFeed", () => {
         expect(
             screen.getByText(/Subscribe or satisfy the access conditions to read it/i),
         ).toBeInTheDocument()
-        expect(screen.getAllByText("Silver tier")).toHaveLength(2)
+        expect(screen.getAllByText("Silver tier")).toHaveLength(1)
     })
 
     test("toggles inline comments from the engagement button", async () => {

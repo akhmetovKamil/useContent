@@ -3,6 +3,7 @@ import { Eye, Heart, MessageCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/utils/cn"
+import { formatPostDate } from "@/utils/date"
 
 interface PostEngagementBarProps {
     commentsCount: number
@@ -12,6 +13,9 @@ interface PostEngagementBarProps {
     likesCount: number
     onCommentsToggle: () => void
     onLike: () => void
+    publishedAt?: string | null
+    accessLabel?: string | null
+    hasAccess?: boolean
     viewsCount: number
 }
 
@@ -23,6 +27,9 @@ export function PostEngagementBar({
     likesCount,
     onCommentsToggle,
     onLike,
+    publishedAt,
+    accessLabel,
+    hasAccess = true,
     viewsCount,
 }: PostEngagementBarProps) {
     return (
@@ -50,10 +57,18 @@ export function PostEngagementBar({
                 <MessageCircle className="size-4" />
                 {commentsCount}
             </Button>
-            <Badge className="rounded-full border border-[var(--line)] bg-transparent">
-                <Eye className="size-3.5" />
-                {viewsCount} views
-            </Badge>
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-2 text-xs text-[var(--muted)]">
+                <span className="inline-flex items-center gap-1.5">
+                    <Eye className="size-3.5" />
+                    {viewsCount} views
+                </span>
+                {accessLabel ? (
+                    <Badge className="rounded-full" variant={hasAccess ? "success" : "warning"}>
+                        {accessLabel}
+                    </Badge>
+                ) : null}
+                {publishedAt ? <span>{formatPostDate(publishedAt)}</span> : null}
+            </div>
         </div>
     )
 }

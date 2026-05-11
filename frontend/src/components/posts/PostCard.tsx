@@ -173,7 +173,7 @@ export function PostCard({
                                 post.title
                             )}
                         </CardTitle>
-                        <PostMetaBadges post={post} />
+                        <PostMetaBadges isAuthorView={isAuthorView} post={post} />
                     </div>
                     {isAuthorView ? (
                         <AuthorActions
@@ -188,7 +188,7 @@ export function PostCard({
                             onUnarchive={onUnarchive}
                             post={post}
                         />
-                    ) : author && token ? (
+                    ) : author && token && hasAccess ? (
                         <Button
                             className="rounded-full"
                             onClick={() => setReportOpen(true)}
@@ -234,13 +234,16 @@ export function PostCard({
                             </div>
                         ) : null}
                         <PostEngagementBar
+                            accessLabel={"accessLabel" in post ? post.accessLabel : null}
                             commentsCount={post.commentsCount}
                             commentsOpen={commentsOpen}
+                            hasAccess={hasAccess}
                             isLikeDisabled={!author || !token || likeMutation.isPending}
                             likedByMe={optimisticLiked}
                             likesCount={optimisticLikesCount}
                             onCommentsToggle={() => setCommentsOpen((value) => !value)}
                             onLike={() => void handleLike()}
+                            publishedAt={post.publishedAt ?? post.createdAt}
                             viewsCount={post.viewsCount}
                         />
                         {commentsMode === "inline" && author && commentsOpen ? (

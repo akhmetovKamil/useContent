@@ -14,6 +14,7 @@ const repositoryMocks = vi.hoisted(() => ({
   deletePostCommentsByPostId: vi.fn(),
   createPostAttachment: vi.fn(),
   appendPostAttachmentId: vi.fn(),
+  listSubscriptionEntitlementsByWalletAndAuthorId: vi.fn(async () => []),
 }));
 
 const profileMocks = vi.hoisted(() => ({
@@ -73,7 +74,10 @@ vi.mock("../activity/events", () => ({
   recordPostLikedActivity: vi.fn(),
 }));
 vi.mock("../onchain", () => ({
-  readOnChainAccessGrants: vi.fn(),
+  readOnChainAccessGrants: vi.fn(async () => ({
+    nftOwnerships: [],
+    tokenBalances: [],
+  })),
   verifyPlatformTierPayment: vi.fn(),
   verifyPlatformStoragePayment: vi.fn(),
   verifyPlanRegistration: vi.fn(),

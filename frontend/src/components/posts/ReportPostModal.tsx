@@ -61,7 +61,7 @@ export function ReportPostModal({
                 <DialogHeader>
                     <DialogTitle>Report post</DialogTitle>
                     <DialogDescription>
-                        Reports help keep promoted and public posts safe. The post will not be hidden automatically.
+                        Reports help keep accessible posts safe. The post will not be hidden automatically.
                     </DialogDescription>
                 </DialogHeader>
                 <form

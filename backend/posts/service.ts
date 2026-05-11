@@ -632,19 +632,7 @@ export async function createPostReportBySlug(
   input: CreatePostReportRequest,
 ): Promise<PostReportDoc> {
   const reporterWallet = normalizeWallet(walletAddress);
-  const author = await getAuthorProfileBySlug(slug);
-  const post = await repo.findPublishedPostByIdAndAuthorId(
-    parseObjectId(postId, "postId"),
-    author._id,
-  );
-  if (!post) {
-    throw APIError.notFound("post not found");
-  }
-  if (post.policyMode !== "public" && !isPostPromotionActive(post)) {
-    throw APIError.failedPrecondition(
-      "only public or promoted posts can be reported",
-    );
-  }
+  const { post } = await getReadablePostContext(slug, postId, reporterWallet);
   const existing = await repo.findPostReport(post._id, reporterWallet);
   if (existing) {
     throw APIError.failedPrecondition("post already reported");
