@@ -148,7 +148,7 @@ A separate manual workflow can run the same production E2E suite without deployi
 
 Smart contract deployment is manual. GitHub Actions workflows run Hardhat deployment scripts for selected networks and sync deployed manager addresses into the backend deployment registry.
 
-Manual workflows are used because contract deployment requires private keys and RPC endpoints. Those secrets should be scoped to GitHub Actions and not mounted into the runtime backend or frontend containers.
+Manual workflows are used because contract deployment requires private keys and RPC endpoints. Those secrets should be scoped to GitHub Actions and not mounted into the runtime backend or frontend containers. Reader and platform contract workflows both use the same `REGISTRY_API_BASE_URL` secret for backend registry sync.
 
 The platform billing workflow deploys `PlatformTierManager` and `PlatformStorageManager` together, writes both records to the backend registry, then reads both public lookup endpoints back. In GitHub Actions the registry sync is required: missing `REGISTRY_API_BASE_URL` or `DEPLOYMENT_REGISTRY_TOKEN` fails the workflow instead of silently producing an address the frontend cannot see.
 
