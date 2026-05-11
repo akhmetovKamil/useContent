@@ -115,10 +115,11 @@ export function RootLayout() {
                                             aria-label={item.label}
                                             className={({ isActive }) =>
                                                 cn(
-                                                    "relative z-10 grid size-full place-items-center rounded-2xl transition-colors duration-150 ease-out",
+                                                    "group/dock-item relative z-10 grid size-full place-items-center rounded-2xl transition-all duration-150 ease-out",
+                                                    "hover:bg-[color-mix(in_srgb,var(--accent)_16%,var(--surface))] hover:text-[var(--foreground)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.08)]",
                                                     isActive
-                                                        ? "bg-[var(--accent)] text-white shadow-[0_10px_24px_rgba(0,0,0,0.14)]"
-                                                        : "text-[var(--foreground)] hover:bg-[var(--accent-soft)]"
+                                                        ? "bg-[color-mix(in_srgb,var(--accent)_24%,var(--surface))] text-[var(--foreground)] ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface)] shadow-[0_10px_24px_rgba(0,0,0,0.14)]"
+                                                        : "text-[var(--foreground)]"
                                                 )
                                             }
                                             end={item.end}
