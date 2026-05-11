@@ -104,7 +104,7 @@ export function RootLayout() {
                                 className={cn(
                                     "relative text-[var(--foreground)]",
                                     item.separatorAfter
-                                        ? "after:pointer-events-none after:absolute after:-right-2 after:top-1/2 after:h-10 after:w-px after:-translate-y-1/2 after:bg-[var(--line)]"
+                                        ? "after:pointer-events-none after:absolute after:-right-2 after:top-1/2 after:z-0 after:h-10 after:w-px after:-translate-y-1/2 after:bg-[var(--line)]"
                                         : ""
                                 )}
                                 key={item.to}
@@ -115,10 +115,10 @@ export function RootLayout() {
                                             aria-label={item.label}
                                             className={({ isActive }) =>
                                                 cn(
-                                                    "relative grid size-full place-items-center rounded-2xl text-[var(--foreground)] transition-colors duration-150 ease-out",
+                                                    "relative z-10 grid size-full place-items-center rounded-2xl transition-colors duration-150 ease-out",
                                                     isActive
-                                                        ? "bg-[var(--accent-soft)]"
-                                                        : "hover:bg-[var(--accent-soft)]"
+                                                        ? "bg-[var(--accent)] text-white shadow-[0_10px_24px_rgba(0,0,0,0.14)]"
+                                                        : "text-[var(--foreground)] hover:bg-[var(--accent-soft)]"
                                                 )
                                             }
                                             end={item.end}

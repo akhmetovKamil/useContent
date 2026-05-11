@@ -15,6 +15,23 @@ export function WorkspaceModeToggle() {
     const isAuthor = Boolean(token) && mode === "author"
     const disabled = !token || authorQuery.isLoading
 
+    function switchWorkspace() {
+        if (!token) {
+            setMode("reader")
+            navigate("/")
+            return
+        }
+
+        if (isAuthor) {
+            setMode("reader")
+            navigate("/")
+            return
+        }
+
+        setMode("author")
+        navigate(authorQuery.data ? "/author" : "/author/onboarding")
+    }
+
     return (
         <div
             className={`flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-2 py-2 shadow-[var(--shadow)] backdrop-blur-sm ${
@@ -28,22 +45,7 @@ export function WorkspaceModeToggle() {
                 aria-label={isAuthor ? "Switch to reader mode" : "Switch to author mode"}
                 className="grid size-9 place-items-center rounded-full bg-[var(--accent)] text-white transition-transform hover:scale-105"
                 disabled={disabled}
-                onClickCapture={() => {
-                    if (!token) {
-                        setMode("reader")
-                        navigate("/")
-                        return
-                    }
-
-                    if (isAuthor) {
-                        setMode("reader")
-                        navigate("/")
-                        return
-                    }
-
-                    setMode("author")
-                    navigate(authorQuery.data ? "/author" : "/author/onboarding")
-                }}
+                onTransition={switchWorkspace}
             >
                 {isAuthor ? (
                     <PenTool className="size-5 text-white" />

@@ -18,6 +18,8 @@ interface AnimatedThemeTogglerProps extends React.ComponentPropsWithoutRef<"butt
   variant?: TransitionVariant
   /** When true, the transition expands from the viewport center instead of the button center. */
   fromCenter?: boolean
+  /** Runs inside the view transition instead of toggling the global color theme. */
+  onTransition?: () => void
 }
 
 function polygonCollapsed(cx: number, cy: number, vertexCount: number): string {
@@ -130,6 +132,7 @@ export const AnimatedThemeToggler = ({
   duration = 400,
   variant,
   fromCenter = false,
+  onTransition,
   ...props
 }: AnimatedThemeTogglerProps) => {
   const shape = variant ?? "circle"
@@ -175,7 +178,12 @@ export const AnimatedThemeToggler = ({
       Math.max(y, viewportHeight - y)
     )
 
-    const applyTheme = () => {
+    const applyChange = () => {
+      if (onTransition) {
+        onTransition()
+        return
+      }
+
       const newTheme = !isDark
       setIsDark(newTheme)
       document.documentElement.classList.toggle("dark")
@@ -183,7 +191,7 @@ export const AnimatedThemeToggler = ({
     }
 
     if (typeof document.startViewTransition !== "function") {
-      applyTheme()
+      applyChange()
       return
     }
 
@@ -199,7 +207,7 @@ export const AnimatedThemeToggler = ({
     }
 
     const transition = document.startViewTransition(() => {
-      flushSync(applyTheme)
+      flushSync(applyChange)
     })
     if (typeof transition?.finished?.finally === "function") {
       transition.finished.finally(cleanup)
@@ -232,7 +240,7 @@ export const AnimatedThemeToggler = ({
         )
       })
     }
-  }, [shape, fromCenter, duration, isDark])
+  }, [shape, fromCenter, duration, isDark, onTransition])
 
   return (
     <button
