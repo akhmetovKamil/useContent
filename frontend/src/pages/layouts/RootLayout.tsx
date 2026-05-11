@@ -69,10 +69,10 @@ export function RootLayout() {
 
     return (
         <div
-            className="min-h-screen px-4 py-4 transition-colors duration-500 md:px-6 md:py-6"
+            className="min-h-screen overflow-x-hidden px-4 py-4 transition-colors duration-500 md:px-6 md:py-6"
             data-testid="app-shell"
         >
-            <div className="relative mx-auto flex min-h-[calc(100vh-2rem)] max-w-7xl flex-col rounded-[32px] border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)] backdrop-blur-sm">
+            <div className="relative mx-auto flex min-h-[calc(100vh-2rem)] min-w-0 max-w-7xl flex-col rounded-[32px] border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)] backdrop-blur-sm">
                 <header className="flex flex-col gap-5 border-b border-[var(--line)] px-5 py-5 md:flex-row md:items-center md:justify-between md:px-8">
                     <div>
                         <div className="font-mono text-xs uppercase tracking-[0.35em] text-[var(--muted)]">
@@ -88,7 +88,7 @@ export function RootLayout() {
                     </div>
                 </header>
 
-                <main className="flex-1 px-5 py-6 md:px-8 md:py-8">
+                <main className="min-w-0 flex-1 px-5 py-6 md:px-8 md:py-8">
                     <Outlet />
                 </main>
             </div>
@@ -115,11 +115,10 @@ export function RootLayout() {
                                             aria-label={item.label}
                                             className={({ isActive }) =>
                                                 cn(
-                                                    "group/dock-item relative z-10 grid size-full place-items-center rounded-2xl transition-all duration-150 ease-out",
-                                                    "hover:bg-[color-mix(in_srgb,var(--accent)_16%,var(--surface))] hover:text-[var(--foreground)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.08)]",
+                                                    "relative grid size-full place-items-center rounded-2xl text-[var(--foreground)] transition-colors duration-150 ease-out",
                                                     isActive
-                                                        ? "bg-[color-mix(in_srgb,var(--accent)_24%,var(--surface))] text-[var(--foreground)] ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface)] shadow-[0_10px_24px_rgba(0,0,0,0.14)]"
-                                                        : "text-[var(--foreground)]"
+                                                        ? "bg-[var(--accent-soft)] shadow-[inset_0_0_0_1px_var(--accent)]"
+                                                        : "hover:bg-[var(--accent-soft)]"
                                                 )
                                             }
                                             end={item.end}

@@ -6,7 +6,7 @@ function PageSection({ className, ...props }: React.ComponentProps<"section">) {
     return (
         <section
             className={cn(
-                "rounded-lg border border-[var(--line)] bg-[var(--surface-strong)] p-6 md:p-8",
+                "min-w-0 overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--surface-strong)] p-6 md:p-8",
                 className
             )}
             {...props}

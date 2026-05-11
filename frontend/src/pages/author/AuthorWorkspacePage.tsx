@@ -41,7 +41,7 @@ export function AuthorWorkspacePage() {
     )
 
     return (
-        <section className="grid gap-5">
+        <section className="grid min-w-0 gap-5">
             <PageSection className="p-5 md:p-6">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>
@@ -98,7 +98,7 @@ export function AuthorWorkspacePage() {
                     </Card>
                 ) : dashboard ? (
                     <>
-                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                             <KpiCard
                                 label="Active subscribers"
                                 value={String(dashboard.counts.activeSubscribers)}
@@ -124,7 +124,7 @@ export function AuthorWorkspacePage() {
                             />
                         </div>
 
-                        <div className="grid gap-5 xl:grid-cols-[1.3fr_0.9fr]">
+                        <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,0.9fr)]">
                             <Card>
                                 <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div>
@@ -354,11 +354,11 @@ function KpiCard({
     value: string
 }) {
     return (
-        <Card>
+        <Card className="min-w-0">
             <CardHeader className="p-4">
                 <CardDescription>{label}</CardDescription>
-                <CardTitle className="text-2xl">{value}</CardTitle>
-                <p className="text-xs text-[var(--muted)]">{detail}</p>
+                <CardTitle className="text-2xl [overflow-wrap:anywhere]">{value}</CardTitle>
+                <p className="text-xs text-[var(--muted)] [overflow-wrap:anywhere]">{detail}</p>
             </CardHeader>
         </Card>
     )
