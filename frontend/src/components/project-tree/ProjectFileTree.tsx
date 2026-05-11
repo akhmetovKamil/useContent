@@ -2,6 +2,7 @@ import { CONTENT_VISIBILITY, PROJECT_NODE_KIND } from "@shared/consts"
 import type { ProjectNodeDto } from "@shared/types/projects"
 import { useEffect, useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 
 import { projectsApi } from "@/api/ProjectsApi"
 import { CreateFolderModal } from "@/components/project-tree/CreateFolderModal"
@@ -25,6 +26,7 @@ import {
 } from "@/queries/projects"
 import { queryKeys } from "@/queries/queryKeys"
 import type { ProjectFileTreeProps } from "@/types/projects"
+import { formatFileSize } from "@/utils/format"
 
 export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: ProjectFileTreeProps) {
     const [currentFolderId, setCurrentFolderId] = useState<string | null>(rootNodeId)
@@ -94,12 +96,6 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
         void loadFolderChildren(node.id)
     }
 
-    function openRoot() {
-        setCurrentFolderId(rootNodeId)
-        setSelectedNode(null)
-        setExpandedFolderIds((previous) => new Set(previous).add(rootNodeId))
-    }
-
     function selectNode(node: ProjectNodeDto) {
         if (node.kind === PROJECT_NODE_KIND.FOLDER) {
             openFolder(node)
@@ -155,18 +151,6 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
         setRenameNodeTarget(null)
     }
 
-    async function toggleVisibility(node: ProjectNodeDto) {
-        await updateNodeMutation.mutateAsync({
-            nodeId: node.id,
-            input: {
-                visibility:
-                    node.visibility === CONTENT_VISIBILITY.PUBLISHED
-                        ? CONTENT_VISIBILITY.AUTHOR
-                        : CONTENT_VISIBILITY.PUBLISHED,
-            },
-        })
-    }
-
     async function deleteNode(node: ProjectNodeDto) {
         await deleteNodeMutation.mutateAsync(node.id)
         if (selectedNode?.id === node.id) {
@@ -208,42 +192,96 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
     }
 
     async function uploadFiles(files: File[]) {
-        await Promise.all(files.map((file) => uploadFileMutation.mutateAsync(file)))
+        if (!files.length) {
+            return
+        }
+
+        const totalSize = files.reduce((sum, file) => sum + file.size, 0)
+        const toastId = toast.loading(
+            `Uploading ${formatUploadSummary(files.length, totalSize)}...`,
+            { duration: Infinity }
+        )
+        let uploadedCount = 0
+
+        try {
+            for (const file of files) {
+                await uploadFileMutation.mutateAsync(file)
+                uploadedCount += 1
+                toast.loading(
+                    `Uploading ${formatUploadSummary(files.length, totalSize)}... ${uploadedCount}/${files.length} complete`,
+                    { duration: Infinity, id: toastId }
+                )
+            }
+
+            toast.success(`Uploaded ${formatUploadSummary(files.length, totalSize)}.`, {
+                id: toastId,
+            })
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "File upload failed.", {
+                id: toastId,
+            })
+        }
     }
 
     async function uploadFolderFiles(files: File[]) {
+        if (!files.length) {
+            return
+        }
+
+        const totalSize = files.reduce((sum, file) => sum + file.size, 0)
+        const toastId = toast.loading(
+            `Uploading folder: ${formatUploadSummary(files.length, totalSize)}...`,
+            { duration: Infinity }
+        )
+        let uploadedCount = 0
         const folderIds = new Map<string, string | null>()
         folderIds.set("", currentFolderId)
 
-        for (const file of files) {
-            const relativePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath
-            const pathParts = (relativePath || file.name).split("/").filter(Boolean)
-            const fileName = pathParts.pop() ?? file.name
-            let parentId = currentFolderId
-            let pathKey = ""
+        try {
+            for (const file of files) {
+                const relativePath = (file as File & { webkitRelativePath?: string })
+                    .webkitRelativePath
+                const pathParts = (relativePath || file.name).split("/").filter(Boolean)
+                const fileName = pathParts.pop() ?? file.name
+                let parentId = currentFolderId
+                let pathKey = ""
 
-            for (const segment of pathParts) {
-                pathKey = pathKey ? `${pathKey}/${segment}` : segment
-                if (!folderIds.has(pathKey)) {
-                    const folder = await projectsApi.createMyProjectFolder(projectId, {
-                        name: segment,
-                        parentId,
-                        visibility: CONTENT_VISIBILITY.PUBLISHED,
-                    })
-                    folderIds.set(pathKey, folder.id)
+                for (const segment of pathParts) {
+                    pathKey = pathKey ? `${pathKey}/${segment}` : segment
+                    if (!folderIds.has(pathKey)) {
+                        const folder = await projectsApi.createMyProjectFolder(projectId, {
+                            name: segment,
+                            parentId,
+                            visibility: CONTENT_VISIBILITY.PUBLISHED,
+                        })
+                        folderIds.set(pathKey, folder.id)
+                    }
+                    parentId = folderIds.get(pathKey) ?? currentFolderId
                 }
-                parentId = folderIds.get(pathKey) ?? currentFolderId
+
+                const uploadFile = new File([file], fileName, { type: file.type })
+                await projectsApi.uploadMyProjectFile(projectId, uploadFile, parentId)
+                uploadedCount += 1
+                toast.loading(
+                    `Uploading folder: ${formatUploadSummary(files.length, totalSize)}... ${uploadedCount}/${files.length} complete`,
+                    { duration: Infinity, id: toastId }
+                )
             }
 
-            const uploadFile = new File([file], fileName, { type: file.type })
-            await projectsApi.uploadMyProjectFile(projectId, uploadFile, parentId)
-        }
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.myProjectNodes(projectId, currentFolderId),
+            })
+            await queryClient.invalidateQueries({ queryKey: ["me", "projects"] })
+            await queryClient.invalidateQueries({ queryKey: ["authors"] })
 
-        await queryClient.invalidateQueries({
-            queryKey: queryKeys.myProjectNodes(projectId, currentFolderId),
-        })
-        await queryClient.invalidateQueries({ queryKey: ["me", "projects"] })
-        await queryClient.invalidateQueries({ queryKey: ["authors"] })
+            toast.success(`Uploaded folder with ${formatUploadSummary(files.length, totalSize)}.`, {
+                id: toastId,
+            })
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Folder upload failed.", {
+                id: toastId,
+            })
+        }
     }
 
     return (
@@ -283,12 +321,11 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                         Failed to load project files: {nodesQuery.error.message}
                     </p>
                 ) : (
-                    <div className="grid gap-4 lg:grid-cols-[minmax(240px,320px)_1fr]">
+                    <div className="grid min-h-[640px] gap-4 lg:max-h-[calc(100dvh-12rem)] lg:grid-cols-[minmax(260px,340px)_1fr]">
                         <ProjectTreeSidebar
                             currentFolderId={currentFolderId}
                             expandedFolderIds={expandedFolderIds}
                             nodesByParent={treeNodesByParent}
-                            onOpenRoot={openRoot}
                             onSelectNode={selectNode}
                             rootNodeId={rootNodeId}
                             selectedNodeId={selectedNode?.id}
@@ -309,7 +346,6 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                                 setRenameNodeTarget(target)
                                 setRenameName(target.name)
                             }}
-                            onToggleVisibility={(target) => void toggleVisibility(target)}
                             selectedNode={selectedNode}
                         />
                     </div>
@@ -379,4 +415,8 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
             />
         </Card>
     )
+}
+
+function formatUploadSummary(fileCount: number, totalSize: number) {
+    return `${fileCount} file${fileCount === 1 ? "" : "s"} (${formatFileSize(totalSize)})`
 }

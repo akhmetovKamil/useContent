@@ -1,8 +1,6 @@
-import { CONTENT_VISIBILITY } from "@shared/consts"
 import type { ProjectNodeDto } from "@shared/types/projects"
 import { Download, Eye, FileText, Folder, PackageOpen, Pencil, Trash2 } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { formatFileSize } from "@/utils/format"
 
@@ -16,7 +14,6 @@ export function ProjectNodeRow({
     onOpenFolder,
     onPreview,
     onRename,
-    onToggleVisibility,
 }: {
     bulkDownloadPending: boolean
     isAuthor: boolean
@@ -27,12 +24,11 @@ export function ProjectNodeRow({
     onOpenFolder: (node: ProjectNodeDto) => void
     onPreview: (node: ProjectNodeDto) => void
     onRename: (node: ProjectNodeDto) => void
-    onToggleVisibility: (node: ProjectNodeDto) => void
 }) {
     return (
-        <div className="grid gap-3 border-b border-[var(--line)] bg-[var(--surface)] p-4 last:border-b-0 md:grid-cols-[1fr_auto]">
+        <div className="grid gap-3 border-b border-[var(--line)] bg-[var(--surface)] p-4 transition hover:bg-[var(--surface-strong)] last:border-b-0 md:grid-cols-[1fr_auto]">
             <button
-                className="flex min-w-0 items-center gap-3 text-left"
+                className="flex min-w-0 items-center gap-3 rounded-2xl text-left outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-default"
                 disabled={node.kind !== "folder"}
                 onClick={() => onOpenFolder(node)}
                 type="button"
@@ -57,7 +53,6 @@ export function ProjectNodeRow({
             </button>
 
             <div className="flex flex-wrap items-center gap-2 md:justify-end">
-                <Badge>{node.visibility}</Badge>
                 {node.kind === "file" ? (
                     <>
                         <Button
@@ -105,17 +100,6 @@ export function ProjectNodeRow({
                         >
                             <Pencil className="size-4" />
                             Rename
-                        </Button>
-                        <Button
-                            className="rounded-full"
-                            onClick={() => onToggleVisibility(node)}
-                            size="sm"
-                            type="button"
-                            variant="outline"
-                        >
-                            {node.visibility === CONTENT_VISIBILITY.PUBLISHED
-                                ? "Make private"
-                                : "Publish"}
                         </Button>
                         <Button
                             className="rounded-full"

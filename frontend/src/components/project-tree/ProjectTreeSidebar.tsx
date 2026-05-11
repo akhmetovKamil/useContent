@@ -7,7 +7,6 @@ interface ProjectTreeSidebarProps {
     currentFolderId: string | null
     expandedFolderIds: Set<string>
     nodesByParent: Record<string, ProjectNodeDto[]>
-    onOpenRoot: () => void
     onSelectNode: (node: ProjectNodeDto) => void
     rootNodeId: string
     selectedNodeId?: string | null
@@ -17,7 +16,6 @@ export function ProjectTreeSidebar({
     currentFolderId,
     expandedFolderIds,
     nodesByParent,
-    onOpenRoot,
     onSelectNode,
     rootNodeId,
     selectedNodeId,
@@ -26,19 +24,10 @@ export function ProjectTreeSidebar({
     const treeElements = buildTreeElements(rootChildren, nodesByParent)
 
     return (
-        <aside className="rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-3 lg:sticky lg:top-4 lg:max-h-[76vh] lg:overflow-auto">
-            <button
-                className="mb-3 flex w-full items-center gap-2 rounded-2xl bg-[var(--surface-strong)] px-3 py-2 text-left text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--foreground)] hover:text-[var(--background)]"
-                onClick={onOpenRoot}
-                type="button"
-            >
-                <FolderOpen className="size-4" />
-                root
-            </button>
-
+        <aside className="min-h-0 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-3 lg:h-full lg:overflow-hidden">
             {treeElements.length ? (
                 <Tree
-                    className="h-auto min-h-[220px] overflow-hidden rounded-2xl bg-[var(--surface)] p-1"
+                    className="h-full min-h-[260px] overflow-hidden rounded-2xl bg-[var(--surface)] p-1"
                     closeIcon={<Folder className="size-4" />}
                     elements={treeElements}
                     initialExpandedItems={[...expandedFolderIds]}

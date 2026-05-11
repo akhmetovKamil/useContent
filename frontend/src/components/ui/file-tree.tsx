@@ -314,8 +314,8 @@ const Folder = forwardRef<HTMLDivElement, FolderProps & React.HTMLAttributes<HTM
                 className="relative h-full overflow-hidden"
             >
                 <AccordionPrimitive.Trigger
-                    className={cn(`flex items-center gap-1 rounded-md text-sm`, className, {
-                        "bg-muted rounded-md": isSelected && isSelectable,
+                    className={cn("flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-sm transition hover:bg-[var(--surface-strong)] hover:text-[var(--foreground)]", className, {
+                        "bg-[var(--surface-strong)] text-[var(--foreground)] shadow-[inset_0_0_0_1px_var(--line)]": isSelected && isSelectable,
                         "cursor-pointer": isSelectable,
                         "cursor-not-allowed opacity-50": !isSelectable,
                     })}
@@ -328,7 +328,7 @@ const Folder = forwardRef<HTMLDivElement, FolderProps & React.HTMLAttributes<HTM
                     {expandedItems?.includes(value)
                         ? (openIcon ?? <FolderOpenIcon className="size-4" />)
                         : (closeIcon ?? <FolderIcon className="size-4" />)}
-                    <span>{element}</span>
+                    <span className="min-w-0 truncate">{element}</span>
                 </AccordionPrimitive.Trigger>
                 <AccordionPrimitive.Content className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down relative h-full overflow-hidden text-sm">
                     {element && indicator && <TreeIndicator aria-hidden="true" />}
@@ -380,9 +380,9 @@ const File = forwardRef<
                 type="button"
                 disabled={!isSelectable}
                 className={cn(
-                    "flex w-fit items-center gap-1 rounded-md pr-1 text-sm duration-200 ease-in-out rtl:pr-0 rtl:pl-1",
+                    "flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-sm transition duration-200 ease-in-out hover:bg-[var(--surface-strong)] hover:text-[var(--foreground)] rtl:pr-0 rtl:pl-1",
                     {
-                        "bg-muted": isSelected && isSelectable,
+                        "bg-[var(--surface-strong)] text-[var(--foreground)] shadow-[inset_0_0_0_1px_var(--line)]": isSelected && isSelectable,
                     },
                     isSelectable ? "cursor-pointer" : "cursor-not-allowed opacity-50",
                     direction === "rtl" ? "rtl" : "ltr",
@@ -396,7 +396,7 @@ const File = forwardRef<
                 {...props}
             >
                 {fileIcon ?? <FileIcon className="size-4" />}
-                {children}
+                <span className="min-w-0 truncate">{children}</span>
             </button>
         )
     }

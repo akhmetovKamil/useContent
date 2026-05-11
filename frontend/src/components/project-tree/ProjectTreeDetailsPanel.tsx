@@ -1,10 +1,9 @@
 import { PROJECT_NODE_KIND } from "@shared/consts"
 import type { ProjectNodeDto } from "@shared/types/projects"
-import { Download, FileText, FolderOpen, PackageOpen } from "lucide-react"
+import { Download, FileText, FolderOpen, ListTree, PackageOpen } from "lucide-react"
 
 import { ProjectFilePreview } from "@/components/project-tree/ProjectFilePreview"
 import { ProjectNodeRow } from "@/components/project-tree/ProjectNodeRow"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { formatFileSize } from "@/utils/format"
 
@@ -21,7 +20,6 @@ interface ProjectTreeDetailsPanelProps {
     onOpenFolder: (node: ProjectNodeDto) => void
     onPreview: (node: ProjectNodeDto) => void
     onRename: (node: ProjectNodeDto) => void
-    onToggleVisibility: (node: ProjectNodeDto) => void
     selectedNode: ProjectNodeDto | null
 }
 
@@ -38,30 +36,25 @@ export function ProjectTreeDetailsPanel({
     onOpenFolder,
     onPreview,
     onRename,
-    onToggleVisibility,
     selectedNode,
 }: ProjectTreeDetailsPanelProps) {
     if (selectedNode?.kind === PROJECT_NODE_KIND.FILE) {
         return (
-            <section className="grid gap-4">
-                <div className="rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-5">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-2 text-sm font-semibold text-[var(--muted)]">
-                                <FileText className="size-4" />
-                                selected file
-                            </div>
-                            <h3 className="mt-2 truncate text-2xl font-semibold text-[var(--foreground)]">
-                                {selectedNode.name}
-                            </h3>
-                            <div className="mt-3 flex flex-wrap gap-2">
-                                <Badge>{selectedNode.visibility}</Badge>
-                                <Badge variant="default">
-                                    {selectedNode.mimeType ?? "unknown type"}
-                                </Badge>
-                                <Badge variant="default">
+            <section className="grid min-h-0 gap-4 lg:h-full lg:overflow-hidden">
+                <div className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] px-4 py-3">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div className="flex min-w-0 items-center gap-3">
+                            <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[var(--surface-strong)] text-[var(--foreground)]">
+                                <FileText className="size-5" />
+                            </span>
+                            <div className="min-w-0">
+                                <h3 className="truncate text-lg font-semibold text-[var(--foreground)]">
+                                    {selectedNode.name}
+                                </h3>
+                                <p className="truncate text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
+                                    {selectedNode.mimeType ?? "unknown type"} ·{" "}
                                     {formatFileSize(selectedNode.size ?? 0)}
-                                </Badge>
+                                </p>
                             </div>
                         </div>
                         <Button
@@ -86,19 +79,23 @@ export function ProjectTreeDetailsPanel({
     }
 
     return (
-        <section className="rounded-[28px] border border-[var(--line)] bg-[var(--surface)]">
-            <div className="flex flex-col gap-4 border-b border-[var(--line)] p-5 md:flex-row md:items-start md:justify-between">
-                <div>
-                    <div className="flex items-center gap-2 text-sm font-semibold text-[var(--muted)]">
-                        <FolderOpen className="size-4" />
-                        selected folder
+        <section className="min-h-0 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] lg:h-full lg:overflow-hidden">
+            <div className="flex flex-col gap-3 border-b border-[var(--line)] px-4 py-3 md:flex-row md:items-center md:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[var(--surface-strong)] text-[var(--foreground)]">
+                        <FolderOpen className="size-5" />
+                    </span>
+                    <div className="min-w-0">
+                        <h3 className="truncate text-lg font-semibold text-[var(--foreground)]">
+                            {currentFolder ? currentFolder.name : "Project files"}
+                        </h3>
+                        <p className="flex items-center gap-2 text-sm text-[var(--muted)]">
+                            <ListTree className="size-4" />
+                            <span>
+                                {nodes.length} item{nodes.length === 1 ? "" : "s"}
+                            </span>
+                        </p>
                     </div>
-                    <h3 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
-                        {currentFolder ? currentFolder.name : "root"}
-                    </h3>
-                    <p className="mt-2 text-sm text-[var(--muted)]">
-                        {nodes.length} item{nodes.length === 1 ? "" : "s"} in this folder.
-                    </p>
                 </div>
                 <Button
                     className="w-fit rounded-full"
@@ -113,7 +110,7 @@ export function ProjectTreeDetailsPanel({
                 </Button>
             </div>
 
-            <div className="p-4">
+            <div className="min-h-0 p-4 lg:h-[calc(100%-4.5rem)] lg:overflow-auto">
                 {isLoading ? (
                     <p className="text-sm text-[var(--muted)]">Loading files...</p>
                 ) : nodes.length ? (
@@ -130,7 +127,6 @@ export function ProjectTreeDetailsPanel({
                                 onOpenFolder={onOpenFolder}
                                 onPreview={onPreview}
                                 onRename={onRename}
-                                onToggleVisibility={onToggleVisibility}
                             />
                         ))}
                     </div>
