@@ -1,5 +1,6 @@
 import type { FeedPostDto } from "@shared/types/posts"
 import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
 import { beforeEach, describe, expect, test, vi } from "vitest"
 
@@ -107,5 +108,52 @@ describe("PostFeed", () => {
             screen.getByText(/Subscribe or satisfy the access conditions to read it/i),
         ).toBeInTheDocument()
         expect(screen.getAllByText("Silver tier")).toHaveLength(2)
+    })
+
+    test("toggles inline comments from the engagement button", async () => {
+        const user = userEvent.setup()
+        const post: FeedPostDto = {
+            id: "post-1",
+            title: "Open post",
+            content: "Public content",
+            status: "published",
+            policyMode: "public",
+            policy: null,
+            accessPolicyId: null,
+            accessLabel: null,
+            commentsPreview: [],
+            feedReason: null,
+            feedSource: "author",
+            hasAccess: true,
+            mediaGridLayout: null,
+            mediaLayout: "carousel",
+            likedByMe: false,
+            likesCount: 0,
+            promotion: null,
+            commentsCount: 0,
+            viewsCount: 0,
+            attachments: [],
+            attachmentIds: [],
+            linkedProjectIds: [],
+            authorId: "author-1",
+            authorSlug: "kamil",
+            authorDisplayName: "Kamil",
+            authorAvatarFileId: null,
+            createdAt: "2026-04-01T00:00:00.000Z",
+            publishedAt: "2026-04-01T00:00:00.000Z",
+            updatedAt: "2026-04-01T00:00:00.000Z",
+        }
+
+        render(<PostFeed emptyLabel="Empty" posts={[post]} showAuthor />, {
+            wrapper: MemoryRouter,
+        })
+
+        expect(screen.queryByText("No comments yet.")).not.toBeInTheDocument()
+
+        await user.click(screen.getByRole("button", { name: "Show comments" }))
+        expect(screen.getByText("No comments yet.")).toBeInTheDocument()
+
+        await user.click(screen.getByRole("button", { name: "Hide comments" }))
+        expect(screen.queryByText("No comments yet.")).not.toBeInTheDocument()
     })
 })

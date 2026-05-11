@@ -2,7 +2,6 @@ import { useEffect, useMemo } from "react"
 import { useParams } from "react-router-dom"
 
 import { LockedPostCard } from "@/components/post-page/LockedPostCard"
-import { PostCommentsSection } from "@/components/post-page/PostCommentsSection"
 import { PostErrorCard } from "@/components/post-page/PostErrorCard"
 import { RelatedPostsSection } from "@/components/post-page/RelatedPostsSection"
 import { PostCard } from "@/components/posts/PostCard"
@@ -11,22 +10,16 @@ import { useAuthorProfileQuery } from "@/queries/authors"
 import {
     useAuthorPostQuery,
     useAuthorPostsQuery,
-    useCreatePostCommentMutation,
-    usePostCommentsQuery,
     useRecordPostViewMutation,
 } from "@/queries/posts"
-import { useAuthStore } from "@/stores/auth-store"
 import { isApiPermissionError } from "@/utils/api/errors"
 import { getPostViewerKey, toAuthorFeedPost } from "@/utils/post-page"
 
 export function PostPage() {
     const { slug = "", postId = "" } = useParams()
-    const token = useAuthStore((state) => state.token)
     const postQuery = useAuthorPostQuery(slug, postId)
     const authorQuery = useAuthorProfileQuery(slug)
     const relatedPostsQuery = useAuthorPostsQuery(slug)
-    const commentsQuery = usePostCommentsQuery(slug, postId, Boolean(postQuery.data))
-    const commentMutation = useCreatePostCommentMutation(slug, postId)
     const recordViewMutation = useRecordPostViewMutation(slug, postId)
     const viewerKey = useMemo(() => getPostViewerKey(), [])
     const author = authorQuery.data
@@ -60,17 +53,7 @@ export function PostPage() {
 
             {feedPost ? (
                 <>
-                    <PostCard commentsMode="hidden" post={feedPost} showAuthor />
-
-                    <PostCommentsSection
-                        authorId={feedPost.authorId}
-                        comments={commentsQuery.data}
-                        isError={commentsQuery.isError}
-                        isLoading={commentsQuery.isLoading}
-                        isPending={commentMutation.isPending}
-                        onSubmit={(content) => commentMutation.mutateAsync({ content })}
-                        token={token}
-                    />
+                    <PostCard post={feedPost} showAuthor />
                 </>
             ) : null}
 

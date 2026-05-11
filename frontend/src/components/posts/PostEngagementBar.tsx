@@ -39,6 +39,8 @@ export function PostEngagementBar({
                 {likesCount}
             </Button>
             <Button
+                aria-label={commentsOpen ? "Hide comments" : "Show comments"}
+                aria-pressed={commentsOpen}
                 className="rounded-full"
                 onClick={onCommentsToggle}
                 size="sm"
