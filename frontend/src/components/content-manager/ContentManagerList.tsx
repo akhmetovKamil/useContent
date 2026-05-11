@@ -1,4 +1,5 @@
 import type { ContentStatus } from "@shared/types/posts"
+import type { ReactNode } from "react"
 
 import { ContentManagerItemCard } from "@/components/content-manager/ContentManagerItemCard"
 import { EmptyState } from "@/components/ui/empty-state"
@@ -15,6 +16,7 @@ interface ContentManagerListProps {
     onOpen?: (item: ManagedContentItem) => void
     onRequestDelete: (item: ManagedContentItem) => void
     onToggleStatus: (itemId: string, status: ContentStatus) => Promise<unknown>
+    renderItemExpansion?: (item: ManagedContentItem) => ReactNode
 }
 
 export function ContentManagerList({
@@ -27,6 +29,7 @@ export function ContentManagerList({
     onOpen,
     onRequestDelete,
     onToggleStatus,
+    renderItemExpansion,
 }: ContentManagerListProps) {
     return (
         <div className="grid gap-4">
@@ -42,6 +45,7 @@ export function ContentManagerList({
                         onOpen={onOpen}
                         onRequestDelete={onRequestDelete}
                         onToggleStatus={onToggleStatus}
+                        renderExpansion={renderItemExpansion}
                     />
                 ))
             ) : !isLoading ? (

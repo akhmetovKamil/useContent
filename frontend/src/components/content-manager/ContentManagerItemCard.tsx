@@ -1,10 +1,12 @@
 import { CONTENT_STATUS } from "@shared/consts"
 import type { ContentStatus } from "@shared/types/posts"
+import type { ReactNode } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { ContentManagerKind, ManagedContentItem } from "@/types/content-manager"
+import { formatDisplayDate } from "@/utils/date"
 import { formatFileSize } from "@/utils/format"
 
 interface ContentManagerItemCardProps {
@@ -14,6 +16,7 @@ interface ContentManagerItemCardProps {
     onArchive?: (itemId: string) => Promise<unknown>
     onRequestDelete: (item: ManagedContentItem) => void
     onToggleStatus: (itemId: string, status: ContentStatus) => Promise<unknown>
+    renderExpansion?: (item: ManagedContentItem) => ReactNode
 }
 
 export function ContentManagerItemCard({
@@ -23,9 +26,11 @@ export function ContentManagerItemCard({
     onArchive,
     onRequestDelete,
     onToggleStatus,
+    renderExpansion,
 }: ContentManagerItemCardProps) {
     const body =
         kind === "post" ? item.content : item.description || "Project description is still empty"
+    const expansion = renderExpansion?.(item)
 
     return (
         <Card>
@@ -34,8 +39,17 @@ export function ContentManagerItemCard({
                     <CardTitle>{item.title}</CardTitle>
                     <Badge>{item.status}</Badge>
                     <Badge>{item.policyMode}</Badge>
+                    {kind === "project" && typeof item.fileCount === "number" ? (
+                        <Badge>{item.fileCount} files</Badge>
+                    ) : null}
+                    {kind === "project" && typeof item.folderCount === "number" ? (
+                        <Badge>{item.folderCount} folders</Badge>
+                    ) : null}
                     {kind === "project" && typeof item.totalSize === "number" ? (
                         <Badge>{formatFileSize(item.totalSize)}</Badge>
+                    ) : null}
+                    {kind === "project" && item.updatedAt ? (
+                        <Badge>Updated {formatDisplayDate(item.updatedAt)}</Badge>
                     ) : null}
                 </div>
             </CardHeader>
@@ -50,7 +64,7 @@ export function ContentManagerItemCard({
                             type="button"
                             variant="outline"
                         >
-                            Open files
+                            {kind === "project" ? "Open project" : "Open"}
                         </Button>
                     ) : null}
                     <Button
@@ -84,6 +98,7 @@ export function ContentManagerItemCard({
                         Delete
                     </Button>
                 </div>
+                {expansion ? <div className="mt-5">{expansion}</div> : null}
             </CardContent>
         </Card>
     )

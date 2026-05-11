@@ -1,7 +1,7 @@
 import { CONTENT_STATUS, POLICY_MODE } from "@shared/consts"
 import type { PolicyMode } from "@shared/types/access"
 import type { ContentStatus } from "@shared/types/posts"
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 
 import { ContentManagerForm } from "@/components/content-manager/ContentManagerForm"
 import { ContentManagerList } from "@/components/content-manager/ContentManagerList"
@@ -34,6 +34,7 @@ interface ContentManagerProps {
     onOpen?: (item: ManagedContentItem) => void
     onArchive?: (itemId: string) => Promise<unknown>
     onToggleStatus: (itemId: string, status: ContentStatus) => Promise<unknown>
+    renderItemExpansion?: (item: ManagedContentItem) => ReactNode
     title: string
     token: string | null
 }
@@ -57,6 +58,7 @@ export function ContentManager({
     onOpen,
     onArchive,
     onToggleStatus,
+    renderItemExpansion,
     title,
     token,
 }: ContentManagerProps) {
@@ -121,6 +123,7 @@ export function ContentManager({
                         onOpen={onOpen}
                         onRequestDelete={setDeleteTarget}
                         onToggleStatus={onToggleStatus}
+                        renderItemExpansion={renderItemExpansion}
                     />
                 </div>
             )}

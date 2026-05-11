@@ -8,7 +8,11 @@ export interface ManagedContentItem {
     policyMode: PolicyMode
     content?: string
     description?: string
+    fileCount?: number
+    folderCount?: number
+    rootNodeId?: string
     totalSize?: number
+    updatedAt?: string
 }
 
 export interface SavedAccessPolicyOption {

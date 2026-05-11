@@ -6,9 +6,8 @@ import { Link } from "react-router-dom"
 
 import { ContentManager } from "@/components/content-manager/ContentManager"
 import { ProjectFileTree } from "@/components/project-tree/ProjectFileTree"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { useMyAccessPoliciesQuery } from "@/queries/access-policies"
 import { useMyAuthorPlatformBillingQuery } from "@/queries/platform"
 import {
@@ -18,8 +17,6 @@ import {
     useUpdateMyProjectMutation,
 } from "@/queries/projects"
 import { useAuthStore } from "@/stores/auth-store"
-import { formatDisplayDate } from "@/utils/date"
-import { formatFileSize } from "@/utils/format"
 
 export function MeProjectsPage() {
     const token = useAuthStore((state) => state.token)
@@ -117,7 +114,11 @@ export function MeProjectsPage() {
                     })
                 }
                 onDelete={(projectId) => deleteProjectMutation.mutateAsync(projectId)}
-                onOpen={(project) => setSelectedProject(project as ProjectDto)}
+                onOpen={(project) =>
+                    setSelectedProject((current) =>
+                        current?.id === project.id ? null : (project as ProjectDto)
+                    )
+                }
                 onArchive={(projectId) =>
                     updateProjectMutation.mutateAsync({
                         projectId,
@@ -129,6 +130,16 @@ export function MeProjectsPage() {
                         projectId,
                         input: { status },
                     })
+                }
+                renderItemExpansion={(item) =>
+                    selectedProject?.id === item.id ? (
+                        <ProjectFileTree
+                            mode="author"
+                            projectId={selectedProject.id}
+                            rootLabel={selectedProject.title}
+                            rootNodeId={selectedProject.rootNodeId}
+                        />
+                    ) : null
                 }
                 title="Structured project spaces with private access"
                 token={token}
@@ -157,50 +168,30 @@ export function MeProjectsPage() {
                     missingSessionLabel="Sign in to manage archived projects."
                     onCreate={() => Promise.resolve()}
                     onDelete={(projectId) => deleteProjectMutation.mutateAsync(projectId)}
-                    onOpen={(project) => setSelectedProject(project as ProjectDto)}
+                    onOpen={(project) =>
+                        setSelectedProject((current) =>
+                            current?.id === project.id ? null : (project as ProjectDto)
+                        )
+                    }
                     onToggleStatus={(projectId) =>
                         updateProjectMutation.mutateAsync({
                             projectId,
                             input: { status: CONTENT_STATUS.PUBLISHED },
                         })
                     }
+                    renderItemExpansion={(item) =>
+                        selectedProject?.id === item.id ? (
+                            <ProjectFileTree
+                                mode="author"
+                                projectId={selectedProject.id}
+                                rootLabel={selectedProject.title}
+                                rootNodeId={selectedProject.rootNodeId}
+                            />
+                        ) : null
+                    }
                     title="Archived project spaces"
                     token={token}
                 />
-            ) : null}
-
-            {selectedProject ? (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{selectedProject.title}</CardTitle>
-                        <div className="flex flex-wrap gap-2">
-                            <Badge className="rounded-full">{selectedProject.status}</Badge>
-                            <Badge className="rounded-full">
-                                {selectedProject.fileCount} files
-                            </Badge>
-                            <Badge className="rounded-full">
-                                {selectedProject.folderCount} folders
-                            </Badge>
-                            <Badge className="rounded-full">
-                                {formatFileSize(selectedProject.totalSize)}
-                            </Badge>
-                            <Badge className="rounded-full">
-                                Updated {formatDisplayDate(selectedProject.updatedAt)}
-                            </Badge>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="whitespace-pre-wrap text-sm leading-6 text-[var(--muted)]">
-                            {selectedProject.description || "Project description is still empty."}
-                        </p>
-                        <ProjectFileTree
-                            mode="author"
-                            projectId={selectedProject.id}
-                            rootLabel={selectedProject.title}
-                            rootNodeId={selectedProject.rootNodeId}
-                        />
-                    </CardContent>
-                </Card>
             ) : null}
         </div>
     )
