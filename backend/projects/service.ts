@@ -61,6 +61,8 @@ const repo = {
   ...subscriptionsRepo,
 };
 
+const ARCHIVE_READ_CONCURRENCY = 4;
+
 import {
   assertAuthorPlatformFeature,
   assertAuthorStorageQuota,
@@ -622,17 +624,23 @@ async function buildProjectArchive(
     throw APIError.failedPrecondition("folder is empty");
   }
 
-  const files = [];
-  for (const item of bundle.files) {
+  const files = await mapWithConcurrency(
+    bundle.files,
+    ARCHIVE_READ_CONCURRENCY,
+    async (item) => {
     const node = await resolveProjectNode(project, item.nodeId);
     if (publishedOnly && node.visibility !== CONTENT_VISIBILITY.PUBLISHED) {
-      continue;
+      return null;
     }
     const file = await readProjectFileObject(node);
-    files.push({ body: file.body, path: item.path });
-  }
+      return { body: file.body, path: item.path };
+    },
+  );
+  const archiveFiles = files.filter(
+    (file): file is NonNullable<(typeof files)[number]> => file !== null,
+  );
 
-  if (!files.length) {
+  if (!archiveFiles.length) {
     throw APIError.failedPrecondition("folder is empty");
   }
 
@@ -640,10 +648,34 @@ async function buildProjectArchive(
     folder._id.equals(project.rootNodeId) ? project.title : folder.name;
 
   return {
-    body: createStoredZipBuffer(files),
+    body: createStoredZipBuffer(archiveFiles),
     contentType: "application/zip",
     fileName: `${sanitizeArchiveFileName(archiveName || "project-files")}.zip`,
   };
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+
+  async function worker(): Promise<void> {
+    while (nextIndex < items.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await mapper(items[index], index);
+    }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    () => worker(),
+  );
+  await Promise.all(workers);
+  return results;
 }
 
 function sanitizeArchiveFileName(name: string): string {

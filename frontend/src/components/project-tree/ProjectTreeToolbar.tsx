@@ -1,4 +1,4 @@
-import { FolderPlus, Upload } from "lucide-react"
+import { FolderInput, FolderPlus, Upload } from "lucide-react"
 import type { RefObject } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -20,7 +20,7 @@ export function ProjectTreeToolbar({
     return (
         <div className="flex flex-wrap gap-2">
             <Button
-                className="rounded-full"
+                className="h-9 rounded-full"
                 onClick={onCreateFolder}
                 size="sm"
                 type="button"
@@ -30,22 +30,23 @@ export function ProjectTreeToolbar({
                 New folder
             </Button>
             <Button
-                className="rounded-full"
+                className="h-9 rounded-full"
                 onClick={() => fileInputRef.current?.click()}
-                size="sm"
-                type="button"
-            >
-                <Upload className="size-4" />
-                Upload files
-            </Button>
-            <Button
-                className="rounded-full"
-                onClick={() => folderInputRef.current?.click()}
                 size="sm"
                 type="button"
                 variant="outline"
             >
                 <Upload className="size-4" />
+                Upload files
+            </Button>
+            <Button
+                className="h-9 rounded-full"
+                onClick={() => folderInputRef.current?.click()}
+                size="sm"
+                type="button"
+                variant="outline"
+            >
+                <FolderInput className="size-4" />
                 Upload folder
             </Button>
             <Input

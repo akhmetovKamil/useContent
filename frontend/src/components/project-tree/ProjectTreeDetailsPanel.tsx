@@ -1,6 +1,6 @@
 import { PROJECT_NODE_KIND } from "@shared/consts"
 import type { ProjectNodeDto, ProjectNodeSummaryDto } from "@shared/types/projects"
-import { Download, FileText, FolderOpen, HardDrive, ListTree, PackageOpen } from "lucide-react"
+import { Download, FileText, Folder, FolderOpen, HardDrive, ListTree, PackageOpen } from "lucide-react"
 
 import { ProjectFilePreview } from "@/components/project-tree/ProjectFilePreview"
 import { ProjectNodeRow } from "@/components/project-tree/ProjectNodeRow"
@@ -90,16 +90,21 @@ export function ProjectTreeDetailsPanel({
                         <h3 className="truncate text-lg font-semibold text-[var(--foreground)]">
                             {currentFolder ? currentFolder.name : "Project files"}
                         </h3>
-                        <p className="flex items-center gap-2 text-sm text-[var(--muted)]">
-                            <ListTree className="size-4" />
-                            <span>
+                        <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[var(--muted)]">
+                            <span className="inline-flex items-center gap-1.5">
+                                <ListTree className="size-4" />
                                 {folderSummary.fileCount} file
-                                {folderSummary.fileCount === 1 ? "" : "s"} ·{" "}
+                                {folderSummary.fileCount === 1 ? "" : "s"}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5">
+                                <Folder className="size-4" />
                                 {folderSummary.folderCount} folder
                                 {folderSummary.folderCount === 1 ? "" : "s"}
                             </span>
-                            <HardDrive className="size-4" />
-                            <span>{formatFileSize(folderSummary.totalSize)}</span>
+                            <span className="inline-flex items-center gap-1.5">
+                                <HardDrive className="size-4" />
+                                {formatFileSize(folderSummary.totalSize)}
+                            </span>
                         </p>
                     </div>
                 </div>
