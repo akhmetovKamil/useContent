@@ -80,8 +80,12 @@ class ProjectsApi {
         )
     }
 
+    async getMyProjectFileBlob(projectId: string, nodeId: string) {
+        return downloadData(`/me/project-files/download/${projectId}/${nodeId}`)
+    }
+
     async downloadMyProjectFile(projectId: string, nodeId: string, fileName: string) {
-        const file = await downloadData(`/me/project-files/download/${projectId}/${nodeId}`)
+        const file = await this.getMyProjectFileBlob(projectId, nodeId)
         downloadBlob(file, fileName)
     }
 
@@ -107,10 +111,12 @@ class ProjectsApi {
         nodeId: string,
         fileName: string
     ) {
-        const file = await downloadData(
-            `/project-files/download/${slug}/${projectId}/${nodeId}`
-        )
+        const file = await this.getAuthorProjectFileBlob(slug, projectId, nodeId)
         downloadBlob(file, fileName)
+    }
+
+    async getAuthorProjectFileBlob(slug: string, projectId: string, nodeId: string) {
+        return downloadData(`/project-files/download/${slug}/${projectId}/${nodeId}`)
     }
 
     async getAuthorProjectBundle(slug: string, projectId: string, folderId?: string | null) {

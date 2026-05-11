@@ -6,14 +6,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 interface PreviewNodeModalProps {
     downloadUrl: string
     node: ProjectNodeDto | null
-    onDownload: () => void
     onOpenChange: (open: boolean) => void
 }
 
 export function PreviewNodeModal({
     downloadUrl,
     node,
-    onDownload,
     onOpenChange,
 }: PreviewNodeModalProps) {
     return (
@@ -23,11 +21,7 @@ export function PreviewNodeModal({
                     <DialogTitle>File preview</DialogTitle>
                 </DialogHeader>
                 {node ? (
-                    <ProjectFilePreview
-                        downloadUrl={downloadUrl}
-                        node={node}
-                        onDownload={onDownload}
-                    />
+                    <ProjectFilePreview downloadUrl={downloadUrl} node={node} />
                 ) : null}
             </DialogContent>
         </Dialog>

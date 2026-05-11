@@ -712,7 +712,6 @@ export function toProjectNodeResponse(
     storageKey: node.storageKey,
     mimeType: node.mimeType,
     size: node.size,
-    visibility: node.visibility,
     createdAt: node.createdAt.toISOString(),
     updatedAt: node.updatedAt.toISOString(),
   };

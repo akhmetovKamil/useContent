@@ -1,4 +1,4 @@
-import { CONTENT_VISIBILITY, PROJECT_NODE_KIND } from "@shared/consts"
+import { PROJECT_NODE_KIND } from "@shared/consts"
 import type { ProjectNodeDto } from "@shared/types/projects"
 import { useEffect, useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
@@ -26,7 +26,9 @@ import {
 } from "@/queries/projects"
 import { queryKeys } from "@/queries/queryKeys"
 import type { ProjectFileTreeProps } from "@/types/projects"
+import { downloadBlob } from "@/utils/download-blob"
 import { formatFileSize } from "@/utils/format"
+import { createStoredZip } from "@/utils/zip"
 
 export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: ProjectFileTreeProps) {
     const [currentFolderId, setCurrentFolderId] = useState<string | null>(rootNodeId)
@@ -135,7 +137,6 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
         await createFolderMutation.mutateAsync({
             name,
             parentId: currentFolderId,
-            visibility: CONTENT_VISIBILITY.PUBLISHED,
         })
         setFolderName("")
         setFolderModalOpen(false)
@@ -160,32 +161,55 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
     }
 
     async function downloadFile(node: ProjectNodeDto) {
-        if (isAuthor) {
-            await downloadMyFileMutation.mutateAsync({ nodeId: node.id, fileName: node.name })
-            return
+        try {
+            if (isAuthor) {
+                await downloadMyFileMutation.mutateAsync({ nodeId: node.id, fileName: node.name })
+                return
+            }
+            await downloadAuthorFileMutation.mutateAsync({ nodeId: node.id, fileName: node.name })
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "File download failed.")
         }
-        await downloadAuthorFileMutation.mutateAsync({ nodeId: node.id, fileName: node.name })
     }
 
     async function downloadFolder(folderId = currentFolderId) {
         setBulkDownloadPending(true)
+        const toastId = toast.loading("Preparing folder archive...", { duration: Infinity })
         try {
             const bundle = isAuthor
                 ? await projectsApi.getMyProjectBundle(projectId, folderId)
                 : await projectsApi.getAuthorProjectBundle(slug, projectId, folderId)
 
-            for (const file of bundle.files) {
-                if (isAuthor) {
-                    await projectsApi.downloadMyProjectFile(projectId, file.nodeId, file.path)
-                } else {
-                    await projectsApi.downloadAuthorProjectFile(
-                        slug,
-                        projectId,
-                        file.nodeId,
-                        file.path
-                    )
-                }
+            if (!bundle.files.length) {
+                toast.info("This folder is empty.", { id: toastId })
+                return
             }
+
+            let downloadedCount = 0
+            const files = []
+            for (const file of bundle.files) {
+                const blob = isAuthor
+                    ? await projectsApi.getMyProjectFileBlob(projectId, file.nodeId)
+                    : await projectsApi.getAuthorProjectFileBlob(slug, projectId, file.nodeId)
+                downloadedCount += 1
+                toast.loading(
+                    `Preparing archive... ${downloadedCount}/${bundle.files.length} files`,
+                    { duration: Infinity, id: toastId }
+                )
+                files.push({ blob, path: file.path })
+            }
+
+            const zip = await createStoredZip(files)
+            const folderName =
+                currentFolder?.id === folderId
+                    ? currentFolder.name
+                    : findKnownNodeById(folderId ?? "", treeNodesByParent)?.name
+            downloadBlob(zip, `${sanitizeArchiveName(folderName || "project-files")}.zip`)
+            toast.success(`Downloaded ${bundle.fileCount} file archive.`, { id: toastId })
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Folder download failed.", {
+                id: toastId,
+            })
         } finally {
             setBulkDownloadPending(false)
         }
@@ -252,7 +276,6 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                         const folder = await projectsApi.createMyProjectFolder(projectId, {
                             name: segment,
                             parentId,
-                            visibility: CONTENT_VISIBILITY.PUBLISHED,
                         })
                         folderIds.set(pathKey, folder.id)
                     }
@@ -402,11 +425,6 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                         : ""
                 }
                 node={previewNode}
-                onDownload={() => {
-                    if (previewNode) {
-                        void downloadFile(previewNode)
-                    }
-                }}
                 onOpenChange={(open) => {
                     if (!open) {
                         setPreviewNode(null)
@@ -419,4 +437,18 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
 
 function formatUploadSummary(fileCount: number, totalSize: number) {
     return `${fileCount} file${fileCount === 1 ? "" : "s"} (${formatFileSize(totalSize)})`
+}
+
+function sanitizeArchiveName(name: string) {
+    return name.trim().replace(/[^\w.-]+/g, "-").replace(/^-+|-+$/g, "") || "project-files"
+}
+
+function findKnownNodeById(nodeId: string, nodesByParent: Record<string, ProjectNodeDto[]>) {
+    for (const nodes of Object.values(nodesByParent)) {
+        const node = nodes.find((item) => item.id === nodeId)
+        if (node) {
+            return node
+        }
+    }
+    return null
 }

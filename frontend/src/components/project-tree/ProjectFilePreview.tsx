@@ -1,18 +1,16 @@
 import type { ProjectNodeDto } from "@shared/types/projects"
-import { Download, FileText, Loader2 } from "lucide-react"
+import { FileText, Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 
-import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { http } from "@/utils/api/http"
 
 interface ProjectFilePreviewProps {
     downloadUrl: string
     node: ProjectNodeDto
-    onDownload: () => void
 }
 
-export function ProjectFilePreview({ downloadUrl, node, onDownload }: ProjectFilePreviewProps) {
+export function ProjectFilePreview({ downloadUrl, node }: ProjectFilePreviewProps) {
     const [objectUrl, setObjectUrl] = useState<string | null>(null)
     const [previewLoading, setPreviewLoading] = useState(false)
     const [textPreview, setTextPreview] = useState<string | null>(null)
@@ -109,18 +107,6 @@ export function ProjectFilePreview({ downloadUrl, node, onDownload }: ProjectFil
                         Preview is not available for this file type yet.
                     </div>
                 ) : null}
-            </div>
-
-            <div className="flex shrink-0 justify-end border-t border-[var(--line)] p-4">
-                <Button
-                    className="rounded-full"
-                    onClick={onDownload}
-                    type="button"
-                    variant="outline"
-                >
-                    <Download className="size-4" />
-                    Download file
-                </Button>
             </div>
         </Card>
     )

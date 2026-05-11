@@ -1,7 +1,6 @@
 import type { AccessPolicy, AccessPolicyInput, PolicyMode } from "./access";
 import type {
   ContentStatus,
-  ContentVisibility,
   ProjectNodeKind,
 } from "../consts";
 import type {
@@ -41,7 +40,6 @@ export interface ProjectNodeDto {
   storageKey: Maybe<string>;
   mimeType: Maybe<string>;
   size: Maybe<number>;
-  visibility: ContentVisibility;
   createdAt: string;
   updatedAt: string;
 }
@@ -82,11 +80,9 @@ export type UpdateProjectInput = Partial<CreateProjectInput>;
 export interface CreateProjectFolderInput {
   name: string;
   parentId?: Maybe<EntityId>;
-  visibility?: ContentVisibility;
 }
 
 export interface UpdateProjectNodeInput {
   name?: string;
   parentId?: Maybe<EntityId>;
-  visibility?: ContentVisibility;
 }

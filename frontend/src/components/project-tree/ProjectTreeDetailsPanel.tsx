@@ -72,7 +72,6 @@ export function ProjectTreeDetailsPanel({
                 <ProjectFilePreview
                     downloadUrl={downloadUrl}
                     node={selectedNode}
-                    onDownload={() => onDownloadFile(selectedNode)}
                 />
             </section>
         )

@@ -45,7 +45,6 @@ export function ProjectNodeRow({
                         {node.name}
                     </span>
                     <span className="mt-1 flex flex-wrap gap-2 text-xs text-[var(--muted)]">
-                        <span>{node.kind}</span>
                         {node.size ? <span>{formatFileSize(node.size)}</span> : null}
                         {node.mimeType ? <span>{node.mimeType}</span> : null}
                     </span>
@@ -56,60 +55,65 @@ export function ProjectNodeRow({
                 {node.kind === "file" ? (
                     <>
                         <Button
-                            className="rounded-full"
+                            aria-label={`Preview ${node.name}`}
+                            className="size-10 rounded-full p-0"
                             onClick={() => onPreview(node)}
                             size="sm"
+                            title="Preview"
                             type="button"
                             variant="outline"
                         >
                             <Eye className="size-4" />
-                            Preview
                         </Button>
                         <Button
-                            className="rounded-full"
+                            aria-label={`Download ${node.name}`}
+                            className="size-10 rounded-full p-0"
                             onClick={() => onDownloadFile(node)}
                             size="sm"
+                            title="Download"
                             type="button"
                             variant="outline"
                         >
                             <Download className="size-4" />
-                            Download
                         </Button>
                     </>
                 ) : (
                     <Button
-                        className="rounded-full"
+                        aria-label={`Download folder ${node.name}`}
+                        className="size-10 rounded-full p-0"
                         disabled={bulkDownloadPending}
                         onClick={() => onDownloadFolder(node.id)}
                         size="sm"
+                        title="Download folder"
                         type="button"
                         variant="outline"
                     >
                         <PackageOpen className="size-4" />
-                        Download folder
                     </Button>
                 )}
                 {isAuthor ? (
                     <>
                         <Button
-                            className="rounded-full"
+                            aria-label={`Rename ${node.name}`}
+                            className="size-10 rounded-full p-0"
                             onClick={() => onRename(node)}
                             size="sm"
+                            title="Rename"
                             type="button"
                             variant="outline"
                         >
                             <Pencil className="size-4" />
-                            Rename
                         </Button>
                         <Button
-                            className="rounded-full"
+                            aria-label={`Delete ${node.name}`}
+                            className="size-10 rounded-full p-0"
                             onClick={() => onDelete(node)}
                             size="sm"
+                            title="Delete"
                             type="button"
                             variant="destructive"
                         >
                             <Trash2 className="size-4" />
-                            Delete
                         </Button>
                     </>
                 ) : null}

@@ -393,7 +393,7 @@ export async function createMyProjectFolder(
     storageKey: null,
     mimeType: null,
     size: null,
-    visibility: input.visibility ?? CONTENT_VISIBILITY.PUBLISHED,
+    visibility: CONTENT_VISIBILITY.PUBLISHED,
     createdAt: now,
     updatedAt: now,
   });
@@ -468,10 +468,6 @@ export async function updateMyProjectNode(
 
   if (input.name !== undefined) {
     update.name = normalizeProjectNodeName(input.name);
-  }
-
-  if (input.visibility !== undefined) {
-    update.visibility = input.visibility;
   }
 
   if (input.parentId !== undefined) {
