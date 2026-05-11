@@ -5,7 +5,7 @@ import { PolicyCard } from "@/components/access-center/PolicyCard"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
-import { ErrorMessage, LoadingMessage } from "@/components/ui/query-state"
+import { ErrorMessage } from "@/components/ui/query-state"
 
 interface PolicyListSectionProps {
     isError: boolean
@@ -44,7 +44,14 @@ export function PolicyListSection({
             </CardHeader>
             <CardContent>
                 {isLoading ? (
-                    <LoadingMessage>Loading policies...</LoadingMessage>
+                    <div className="grid animate-pulse gap-4 lg:grid-cols-2">
+                        {Array.from({ length: 4 }).map((_, index) => (
+                            <div
+                                className="h-44 rounded-[30px] border border-[var(--line)] bg-[var(--surface-strong)]"
+                                key={index}
+                            />
+                        ))}
+                    </div>
                 ) : isError ? (
                     <ErrorMessage>{errorMessage ?? "Failed to load policies."}</ErrorMessage>
                 ) : policies.length ? (

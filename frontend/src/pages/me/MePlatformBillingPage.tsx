@@ -50,6 +50,8 @@ export function MePlatformBillingPage() {
         setExtraGb(0)
     }
 
+    const isInitialLoading = Boolean(token) && (plansQuery.isLoading || billingQuery.isLoading)
+
     return (
         <PageSection>
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -83,40 +85,46 @@ export function MePlatformBillingPage() {
                 </Card>
             ) : null}
 
-            {billingQuery.data ? <StateBanner billing={billingQuery.data} /> : null}
+            {isInitialLoading ? (
+                <PlatformBillingSkeleton />
+            ) : (
+                <>
+                    {billingQuery.data ? <StateBanner billing={billingQuery.data} /> : null}
 
-            <div className="mt-6 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-                <div className="grid gap-4">
-                    <div className="grid gap-4 md:grid-cols-2">
-                        {plans.map((plan) => (
-                            <PlanCard
-                                billing={billingQuery.data}
-                                key={plan.code}
-                                onOpenCheckout={() => openCheckout(plan)}
-                                plan={plan}
-                            />
-                        ))}
+                    <div className="mt-6 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+                        <div className="grid gap-4">
+                            <div className="grid gap-4 md:grid-cols-2">
+                                {plans.map((plan) => (
+                                    <PlanCard
+                                        billing={billingQuery.data}
+                                        key={plan.code}
+                                        onOpenCheckout={() => openCheckout(plan)}
+                                        plan={plan}
+                                    />
+                                ))}
+                            </div>
+                            <FeatureMatrix />
+                        </div>
+
+                        <StoragePanel
+                            billing={billingQuery.data}
+                            cleanupPreview={cleanupPreviewQuery.data}
+                            currentExtraGb={currentExtraGb}
+                            extraGb={extraGb}
+                            maxExtraGb={maxExtraGb}
+                            monthlyEstimateCents={estimateCents}
+                            onExtraGbChange={setExtraGb}
+                            onOpenCheckout={() => {
+                                if (selectedPlan) {
+                                    setCheckoutPlan(selectedPlan)
+                                    setCheckoutKind("storage")
+                                }
+                            }}
+                            plan={selectedPlan}
+                        />
                     </div>
-                    <FeatureMatrix />
-                </div>
-
-                <StoragePanel
-                    billing={billingQuery.data}
-                    cleanupPreview={cleanupPreviewQuery.data}
-                    currentExtraGb={currentExtraGb}
-                    extraGb={extraGb}
-                    maxExtraGb={maxExtraGb}
-                    monthlyEstimateCents={estimateCents}
-                    onExtraGbChange={setExtraGb}
-                    onOpenCheckout={() => {
-                        if (selectedPlan) {
-                            setCheckoutPlan(selectedPlan)
-                            setCheckoutKind("storage")
-                        }
-                    }}
-                    plan={selectedPlan}
-                />
-            </div>
+                </>
+            )}
 
             <Drawer
                 direction="right"
@@ -143,5 +151,47 @@ export function MePlatformBillingPage() {
             </Drawer>
 
         </PageSection>
+    )
+}
+
+function PlatformBillingSkeleton() {
+    return (
+        <div className="mt-6 grid animate-pulse gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+            <div className="grid gap-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                    {Array.from({ length: 2 }).map((_, index) => (
+                        <Card className="rounded-[30px]" key={index}>
+                            <CardContent className="grid gap-5 p-6">
+                                <div className="h-6 w-28 rounded-full bg-[var(--surface-strong)]" />
+                                <div className="h-10 w-36 rounded-full bg-[var(--surface-strong)]" />
+                                <div className="grid gap-2">
+                                    <div className="h-3 rounded-full bg-[var(--surface-strong)]" />
+                                    <div className="h-3 w-4/5 rounded-full bg-[var(--surface-strong)]" />
+                                </div>
+                                <div className="h-11 rounded-full bg-[var(--surface-strong)]" />
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+                <Card className="rounded-[30px]">
+                    <CardContent className="grid gap-3 p-6 md:grid-cols-3">
+                        {Array.from({ length: 3 }).map((_, index) => (
+                            <div
+                                className="h-36 rounded-[24px] bg-[var(--surface-strong)]"
+                                key={index}
+                            />
+                        ))}
+                    </CardContent>
+                </Card>
+            </div>
+            <Card className="rounded-[30px]">
+                <CardContent className="grid gap-5 p-6">
+                    <div className="h-14 w-3/4 rounded-full bg-[var(--surface-strong)]" />
+                    <div className="h-36 rounded-[26px] bg-[var(--surface-strong)]" />
+                    <div className="h-28 rounded-[26px] bg-[var(--surface-strong)]" />
+                    <div className="h-12 rounded-full bg-[var(--surface-strong)]" />
+                </CardContent>
+            </Card>
+        </div>
     )
 }

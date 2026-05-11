@@ -9,6 +9,7 @@ import {
   type ContentStatus,
   NFT_STANDARD,
   PAYMENT_ASSET,
+  POLICY_MODE,
   POST_PROMOTION_STATUS,
   SUBSCRIPTION_ENTITLEMENT_STATUS,
   type PaymentAsset,
@@ -569,7 +570,13 @@ export async function buildFeedPostResponse(
     },
     author,
     {
-      accessLabel: describeAccessPolicy(resolvedPolicy.root, plans),
+      accessLabel: await resolveAccessLabel(
+        post.policyMode,
+        post.accessPolicyId,
+        author,
+        resolvedPolicy,
+        plans,
+      ),
       commentsPreview: visibleCommentsPreview,
       feedReason: feed?.reason ?? null,
       feedSource: feed?.source ?? "author",
@@ -604,6 +611,34 @@ export function describeAccessPolicy(
   );
 
   return describeAccessPolicyNode(node, planById);
+}
+
+async function resolveAccessLabel(
+  policyMode: PostDoc["policyMode"] | ProjectDoc["policyMode"],
+  accessPolicyId: ObjectId | null,
+  author: AuthorProfileDoc,
+  resolvedPolicy: AccessPolicy,
+  plans: SubscriptionPlanDoc[],
+): Promise<string | null> {
+  if (policyMode === POLICY_MODE.PUBLIC) {
+    return "Public";
+  }
+
+  const presetId =
+    policyMode === POLICY_MODE.CUSTOM
+      ? accessPolicyId
+      : author.defaultPolicyId;
+  if (presetId) {
+    const preset = await repo.findAccessPolicyPresetByIdAndAuthorId(
+      presetId,
+      author._id,
+    );
+    if (preset) {
+      return preset.name;
+    }
+  }
+
+  return describeAccessPolicy(resolvedPolicy.root, plans);
 }
 
 export function describeAccessPolicyNode(
@@ -727,7 +762,13 @@ export async function buildFeedProjectResponse(
     },
     author,
     {
-      accessLabel: describeAccessPolicy(resolvedPolicy.root, plans),
+      accessLabel: await resolveAccessLabel(
+        project.policyMode,
+        project.accessPolicyId,
+        author,
+        resolvedPolicy,
+        plans,
+      ),
       hasAccess,
       stats,
     },

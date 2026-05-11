@@ -5,7 +5,7 @@ import { SubscriptionPlanCard } from "@/components/access-center/SubscriptionPla
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
-import { ErrorMessage, LoadingMessage } from "@/components/ui/query-state"
+import { ErrorMessage } from "@/components/ui/query-state"
 
 interface SubscriptionPlanListSectionProps {
     deleteErrorMessage?: string
@@ -45,7 +45,14 @@ export function SubscriptionPlanListSection({
             </CardHeader>
             <CardContent>
                 {isLoading ? (
-                    <LoadingMessage>Loading plans...</LoadingMessage>
+                    <div className="grid animate-pulse gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {Array.from({ length: 3 }).map((_, index) => (
+                            <div
+                                className="h-56 rounded-[30px] border border-[var(--line)] bg-[var(--surface-strong)]"
+                                key={index}
+                            />
+                        ))}
+                    </div>
                 ) : isError ? (
                     <ErrorMessage>{errorMessage ?? "Failed to load subscription plans."}</ErrorMessage>
                 ) : plans.length ? (

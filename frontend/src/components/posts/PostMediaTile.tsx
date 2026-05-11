@@ -56,7 +56,7 @@ export function PostMediaTile({
     return (
         <div
             className={cn(
-                "group relative min-h-44 overflow-hidden bg-[var(--surface-strong)]",
+                "group relative aspect-[16/10] min-h-64 overflow-hidden bg-[var(--surface-strong)]",
                 className
             )}
             data-testid="post-media-tile"

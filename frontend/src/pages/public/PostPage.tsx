@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react"
+import { useEffect, useLayoutEffect, useMemo } from "react"
 import { useParams } from "react-router-dom"
 
 import { LockedPostCard } from "@/components/post-page/LockedPostCard"
@@ -32,6 +32,10 @@ export function PostPage() {
         .filter((item) => item.id !== postId)
         .slice(0, 3)
     const isLocked = postQuery.isError && isApiPermissionError(postQuery.error)
+
+    useLayoutEffect(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" })
+    }, [postId, slug])
 
     useEffect(() => {
         if (post && slug && postId && viewerKey) {
