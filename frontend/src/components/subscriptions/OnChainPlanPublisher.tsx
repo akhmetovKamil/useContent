@@ -6,6 +6,7 @@ import { useState } from "react"
 import { useAccount, usePublicClient, useWriteContract } from "wagmi"
 
 import { Button } from "@/components/ui/button"
+import { getWalletChainName, useEnsureWalletChain } from "@/hooks/useEnsureWalletChain"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import {
     billingDaysToSeconds,
@@ -46,6 +47,7 @@ export function OnChainPlanPublisher({
     const { address } = useAccount()
     const publicClient = usePublicClient({ chainId })
     const { writeContractAsync } = useWriteContract()
+    const ensureWalletChain = useEnsureWalletChain()
     const authorQuery = useMyAuthorProfileQuery(Boolean(address))
     const [status, setStatus] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
@@ -66,6 +68,8 @@ export function OnChainPlanPublisher({
         setStatus(existingPlanKey ? "Updating plan on-chain..." : "Publishing plan on-chain...")
 
         try {
+            setStatus(`Switching wallet to ${getWalletChainName(chainId)}...`)
+            await ensureWalletChain(chainId)
             const onChainPlan = await readPlan(contractAddress, currentPlanKey)
             const onChainAuthor = normalizeAddressLike(String(onChainPlan[0]))
             const planExists = !isZeroAddress(onChainAuthor)

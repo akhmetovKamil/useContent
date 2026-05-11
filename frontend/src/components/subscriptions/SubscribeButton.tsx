@@ -3,7 +3,7 @@ import { PAYMENT_ASSET } from "@shared/consts"
 import type { SubscriptionPlanDto } from "@shared/types/subscriptions"
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { useAccount, usePublicClient, useSwitchChain, useWriteContract } from "wagmi"
+import { useAccount, usePublicClient, useWriteContract } from "wagmi"
 
 import { Button } from "@/components/ui/button"
 import { queryKeys } from "@/queries/queryKeys"
@@ -12,7 +12,7 @@ import {
     useCreateSubscriptionPaymentIntentMutation,
 } from "@/queries/subscription-plans"
 import { useAuthStore } from "@/stores/auth-store"
-import { supportedChainOptions } from "@/utils/config/chains"
+import { getWalletChainName, useEnsureWalletChain } from "@/hooks/useEnsureWalletChain"
 import { erc20Abi } from "@/utils/web3/erc20"
 import { toAddress } from "@/utils/web3/subscriptions"
 
@@ -23,31 +23,17 @@ interface SubscribeButtonProps {
 }
 
 export function SubscribeButton({ authorSlug, label = "Subscribe", plan }: SubscribeButtonProps) {
-    const { address, chainId: walletChainId } = useAccount()
+    const { address } = useAccount()
     const queryClient = useQueryClient()
     const publicClient = usePublicClient({ chainId: plan.chainId })
     const token = useAuthStore((state) => state.token)
     const { writeContractAsync } = useWriteContract()
-    const { switchChainAsync } = useSwitchChain()
+    const ensureWalletChain = useEnsureWalletChain()
     const createIntentMutation = useCreateSubscriptionPaymentIntentMutation(authorSlug)
     const confirmPaymentMutation = useConfirmSubscriptionPaymentMutation()
     const [status, setStatus] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
     const disabled = !token || !address || !publicClient || !plan.active || !plan.planKey
-
-    async function ensureWalletChain() {
-        if (walletChainId === plan.chainId) {
-            return
-        }
-        if (!switchChainAsync) {
-            throw new Error("Switch wallet network before subscribing.")
-        }
-        const networkName =
-            supportedChainOptions.find((chain) => chain.id === plan.chainId)?.name ??
-            `chain ${plan.chainId}`
-        setStatus(`Switching wallet to ${networkName}...`)
-        await switchChainAsync({ chainId: plan.chainId })
-    }
 
     async function subscribe() {
         if (!address || !publicClient) {
@@ -58,7 +44,8 @@ export function SubscribeButton({ authorSlug, label = "Subscribe", plan }: Subsc
         setStatus("Creating payment intent...")
 
         try {
-            await ensureWalletChain()
+            setStatus(`Switching wallet to ${getWalletChainName(plan.chainId)}...`)
+            await ensureWalletChain(plan.chainId)
             const intent = await createIntentMutation.mutateAsync({ planCode: plan.code })
             const managerAddress = toAddress(plan.contractAddress)
             const paymentAsset = plan.paymentAsset ?? PAYMENT_ASSET.ERC20

@@ -6,7 +6,7 @@ import { shortenWalletAddress } from "@shared/utils/web3"
 import { CreditCard } from "lucide-react"
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { useAccount, usePublicClient, useSwitchChain, useWriteContract } from "wagmi"
+import { useAccount, usePublicClient, useWriteContract } from "wagmi"
 
 import { SummaryRow } from "@/components/platform-billing/SummaryRow"
 import { Button } from "@/components/ui/button"
@@ -23,6 +23,7 @@ import {
     usePlatformTierManagerDeploymentQuery,
 } from "@/queries/platform"
 import { queryKeys } from "@/queries/queryKeys"
+import { getWalletChainName, useEnsureWalletChain } from "@/hooks/useEnsureWalletChain"
 import { supportedChainOptions } from "@/utils/config/chains"
 import { formatFileSize, formatUsdCents } from "@/utils/format"
 import { GIB } from "@/utils/platform-billing"
@@ -50,11 +51,11 @@ export function CheckoutPreview({
     plan: PlatformPlanDto
     tokenAddress: `0x${string}`
 }) {
-    const { address, chainId: walletChainId } = useAccount()
+    const { address } = useAccount()
     const queryClient = useQueryClient()
     const publicClient = usePublicClient({ chainId })
     const { writeContractAsync } = useWriteContract()
-    const { switchChainAsync } = useSwitchChain()
+    const ensureWalletChain = useEnsureWalletChain()
     const createTierIntentMutation = useCreatePlatformTierPaymentIntentMutation()
     const confirmTierPaymentMutation = useConfirmPlatformTierPaymentMutation()
     const createStorageIntentMutation = useCreatePlatformStoragePaymentIntentMutation()
@@ -81,19 +82,6 @@ export function CheckoutPreview({
         storageAlreadyCovered ||
         isPending
 
-    async function ensureWalletChain() {
-        if (walletChainId === chainId) {
-            return
-        }
-        if (!switchChainAsync) {
-            throw new Error("Switch wallet network before paying.")
-        }
-        const networkName =
-            supportedChainOptions.find((chain) => chain.id === chainId)?.name ?? `chain ${chainId}`
-        setStatus(`Switching wallet to ${networkName}...`)
-        await switchChainAsync({ chainId })
-    }
-
     async function pay() {
         if (!address || !publicClient) {
             return
@@ -115,7 +103,8 @@ export function CheckoutPreview({
         )
 
         try {
-            await ensureWalletChain()
+            setStatus(`Switching wallet to ${getWalletChainName(chainId)}...`)
+            await ensureWalletChain(chainId)
             const intent =
                 kind === "tier"
                     ? await createTierIntentMutation.mutateAsync({
