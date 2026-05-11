@@ -36,8 +36,7 @@ export function StoragePanel({
     const progress = Math.min(100, Math.round((used / total) * 100))
     const estimatedTotal = (plan?.baseStorageBytes ?? 0) + extraGb * GIB
     const isOverQuota = Boolean(billing && billing.usedStorageBytes > billing.totalStorageBytes)
-    const storageMissingSelection = extraGb <= 0
-    const storageAlreadyCovered = extraGb > 0 && extraGb <= currentExtraGb
+    const storageAlreadyCovered = extraGb <= currentExtraGb
     const canPayStorage = Boolean(plan && plan.code !== "free" && extraGb > currentExtraGb)
     const runCleanupMutation = useRunMyAuthorPlatformCleanupMutation()
 
@@ -129,6 +128,14 @@ export function StoragePanel({
                         value={formatFileSize(estimatedTotal)}
                     />
                     <SummaryRow
+                        label="Selected extra storage"
+                        value={
+                            storageAlreadyCovered
+                                ? `${extraGb} GB · already active`
+                                : `${extraGb} GB`
+                        }
+                    />
+                    <SummaryRow
                         label="Monthly estimate"
                         value={
                             storageAlreadyCovered
@@ -145,9 +152,7 @@ export function StoragePanel({
                     type="button"
                 >
                     <CreditCard className="size-4" />
-                    {storageMissingSelection
-                        ? "Choose storage"
-                        : storageAlreadyCovered
+                    {storageAlreadyCovered
                           ? "Already active"
                           : "Open payment preview"}
                 </Button>

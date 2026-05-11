@@ -67,7 +67,6 @@ export function CheckoutPreview({
     const selectedToken = getPlatformUsdcToken(chainId)
     const deploymentQuery = kind === "tier" ? tierDeploymentQuery : storageDeploymentQuery
     const storageAlreadyCovered = kind === "storage" && extraGb <= currentExtraGb
-    const storageMissingSelection = kind === "storage" && extraGb <= 0
     const isPending =
         createTierIntentMutation.isPending ||
         confirmTierPaymentMutation.isPending ||
@@ -78,7 +77,6 @@ export function CheckoutPreview({
         !publicClient ||
         !deploymentQuery.data ||
         !selectedToken ||
-        storageMissingSelection ||
         storageAlreadyCovered ||
         isPending
 
@@ -87,11 +85,7 @@ export function CheckoutPreview({
             return
         }
         if (kind === "storage" && extraGb <= currentExtraGb) {
-            setError(
-                extraGb <= 0
-                    ? "Choose extra storage first."
-                    : "This storage amount is already active."
-            )
+            setError("This storage amount is already active.")
             return
         }
 
@@ -298,9 +292,7 @@ export function CheckoutPreview({
                 <CreditCard className="size-4" />
                 {!address
                     ? "Connect wallet to pay"
-                    : storageMissingSelection
-                      ? "Choose storage"
-                      : storageAlreadyCovered
+                    : storageAlreadyCovered
                         ? "Already active"
                         : "Pay and activate"}
             </Button>
