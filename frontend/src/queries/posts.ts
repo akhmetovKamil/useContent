@@ -230,7 +230,6 @@ export function useCreatePostCommentMutation(slug: string, postId: string) {
             postsApi.createPostComment(slug, postId, input),
         onSuccess: () => {
             void invalidateMany(queryClient, [
-                queryKeys.postComments(slug, postId),
                 queryKeys.authorPost(slug, postId),
                 queryKeys.authorPosts(slug),
                 queryKeys.myFeedPosts,

@@ -21,7 +21,7 @@ interface InlineCommentsProps {
     isError?: boolean
     isLoading?: boolean
     isPending?: boolean
-    onSubmit: (content: string) => Promise<unknown>
+    onSubmit: (content: string) => Promise<PostCommentDto>
     token: string | null
 }
 
@@ -42,7 +42,14 @@ export function InlineComments({
     const [optimisticComments, setOptimisticComments] = useState<PostCommentDto[]>([])
     const visibleComments = useMemo(() => {
         const base = comments ?? commentsPreview
-        return [...base, ...optimisticComments]
+        const seen = new Set<string>()
+        return [...base, ...optimisticComments].filter((item) => {
+            if (seen.has(item.id)) {
+                return false
+            }
+            seen.add(item.id)
+            return true
+        })
     }, [comments, commentsPreview, optimisticComments])
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -71,9 +78,9 @@ export function InlineComments({
         setOptimisticComments((current) => [...current, optimistic])
 
         try {
-            await onSubmit(nextContent)
+            const created = await onSubmit(nextContent)
             setOptimisticComments((current) =>
-                current.filter((item) => item.id !== optimistic.id)
+                current.map((item) => (item.id === optimistic.id ? created : item))
             )
         } catch {
             setOptimisticComments((current) =>
@@ -85,7 +92,7 @@ export function InlineComments({
 
     return (
         <div className="grid gap-4 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4">
-            {isLoading ? (
+            {isLoading && !visibleComments.length ? (
                 <p className="text-sm text-[var(--muted)]">Loading comments...</p>
             ) : isError ? (
                 <p className="text-sm text-rose-600">Failed to load comments.</p>

@@ -56,6 +56,8 @@ export function PostCard({
     const [reportOpen, setReportOpen] = useState(false)
     const [reportReason, setReportReason] = useState<PostReportReason>("spam")
     const [reportComment, setReportComment] = useState("")
+    const [hasReported, setHasReported] = useState(false)
+    const [reportErrorMessage, setReportErrorMessage] = useState("")
     const [optimisticLiked, setOptimisticLiked] = useState(post.likedByMe)
     const [optimisticLikesCount, setOptimisticLikesCount] = useState(post.likesCount)
     const author = getFeedAuthor(post)
@@ -126,6 +128,30 @@ export function PostCard({
                 attachmentId: attachment.id,
                 fileName: attachment.fileName,
             })
+        }
+    }
+
+    async function handleReportSubmit() {
+        setReportErrorMessage("")
+        try {
+            await reportMutation.mutateAsync({
+                comment: reportComment,
+                reason: reportReason,
+            })
+            setHasReported(true)
+            setReportComment("")
+            setReportOpen(false)
+            toast.info("Report sent to moderation.")
+        } catch (error) {
+            if (isDuplicateReportError(error)) {
+                setHasReported(true)
+                setReportErrorMessage("Вы уже пожаловались на этот пост")
+                return
+            }
+
+            setReportErrorMessage(
+                error instanceof Error ? error.message : "Failed to submit report."
+            )
         }
     }
 
@@ -239,27 +265,28 @@ export function PostCard({
             {author ? (
                 <ReportPostModal
                     comment={reportComment}
-                    error={reportMutation.error}
+                    errorMessage={reportErrorMessage}
+                    hasReported={hasReported}
                     isPending={reportMutation.isPending}
                     onCommentChange={setReportComment}
-                    onOpenChange={setReportOpen}
+                    onOpenChange={(open) => {
+                        setReportOpen(open)
+                        if (open) {
+                            setReportErrorMessage(
+                                hasReported ? "Вы уже пожаловались на этот пост" : ""
+                            )
+                        }
+                    }}
                     onReasonChange={setReportReason}
-                    onSubmit={() =>
-                        void reportMutation
-                            .mutateAsync({
-                                comment: reportComment,
-                                reason: reportReason,
-                            })
-                            .then(() => {
-                                setReportComment("")
-                                setReportOpen(false)
-                                toast.info("Report sent to moderation.")
-                            })
-                    }
+                    onSubmit={() => void handleReportSubmit()}
                     open={reportOpen}
                     reason={reportReason}
                 />
             ) : null}
         </Card>
     )
+}
+
+function isDuplicateReportError(error: unknown) {
+    return error instanceof Error && /already reported|post already reported/i.test(error.message)
 }

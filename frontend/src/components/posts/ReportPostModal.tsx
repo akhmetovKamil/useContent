@@ -22,7 +22,8 @@ import { useState } from "react"
 
 export function ReportPostModal({
     comment,
-    error,
+    errorMessage,
+    hasReported,
     isPending,
     onCommentChange,
     onOpenChange,
@@ -32,7 +33,8 @@ export function ReportPostModal({
     reason,
 }: {
     comment: string
-    error: Error | null
+    errorMessage?: string
+    hasReported?: boolean
     isPending: boolean
     onCommentChange: (value: string) => void
     onOpenChange: (open: boolean) => void
@@ -98,13 +100,13 @@ export function ReportPostModal({
                 {fieldErrors.comment ? (
                     <p className="text-sm text-rose-600">{fieldErrors.comment}</p>
                 ) : null}
-                {error ? <p className="text-sm text-rose-600">{error.message}</p> : null}
+                {errorMessage ? <p className="text-sm text-rose-600">{errorMessage}</p> : null}
                 <div className="flex justify-end gap-2">
                     <Button onClick={() => onOpenChange(false)} type="button" variant="outline">
                         Cancel
                     </Button>
-                    <Button disabled={isPending} type="submit">
-                        {isPending ? "Saving..." : "Submit report"}
+                    <Button disabled={isPending || hasReported} type="submit">
+                        {hasReported ? "Already reported" : isPending ? "Saving..." : "Submit report"}
                     </Button>
                 </div>
                 </form>
