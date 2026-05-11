@@ -1,5 +1,5 @@
 import type { PlatformPlanDto } from "@shared/types/platform"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { BillingStatusBadge } from "@/components/platform-billing/BillingStatusBadge"
 import { CheckoutPreview } from "@/components/platform-billing/CheckoutPreview"
@@ -32,10 +32,17 @@ export function MePlatformBillingPage() {
     const basicPlan = plans.find((plan) => plan.code === "basic")
     const selectedPlan = checkoutPlan ?? basicPlan ?? null
     const maxExtraGb = bytesToGb(selectedPlan?.maxExtraStorageBytes ?? 0)
+    const currentExtraGb = bytesToGb(billingQuery.data?.extraStorageBytes ?? 0)
     const estimateCents =
         checkoutKind === "tier"
             ? (selectedPlan?.priceUsdCents ?? 0)
-            : extraGb * (selectedPlan?.pricePerExtraGbUsdCents ?? 0)
+            : extraGb > currentExtraGb
+              ? extraGb * (selectedPlan?.pricePerExtraGbUsdCents ?? 0)
+              : 0
+
+    useEffect(() => {
+        setExtraGb(currentExtraGb)
+    }, [currentExtraGb])
 
     function openCheckout(plan: PlatformPlanDto) {
         setCheckoutPlan(plan)
@@ -96,6 +103,7 @@ export function MePlatformBillingPage() {
                 <StoragePanel
                     billing={billingQuery.data}
                     cleanupPreview={cleanupPreviewQuery.data}
+                    currentExtraGb={currentExtraGb}
                     extraGb={extraGb}
                     maxExtraGb={maxExtraGb}
                     monthlyEstimateCents={estimateCents}
@@ -119,6 +127,7 @@ export function MePlatformBillingPage() {
                     {checkoutPlan ? (
                         <CheckoutPreview
                             chainId={paymentChainId}
+                            currentExtraGb={currentExtraGb}
                             extraGb={extraGb}
                             kind={checkoutKind}
                             monthlyEstimateCents={estimateCents}

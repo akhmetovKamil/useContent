@@ -13,6 +13,7 @@ import { GIB } from "@/utils/platform-billing"
 export function StoragePanel({
     billing,
     cleanupPreview,
+    currentExtraGb = 0,
     extraGb,
     maxExtraGb,
     monthlyEstimateCents,
@@ -22,6 +23,7 @@ export function StoragePanel({
 }: {
     billing?: AuthorPlatformBillingDto
     cleanupPreview?: AuthorPlatformCleanupPreviewDto
+    currentExtraGb?: number
     extraGb: number
     maxExtraGb: number
     monthlyEstimateCents: number
@@ -34,6 +36,9 @@ export function StoragePanel({
     const progress = Math.min(100, Math.round((used / total) * 100))
     const estimatedTotal = (plan?.baseStorageBytes ?? 0) + extraGb * GIB
     const isOverQuota = Boolean(billing && billing.usedStorageBytes > billing.totalStorageBytes)
+    const storageMissingSelection = extraGb <= 0
+    const storageAlreadyCovered = extraGb > 0 && extraGb <= currentExtraGb
+    const canPayStorage = Boolean(plan && plan.code !== "free" && extraGb > currentExtraGb)
     const runCleanupMutation = useRunMyAuthorPlatformCleanupMutation()
 
     return (
@@ -96,6 +101,11 @@ export function StoragePanel({
                         </div>
                         <Badge className="rounded-full">{extraGb} GB</Badge>
                     </div>
+                    {currentExtraGb > 0 ? (
+                        <p className="mt-3 text-sm text-[var(--muted)]">
+                            {currentExtraGb} GB of extra storage is already active.
+                        </p>
+                    ) : null}
                     <input
                         className="mt-5 h-2 w-full cursor-pointer appearance-none rounded-full bg-[var(--line)] accent-[var(--accent)]"
                         disabled={!maxExtraGb}
@@ -118,17 +128,28 @@ export function StoragePanel({
                         label="Total quota after upgrade"
                         value={formatFileSize(estimatedTotal)}
                     />
-                    <SummaryRow label="Monthly estimate" value={formatUsdCents(monthlyEstimateCents)} />
+                    <SummaryRow
+                        label="Monthly estimate"
+                        value={
+                            storageAlreadyCovered
+                                ? "Already paid"
+                                : formatUsdCents(monthlyEstimateCents)
+                        }
+                    />
                 </div>
 
                 <Button
                     className="rounded-full"
-                    disabled={!plan || plan.code === "free"}
+                    disabled={!canPayStorage}
                     onClick={onOpenCheckout}
                     type="button"
                 >
                     <CreditCard className="size-4" />
-                    Open payment preview
+                    {storageMissingSelection
+                        ? "Choose storage"
+                        : storageAlreadyCovered
+                          ? "Already active"
+                          : "Open payment preview"}
                 </Button>
             </CardContent>
         </Card>

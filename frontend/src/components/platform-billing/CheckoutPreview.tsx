@@ -6,7 +6,7 @@ import { shortenWalletAddress } from "@shared/utils/web3"
 import { CreditCard } from "lucide-react"
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { useAccount, usePublicClient, useWriteContract } from "wagmi"
+import { useAccount, usePublicClient, useSwitchChain, useWriteContract } from "wagmi"
 
 import { SummaryRow } from "@/components/platform-billing/SummaryRow"
 import { Button } from "@/components/ui/button"
@@ -38,8 +38,10 @@ export function CheckoutPreview({
     onSuccess,
     plan,
     tokenAddress,
+    currentExtraGb = 0,
 }: {
     chainId: number
+    currentExtraGb?: number
     extraGb: number
     kind: "tier" | "storage"
     monthlyEstimateCents: number
@@ -48,10 +50,11 @@ export function CheckoutPreview({
     plan: PlatformPlanDto
     tokenAddress: `0x${string}`
 }) {
-    const { address } = useAccount()
+    const { address, chainId: walletChainId } = useAccount()
     const queryClient = useQueryClient()
     const publicClient = usePublicClient({ chainId })
     const { writeContractAsync } = useWriteContract()
+    const { switchChainAsync } = useSwitchChain()
     const createTierIntentMutation = useCreatePlatformTierPaymentIntentMutation()
     const confirmTierPaymentMutation = useConfirmPlatformTierPaymentMutation()
     const createStorageIntentMutation = useCreatePlatformStoragePaymentIntentMutation()
@@ -62,6 +65,8 @@ export function CheckoutPreview({
     const [error, setError] = useState<string | null>(null)
     const selectedToken = getPlatformUsdcToken(chainId)
     const deploymentQuery = kind === "tier" ? tierDeploymentQuery : storageDeploymentQuery
+    const storageAlreadyCovered = kind === "storage" && extraGb <= currentExtraGb
+    const storageMissingSelection = kind === "storage" && extraGb <= 0
     const isPending =
         createTierIntentMutation.isPending ||
         confirmTierPaymentMutation.isPending ||
@@ -72,10 +77,33 @@ export function CheckoutPreview({
         !publicClient ||
         !deploymentQuery.data ||
         !selectedToken ||
+        storageMissingSelection ||
+        storageAlreadyCovered ||
         isPending
+
+    async function ensureWalletChain() {
+        if (walletChainId === chainId) {
+            return
+        }
+        if (!switchChainAsync) {
+            throw new Error("Switch wallet network before paying.")
+        }
+        const networkName =
+            supportedChainOptions.find((chain) => chain.id === chainId)?.name ?? `chain ${chainId}`
+        setStatus(`Switching wallet to ${networkName}...`)
+        await switchChainAsync({ chainId })
+    }
 
     async function pay() {
         if (!address || !publicClient) {
+            return
+        }
+        if (kind === "storage" && extraGb <= currentExtraGb) {
+            setError(
+                extraGb <= 0
+                    ? "Choose extra storage first."
+                    : "This storage amount is already active."
+            )
             return
         }
 
@@ -87,6 +115,7 @@ export function CheckoutPreview({
         )
 
         try {
+            await ensureWalletChain()
             const intent =
                 kind === "tier"
                     ? await createTierIntentMutation.mutateAsync({
@@ -245,18 +274,30 @@ export function CheckoutPreview({
                     ) : (
                         <SummaryRow
                             label="Extra storage"
-                            value={`${extraGb} GB · ${formatUsdCents(
-                                extraGb * plan.pricePerExtraGbUsdCents
-                            )}`}
+                            value={
+                                storageAlreadyCovered
+                                    ? `${extraGb} GB · already active`
+                                    : `${extraGb} GB · ${formatUsdCents(
+                                          extraGb * plan.pricePerExtraGbUsdCents
+                                      )}`
+                            }
                         />
                     )}
                     <SummaryRow label="Total estimate" value={formatUsdCents(monthlyEstimateCents)} />
                     <SummaryRow
                         label="Quota after upgrade"
                         value={formatFileSize(
-                            kind === "tier" ? plan.baseStorageBytes : extraGb * GIB
+                            kind === "tier"
+                                ? plan.baseStorageBytes
+                                : plan.baseStorageBytes + extraGb * GIB
                         )}
                     />
+                    {kind === "storage" ? (
+                        <SummaryRow
+                            label="Currently paid extra"
+                            value={`${currentExtraGb} GB · ${formatFileSize(currentExtraGb * GIB)}`}
+                        />
+                    ) : null}
                 </CardContent>
             </Card>
             <Button
@@ -266,7 +307,13 @@ export function CheckoutPreview({
                 type="button"
             >
                 <CreditCard className="size-4" />
-                {!address ? "Connect wallet to pay" : "Pay and activate"}
+                {!address
+                    ? "Connect wallet to pay"
+                    : storageMissingSelection
+                      ? "Choose storage"
+                      : storageAlreadyCovered
+                        ? "Already active"
+                        : "Pay and activate"}
             </Button>
             {status ? <p className="text-sm text-[var(--muted)]">{status}</p> : null}
             {error ? <p className="text-sm text-rose-600">{error}</p> : null}
