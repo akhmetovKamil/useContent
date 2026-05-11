@@ -69,6 +69,21 @@ const defaultToken = getTokenPresets(defaultSubscriptionChain.id).find(
     (preset) => preset.kind === PAYMENT_ASSET.ERC20
 )
 
+function getNextPlanDefaults(plans: SubscriptionPlanDto[]) {
+    const usedCodes = new Set(plans.map((plan) => plan.code))
+    if (!usedCodes.has("main")) {
+        return { code: "main", title: "Main subscription" }
+    }
+
+    let index = plans.length + 1
+    let code = `tier-${index}`
+    while (usedCodes.has(code)) {
+        index += 1
+        code = `tier-${index}`
+    }
+    return { code, title: `Tier ${index}` }
+}
+
 export function MeSubscriptionPlanPage() {
     const token = useAuthStore((state) => state.token)
     const plansQuery = useMySubscriptionPlansQuery(Boolean(token))
@@ -81,6 +96,7 @@ export function MeSubscriptionPlanPage() {
 
     const [planModalOpen, setPlanModalOpen] = useState(false)
     const [policyModalOpen, setPolicyModalOpen] = useState(false)
+    const [editingPlanId, setEditingPlanId] = useState<string | null>(null)
     const [editingPolicyId, setEditingPolicyId] = useState<string | null>(null)
     const [deletePolicyId, setDeletePolicyId] = useState<string | null>(null)
 
@@ -124,9 +140,11 @@ export function MeSubscriptionPlanPage() {
             ? Number(customTokenDecimals)
             : (selectedToken?.decimals ?? 18)
     const amountInBaseUnits = toBaseUnits(amount, tokenDecimals)
-    const selectedPlan = plansQuery.data?.find((plan) => plan.code === code)
+    const plans = plansQuery.data ?? []
+    const editingPlan = plans.find((plan) => plan.id === editingPlanId) ?? null
+    const duplicateCreateCode = !editingPlan && plans.some((plan) => plan.code === code)
     const managerAddress =
-        managerDeploymentQuery.data?.address ?? selectedPlan?.contractAddress ?? ""
+        managerDeploymentQuery.data?.address ?? editingPlan?.contractAddress ?? ""
     const policyOptions =
         plansQuery.data?.map((plan) => ({
             billingPeriodDays: plan.billingPeriodDays,
@@ -202,8 +220,10 @@ export function MeSubscriptionPlanPage() {
 
     function openPlanModal(plan?: SubscriptionPlanDto) {
         if (plan) {
+            setEditingPlanId(plan.id)
             fillPlanForm(plan)
         } else {
+            setEditingPlanId(null)
             resetPlanForm()
         }
         setPlanModalOpen(true)
@@ -213,8 +233,9 @@ export function MeSubscriptionPlanPage() {
         const nextToken = getTokenPresets(defaultSubscriptionChain.id).find(
             (preset) => preset.kind === PAYMENT_ASSET.ERC20
         )
-        setCode("main")
-        setTitle("Main subscription")
+        const nextDefaults = getNextPlanDefaults(plans)
+        setCode(nextDefaults.code)
+        setTitle(nextDefaults.title)
         setChainId(String(defaultSubscriptionChain.id))
         setTokenAddress(nextToken?.address ?? "")
         setSelectedTokenId(nextToken ? getTokenId(nextToken) : "custom")
@@ -455,7 +476,7 @@ export function MeSubscriptionPlanPage() {
                 <DrawerContent className="!w-[min(100vw,860px)] !max-w-none overflow-y-auto rounded-l-[32px] border-[var(--line)] bg-[var(--surface)] p-5 shadow-[var(--shadow)] sm:p-8">
                     <DrawerHeader className="px-0 pt-0">
                         <DrawerTitle>
-                            {selectedPlan ? "Edit subscription plan" : "Create subscription plan"}
+                            {editingPlan ? "Edit subscription plan" : "Create subscription plan"}
                         </DrawerTitle>
                         <DrawerDescription>
                             Plans define payment amount and on-chain registration. Use them inside
@@ -470,7 +491,7 @@ export function MeSubscriptionPlanPage() {
                                     onChange={(event) => {
                                         const value = event.target.value
                                         setTitle(value)
-                                        if (!selectedPlan) {
+                                        if (!editingPlan) {
                                             setCode(buildPlanCode(value))
                                         }
                                     }}
@@ -486,6 +507,7 @@ export function MeSubscriptionPlanPage() {
                             </Label>
                         </div>
                         <ChainPicker
+                            disabled={Boolean(editingPlan)}
                             onChange={(nextChainId) => {
                                 setChainId(String(nextChainId))
                                 const nextToken = getTokenPresets(nextChainId).find(
@@ -500,6 +522,13 @@ export function MeSubscriptionPlanPage() {
                             }}
                             value={selectedChainId}
                         />
+                        {editingPlan ? (
+                            <p className="text-sm text-[var(--muted)]">
+                                Existing plans keep their chain and internal code. Update changes
+                                price, token, period, and active status for future renewals on the
+                                same on-chain plan key.
+                            </p>
+                        ) : null}
                         <TokenPicker
                             chainId={selectedChainId}
                             customDecimals={customTokenDecimals}
@@ -556,6 +585,12 @@ export function MeSubscriptionPlanPage() {
                                 {upsertPlanMutation.error.message}
                             </p>
                         ) : null}
+                        {duplicateCreateCode ? (
+                            <p className="text-sm text-rose-600">
+                                A plan with internal code "{code}" already exists. Choose another
+                                title or edit the existing plan.
+                            </p>
+                        ) : null}
                         {!managerAddress ? (
                             <p className="text-sm text-amber-700">
                                 SubscriptionManager is not registered for this network in the
@@ -572,9 +607,10 @@ export function MeSubscriptionPlanPage() {
                                 upsertPlanMutation.isPending ||
                                 !managerAddress ||
                                 !planTokenAddress ||
-                                !amountInBaseUnits
+                                !amountInBaseUnits ||
+                                duplicateCreateCode
                             }
-                            existingPlanKey={selectedPlan?.planKey}
+                            existingPlanKey={editingPlan?.planKey}
                             onPublished={(published) => {
                                 setPlanKey(published.planKey ?? "")
                                 setRegistrationTxHash(published.registrationTxHash ?? "")

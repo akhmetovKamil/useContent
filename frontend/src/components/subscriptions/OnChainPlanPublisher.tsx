@@ -63,7 +63,7 @@ export function OnChainPlanPublisher({
             return
         }
 
-        const currentPlanKey = planKey
+        const currentPlanKey = (existingPlanKey || planKey) as `0x${string}`
         setError(null)
         setStatus(existingPlanKey ? "Updating plan on-chain..." : "Publishing plan on-chain...")
 
@@ -76,7 +76,7 @@ export function OnChainPlanPublisher({
             if (planExists && !isSameAddressLike(onChainAuthor, address)) {
                 throw new Error("This on-chain plan key is already owned by another wallet.")
             }
-            const shouldUpdate = Boolean(existingPlanKey || planExists)
+            const shouldUpdate = planExists
 
             const txHash = await writeContractAsync({
                 address: toAddress(contractAddress),

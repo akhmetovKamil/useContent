@@ -7,11 +7,12 @@ import { getChainDisplayConfig, supportedChainOptions } from "@/utils/config/cha
 
 interface ChainPickerProps {
     className?: string
+    disabled?: boolean
     onChange: (chainId: number) => void
     value: number
 }
 
-export function ChainPicker({ className, onChange, value }: ChainPickerProps) {
+export function ChainPicker({ className, disabled = false, onChange, value }: ChainPickerProps) {
     const selectedChain = supportedChainOptions.find((chain) => chain.id === value)
 
     return (
@@ -41,7 +42,9 @@ export function ChainPicker({ className, onChange, value }: ChainPickerProps) {
                             value === chain.id
                                 ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-[var(--shadow)]"
                                 : "border-[var(--line)] bg-[var(--surface)] hover:border-[var(--accent)]",
+                            disabled && "cursor-not-allowed opacity-60 hover:translate-y-0"
                         )}
+                        disabled={disabled}
                         key={chain.id}
                         onClick={() => onChange(chain.id)}
                         type="button"
