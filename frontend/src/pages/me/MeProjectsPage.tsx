@@ -18,6 +18,7 @@ import {
     useUpdateMyProjectMutation,
 } from "@/queries/projects"
 import { useAuthStore } from "@/stores/auth-store"
+import { formatDisplayDate } from "@/utils/date"
 import { formatFileSize } from "@/utils/format"
 
 export function MeProjectsPage() {
@@ -182,6 +183,9 @@ export function MeProjectsPage() {
                             </Badge>
                             <Badge className="rounded-full">
                                 {formatFileSize(selectedProject.totalSize)}
+                            </Badge>
+                            <Badge className="rounded-full">
+                                Updated {formatDisplayDate(selectedProject.updatedAt)}
                             </Badge>
                         </div>
                     </CardHeader>

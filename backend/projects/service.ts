@@ -303,6 +303,7 @@ export async function listMyProjectNodes(
     breadcrumbs: (await buildProjectBreadcrumbs(project, currentFolder)).map(
       toProjectNodeResponse,
     ),
+    currentFolderSummary: await buildFolderSummary(project, currentFolder, false),
   };
 }
 
@@ -333,6 +334,7 @@ export async function listAuthorProjectNodesBySlug(
     breadcrumbs: (await buildProjectBreadcrumbs(project, currentFolder)).map(
       toProjectNodeResponse,
     ),
+    currentFolderSummary: await buildFolderSummary(project, currentFolder, true),
   };
 }
 
@@ -545,4 +547,34 @@ export async function getAuthorProjectFileBySlug(
     await assertPublishedProjectPath(project, parent);
   }
   return readProjectFileObject(node);
+}
+
+async function buildFolderSummary(
+  project: ProjectDoc,
+  folder: ProjectNodeDoc,
+  publishedOnly: boolean,
+): Promise<ProjectNodeListResponse["currentFolderSummary"]> {
+  let fileCount = 0;
+  let folderCount = 0;
+  let totalSize = 0;
+
+  async function collect(parent: ProjectNodeDoc): Promise<void> {
+    const children = publishedOnly
+      ? await repo.listPublishedProjectNodesByParent(project._id, parent._id)
+      : await repo.listProjectNodesByParent(project._id, parent._id);
+
+    for (const child of children) {
+      if (child.kind === PROJECT_NODE_KIND.FOLDER) {
+        folderCount += 1;
+        await collect(child);
+        continue;
+      }
+
+      fileCount += 1;
+      totalSize += child.size ?? 0;
+    }
+  }
+
+  await collect(folder);
+  return { fileCount, folderCount, totalSize };
 }

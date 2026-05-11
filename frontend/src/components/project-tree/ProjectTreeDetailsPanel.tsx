@@ -1,6 +1,6 @@
 import { PROJECT_NODE_KIND } from "@shared/consts"
-import type { ProjectNodeDto } from "@shared/types/projects"
-import { Download, FileText, FolderOpen, ListTree, PackageOpen } from "lucide-react"
+import type { ProjectNodeDto, ProjectNodeSummaryDto } from "@shared/types/projects"
+import { Download, FileText, FolderOpen, HardDrive, ListTree, PackageOpen } from "lucide-react"
 
 import { ProjectFilePreview } from "@/components/project-tree/ProjectFilePreview"
 import { ProjectNodeRow } from "@/components/project-tree/ProjectNodeRow"
@@ -14,6 +14,7 @@ interface ProjectTreeDetailsPanelProps {
     isAuthor: boolean
     isLoading: boolean
     nodes: ProjectNodeDto[]
+    folderSummary: ProjectNodeSummaryDto
     onDelete: (node: ProjectNodeDto) => void
     onDownloadFile: (node: ProjectNodeDto) => void
     onDownloadFolder: (folderId?: string | null) => void
@@ -30,6 +31,7 @@ export function ProjectTreeDetailsPanel({
     isAuthor,
     isLoading,
     nodes,
+    folderSummary,
     onDelete,
     onDownloadFile,
     onDownloadFolder,
@@ -91,8 +93,13 @@ export function ProjectTreeDetailsPanel({
                         <p className="flex items-center gap-2 text-sm text-[var(--muted)]">
                             <ListTree className="size-4" />
                             <span>
-                                {nodes.length} item{nodes.length === 1 ? "" : "s"}
+                                {folderSummary.fileCount} file
+                                {folderSummary.fileCount === 1 ? "" : "s"} ·{" "}
+                                {folderSummary.folderCount} folder
+                                {folderSummary.folderCount === 1 ? "" : "s"}
                             </span>
+                            <HardDrive className="size-4" />
+                            <span>{formatFileSize(folderSummary.totalSize)}</span>
                         </p>
                     </div>
                 </div>

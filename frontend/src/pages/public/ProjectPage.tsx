@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom"
 import { ProjectFileTree } from "@/components/project-tree/ProjectFileTree"
 import { Badge } from "@/components/ui/badge"
 import { useAuthorProjectQuery } from "@/queries/projects"
+import { formatDisplayDate } from "@/utils/date"
 import { formatFileSize } from "@/utils/format"
 
 export function ProjectPage() {
@@ -34,6 +35,9 @@ export function ProjectPage() {
                         </Badge>
                         <Badge className="rounded-full">
                             {formatFileSize(projectQuery.data.totalSize)}
+                        </Badge>
+                        <Badge className="rounded-full">
+                            Updated {formatDisplayDate(projectQuery.data.updatedAt)}
                         </Badge>
                     </div>
                     <p className="mt-6 whitespace-pre-wrap text-base leading-7 text-[var(--foreground)]">

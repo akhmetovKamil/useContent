@@ -5,6 +5,7 @@ import { Link } from "react-router-dom"
 import { ProfileAvatar } from "@/components/common/ProfileAvatar"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { formatDisplayDate } from "@/utils/date"
 import { formatFileSize } from "@/utils/format"
 
 export type ProjectItem = ProjectDto | FeedProjectDto
@@ -62,6 +63,9 @@ export function ProjectCard({ project, showAuthor }: ProjectCardProps) {
                             <Badge className="rounded-full">
                                 <HardDrive className="size-3.5" />
                                 {formatFileSize(project.totalSize)}
+                            </Badge>
+                            <Badge className="rounded-full">
+                                Updated {formatDisplayDate(project.updatedAt)}
                             </Badge>
                             {"accessLabel" in project && project.accessLabel ? (
                                 <Badge

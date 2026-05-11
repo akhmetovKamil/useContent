@@ -1,5 +1,6 @@
 import type { CreateProjectFolderInput, CreateProjectInput, ProjectBundleDto, ProjectDto, ProjectNodeDto, ProjectNodeListDto, UpdateProjectInput, UpdateProjectNodeInput } from "@shared/types/projects"
 import type { ListProjectsResponseDto } from "@shared/types/responses"
+import type { AxiosProgressEvent } from "axios"
 
 import { downloadBlob } from "@/utils/download-blob"
 import {
@@ -66,12 +67,18 @@ class ProjectsApi {
         })
     }
 
-    async uploadMyProjectFile(projectId: string, file: File, parentId?: string | null) {
+    async uploadMyProjectFile(
+        projectId: string,
+        file: File,
+        parentId?: string | null,
+        onUploadProgress?: (event: AxiosProgressEvent) => void
+    ) {
         return uploadData<ProjectNodeDto, FileUploadParams>(
             `/me/project-files/upload/${projectId}`,
             file,
             {
                 headers: { "Content-Type": file.type || "application/octet-stream" },
+                onUploadProgress,
                 params: {
                     name: file.name,
                     parentId,

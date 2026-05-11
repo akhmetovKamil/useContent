@@ -48,6 +48,13 @@ export interface ProjectNodeListDto {
   nodes: ProjectNodeDto[];
   currentFolderId: EntityId;
   breadcrumbs: ProjectNodeDto[];
+  currentFolderSummary: ProjectNodeSummaryDto;
+}
+
+export interface ProjectNodeSummaryDto {
+  fileCount: number;
+  folderCount: number;
+  totalSize: number;
 }
 
 export interface ProjectBundleItemDto extends StorageSizedDto {

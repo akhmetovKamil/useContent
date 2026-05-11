@@ -22,7 +22,6 @@ import {
     useDownloadMyProjectFileMutation,
     useMyProjectNodesQuery,
     useUpdateMyProjectNodeMutation,
-    useUploadMyProjectFileMutation,
 } from "@/queries/projects"
 import { queryKeys } from "@/queries/queryKeys"
 import type { ProjectFileTreeProps } from "@/types/projects"
@@ -62,7 +61,6 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
     )
     const nodesQuery = isAuthor ? myNodesQuery : authorNodesQuery
     const createFolderMutation = useCreateMyProjectFolderMutation(projectId, currentFolderId)
-    const uploadFileMutation = useUploadMyProjectFileMutation(projectId, currentFolderId)
     const updateNodeMutation = useUpdateMyProjectNodeMutation(projectId, currentFolderId)
     const deleteNodeMutation = useDeleteMyProjectNodeMutation(projectId, currentFolderId)
     const downloadMyFileMutation = useDownloadMyProjectFileMutation(projectId)
@@ -72,6 +70,11 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
     const orderedNodes = [...folders, ...files]
     const currentFolder =
         nodesQuery.data?.breadcrumbs.find((breadcrumb) => breadcrumb.id === currentFolderId) ?? null
+    const currentFolderSummary = nodesQuery.data?.currentFolderSummary ?? {
+        fileCount: orderedNodes.filter((node) => node.kind === PROJECT_NODE_KIND.FILE).length,
+        folderCount: orderedNodes.filter((node) => node.kind === PROJECT_NODE_KIND.FOLDER).length,
+        totalSize: orderedNodes.reduce((sum, node) => sum + (node.size ?? 0), 0),
+    }
     const selectedFileDownloadUrl =
         selectedNode?.kind === PROJECT_NODE_KIND.FILE
             ? isAuthor
@@ -160,6 +163,14 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
         setDeleteNodeTarget(null)
     }
 
+    async function invalidateProjectFileQueries() {
+        await queryClient.invalidateQueries({
+            queryKey: queryKeys.myProjectNodes(projectId, currentFolderId),
+        })
+        await queryClient.invalidateQueries({ queryKey: queryKeys.myProjects() })
+        await queryClient.invalidateQueries({ queryKey: queryKeys.authors() })
+    }
+
     async function downloadFile(node: ProjectNodeDto) {
         try {
             if (isAuthor) {
@@ -221,22 +232,28 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
         }
 
         const totalSize = files.reduce((sum, file) => sum + file.size, 0)
-        const toastId = toast.loading(
-            `Uploading ${formatUploadSummary(files.length, totalSize)}...`,
-            { duration: Infinity }
-        )
-        let uploadedCount = 0
+        const toastId = toast.loading(formatUploadProgress("Uploading", 0, totalSize, files.length), {
+            duration: Infinity,
+        })
+        let completedBytes = 0
 
         try {
             for (const file of files) {
-                await uploadFileMutation.mutateAsync(file)
-                uploadedCount += 1
-                toast.loading(
-                    `Uploading ${formatUploadSummary(files.length, totalSize)}... ${uploadedCount}/${files.length} complete`,
-                    { duration: Infinity, id: toastId }
-                )
+                await projectsApi.uploadMyProjectFile(projectId, file, currentFolderId, (event) => {
+                    toast.loading(
+                        formatUploadProgress(
+                            "Uploading",
+                            Math.min(totalSize, completedBytes + event.loaded),
+                            totalSize,
+                            files.length
+                        ),
+                        { duration: Infinity, id: toastId }
+                    )
+                })
+                completedBytes += file.size
             }
 
+            await invalidateProjectFileQueries()
             toast.success(`Uploaded ${formatUploadSummary(files.length, totalSize)}.`, {
                 id: toastId,
             })
@@ -254,10 +271,10 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
 
         const totalSize = files.reduce((sum, file) => sum + file.size, 0)
         const toastId = toast.loading(
-            `Uploading folder: ${formatUploadSummary(files.length, totalSize)}...`,
+            formatUploadProgress("Uploading folder", 0, totalSize, files.length),
             { duration: Infinity }
         )
-        let uploadedCount = 0
+        let completedBytes = 0
         const folderIds = new Map<string, string | null>()
         folderIds.set("", currentFolderId)
 
@@ -283,19 +300,21 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                 }
 
                 const uploadFile = new File([file], fileName, { type: file.type })
-                await projectsApi.uploadMyProjectFile(projectId, uploadFile, parentId)
-                uploadedCount += 1
-                toast.loading(
-                    `Uploading folder: ${formatUploadSummary(files.length, totalSize)}... ${uploadedCount}/${files.length} complete`,
-                    { duration: Infinity, id: toastId }
-                )
+                await projectsApi.uploadMyProjectFile(projectId, uploadFile, parentId, (event) => {
+                    toast.loading(
+                        formatUploadProgress(
+                            "Uploading folder",
+                            Math.min(totalSize, completedBytes + event.loaded),
+                            totalSize,
+                            files.length
+                        ),
+                        { duration: Infinity, id: toastId }
+                    )
+                })
+                completedBytes += file.size
             }
 
-            await queryClient.invalidateQueries({
-                queryKey: queryKeys.myProjectNodes(projectId, currentFolderId),
-            })
-            await queryClient.invalidateQueries({ queryKey: ["me", "projects"] })
-            await queryClient.invalidateQueries({ queryKey: ["authors"] })
+            await invalidateProjectFileQueries()
 
             toast.success(`Uploaded folder with ${formatUploadSummary(files.length, totalSize)}.`, {
                 id: toastId,
@@ -360,6 +379,7 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
                             isAuthor={isAuthor}
                             isLoading={nodesQuery.isLoading}
                             nodes={orderedNodes}
+                            folderSummary={currentFolderSummary}
                             onDelete={setDeleteNodeTarget}
                             onDownloadFile={(target) => void downloadFile(target)}
                             onDownloadFolder={(folderId) => void downloadFolder(folderId)}
@@ -437,6 +457,17 @@ export function ProjectFileTree({ mode, projectId, rootNodeId, slug = "" }: Proj
 
 function formatUploadSummary(fileCount: number, totalSize: number) {
     return `${fileCount} file${fileCount === 1 ? "" : "s"} (${formatFileSize(totalSize)})`
+}
+
+function formatUploadProgress(
+    label: string,
+    loadedBytes: number,
+    totalBytes: number,
+    fileCount: number
+) {
+    return `${label} ${fileCount} file${fileCount === 1 ? "" : "s"} · ${formatFileSize(
+        loadedBytes
+    )} / ${formatFileSize(totalBytes)}`
 }
 
 function sanitizeArchiveName(name: string) {
