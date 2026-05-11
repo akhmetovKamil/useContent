@@ -9,7 +9,7 @@ interface PostCommentsSectionProps {
     isError: boolean
     isLoading: boolean
     isPending: boolean
-    onSubmit: (content: string) => Promise<unknown>
+    onSubmit: (content: string) => Promise<PostCommentDto>
     token: string | null
 }
 
