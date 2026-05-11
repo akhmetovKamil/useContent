@@ -16,6 +16,16 @@ on:
           - base
           - optimism
           - arbitrum
+      platformTierManagerAddress:
+        description: Existing PlatformTierManager address to sync instead of redeploying
+        required: false
+        default: ""
+        type: string
+      platformStorageManagerAddress:
+        description: Existing PlatformStorageManager address to sync instead of redeploying
+        required: false
+        default: ""
+        type: string
 
 jobs:
   deploy-platform-billing-managers:
@@ -47,8 +57,11 @@ jobs:
           DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
           PLATFORM_TREASURY: ${{ secrets.PLATFORM_TREASURY }}
           PLATFORM_PAYMENT_TOKEN: ${{ secrets.PLATFORM_PAYMENT_TOKEN }}
+          REGISTRY_API_BASE_URL: ${{ secrets.REGISTRY_API_BASE_URL }}
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
           DEPLOYMENT_REGISTRY_TOKEN: ${{ secrets.DEPLOYMENT_REGISTRY_TOKEN }}
+          PLATFORM_TIER_MANAGER_ADDRESS: ${{ inputs.platformTierManagerAddress }}
+          PLATFORM_STORAGE_MANAGER_ADDRESS: ${{ inputs.platformStorageManagerAddress }}
           RPC_URL_11155111: ${{ secrets.RPC_URL_11155111 }}
           RPC_URL_84532: ${{ secrets.RPC_URL_84532 }}
           RPC_URL_11155420: ${{ secrets.RPC_URL_11155420 }}

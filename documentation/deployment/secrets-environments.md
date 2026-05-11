@@ -52,7 +52,9 @@ Backend image build is handled by GitHub Actions. The workflow injects MinIO-rel
 
 Contract deployment is intentionally separate from normal application deployment. Manual GitHub Actions workflows receive deployer private keys, treasury addresses, RPC URLs and registry token only for the duration of the deployment job. Runtime containers only read the resulting deployment registry records.
 
-For platform billing deployments, `API_BASE_URL` and `DEPLOYMENT_REGISTRY_TOKEN` are mandatory in GitHub Actions. The deploy script registers both `PlatformTierManager` and `PlatformStorageManager` and then performs a public read-back check against the backend lookup endpoints. Local deploys can intentionally skip this with `SKIP_DEPLOYMENT_REGISTRY_SYNC=true`, but CI should not.
+For platform billing deployments, `REGISTRY_API_BASE_URL` and `DEPLOYMENT_REGISTRY_TOKEN` are mandatory in GitHub Actions. `REGISTRY_API_BASE_URL` should be the public backend origin, normally `https://api.usecontent.app`; it must not be the Coolify internal backend port such as `http://server-ip:8080`. The deploy script checks `/health` before any on-chain transaction, registers both `PlatformTierManager` and `PlatformStorageManager`, then performs a public read-back check against the backend lookup endpoints. Local deploys can intentionally skip this with `SKIP_DEPLOYMENT_REGISTRY_SYNC=true`, but CI should not.
+
+If an on-chain deployment already succeeded and only registry sync failed, rerun the manual `Platform Billing Contracts` workflow with the existing `platformTierManagerAddress` and `platformStorageManagerAddress` inputs. That mode syncs and verifies the addresses without deploying new contracts.
 
 ## Domain layout
 

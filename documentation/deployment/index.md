@@ -150,7 +150,11 @@ Smart contract deployment is manual. GitHub Actions workflows run Hardhat deploy
 
 Manual workflows are used because contract deployment requires private keys and RPC endpoints. Those secrets should be scoped to GitHub Actions and not mounted into the runtime backend or frontend containers.
 
-The platform billing workflow deploys `PlatformTierManager` and `PlatformStorageManager` together, writes both records to the backend registry, then reads both public lookup endpoints back. In GitHub Actions the registry sync is required: missing `API_BASE_URL` or `DEPLOYMENT_REGISTRY_TOKEN` fails the workflow instead of silently producing an address the frontend cannot see. Local manual deploys may opt out only with `SKIP_DEPLOYMENT_REGISTRY_SYNC=true`.
+The platform billing workflow deploys `PlatformTierManager` and `PlatformStorageManager` together, writes both records to the backend registry, then reads both public lookup endpoints back. In GitHub Actions the registry sync is required: missing `REGISTRY_API_BASE_URL` or `DEPLOYMENT_REGISTRY_TOKEN` fails the workflow instead of silently producing an address the frontend cannot see.
+
+`REGISTRY_API_BASE_URL` must point to the public backend API, for example `https://api.usecontent.app`. Do not point it at the backend container's internal `:8080` port: GitHub Actions cannot reach that port through Coolify. The deploy script performs a `/health` preflight before sending any transactions, so a wrong registry URL fails before gas is spent. If contracts were already deployed but registry sync failed, the manual platform workflow can be rerun with `platformTierManagerAddress` and `platformStorageManagerAddress` inputs to sync the existing addresses without redeploying.
+
+Local manual deploys may opt out only with `SKIP_DEPLOYMENT_REGISTRY_SYNC=true`.
 
 ## Documentation deployment
 
