@@ -3,7 +3,7 @@ import type {
     PostMediaGridLayoutDto,
     PostMediaLayout,
 } from "@shared/types/posts"
-import { Fragment, useState } from "react"
+import { useState } from "react"
 
 import { PostFileAttachmentButton } from "@/components/posts/PostFileAttachmentButton"
 import { PostMediaLightbox } from "@/components/posts/PostMediaLightbox"
@@ -15,7 +15,6 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from "@/components/ui/carousel"
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { cn } from "@/utils/cn"
 
 interface PostMediaGalleryProps {
@@ -44,46 +43,23 @@ export function PostMediaGallery({
 
     const media = attachments.filter((attachment) => attachment.kind !== "file")
     const files = attachments.filter((attachment) => attachment.kind === "file")
+    const canUseFixedGrid =
+        media.length > 1 &&
+        media.length <= 4 &&
+        mediaLayout === "resizable_grid" &&
+        mediaGridLayout?.variant === getGridVariant(media.length)
 
     return (
         <div className="grid gap-3">
             {media.length ? (
-                media.length > 1 &&
-                media.length <= 4 &&
-                mediaLayout === "resizable_grid" &&
-                mediaGridLayout ? (
-                    <ResizablePanelGroup
-                        className="min-h-80 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]"
-                        defaultLayout={mediaGridLayout.sizes.reduce<Record<string, number>>(
-                            (layout, size, index) => {
-                                layout[`media-${index}`] = size
-                                return layout
-                            },
-                            {}
-                        )}
-                        direction="horizontal"
-                    >
-                        {media.map((attachment, index) => (
-                            <Fragment key={attachment.id}>
-                                <ResizablePanel
-                                    defaultSize={mediaGridLayout.sizes[index]}
-                                    id={`media-${index}`}
-                                    minSize={20}
-                                >
-                                    <PostMediaTile
-                                        attachment={attachment}
-                                        className="h-full"
-                                        downloadUrl={getDownloadUrl(attachment)}
-                                        onDownload={() => onDownload(attachment)}
-                                        onPreview={(objectUrl) =>
-                                            setPreview({ attachment, objectUrl })
-                                        }
-                                    />
-                                </ResizablePanel>
-                                {index < media.length - 1 ? <ResizableHandle /> : null}
-                            </Fragment>
-                        ))}
-                    </ResizablePanelGroup>
+                canUseFixedGrid ? (
+                    <FixedPostMediaGrid
+                        getDownloadUrl={getDownloadUrl}
+                        media={media}
+                        mediaGridLayout={mediaGridLayout}
+                        onDownload={onDownload}
+                        onPreview={(attachment, objectUrl) => setPreview({ attachment, objectUrl })}
+                    />
                 ) : media.length > 1 ? (
                     <Carousel className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
                         <CarouselContent className="-ml-0">
@@ -153,4 +129,122 @@ export function PostMediaGallery({
             />
         </div>
     )
+}
+
+interface FixedPostMediaGridProps {
+    getDownloadUrl: (attachment: PostAttachmentDto) => string | null
+    media: PostAttachmentDto[]
+    mediaGridLayout: PostMediaGridLayoutDto
+    onDownload: (attachment: PostAttachmentDto) => void
+    onPreview: (attachment: PostAttachmentDto, objectUrl: string) => void
+}
+
+function FixedPostMediaGrid({
+    getDownloadUrl,
+    media,
+    mediaGridLayout,
+    onDownload,
+    onPreview,
+}: FixedPostMediaGridProps) {
+    const sizes = normalizeFixedGridSizes(mediaGridLayout.sizes, media.length)
+    const renderTile = (index: number) => (
+        <PostMediaTile
+            attachment={media[index]}
+            className="h-full"
+            downloadUrl={getDownloadUrl(media[index])}
+            onDownload={() => onDownload(media[index])}
+            onPreview={(objectUrl) => onPreview(media[index], objectUrl)}
+        />
+    )
+
+    if (media.length === 2) {
+        return (
+            <div
+                className="grid min-h-80 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]"
+                style={{ gridTemplateColumns: `${sizes[0]}fr ${sizes[1]}fr` }}
+            >
+                {renderTile(0)}
+                {renderTile(1)}
+            </div>
+        )
+    }
+
+    if (media.length === 3) {
+        return (
+            <div
+                className="grid min-h-80 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]"
+                style={{ gridTemplateColumns: `${sizes[0]}fr ${sizes[1]}fr` }}
+            >
+                {renderTile(0)}
+                <div
+                    className="grid min-h-0"
+                    style={{ gridTemplateRows: `${sizes[2]}fr ${sizes[3]}fr` }}
+                >
+                    {renderTile(1)}
+                    {renderTile(2)}
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div
+            className="grid min-h-80 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]"
+            style={{ gridTemplateColumns: `${sizes[0]}fr ${sizes[1]}fr` }}
+        >
+            <div
+                className="grid min-h-0"
+                style={{ gridTemplateRows: `${sizes[2]}fr ${sizes[3]}fr` }}
+            >
+                {renderTile(0)}
+                {renderTile(2)}
+            </div>
+            <div
+                className="grid min-h-0"
+                style={{ gridTemplateRows: `${sizes[4]}fr ${sizes[5]}fr` }}
+            >
+                {renderTile(1)}
+                {renderTile(3)}
+            </div>
+        </div>
+    )
+}
+
+function normalizeFixedGridSizes(sizes: number[], count: number) {
+    const fallback = getGridFallbackSizes(count)
+
+    if (sizes.length === fallback.length) {
+        return sizes.map((size) => Math.min(80, Math.max(20, Math.round(size))))
+    }
+
+    if (count === 3 && sizes.length === 3) {
+        return [
+            Math.min(80, Math.max(20, Math.round(sizes[0]))),
+            Math.min(80, Math.max(20, Math.round(100 - sizes[0]))),
+            Math.min(80, Math.max(20, Math.round(sizes[1]))),
+            Math.min(80, Math.max(20, Math.round(sizes[2]))),
+        ]
+    }
+
+    return fallback
+}
+
+function getGridVariant(count: number) {
+    return count === 2 ? "two" : count === 3 ? "three" : count === 4 ? "four" : null
+}
+
+function getGridFallbackSizes(count: number) {
+    if (count === 2) {
+        return [50, 50]
+    }
+
+    if (count === 3) {
+        return [60, 40, 50, 50]
+    }
+
+    if (count === 4) {
+        return [50, 50, 50, 50, 50, 50]
+    }
+
+    return []
 }

@@ -1,19 +1,12 @@
 import type { ProjectNodeDto } from "@shared/types/projects"
 import { Folder, FolderOpen } from "lucide-react"
-import type { DragEventHandler } from "react"
 
 import { Tree, type TreeViewElement } from "@/components/ui/file-tree"
-import { cn } from "@/utils/cn"
 
 interface ProjectTreeSidebarProps {
     currentFolderId: string | null
-    isDropActive?: boolean
     expandedFolderIds: Set<string>
     nodesByParent: Record<string, ProjectNodeDto[]>
-    onDragEnter?: DragEventHandler<HTMLElement>
-    onDragLeave?: DragEventHandler<HTMLElement>
-    onDragOver?: DragEventHandler<HTMLElement>
-    onDrop?: DragEventHandler<HTMLElement>
     onSelectNode: (node: ProjectNodeDto) => void
     rootNodeId: string
     selectedNodeId?: string | null
@@ -21,13 +14,8 @@ interface ProjectTreeSidebarProps {
 
 export function ProjectTreeSidebar({
     currentFolderId,
-    isDropActive,
     expandedFolderIds,
     nodesByParent,
-    onDragEnter,
-    onDragLeave,
-    onDragOver,
-    onDrop,
     onSelectNode,
     rootNodeId,
     selectedNodeId,
@@ -37,16 +25,7 @@ export function ProjectTreeSidebar({
 
     return (
         <aside
-            className={cn(
-                "min-h-0 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-3 transition-colors lg:h-full lg:overflow-hidden",
-                isDropActive
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-[inset_0_0_0_1px_var(--accent)]"
-                    : ""
-            )}
-            onDragEnter={onDragEnter}
-            onDragLeave={onDragLeave}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
+            className="min-h-0 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-3 transition-colors lg:h-full lg:overflow-hidden"
         >
             {treeElements.length ? (
                 <Tree
@@ -66,7 +45,7 @@ export function ProjectTreeSidebar({
                 />
             ) : (
                 <p className="rounded-2xl border border-dashed border-[var(--line)] p-4 text-sm text-[var(--muted)]">
-                    {isDropActive ? "Drop files or folders to upload." : "No files loaded yet."}
+                    No files loaded yet.
                 </p>
             )}
         </aside>
