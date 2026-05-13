@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 @theme inline {
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -26,6 +28,28 @@
     --font-sans: var(--sans);
     --font-serif: var(--serif);
     --font-mono: var(--mono);
+    --animate-marquee: marquee var(--duration) infinite linear;
+    --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
+
+    @keyframes marquee {
+        from {
+            transform: translateX(0);
+        }
+
+        to {
+            transform: translateX(calc(-100% - var(--gap)));
+        }
+    }
+
+    @keyframes marquee-vertical {
+        from {
+            transform: translateY(0);
+        }
+
+        to {
+            transform: translateY(calc(-100% - var(--gap)));
+        }
+    }
 }
 
 ::view-transition-old(root), ::view-transition-new(root) {
