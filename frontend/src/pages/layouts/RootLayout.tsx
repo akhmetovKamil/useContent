@@ -44,13 +44,9 @@ export function RootLayout() {
           : readerNavItems.map((item) =>
                 item.label === "Profile" ? { ...item, to: readerProfilePath } : item
             )
-    const subtitle = visibleMode === "author" ? "Author Workspace" : "User Workspace"
     const isAuthorOnboarding = location.pathname === "/author/onboarding"
-    const isReaderDiscover = location.pathname === "/me/discover"
     const showDock = Boolean(token && !isAuthorOnboarding)
-    const showWorkspaceToggle = Boolean(token && !isAuthorOnboarding)
-    const showDefaultHeader = !isReaderDiscover
-    const showFloatingControls = Boolean(token && isReaderDiscover && !isAuthorOnboarding)
+    const showFloatingHeader = Boolean(token && !isAuthorOnboarding)
 
     useEffect(() => {
         document.documentElement.dataset.palette = palette
@@ -77,31 +73,23 @@ export function RootLayout() {
             data-testid="app-shell"
         >
             <div className="relative mx-auto flex min-h-[calc(100vh-2rem)] min-w-0 max-w-7xl flex-col rounded-[32px] border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)] backdrop-blur-sm">
-                {showDefaultHeader ? (
-                    <header className="flex flex-col gap-5 border-b border-[var(--line)] px-5 py-5 md:flex-row md:items-center md:justify-between md:px-8">
-                        <div>
-                            <div className="font-mono text-xs uppercase tracking-[0.35em] text-[var(--muted)]">
-                                useContent
-                            </div>
-                            <div className="mt-2 max-w-xl font-[var(--serif)] text-2xl leading-tight text-[var(--foreground)] md:text-4xl">
-                                {subtitle}
-                            </div>
-                        </div>
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                            {showWorkspaceToggle ? <WorkspaceModeToggle /> : null}
-                            <WalletStatus />
-                        </div>
-                    </header>
-                ) : null}
-
-                <main className="min-w-0 flex-1 px-5 py-6 md:px-8 md:py-8">
+                <main
+                    className={cn(
+                        "min-w-0 flex-1 px-5 py-6 md:px-8 md:py-8",
+                        showFloatingHeader ? "pt-24 md:pt-28" : ""
+                    )}
+                >
                     <Outlet />
                 </main>
             </div>
-            {showFloatingControls ? (
-                <div className="fixed top-4 left-1/2 z-40 flex w-[min(calc(100vw-1rem),720px)] -translate-x-1/2 flex-col items-stretch gap-2 px-2 sm:flex-row sm:items-center sm:justify-end">
-                    <WorkspaceModeToggle />
-                    <WalletStatus />
+            {showFloatingHeader ? (
+                <div className="pointer-events-none fixed inset-x-4 top-4 z-40 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-2">
+                    <div className="pointer-events-auto col-start-2">
+                        <WorkspaceModeToggle />
+                    </div>
+                    <div className="pointer-events-auto col-start-3 justify-self-end overflow-x-auto">
+                        <WalletStatus />
+                    </div>
                 </div>
             ) : null}
             {showDock ? (
