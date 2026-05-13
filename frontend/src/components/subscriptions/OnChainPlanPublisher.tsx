@@ -23,6 +23,7 @@ interface OnChainPlanPublisherProps {
     contractAddress: string
     disabled?: boolean
     existingPlanKey?: string
+    buttonLabel?: string
     onPublished: (
         input: Pick<UpsertSubscriptionPlanInput, "planKey" | "registrationTxHash">
     ) => void
@@ -39,6 +40,7 @@ export function OnChainPlanPublisher({
     contractAddress,
     disabled,
     existingPlanKey,
+    buttonLabel,
     onPublished,
     paymentAsset,
     price,
@@ -135,16 +137,9 @@ export function OnChainPlanPublisher({
                 disabled={disabled || !canPublish}
                 onClick={() => void publish()}
                 type="button"
-                variant="outline"
             >
-                {existingPlanKey ? "Update plan" : "Publish plan"}
+                {buttonLabel ?? (existingPlanKey ? "Save plan" : "Publish plan")}
             </Button>
-            <p className="text-xs text-[var(--muted)]">
-                Plan key:{" "}
-                <span className="font-mono">
-                    {planKey ?? "connect wallet and load author profile"}
-                </span>
-            </p>
             {status ? <p className="text-sm text-[var(--muted)]">{status}</p> : null}
             {error ? <p className="text-sm text-rose-600">{error}</p> : null}
         </div>

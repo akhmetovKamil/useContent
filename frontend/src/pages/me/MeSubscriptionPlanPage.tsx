@@ -33,7 +33,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { ChainPicker } from "@/components/web3/pickers/ChainPicker"
 import { TokenAmountInput } from "@/components/web3/pickers/TokenAmountInput"
 import { TokenPicker } from "@/components/web3/pickers/TokenPicker"
-import { Web3SummaryPanel } from "@/components/web3/pickers/Web3SummaryPanel"
 import { getTokenId } from "@/utils/web3/tokens"
 import {
     useCreateMyAccessPolicyMutation,
@@ -116,8 +115,6 @@ export function MeSubscriptionPlanPage() {
     const [customTokenLookupError, setCustomTokenLookupError] = useState("")
     const [amount, setAmount] = useState("1")
     const [billingPeriodDays, setBillingPeriodDays] = useState("30")
-    const [planKey, setPlanKey] = useState("")
-    const [registrationTxHash, setRegistrationTxHash] = useState("")
 
     const [policyName, setPolicyName] = useState("Subscribers only")
     const [policyDescription, setPolicyDescription] = useState("")
@@ -242,8 +239,6 @@ export function MeSubscriptionPlanPage() {
         setCustomTokenDecimals(String(nextToken?.decimals ?? 18))
         setAmount("1")
         setBillingPeriodDays("30")
-        setPlanKey("")
-        setRegistrationTxHash("")
     }
 
     function fillPlanForm(plan: SubscriptionPlanDto) {
@@ -263,8 +258,6 @@ export function MeSubscriptionPlanPage() {
         setCustomTokenDecimals(String(decimals))
         setAmount(formatUnits(BigInt(plan.price), decimals))
         setBillingPeriodDays(String(plan.billingPeriodDays))
-        setPlanKey(plan.planKey)
-        setRegistrationTxHash(plan.registrationTxHash ?? "")
     }
 
     function openPolicyModal(policy?: AccessPolicyPresetDto) {
@@ -566,20 +559,6 @@ export function MeSubscriptionPlanPage() {
                             onAmountChange={setAmount}
                             symbol={selectedToken?.symbol}
                         />
-                        <Web3SummaryPanel
-                            items={[
-                                {
-                                    label: "manager",
-                                    value: managerDeploymentQuery.isLoading
-                                        ? "loading..."
-                                        : managerAddress || "not configured for selected network",
-                                },
-                                { label: "internal code", value: code },
-                                { label: "plan key", value: planKey },
-                                { label: "registration tx", value: registrationTxHash },
-                            ]}
-                            title="On-chain registration"
-                        />
                         {upsertPlanMutation.isError ? (
                             <p className="text-sm text-rose-600">
                                 {upsertPlanMutation.error.message}
@@ -593,47 +572,55 @@ export function MeSubscriptionPlanPage() {
                         ) : null}
                         {!managerAddress ? (
                             <p className="text-sm text-amber-700">
-                                SubscriptionManager is not registered for this network in the
-                                backend registry yet.
+                                Subscription plans cannot be published until this network is
+                                configured.
                             </p>
                         ) : null}
-                        <OnChainPlanPublisher
-                            active
-                            billingPeriodDays={Number(billingPeriodDays)}
-                            chainId={selectedChainId}
-                            code={code}
-                            contractAddress={managerAddress}
-                            disabled={
-                                upsertPlanMutation.isPending ||
-                                !managerAddress ||
-                                !planTokenAddress ||
-                                !amountInBaseUnits ||
-                                duplicateCreateCode
-                            }
-                            existingPlanKey={editingPlan?.planKey}
-                            onPublished={(published) => {
-                                setPlanKey(published.planKey ?? "")
-                                setRegistrationTxHash(published.registrationTxHash ?? "")
-                                void upsertPlanMutation
-                                    .mutateAsync({
-                                        code,
-                                        title,
-                                        paymentAsset,
-                                        chainId: selectedChainId,
-                                        tokenAddress: planTokenAddress,
-                                        price: amountInBaseUnits,
-                                        billingPeriodDays: Number(billingPeriodDays),
-                                        contractAddress: managerAddress,
-                                        planKey: published.planKey,
-                                        registrationTxHash: published.registrationTxHash,
-                                        active: true,
-                                    })
-                                    .then(() => setPlanModalOpen(false))
-                            }}
-                            price={amountInBaseUnits}
-                            paymentAsset={paymentAsset}
-                            tokenAddress={planTokenAddress}
-                        />
+                        <div className="flex justify-end gap-2 border-t border-[var(--line)] pt-4">
+                            <Button
+                                onClick={() => setPlanModalOpen(false)}
+                                type="button"
+                                variant="outline"
+                            >
+                                Cancel
+                            </Button>
+                            <OnChainPlanPublisher
+                                active
+                                billingPeriodDays={Number(billingPeriodDays)}
+                                buttonLabel={editingPlan ? "Save plan" : "Publish plan"}
+                                chainId={selectedChainId}
+                                code={code}
+                                contractAddress={managerAddress}
+                                disabled={
+                                    upsertPlanMutation.isPending ||
+                                    !managerAddress ||
+                                    !planTokenAddress ||
+                                    !amountInBaseUnits ||
+                                    duplicateCreateCode
+                                }
+                                existingPlanKey={editingPlan?.planKey}
+                                onPublished={(published) => {
+                                    void upsertPlanMutation
+                                        .mutateAsync({
+                                            code,
+                                            title,
+                                            paymentAsset,
+                                            chainId: selectedChainId,
+                                            tokenAddress: planTokenAddress,
+                                            price: amountInBaseUnits,
+                                            billingPeriodDays: Number(billingPeriodDays),
+                                            contractAddress: managerAddress,
+                                            planKey: published.planKey,
+                                            registrationTxHash: published.registrationTxHash,
+                                            active: true,
+                                        })
+                                        .then(() => setPlanModalOpen(false))
+                                }}
+                                price={amountInBaseUnits}
+                                paymentAsset={paymentAsset}
+                                tokenAddress={planTokenAddress}
+                            />
+                        </div>
                     </div>
                 </DrawerContent>
             </Drawer>
