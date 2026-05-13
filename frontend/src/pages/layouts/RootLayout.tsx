@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { NavLink, Outlet, useLocation } from "react-router-dom"
+import { Link, Outlet, useLocation } from "react-router-dom"
 import { LockKeyhole } from "lucide-react"
 
 import { WorkspaceModeToggle } from "@/components/layout/WorkspaceModeToggle"
@@ -11,7 +11,6 @@ import { useMyAuthorPlatformBillingQuery } from "@/queries/platform"
 import { useMyAuthorProfileQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 import { useWorkspaceStore } from "@/stores/workspace-store"
-import type { NavItemConfig } from "@/types/navigation"
 import { cn } from "@/utils/cn"
 
 export function RootLayout() {
@@ -99,68 +98,43 @@ export function RootLayout() {
                         iconMagnification={56}
                         iconSize={44}
                     >
-                        {navItems.map((item) => {
-                            const isActive = isDockItemActive(location.pathname, item)
-
-                            return (
-                                <DockIcon
-                                    className={cn(
-                                        "relative text-[var(--foreground)]",
-                                        item.separatorAfter
-                                            ? "after:pointer-events-none after:absolute after:-right-2 after:top-1/2 after:z-0 after:h-10 after:w-px after:-translate-y-1/2 after:bg-[var(--line)]"
-                                            : ""
-                                    )}
-                                    key={item.to}
-                                >
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <NavLink
-                                                aria-label={item.label}
-                                                className={cn(
-                                                    "relative grid size-full place-items-center rounded-2xl text-[var(--foreground)] transition-colors duration-150 ease-out hover:bg-[var(--dock-highlight,var(--accent))] hover:text-[var(--dock-highlight-foreground,var(--accent-foreground))]",
-                                                    isActive
-                                                        ? "bg-[var(--dock-highlight,var(--accent))] text-[var(--dock-highlight-foreground,var(--accent-foreground))] shadow-[0_8px_18px_rgba(0,0,0,0.12)]"
-                                                        : ""
-                                                )}
-                                                end={item.end}
-                                                to={item.to}
-                                            >
-                                                <span className="relative">
-                                                    <item.icon
-                                                        className="size-6"
-                                                        strokeWidth={2.2}
-                                                    />
-                                                    {item.locked ? (
-                                                        <span className="absolute -right-2 -bottom-2 grid size-4 place-items-center rounded-full bg-[var(--foreground)] text-[var(--surface)]">
-                                                            <LockKeyhole
-                                                                className="size-2.5"
-                                                                strokeWidth={2.4}
-                                                            />
-                                                        </span>
-                                                    ) : null}
-                                                </span>
-                                            </NavLink>
-                                        </TooltipTrigger>
-                                        <TooltipContent>{item.label}</TooltipContent>
-                                    </Tooltip>
-                                </DockIcon>
-                            )
-                        })}
+                        {navItems.map((item) => (
+                            <DockIcon
+                                className={cn(
+                                    "relative text-[var(--foreground)]",
+                                    item.separatorAfter
+                                        ? "after:pointer-events-none after:absolute after:-right-2 after:top-1/2 after:z-0 after:h-10 after:w-px after:-translate-y-1/2 after:bg-[var(--line)]"
+                                        : ""
+                                )}
+                                key={item.to}
+                            >
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Link
+                                            aria-label={item.label}
+                                            className="relative grid size-full place-items-center rounded-2xl text-[var(--foreground)] transition-colors duration-150 ease-out hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-[var(--foreground)]"
+                                            to={item.to}
+                                        >
+                                            <span className="relative">
+                                                <item.icon className="size-6" strokeWidth={2.2} />
+                                                {item.locked ? (
+                                                    <span className="absolute -right-2 -bottom-2 grid size-4 place-items-center rounded-full bg-[var(--foreground)] text-[var(--surface)]">
+                                                        <LockKeyhole
+                                                            className="size-2.5"
+                                                            strokeWidth={2.4}
+                                                        />
+                                                    </span>
+                                                ) : null}
+                                            </span>
+                                        </Link>
+                                    </TooltipTrigger>
+                                    <TooltipContent>{item.label}</TooltipContent>
+                                </Tooltip>
+                            </DockIcon>
+                        ))}
                     </Dock>
                 </nav>
             ) : null}
         </div>
     )
-}
-
-function isDockItemActive(pathname: string, item: NavItemConfig) {
-    if (item.to === "/") {
-        return pathname === "/"
-    }
-
-    if (item.end) {
-        return pathname === item.to
-    }
-
-    return pathname === item.to || pathname.startsWith(`${item.to}/`)
 }
