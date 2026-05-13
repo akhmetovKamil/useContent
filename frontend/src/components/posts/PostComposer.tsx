@@ -75,6 +75,7 @@ export function PostComposer({
     const [mediaLayout, setMediaLayout] = useState<PostMediaLayout>("carousel")
     const [gridSizes, setGridSizes] = useState<number[]>([])
     const [isDragging, setIsDragging] = useState(false)
+    const userSelectedMediaLayoutRef = useRef(false)
     const selectedProjects = useMemo(
         () => projectOptions.filter((project) => linkedProjectIds.includes(project.id)),
         [linkedProjectIds, projectOptions]
@@ -116,10 +117,18 @@ export function PostComposer({
     )
 
     useEffect(() => {
-        if (!canUseResizableGrid && mediaLayout === "resizable_grid") {
-            setMediaLayout("carousel")
+        if (!mediaPreviews.length || !canUseResizableGrid) {
+            userSelectedMediaLayoutRef.current = false
+            if (mediaLayout === "resizable_grid") {
+                setMediaLayout("carousel")
+            }
+            return
         }
-    }, [canUseResizableGrid, mediaLayout])
+
+        if (!userSelectedMediaLayoutRef.current && mediaLayout !== "resizable_grid") {
+            setMediaLayout("resizable_grid")
+        }
+    }, [canUseResizableGrid, mediaLayout, mediaPreviews.length])
 
     useEffect(() => {
         setGridSizes((current) => normalizeGridSizes(current, mediaPreviews.length))
@@ -139,6 +148,27 @@ export function PostComposer({
         event.preventDefault()
         setIsDragging(false)
         addFiles(Array.from(event.dataTransfer.files ?? []))
+    }
+
+    function selectMediaLayout(layout: PostMediaLayout) {
+        userSelectedMediaLayoutRef.current = true
+        setMediaLayout(layout)
+    }
+
+    function swapMediaFiles(sourceIndex: number, targetIndex: number) {
+        if (sourceIndex === targetIndex) {
+            return
+        }
+
+        setFiles((current) => {
+            if (!current[sourceIndex] || !current[targetIndex]) {
+                return current
+            }
+
+            const next = [...current]
+            ;[next[sourceIndex], next[targetIndex]] = [next[targetIndex], next[sourceIndex]]
+            return next
+        })
     }
 
     return (
@@ -240,7 +270,7 @@ export function PostComposer({
                                         <div className="flex rounded-full border border-[var(--line)] bg-[var(--surface)] p-1">
                                             <Button
                                                 className="rounded-full"
-                                                onClick={() => setMediaLayout("carousel")}
+                                                onClick={() => selectMediaLayout("carousel")}
                                                 size="sm"
                                                 type="button"
                                                 variant={
@@ -256,7 +286,7 @@ export function PostComposer({
                                                 <Button
                                                     className="rounded-full"
                                                     onClick={() =>
-                                                        setMediaLayout("resizable_grid")
+                                                        selectMediaLayout("resizable_grid")
                                                     }
                                                     size="sm"
                                                     type="button"
@@ -306,6 +336,7 @@ export function PostComposer({
                                                 current.filter((item) => item !== file)
                                             )
                                         }
+                                        onSwap={swapMediaFiles}
                                         previews={mediaPreviews}
                                         sizes={mediaGridLayout?.sizes ?? []}
                                     />
@@ -540,90 +571,252 @@ function ComposerMediaPreview({ onRemove, preview }: ComposerMediaPreviewProps) 
 interface ComposerResizableGridProps {
     onLayout: (sizes: number[]) => void
     onRemove: (file: File) => void
+    onSwap: (sourceIndex: number, targetIndex: number) => void
     previews: ComposerMediaPreviewProps["preview"][]
     sizes: number[]
 }
 
+type ResizablePanelLayout = Record<string, number>
+
 function ComposerResizableGrid({
     onLayout,
     onRemove,
+    onSwap,
     previews,
     sizes,
 }: ComposerResizableGridProps) {
-    return (
-        <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
-            <ResizablePanelGroup
-                className="min-h-80"
-                defaultLayout={toResizableLayout(sizes)}
-                direction="horizontal"
-                onLayoutChanged={(nextLayout) =>
-                    onLayout(
-                        previews.map((_, index) =>
-                            Math.round(nextLayout[`media-${index}`] ?? sizes[index] ?? 0)
-                        )
-                    )
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+    const layout = normalizeGridSizes(sizes, previews.length)
+    const renderPanel = (index: number) => (
+        <ComposerResizableMediaPanel
+            dragged={draggedIndex === index}
+            index={index}
+            onDragEnd={() => setDraggedIndex(null)}
+            onDragStart={() => setDraggedIndex(index)}
+            onDropOnPanel={() => {
+                if (draggedIndex !== null) {
+                    onSwap(draggedIndex, index)
                 }
-            >
-                {previews.map((preview, index) => (
-                    <FragmentedResizableMediaPanel
-                        defaultSize={sizes[index]}
-                        index={index}
-                        key={`${preview.file.name}-${preview.file.size}`}
-                        onRemove={() => onRemove(preview.file)}
-                        preview={preview}
-                        showHandle={index < previews.length - 1}
-                    />
-                ))}
-            </ResizablePanelGroup>
-        </div>
+                setDraggedIndex(null)
+            }}
+            onRemove={() => onRemove(previews[index].file)}
+            preview={previews[index]}
+        />
     )
+
+    if (previews.length === 2) {
+        return (
+            <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
+                <ResizablePanelGroup
+                    className="min-h-80"
+                    direction="horizontal"
+                    onLayoutChanged={(nextLayout: ResizablePanelLayout) =>
+                        onLayout([nextLayout["two-left"], nextLayout["two-right"]])
+                    }
+                >
+                    <ResizablePanel defaultSize={layout[0]} id="two-left" minSize={20}>
+                        {renderPanel(0)}
+                    </ResizablePanel>
+                    <ResizableHandle withHandle />
+                    <ResizablePanel defaultSize={layout[1]} id="two-right" minSize={20}>
+                        {renderPanel(1)}
+                    </ResizablePanel>
+                </ResizablePanelGroup>
+            </div>
+        )
+    }
+
+    if (previews.length === 3) {
+        return (
+            <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
+                <ResizablePanelGroup
+                    className="min-h-80"
+                    direction="horizontal"
+                    onLayoutChanged={(nextLayout: ResizablePanelLayout) =>
+                        onLayout([
+                            nextLayout["three-left"],
+                            nextLayout["three-right"],
+                            layout[2],
+                            layout[3],
+                        ])
+                    }
+                >
+                    <ResizablePanel defaultSize={layout[0]} id="three-left" minSize={20}>
+                        {renderPanel(0)}
+                    </ResizablePanel>
+                    <ResizableHandle withHandle />
+                    <ResizablePanel defaultSize={layout[1]} id="three-right" minSize={20}>
+                        <ResizablePanelGroup
+                            direction="vertical"
+                            onLayoutChanged={(nextLayout: ResizablePanelLayout) =>
+                                onLayout([
+                                    layout[0],
+                                    layout[1],
+                                    nextLayout["three-top"],
+                                    nextLayout["three-bottom"],
+                                ])
+                            }
+                        >
+                            <ResizablePanel defaultSize={layout[2]} id="three-top" minSize={20}>
+                                {renderPanel(1)}
+                            </ResizablePanel>
+                            <ResizableHandle withHandle />
+                            <ResizablePanel defaultSize={layout[3]} id="three-bottom" minSize={20}>
+                                {renderPanel(2)}
+                            </ResizablePanel>
+                        </ResizablePanelGroup>
+                    </ResizablePanel>
+                </ResizablePanelGroup>
+            </div>
+        )
+    }
+
+    if (previews.length === 4) {
+        return (
+            <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
+                <ResizablePanelGroup
+                    className="min-h-80"
+                    direction="horizontal"
+                    onLayoutChanged={(nextLayout: ResizablePanelLayout) =>
+                        onLayout([
+                            nextLayout["four-left"],
+                            nextLayout["four-right"],
+                            layout[2],
+                            layout[3],
+                            layout[4],
+                            layout[5],
+                        ])
+                    }
+                >
+                    <ResizablePanel defaultSize={layout[0]} id="four-left" minSize={20}>
+                        <ResizablePanelGroup
+                            direction="vertical"
+                            onLayoutChanged={(nextLayout: ResizablePanelLayout) =>
+                                onLayout([
+                                    layout[0],
+                                    layout[1],
+                                    nextLayout["four-left-top"],
+                                    nextLayout["four-left-bottom"],
+                                    layout[4],
+                                    layout[5],
+                                ])
+                            }
+                        >
+                            <ResizablePanel
+                                defaultSize={layout[2]}
+                                id="four-left-top"
+                                minSize={20}
+                            >
+                                {renderPanel(0)}
+                            </ResizablePanel>
+                            <ResizableHandle withHandle />
+                            <ResizablePanel
+                                defaultSize={layout[3]}
+                                id="four-left-bottom"
+                                minSize={20}
+                            >
+                                {renderPanel(2)}
+                            </ResizablePanel>
+                        </ResizablePanelGroup>
+                    </ResizablePanel>
+                    <ResizableHandle withHandle />
+                    <ResizablePanel defaultSize={layout[1]} id="four-right" minSize={20}>
+                        <ResizablePanelGroup
+                            direction="vertical"
+                            onLayoutChanged={(nextLayout: ResizablePanelLayout) =>
+                                onLayout([
+                                    layout[0],
+                                    layout[1],
+                                    layout[2],
+                                    layout[3],
+                                    nextLayout["four-right-top"],
+                                    nextLayout["four-right-bottom"],
+                                ])
+                            }
+                        >
+                            <ResizablePanel
+                                defaultSize={layout[4]}
+                                id="four-right-top"
+                                minSize={20}
+                            >
+                                {renderPanel(1)}
+                            </ResizablePanel>
+                            <ResizableHandle withHandle />
+                            <ResizablePanel
+                                defaultSize={layout[5]}
+                                id="four-right-bottom"
+                                minSize={20}
+                            >
+                                {renderPanel(3)}
+                            </ResizablePanel>
+                        </ResizablePanelGroup>
+                    </ResizablePanel>
+                </ResizablePanelGroup>
+            </div>
+        )
+    }
+
+    return null
 }
 
-interface FragmentedResizableMediaPanelProps {
-    defaultSize: number
+interface ComposerResizableMediaPanelProps {
+    dragged: boolean
     index: number
+    onDragEnd: () => void
+    onDragStart: () => void
+    onDropOnPanel: () => void
     onRemove: () => void
     preview: ComposerMediaPreviewProps["preview"]
-    showHandle: boolean
 }
 
-function FragmentedResizableMediaPanel({
-    defaultSize,
+function ComposerResizableMediaPanel({
+    dragged,
     index,
+    onDragEnd,
+    onDragStart,
+    onDropOnPanel,
     onRemove,
     preview,
-    showHandle,
-}: FragmentedResizableMediaPanelProps) {
-    const panelId = `media-${index}`
+}: ComposerResizableMediaPanelProps) {
     return (
-        <>
-            <ResizablePanel defaultSize={defaultSize} id={panelId} minSize={20}>
-                <div className="relative h-full min-h-80">
-                    <img
-                        alt={preview.file.name}
-                        className="h-full min-h-80 w-full object-cover"
-                        src={preview.url}
-                    />
-                    <Button
-                        aria-label={`Remove ${preview.file.name}`}
-                        className="absolute top-3 right-3 rounded-full shadow-[var(--shadow)]"
-                        onClick={onRemove}
-                        size="icon"
-                        type="button"
-                        variant="secondary"
-                    >
-                        <X className="size-4" />
-                    </Button>
-                    <div className="absolute right-0 bottom-0 left-0 bg-[linear-gradient(180deg,transparent,rgba(0,0,0,0.58))] p-3 text-white">
-                        <div className="truncate text-sm font-medium">{preview.file.name}</div>
-                        <div className="mt-1 text-xs text-white/75">
-                            {formatFileSize(preview.file.size)}
-                        </div>
-                    </div>
-                </div>
-            </ResizablePanel>
-            {showHandle ? <ResizableHandle withHandle /> : null}
-        </>
+        <div
+            className={cn(
+                "relative h-full min-h-80 transition-opacity",
+                dragged ? "opacity-60" : ""
+            )}
+            draggable
+            onDragEnd={onDragEnd}
+            onDragOver={(event) => event.preventDefault()}
+            onDragStart={(event) => {
+                event.dataTransfer.effectAllowed = "move"
+                event.dataTransfer.setData("text/plain", String(index))
+                onDragStart()
+            }}
+            onDrop={(event) => {
+                event.preventDefault()
+                onDropOnPanel()
+            }}
+        >
+            <img
+                alt={preview.file.name}
+                className="h-full min-h-80 w-full cursor-grab object-cover active:cursor-grabbing"
+                src={preview.url}
+            />
+            <Button
+                aria-label={`Remove ${preview.file.name}`}
+                className="absolute top-3 right-3 rounded-full shadow-[var(--shadow)]"
+                onClick={onRemove}
+                size="icon"
+                type="button"
+                variant="secondary"
+            >
+                <X className="size-4" />
+            </Button>
+            <div className="absolute right-0 bottom-0 left-0 bg-[linear-gradient(180deg,transparent,rgba(0,0,0,0.58))] p-3 text-white">
+                <div className="truncate text-sm font-medium">{preview.file.name}</div>
+                <div className="mt-1 text-xs text-white/75">{formatFileSize(preview.file.size)}</div>
+            </div>
+        </div>
     )
 }
 
@@ -632,16 +825,32 @@ function normalizeGridSizes(sizes: number[], count: number) {
         return []
     }
 
-    if (sizes.length === count) {
+    const expectedCount = getGridSizeCount(count)
+    const fallbackSizes = getGridFallbackSizes(count)
+
+    if (sizes.length === expectedCount) {
         return sizes.map((size) => Math.min(80, Math.max(20, Math.round(size))))
     }
 
-    return Array.from({ length: count }, () => Math.round(100 / count))
+    return fallbackSizes
 }
 
-function toResizableLayout(sizes: number[]) {
-    return sizes.reduce<Record<string, number>>((layout, size, index) => {
-        layout[`media-${index}`] = size
-        return layout
-    }, {})
+function getGridSizeCount(count: number) {
+    return count === 2 ? 2 : count === 3 ? 4 : count === 4 ? 6 : 0
+}
+
+function getGridFallbackSizes(count: number) {
+    if (count === 2) {
+        return [50, 50]
+    }
+
+    if (count === 3) {
+        return [60, 40, 50, 50]
+    }
+
+    if (count === 4) {
+        return [50, 50, 50, 50, 50, 50]
+    }
+
+    return []
 }

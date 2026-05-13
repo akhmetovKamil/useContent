@@ -1020,14 +1020,24 @@ export function normalizePostMediaLayout(input: {
 
   const variant =
     attachmentCount === 2 ? "two" : attachmentCount === 3 ? "three" : "four";
-  const expectedSizeCount = variant === "two" ? 2 : variant === "three" ? 3 : 4;
+  const expectedSizeCount = variant === "two" ? 2 : variant === "three" ? 4 : 6;
   const rawSizes = Array.isArray(input.mediaGridLayout?.sizes)
     ? input.mediaGridLayout.sizes
     : [];
   const fallbackSizes =
-    variant === "two" ? [50, 50] : variant === "three" ? [60, 50, 50] : [50, 50, 50, 50];
+    variant === "two"
+      ? [50, 50]
+      : variant === "three"
+        ? [60, 40, 50, 50]
+        : [50, 50, 50, 50, 50, 50];
+  const compatibleRawSizes =
+    rawSizes.length === expectedSizeCount
+      ? rawSizes
+      : variant === "three" && rawSizes.length === 3
+        ? [rawSizes[0], 100 - Number(rawSizes[0]), rawSizes[1], rawSizes[2]]
+        : fallbackSizes;
   const sizes = fallbackSizes.map((fallback, index) => {
-    const value = rawSizes[index];
+    const value = compatibleRawSizes[index];
     return typeof value === "number" && Number.isFinite(value)
       ? Math.min(80, Math.max(20, Math.round(value)))
       : fallback;
