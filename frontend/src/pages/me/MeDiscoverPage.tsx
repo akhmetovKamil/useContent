@@ -117,9 +117,7 @@ function AuthorRailCard({ author }: { author: AuthorCatalogItemDto }) {
                 <Badge>{author.postsCount} posts</Badge>
                 <Badge>{author.subscriptionPlansCount} tiers</Badge>
                 {author.tags.slice(0, 1).map((tag) => (
-                    <Badge key={tag} variant="secondary">
-                        {tag}
-                    </Badge>
+                    <Badge key={tag}>{tag}</Badge>
                 ))}
             </div>
         </Link>

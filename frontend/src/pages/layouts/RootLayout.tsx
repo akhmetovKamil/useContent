@@ -50,6 +50,7 @@ export function RootLayout() {
     const showDock = Boolean(token && !isAuthorOnboarding)
     const showWorkspaceToggle = Boolean(token && !isAuthorOnboarding)
     const showDefaultHeader = !isReaderDiscover
+    const showFloatingControls = Boolean(token && isReaderDiscover && !isAuthorOnboarding)
 
     useEffect(() => {
         document.documentElement.dataset.palette = palette
@@ -97,6 +98,12 @@ export function RootLayout() {
                     <Outlet />
                 </main>
             </div>
+            {showFloatingControls ? (
+                <div className="fixed top-4 left-1/2 z-40 flex w-[min(calc(100vw-1rem),720px)] -translate-x-1/2 flex-col items-stretch gap-2 px-2 sm:flex-row sm:items-center sm:justify-end">
+                    <WorkspaceModeToggle />
+                    <WalletStatus />
+                </div>
+            ) : null}
             {showDock ? (
                 <nav className="fixed bottom-4 left-1/2 z-40 w-[min(calc(100vw-1rem),720px)] -translate-x-1/2 px-2">
                     <Dock
