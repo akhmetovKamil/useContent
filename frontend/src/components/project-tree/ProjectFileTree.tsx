@@ -1,6 +1,6 @@
 import { PROJECT_NODE_KIND } from "@shared/consts"
 import type { ProjectNodeDto } from "@shared/types/projects"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type DragEvent } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
@@ -43,6 +43,7 @@ export function ProjectFileTree({
     const [renameName, setRenameName] = useState("")
     const [renameNodeTarget, setRenameNodeTarget] = useState<ProjectNodeDto | null>(null)
     const [selectedNode, setSelectedNode] = useState<ProjectNodeDto | null>(null)
+    const [isTreeDropActive, setIsTreeDropActive] = useState(false)
     const [lastBreadcrumbs, setLastBreadcrumbs] = useState<ProjectNodeDto[]>([])
     const [treeNodesByParent, setTreeNodesByParent] = useState<Record<string, ProjectNodeDto[]>>({})
     const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(
@@ -328,6 +329,40 @@ export function ProjectFileTree({
         }
     }
 
+    function handleTreeDrag(event: DragEvent<HTMLElement>) {
+        if (!isAuthor || !hasFileDrop(event.dataTransfer)) {
+            return
+        }
+        event.preventDefault()
+        event.dataTransfer.dropEffect = "copy"
+    }
+
+    async function handleTreeDrop(event: DragEvent<HTMLElement>) {
+        if (!isAuthor || !hasFileDrop(event.dataTransfer)) {
+            return
+        }
+
+        event.preventDefault()
+        setIsTreeDropActive(false)
+
+        try {
+            const files = await getFilesFromDataTransfer(event.dataTransfer)
+            if (!files.length) {
+                toast.info("No files found in the dropped item.")
+                return
+            }
+
+            if (files.some((file) => getRelativePath(file).includes("/"))) {
+                await uploadFolderFiles(files)
+                return
+            }
+
+            await uploadFiles(files)
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Dropped files could not be read.")
+        }
+    }
+
     return (
         <Card className="mt-6 overflow-hidden">
             <CardHeader className="gap-4 md:flex-row md:items-start md:justify-between">
@@ -371,7 +406,26 @@ export function ProjectFileTree({
                         <ProjectTreeSidebar
                             currentFolderId={currentFolderId}
                             expandedFolderIds={expandedFolderIds}
+                            isDropActive={isTreeDropActive}
                             nodesByParent={treeNodesByParent}
+                            onDragEnter={(event) => {
+                                handleTreeDrag(event)
+                                if (isAuthor && hasFileDrop(event.dataTransfer)) {
+                                    setIsTreeDropActive(true)
+                                }
+                            }}
+                            onDragLeave={(event) => {
+                                const nextTarget = event.relatedTarget
+                                if (
+                                    nextTarget instanceof Node &&
+                                    event.currentTarget.contains(nextTarget)
+                                ) {
+                                    return
+                                }
+                                setIsTreeDropActive(false)
+                            }}
+                            onDragOver={handleTreeDrag}
+                            onDrop={(event) => void handleTreeDrop(event)}
                             onSelectNode={selectNode}
                             rootNodeId={rootNodeId}
                             selectedNodeId={selectedNode?.id}
@@ -457,6 +511,86 @@ export function ProjectFileTree({
             />
         </Card>
     )
+}
+
+type DataTransferItemWithEntry = DataTransferItem & {
+    webkitGetAsEntry?: () => FileSystemEntry | null
+}
+
+function hasFileDrop(dataTransfer: DataTransfer) {
+    return Array.from(dataTransfer.types).includes("Files")
+}
+
+async function getFilesFromDataTransfer(dataTransfer: DataTransfer) {
+    const items = Array.from(dataTransfer.items ?? []) as DataTransferItemWithEntry[]
+    const entries = items
+        .map((item) => item.webkitGetAsEntry?.())
+        .filter((entry): entry is FileSystemEntry => Boolean(entry))
+
+    if (!entries.length) {
+        return Array.from(dataTransfer.files ?? [])
+    }
+
+    const files = await Promise.all(entries.map((entry) => readDroppedEntry(entry)))
+    return files.flat()
+}
+
+async function readDroppedEntry(entry: FileSystemEntry, parentPath = ""): Promise<File[]> {
+    const relativePath = parentPath ? `${parentPath}/${entry.name}` : entry.name
+
+    if (entry.isFile) {
+        const file = await readDroppedFile(entry as FileSystemFileEntry)
+        return [withRelativePath(file, relativePath)]
+    }
+
+    if (!entry.isDirectory) {
+        return []
+    }
+
+    const reader = (entry as FileSystemDirectoryEntry).createReader()
+    const childEntries = await readAllDirectoryEntries(reader)
+    const files = await Promise.all(
+        childEntries.map((childEntry) => readDroppedEntry(childEntry, relativePath))
+    )
+    return files.flat()
+}
+
+function readDroppedFile(entry: FileSystemFileEntry) {
+    return new Promise<File>((resolve, reject) => {
+        entry.file(resolve, reject)
+    })
+}
+
+async function readAllDirectoryEntries(reader: FileSystemDirectoryReader) {
+    const entries: FileSystemEntry[] = []
+
+    while (true) {
+        const batch = await new Promise<FileSystemEntry[]>((resolve, reject) => {
+            reader.readEntries(resolve, reject)
+        })
+        if (!batch.length) {
+            break
+        }
+        entries.push(...batch)
+    }
+
+    return entries
+}
+
+function withRelativePath(file: File, relativePath: string) {
+    const nextFile = new File([file], file.name, {
+        lastModified: file.lastModified,
+        type: file.type,
+    })
+    Object.defineProperty(nextFile, "webkitRelativePath", {
+        configurable: true,
+        value: relativePath,
+    })
+    return nextFile
+}
+
+function getRelativePath(file: File) {
+    return (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name
 }
 
 function formatUploadSummary(fileCount: number, totalSize: number) {

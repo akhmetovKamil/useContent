@@ -18,6 +18,7 @@ documentation/.vitepress/dist/
 documentation/dist/
 **/playwright-report/
 **/test-results/
+.playwright-mcp/
 shared/deployments/
 /docs/
 
