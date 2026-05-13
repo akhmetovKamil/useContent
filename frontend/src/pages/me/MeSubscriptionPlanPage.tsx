@@ -386,7 +386,7 @@ export function MeSubscriptionPlanPage() {
             )}
 
             <Drawer direction="right" onOpenChange={setPolicyModalOpen} open={policyModalOpen}>
-                <DrawerContent className="!w-[min(100vw,920px)] !max-w-none overflow-y-auto rounded-l-[32px] border-[var(--line)] bg-[var(--surface)] p-5 shadow-[var(--shadow)] sm:p-8">
+                <DrawerContent className="w-[min(calc(100dvw-1rem),920px)] overflow-y-auto overflow-x-hidden rounded-l-[32px] border-[var(--line)] bg-[var(--drawer-surface,var(--popover))] p-5 shadow-[var(--shadow)] sm:p-8">
                     <DrawerHeader className="px-0 pt-0">
                         <DrawerTitle>
                             {editingPolicyId ? "Edit access policy" : "Create access policy"}
@@ -473,7 +473,7 @@ export function MeSubscriptionPlanPage() {
             </Drawer>
 
             <Drawer direction="right" onOpenChange={setPlanModalOpen} open={planModalOpen}>
-                <DrawerContent className="!w-[min(100vw,860px)] !max-w-none overflow-y-auto rounded-l-[32px] border-[var(--line)] bg-[var(--surface)] p-5 shadow-[var(--shadow)] sm:p-8">
+                <DrawerContent className="w-[min(calc(100dvw-1rem),860px)] overflow-y-auto overflow-x-hidden rounded-l-[32px] border-[var(--line)] bg-[var(--drawer-surface,var(--popover))] p-5 shadow-[var(--shadow)] sm:p-8">
                     <DrawerHeader className="px-0 pt-0">
                         <DrawerTitle>
                             {editingPlan ? "Edit subscription plan" : "Create subscription plan"}

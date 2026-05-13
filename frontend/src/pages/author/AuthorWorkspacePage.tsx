@@ -205,6 +205,7 @@ export function AuthorWorkspacePage() {
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
+                                    <div className="max-w-full overflow-x-auto">
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
@@ -256,6 +257,7 @@ export function AuthorWorkspacePage() {
                                             )}
                                         </TableBody>
                                     </Table>
+                                    </div>
                                 </CardContent>
                             </Card>
                         </div>
@@ -273,7 +275,8 @@ export function AuthorWorkspacePage() {
                                 </Button>
                             </CardHeader>
                             <CardContent>
-                                <Table>
+                            <div className="max-w-full overflow-x-auto">
+                            <Table>
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Subscriber</TableHead>
@@ -334,7 +337,8 @@ export function AuthorWorkspacePage() {
                                             </TableRow>
                                         )}
                                     </TableBody>
-                                </Table>
+                            </Table>
+                            </div>
                             </CardContent>
                         </Card>
                     </>

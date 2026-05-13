@@ -59,7 +59,7 @@ export function AuthorPage() {
                 </Card>
             ) : authorQuery.data ? (
                 <>
-                    <Card className="overflow-hidden rounded-[32px]">
+                    <Card className="overflow-hidden rounded-[32px] py-0">
                         <CardHeader className="bg-[var(--accent-soft)]">
                             <div className="flex flex-wrap items-start gap-4">
                                 <ProfileAvatar
@@ -80,7 +80,7 @@ export function AuthorPage() {
                                 </div>
                             </div>
                         </CardHeader>
-                        <CardContent className="pt-6">
+                        <CardContent className="py-6">
                             <p className="max-w-3xl text-[var(--muted)]">
                                 {authorQuery.data.bio ||
                                     "The author has not added a profile description yet."}

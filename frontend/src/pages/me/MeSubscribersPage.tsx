@@ -55,6 +55,7 @@ export function MeSubscribersPage() {
                     {subscribersQuery.isLoading ? (
                         <p className="text-sm text-[var(--muted)]">Loading subscribers...</p>
                     ) : (
+                        <div className="max-w-full overflow-x-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -148,6 +149,7 @@ export function MeSubscribersPage() {
                                 )}
                             </TableBody>
                         </Table>
+                        </div>
                     )}
                 </CardContent>
             </Card>
