@@ -1,5 +1,6 @@
 import {
     Bell,
+    Compass,
     FileText,
     FolderKanban,
     Home,
@@ -18,7 +19,8 @@ import type { FeedSourceFilterOption, NavItemConfig } from "@/types/navigation"
 export const publicNavItems: NavItemConfig[] = [{ to: "/", label: "Home", icon: Home, end: true }]
 
 export const readerNavItems: NavItemConfig[] = [
-    { to: "/", label: "Home", icon: Home, end: true, separatorAfter: true },
+    { to: "/", label: "Home", icon: Home, end: true },
+    { to: "/me/discover", label: "Discover", icon: Compass, separatorAfter: true },
     { to: "/me/profile", label: "Profile", icon: UserRound },
     { to: "/me/subscriptions", label: "Subscriptions", icon: ReceiptText },
     { to: "/me/activity", label: "Activity", icon: Bell },

@@ -46,8 +46,10 @@ export function RootLayout() {
             )
     const subtitle = visibleMode === "author" ? "Author Workspace" : "User Workspace"
     const isAuthorOnboarding = location.pathname === "/author/onboarding"
+    const isReaderDiscover = location.pathname === "/me/discover"
     const showDock = Boolean(token && !isAuthorOnboarding)
     const showWorkspaceToggle = Boolean(token && !isAuthorOnboarding)
+    const showDefaultHeader = !isReaderDiscover
 
     useEffect(() => {
         document.documentElement.dataset.palette = palette
@@ -74,20 +76,22 @@ export function RootLayout() {
             data-testid="app-shell"
         >
             <div className="relative mx-auto flex min-h-[calc(100vh-2rem)] min-w-0 max-w-7xl flex-col rounded-[32px] border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)] backdrop-blur-sm">
-                <header className="flex flex-col gap-5 border-b border-[var(--line)] px-5 py-5 md:flex-row md:items-center md:justify-between md:px-8">
-                    <div>
-                        <div className="font-mono text-xs uppercase tracking-[0.35em] text-[var(--muted)]">
-                            useContent
+                {showDefaultHeader ? (
+                    <header className="flex flex-col gap-5 border-b border-[var(--line)] px-5 py-5 md:flex-row md:items-center md:justify-between md:px-8">
+                        <div>
+                            <div className="font-mono text-xs uppercase tracking-[0.35em] text-[var(--muted)]">
+                                useContent
+                            </div>
+                            <div className="mt-2 max-w-xl font-[var(--serif)] text-2xl leading-tight text-[var(--foreground)] md:text-4xl">
+                                {subtitle}
+                            </div>
                         </div>
-                        <div className="mt-2 max-w-xl font-[var(--serif)] text-2xl leading-tight text-[var(--foreground)] md:text-4xl">
-                            {subtitle}
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                            {showWorkspaceToggle ? <WorkspaceModeToggle /> : null}
+                            <WalletStatus />
                         </div>
-                    </div>
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                        {showWorkspaceToggle ? <WorkspaceModeToggle /> : null}
-                        <WalletStatus />
-                    </div>
-                </header>
+                    </header>
+                ) : null}
 
                 <main className="min-w-0 flex-1 px-5 py-6 md:px-8 md:py-8">
                     <Outlet />
