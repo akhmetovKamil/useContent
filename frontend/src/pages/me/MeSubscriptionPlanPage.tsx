@@ -12,6 +12,7 @@ import { SubscriptionPlanListSection } from "@/components/access-center/Subscrip
 import { AccessPolicyEditor } from "@/components/access/AccessPolicyEditor"
 import { OnChainPlanPublisher } from "@/components/subscriptions/OnChainPlanPublisher"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
     Dialog,
     DialogContent,
@@ -403,13 +404,14 @@ export function MeSubscriptionPlanPage() {
                                     value={policyName}
                                 />
                             </Label>
-                            <label className="flex items-end gap-3 rounded-[18px] border border-[var(--line)] bg-[var(--surface-strong)] p-3 text-sm">
-                                <input
+                            <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-[18px] border border-[var(--line)] bg-[var(--surface)] p-4 text-sm text-[var(--foreground)]">
+                                <Checkbox
                                     checked={policyIsDefault}
-                                    onChange={(event) => setPolicyIsDefault(event.target.checked)}
-                                    type="checkbox"
+                                    onCheckedChange={(checked) =>
+                                        setPolicyIsDefault(checked === true)
+                                    }
                                 />
-                                Make this the default inherited policy
+                                <span>Make this the default inherited policy</span>
                             </label>
                         </div>
                         <Label>
