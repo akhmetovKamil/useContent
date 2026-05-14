@@ -44,7 +44,7 @@ export function RootLayout() {
                 item.label === "Profile" ? { ...item, to: readerProfilePath } : item
             )
     const isAuthorOnboarding = location.pathname === "/author/onboarding"
-    const showDock = !isAuthorOnboarding
+    const showAuthenticatedChrome = Boolean(token) && !isAuthorOnboarding
     const showFloatingHeader = !isAuthorOnboarding
 
     useEffect(() => {
@@ -82,16 +82,18 @@ export function RootLayout() {
                 </main>
             </div>
             {showFloatingHeader ? (
-                <div className="pointer-events-none fixed inset-x-4 top-4 z-40 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-2">
-                    <div className="pointer-events-auto col-start-2">
-                        <WorkspaceModeToggle />
-                    </div>
-                    <div className="pointer-events-auto col-start-3 justify-self-end overflow-x-auto">
+                <div className="pointer-events-none fixed inset-x-4 top-4 z-40">
+                    {showAuthenticatedChrome ? (
+                        <div className="pointer-events-auto absolute left-1/2 top-0 -translate-x-1/2">
+                            <WorkspaceModeToggle />
+                        </div>
+                    ) : null}
+                    <div className="pointer-events-auto ml-auto flex w-fit max-w-[calc(100vw-2rem)] justify-end">
                         <WalletStatus />
                     </div>
                 </div>
             ) : null}
-            {showDock ? (
+            {showAuthenticatedChrome ? (
                 <nav className="fixed bottom-4 left-1/2 z-40 w-[min(calc(100vw-1rem),720px)] -translate-x-1/2 px-2">
                     <Dock
                         className="border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)]"

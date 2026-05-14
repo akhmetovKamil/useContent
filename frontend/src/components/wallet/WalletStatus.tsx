@@ -44,11 +44,12 @@ export function WalletStatus() {
     }
 
     return (
-        <div className="flex flex-wrap items-center gap-3 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-2 shadow-[var(--shadow)] backdrop-blur-sm">
-            <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">wallet</div>
+        <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-2 shadow-[var(--shadow)]">
             {isConnected && shortAddress ? (
                 <>
-                    <div className="font-mono text-sm text-[var(--foreground)]">{shortAddress}</div>
+                    <div className="shrink-0 font-mono text-sm text-[var(--foreground)]">
+                        {shortAddress}
+                    </div>
                     <Badge variant={isSessionActive ? "success" : "warning"}>
                         {isSessionActive
                             ? "session active"
@@ -78,18 +79,23 @@ export function WalletStatus() {
                     </Button>
                 </>
             ) : (
-                <Button
-                    className="rounded-full"
-                    disabled={!connector || connectPending}
-                    onClick={() => void handleConnect()}
-                    size="sm"
-                    type="button"
-                >
-                    {connectPending ? "Connecting..." : "Connect wallet"}
-                </Button>
+                <>
+                    <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
+                        wallet
+                    </div>
+                    <Button
+                        className="rounded-full"
+                        disabled={!connector || connectPending}
+                        onClick={() => void handleConnect()}
+                        size="sm"
+                        type="button"
+                    >
+                        {connectPending ? "Connecting..." : "Connect wallet"}
+                    </Button>
+                </>
             )}
             {signInError ? (
-                <div className="basis-full text-xs text-rose-600">{signInError.message}</div>
+                <div className="max-w-60 truncate text-xs text-rose-600">{signInError.message}</div>
             ) : null}
         </div>
     )

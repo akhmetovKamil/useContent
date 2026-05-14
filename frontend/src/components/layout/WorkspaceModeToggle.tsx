@@ -33,11 +33,7 @@ export function WorkspaceModeToggle() {
     }
 
     return (
-        <div
-            className={`flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-2 py-2 shadow-[var(--shadow)] backdrop-blur-sm ${
-                !token ? "opacity-60" : ""
-            }`}
-        >
+        <div className="flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-2 py-2 shadow-[var(--shadow)]">
             <span className="pl-2 text-xs uppercase tracking-[0.24em] text-[var(--muted)]">
                 {isAuthor ? "Author" : "Reader"}
             </span>
