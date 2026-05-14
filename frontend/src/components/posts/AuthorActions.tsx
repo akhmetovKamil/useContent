@@ -41,14 +41,18 @@ export function AuthorActions({
                     />
                 </>
             ) : null}
-            <IconAction icon={Pencil} label="Edit" onClick={() => onEdit?.(editablePost)} />
             {post.status === CONTENT_STATUS.PUBLISHED && (onPromote || onStopPromotion || isPromoteLocked) ? (
                 isPromoted && onStopPromotion ? (
-                    <IconAction
-                        icon={Megaphone}
-                        label="Pause promo"
+                    <Button
+                        className="rounded-full bg-amber-100 text-amber-900 hover:bg-amber-200"
                         onClick={() => onStopPromotion?.(editablePost)}
-                    />
+                        size="sm"
+                        type="button"
+                        variant="secondary"
+                    >
+                        <Megaphone className="size-4" />
+                        Stop promotion
+                    </Button>
                 ) : isPromoteLocked ? (
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -77,9 +81,11 @@ export function AuthorActions({
                     />
                 ) : null
             ) : null}
+            <IconAction icon={Pencil} iconOnly label="Edit" onClick={() => onEdit?.(editablePost)} />
             {post.status !== CONTENT_STATUS.ARCHIVED ? (
                 <IconAction
                     icon={Archive}
+                    iconOnly
                     label="Archive"
                     onClick={() => onArchive?.(editablePost)}
                 />
@@ -87,12 +93,13 @@ export function AuthorActions({
             <Button
                 className="rounded-full"
                 onClick={() => onDelete?.(editablePost)}
-                size="sm"
+                size="icon"
                 type="button"
+                title="Delete"
                 variant="destructive"
+                aria-label="Delete"
             >
                 <Trash2 className="size-4" />
-                Delete
             </Button>
         </div>
     )

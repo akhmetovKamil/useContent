@@ -44,7 +44,7 @@ export function WalletStatus() {
     }
 
     return (
-        <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-2 shadow-[var(--shadow)]">
+        <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--drawer-surface,var(--background))] px-3 py-2">
             {isConnected && shortAddress ? (
                 <>
                     <div className="shrink-0 font-mono text-sm text-[var(--foreground)]">

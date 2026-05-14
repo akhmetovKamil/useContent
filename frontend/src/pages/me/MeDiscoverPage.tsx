@@ -36,8 +36,8 @@ export function MeDiscoverPage() {
                             />
                         </h1>
                         <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-[var(--muted)] md:text-lg">
-                            A moving reader home for discovering authors, tiers, and new creator
-                            spaces.
+                            Publish posts, project spaces, and member-only updates in one place.
+                            Discover authors, tiers, and new creator worlds as they go live.
                         </p>
                     </div>
                 </div>

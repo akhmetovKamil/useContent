@@ -60,7 +60,7 @@ export function AuthorPage() {
             ) : authorQuery.data ? (
                 <>
                     <Card className="overflow-hidden rounded-[32px] py-0">
-                        <CardHeader className="bg-[var(--accent-soft)]">
+                        <CardHeader className="bg-[var(--accent-soft)] px-6 py-6">
                             <div className="flex flex-wrap items-start gap-4">
                                 <ProfileAvatar
                                     avatarFileId={authorQuery.data.avatarFileId}

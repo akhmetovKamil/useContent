@@ -3,24 +3,32 @@ import type { ComponentType } from "react"
 import { Button } from "@/components/ui/button"
 
 export function IconAction({
+    className,
     icon: Icon,
+    iconOnly = false,
     label,
     onClick,
+    variant = "outline",
 }: {
+    className?: string
     icon: ComponentType<{ className?: string }>
+    iconOnly?: boolean
     label: string
     onClick: () => void
+    variant?: "default" | "destructive" | "ghost" | "outline" | "secondary"
 }) {
     return (
         <Button
-            className="rounded-full"
+            aria-label={iconOnly ? label : undefined}
+            className={className ?? "rounded-full"}
             onClick={onClick}
-            size="sm"
+            size={iconOnly ? "icon" : "sm"}
             type="button"
-            variant="outline"
+            title={iconOnly ? label : undefined}
+            variant={variant}
         >
             <Icon className="size-4" />
-            {label}
+            {iconOnly ? null : label}
         </Button>
     )
 }

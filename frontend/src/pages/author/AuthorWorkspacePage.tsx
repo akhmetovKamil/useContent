@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts"
+import type { PaymentAsset } from "@shared/consts"
 import { shortenWalletAddress } from "@shared/utils/web3"
 
 import { Badge } from "@/components/ui/badge"
@@ -20,6 +21,7 @@ import {
 import { useMyAuthorDashboardQuery, useMyAuthorProfileQuery } from "@/queries/profile"
 import { useAuthStore } from "@/stores/auth-store"
 import { formatDisplayDate } from "@/utils/date"
+import { formatPlanAmount } from "@/utils/subscription-plan"
 
 type RevenuePeriod = "month" | "year"
 
@@ -33,8 +35,8 @@ export function AuthorWorkspacePage() {
     const chartData = useMemo(
         () =>
             (dashboard?.revenueSeries[period] ?? []).map((point) => ({
-                gross: sumAssetAmounts(point.assets, "grossAmount"),
-                net: sumAssetAmounts(point.assets, "netAmount"),
+                gross: sumDisplayAssetAmounts(point.assets, "grossAmount"),
+                net: sumDisplayAssetAmounts(point.assets, "netAmount"),
                 period: point.period,
             })),
         [dashboard, period]
@@ -174,6 +176,7 @@ export function AuthorWorkspacePage() {
                                                     axisLine={false}
                                                     tickLine={false}
                                                     tickMargin={10}
+                                                    tickFormatter={formatCompactChartValue}
                                                 />
                                                 <Tooltip content={<ChartTooltipContent />} />
                                                 <Bar
@@ -230,6 +233,7 @@ export function AuthorWorkspacePage() {
                                                         <TableCell>
                                                             {formatAssetAmount(
                                                                 plan.price,
+                                                                plan.tokenAddress,
                                                                 plan.paymentAsset,
                                                                 plan.chainId
                                                             )}
@@ -368,11 +372,17 @@ function KpiCard({
     )
 }
 
-function sumAssetAmounts(
-    assets: Array<{ grossAmount: string; netAmount: string }>,
+function sumDisplayAssetAmounts(
+    assets: Array<{
+        chainId: number
+        grossAmount: string
+        netAmount: string
+        paymentAsset: string
+        tokenAddress: string
+    }>,
     key: "grossAmount" | "netAmount"
 ) {
-    return assets.reduce((total, asset) => total + Number(asset[key] ?? 0), 0)
+    return assets.reduce((total, asset) => total + toDisplayAssetNumber(asset, key), 0)
 }
 
 function formatRevenueGroups(
@@ -381,6 +391,7 @@ function formatRevenueGroups(
         grossAmount: string
         netAmount: string
         paymentAsset: string
+        tokenAddress: string
     }>,
     mode: "gross" | "net"
 ) {
@@ -392,6 +403,7 @@ function formatRevenueGroups(
         .map((asset) =>
             formatAssetAmount(
                 mode === "gross" ? asset.grossAmount : asset.netAmount,
+                asset.tokenAddress,
                 asset.paymentAsset,
                 asset.chainId
             )
@@ -399,6 +411,47 @@ function formatRevenueGroups(
         .join(" · ")
 }
 
-function formatAssetAmount(amount: string, paymentAsset: string, chainId: number) {
-    return `${amount} ${paymentAsset.toUpperCase()} · ${chainId}`
+function formatAssetAmount(
+    amount: string,
+    tokenAddress: string,
+    paymentAsset: string,
+    chainId: number
+) {
+    return `${formatPlanAmount(chainId, tokenAddress, amount, paymentAsset as PaymentAsset)} · ${chainId}`
+}
+
+function toDisplayAssetNumber(
+    asset: {
+        chainId: number
+        grossAmount: string
+        netAmount: string
+        paymentAsset: string
+        tokenAddress: string
+    },
+    key: "grossAmount" | "netAmount"
+) {
+    const formatted = formatPlanAmount(
+        asset.chainId,
+        asset.tokenAddress,
+        asset[key],
+        asset.paymentAsset as PaymentAsset
+    )
+    const numeric = Number.parseFloat(formatted)
+
+    return Number.isFinite(numeric) ? numeric : 0
+}
+
+function formatCompactChartValue(value: number) {
+    if (value === 0) {
+        return "0"
+    }
+
+    if (Math.abs(value) < 0.001) {
+        return value.toPrecision(2)
+    }
+
+    return new Intl.NumberFormat("en", {
+        maximumFractionDigits: 4,
+        notation: Math.abs(value) >= 1000 ? "compact" : "standard",
+    }).format(value)
 }
