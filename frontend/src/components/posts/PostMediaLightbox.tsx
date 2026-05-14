@@ -40,13 +40,10 @@ export function PostMediaLightbox({
                 </DialogDescription>
                 {attachment && objectUrl ? (
                     <div className="grid max-h-[90dvh] max-w-[92vw] gap-4">
-                        <div className="flex min-w-0 items-center justify-between gap-3 rounded-2xl bg-black/45 px-4 py-3 shadow-lg backdrop-blur-md">
-                            <div className="min-w-0">
-                                <div className="truncate text-sm font-medium">
+                        <div className="flex min-h-16 min-w-0 items-center justify-between gap-3 rounded-2xl bg-black/45 px-4 py-3 shadow-lg backdrop-blur-md">
+                            <div className="flex min-w-0 items-center">
+                                <div className="truncate text-lg font-semibold leading-none md:text-xl">
                                     {attachment.fileName}
-                                </div>
-                                <div className="mt-1 text-xs text-white/60">
-                                    {attachment.mimeType}
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">

@@ -1,7 +1,6 @@
 import { CONTENT_STATUS } from "@shared/consts"
 import type { PostDto } from "@shared/types/posts"
-import { Archive, ExternalLink, LockKeyhole, Megaphone, Pencil, RotateCcw, Send, Trash2 } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Archive, LockKeyhole, Megaphone, Pencil, RotateCcw, Send, Trash2 } from "lucide-react"
 
 import { IconAction } from "@/components/common/IconAction"
 import type { AuthorPostActions, FeedPost } from "@/components/posts/types"
@@ -84,14 +83,6 @@ export function AuthorActions({
                     label="Archive"
                     onClick={() => onArchive?.(editablePost)}
                 />
-            ) : null}
-            {"authorSlug" in post ? (
-                <Button asChild className="rounded-full" size="sm" type="button" variant="outline">
-                    <Link to={`/authors/${post.authorSlug}/posts/${post.id}`}>
-                        <ExternalLink className="size-4" />
-                        Open
-                    </Link>
-                </Button>
             ) : null}
             <Button
                 className="rounded-full"
