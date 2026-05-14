@@ -152,6 +152,7 @@ function FixedPostMediaGrid({
             attachment={media[index]}
             className="h-full"
             downloadUrl={getDownloadUrl(media[index])}
+            fillContainer
             onDownload={() => onDownload(media[index])}
             onPreview={(objectUrl) => onPreview(media[index], objectUrl)}
             showDownloadButton={false}
@@ -161,7 +162,7 @@ function FixedPostMediaGrid({
     if (media.length === 2) {
         return (
             <div
-                className="grid min-h-80 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]"
+                className="grid h-[min(70vw,640px)] min-h-80 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]"
                 style={{ gridTemplateColumns: `${sizes[0]}fr ${sizes[1]}fr` }}
             >
                 {renderTile(0)}
@@ -173,7 +174,7 @@ function FixedPostMediaGrid({
     if (media.length === 3) {
         return (
             <div
-                className="grid min-h-80 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]"
+                className="grid h-[min(70vw,640px)] min-h-80 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]"
                 style={{ gridTemplateColumns: `${sizes[0]}fr ${sizes[1]}fr` }}
             >
                 {renderTile(0)}
@@ -190,7 +191,7 @@ function FixedPostMediaGrid({
 
     return (
         <div
-            className="grid min-h-80 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]"
+            className="grid h-[min(70vw,640px)] min-h-80 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]"
             style={{ gridTemplateColumns: `${sizes[0]}fr ${sizes[1]}fr` }}
         >
             <div

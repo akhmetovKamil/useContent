@@ -10,6 +10,7 @@ interface PostMediaTileProps {
     attachment: PostAttachmentDto
     className?: string
     downloadUrl: string | null
+    fillContainer?: boolean
     onDownload: () => void
     onPreview?: (objectUrl: string) => void
     showDownloadButton?: boolean
@@ -19,6 +20,7 @@ export function PostMediaTile({
     attachment,
     className,
     downloadUrl,
+    fillContainer = false,
     onDownload,
     onPreview,
     showDownloadButton = true,
@@ -58,7 +60,8 @@ export function PostMediaTile({
     return (
         <div
             className={cn(
-                "group relative aspect-[16/10] min-h-64 overflow-hidden bg-[var(--surface-strong)]",
+                "group relative overflow-hidden bg-[var(--surface-strong)]",
+                fillContainer ? "h-full min-h-0" : "aspect-[16/10] min-h-64",
                 className
             )}
             data-testid="post-media-tile"
@@ -66,14 +69,20 @@ export function PostMediaTile({
             {attachment.kind === "image" && objectUrl ? (
                 <img
                     alt={attachment.fileName}
-                    className="h-full max-h-[520px] min-h-44 w-full cursor-zoom-in object-cover"
+                    className={cn(
+                        "h-full w-full cursor-zoom-in object-cover",
+                        fillContainer ? "min-h-0" : "max-h-[520px] min-h-44"
+                    )}
                     onClick={() => onPreview?.(objectUrl)}
                     src={objectUrl}
                 />
             ) : null}
             {attachment.kind === "video" && objectUrl ? (
                 <video
-                    className="h-full max-h-[520px] min-h-44 w-full cursor-zoom-in object-cover"
+                    className={cn(
+                        "h-full w-full cursor-zoom-in object-cover",
+                        fillContainer ? "min-h-0" : "max-h-[520px] min-h-44"
+                    )}
                     controls
                     onClick={() => onPreview?.(objectUrl)}
                     src={objectUrl}
@@ -91,7 +100,12 @@ export function PostMediaTile({
                 </div>
             ) : null}
             {!objectUrl && attachment.kind !== "audio" ? (
-                <div className="grid h-full min-h-44 place-items-center p-5 text-sm text-[var(--muted)]">
+                <div
+                    className={cn(
+                        "grid h-full place-items-center p-5 text-sm text-[var(--muted)]",
+                        fillContainer ? "min-h-0" : "min-h-44"
+                    )}
+                >
                     <div className="grid justify-items-center gap-2">
                         <Play className="size-5" />
                         Loading preview
