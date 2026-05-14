@@ -569,13 +569,14 @@ function ComposerMediaPreview({ onRemove, preview }: ComposerMediaPreviewProps) 
 }
 
 interface ComposerResizableGridProps {
-    onLayout: (sizes: number[]) => void
+    onLayout: (sizes: number[] | ((current: number[]) => number[])) => void
     onRemove: (file: File) => void
     onSwap: (sourceIndex: number, targetIndex: number) => void
     previews: ComposerMediaPreviewProps["preview"][]
     sizes: number[]
 }
 
+type GridSizeUpdater = (current: number[]) => number[]
 type ResizablePanelLayout = Record<string, number>
 
 function ComposerResizableGrid({
@@ -587,6 +588,9 @@ function ComposerResizableGrid({
 }: ComposerResizableGridProps) {
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
     const layout = normalizeGridSizes(sizes, previews.length)
+    const updateLayout = (updater: GridSizeUpdater) => {
+        onLayout((current) => updater(normalizeGridSizes(current, previews.length)))
+    }
     const renderPanel = (index: number) => (
         <ComposerResizableMediaPanel
             dragged={draggedIndex === index}
@@ -611,7 +615,10 @@ function ComposerResizableGrid({
                     className="min-h-80"
                     direction="horizontal"
                     onLayoutChanged={(nextLayout: ResizablePanelLayout) =>
-                        onLayout([nextLayout["two-left"], nextLayout["two-right"]])
+                        updateLayout(() => [
+                            nextLayout["two-left"] ?? 50,
+                            nextLayout["two-right"] ?? 50,
+                        ])
                     }
                 >
                     <ResizablePanel defaultSize={layout[0]} id="two-left" minSize={20}>
@@ -633,11 +640,11 @@ function ComposerResizableGrid({
                     className="min-h-80"
                     direction="horizontal"
                     onLayoutChanged={(nextLayout: ResizablePanelLayout) =>
-                        onLayout([
-                            nextLayout["three-left"],
-                            nextLayout["three-right"],
-                            layout[2],
-                            layout[3],
+                        updateLayout((current) => [
+                            nextLayout["three-left"] ?? current[0],
+                            nextLayout["three-right"] ?? current[1],
+                            current[2],
+                            current[3],
                         ])
                     }
                 >
@@ -649,11 +656,11 @@ function ComposerResizableGrid({
                         <ResizablePanelGroup
                             direction="vertical"
                             onLayoutChanged={(nextLayout: ResizablePanelLayout) =>
-                                onLayout([
-                                    layout[0],
-                                    layout[1],
-                                    nextLayout["three-top"],
-                                    nextLayout["three-bottom"],
+                                updateLayout((current) => [
+                                    current[0],
+                                    current[1],
+                                    nextLayout["three-top"] ?? current[2],
+                                    nextLayout["three-bottom"] ?? current[3],
                                 ])
                             }
                         >
@@ -678,13 +685,13 @@ function ComposerResizableGrid({
                     className="min-h-80"
                     direction="horizontal"
                     onLayoutChanged={(nextLayout: ResizablePanelLayout) =>
-                        onLayout([
-                            nextLayout["four-left"],
-                            nextLayout["four-right"],
-                            layout[2],
-                            layout[3],
-                            layout[4],
-                            layout[5],
+                        updateLayout((current) => [
+                            nextLayout["four-left"] ?? current[0],
+                            nextLayout["four-right"] ?? current[1],
+                            current[2],
+                            current[3],
+                            current[4],
+                            current[5],
                         ])
                     }
                 >
@@ -692,13 +699,13 @@ function ComposerResizableGrid({
                         <ResizablePanelGroup
                             direction="vertical"
                             onLayoutChanged={(nextLayout: ResizablePanelLayout) =>
-                                onLayout([
-                                    layout[0],
-                                    layout[1],
-                                    nextLayout["four-left-top"],
-                                    nextLayout["four-left-bottom"],
-                                    layout[4],
-                                    layout[5],
+                                updateLayout((current) => [
+                                    current[0],
+                                    current[1],
+                                    nextLayout["four-left-top"] ?? current[2],
+                                    nextLayout["four-left-bottom"] ?? current[3],
+                                    current[4],
+                                    current[5],
                                 ])
                             }
                         >
@@ -724,13 +731,13 @@ function ComposerResizableGrid({
                         <ResizablePanelGroup
                             direction="vertical"
                             onLayoutChanged={(nextLayout: ResizablePanelLayout) =>
-                                onLayout([
-                                    layout[0],
-                                    layout[1],
-                                    layout[2],
-                                    layout[3],
-                                    nextLayout["four-right-top"],
-                                    nextLayout["four-right-bottom"],
+                                updateLayout((current) => [
+                                    current[0],
+                                    current[1],
+                                    current[2],
+                                    current[3],
+                                    nextLayout["four-right-top"] ?? current[4],
+                                    nextLayout["four-right-bottom"] ?? current[5],
                                 ])
                             }
                         >

@@ -12,6 +12,7 @@ interface PostMediaTileProps {
     downloadUrl: string | null
     onDownload: () => void
     onPreview?: (objectUrl: string) => void
+    showDownloadButton?: boolean
 }
 
 export function PostMediaTile({
@@ -20,6 +21,7 @@ export function PostMediaTile({
     downloadUrl,
     onDownload,
     onPreview,
+    showDownloadButton = true,
 }: PostMediaTileProps) {
     const [objectUrl, setObjectUrl] = useState<string | null>(null)
 
@@ -96,20 +98,22 @@ export function PostMediaTile({
                     </div>
                 </div>
             ) : null}
-            <div
-                className="absolute right-3 bottom-3 opacity-0 transition group-hover:opacity-100"
-                onClick={(event) => event.stopPropagation()}
-            >
-                <Button
-                    className="rounded-full shadow-[var(--shadow)]"
-                    onClick={onDownload}
-                    size="sm"
-                    type="button"
+            {showDownloadButton ? (
+                <div
+                    className="absolute right-3 bottom-3 opacity-0 transition group-hover:opacity-100"
+                    onClick={(event) => event.stopPropagation()}
                 >
-                    <Download className="size-4" />
-                    Download
-                </Button>
-            </div>
+                    <Button
+                        className="rounded-full shadow-[var(--shadow)]"
+                        onClick={onDownload}
+                        size="sm"
+                        type="button"
+                    >
+                        <Download className="size-4" />
+                        Download
+                    </Button>
+                </div>
+            ) : null}
         </div>
     )
 }

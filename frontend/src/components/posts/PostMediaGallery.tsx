@@ -154,6 +154,7 @@ function FixedPostMediaGrid({
             downloadUrl={getDownloadUrl(media[index])}
             onDownload={() => onDownload(media[index])}
             onPreview={(objectUrl) => onPreview(media[index], objectUrl)}
+            showDownloadButton={false}
         />
     )
 
