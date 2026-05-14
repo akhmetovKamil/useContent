@@ -5,7 +5,11 @@ test("homepage shell loads", async ({ page }) => {
 
     await expect(page.getByTestId("app-shell")).toBeVisible()
     await expect(page.getByText("Unexpected Application Error")).toHaveCount(0)
-    await expect(page.getByText("useContent")).toBeVisible()
+    await expect(
+        page.getByRole("heading", {
+            name: "Content, access rules, and subscriptions in one place.",
+        }),
+    ).toBeVisible()
 })
 
 test("public discovery feed renders a stable state", async ({ page }) => {
