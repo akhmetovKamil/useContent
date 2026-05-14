@@ -44,8 +44,8 @@ export function RootLayout() {
                 item.label === "Profile" ? { ...item, to: readerProfilePath } : item
             )
     const isAuthorOnboarding = location.pathname === "/author/onboarding"
-    const showDock = Boolean(token && !isAuthorOnboarding)
-    const showFloatingHeader = Boolean(token && !isAuthorOnboarding)
+    const showDock = !isAuthorOnboarding
+    const showFloatingHeader = !isAuthorOnboarding
 
     useEffect(() => {
         document.documentElement.dataset.palette = palette

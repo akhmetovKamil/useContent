@@ -131,7 +131,7 @@ export function MePlatformBillingPage() {
                 onOpenChange={(open) => !open && setCheckoutPlan(null)}
                 open={Boolean(checkoutPlan)}
             >
-                <DrawerContent className="w-[min(calc(100dvw-1rem),760px)] overflow-y-auto overflow-x-hidden rounded-l-[32px] border-[var(--line)] bg-[var(--drawer-surface,var(--popover))] p-5 shadow-[var(--shadow)] sm:p-8">
+                <DrawerContent className="w-[min(calc(100dvw-1rem),980px)] overflow-y-auto overflow-x-hidden rounded-l-[32px] border-[var(--line)] bg-[var(--drawer-surface,var(--popover))] p-5 shadow-[var(--shadow)] sm:p-8">
                     {checkoutPlan ? (
                         <CheckoutPreview
                             chainId={paymentChainId}

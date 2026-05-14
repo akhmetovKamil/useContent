@@ -32,7 +32,7 @@ export function TierDrawer({
     return (
         <Drawer direction="right" onOpenChange={onOpenChange} open={open}>
             <DrawerContent
-                className="w-[min(calc(100dvw-1rem),920px)] overflow-y-auto overflow-x-hidden rounded-l-[32px] border-[var(--line)] bg-[var(--drawer-surface,var(--popover))] p-5 shadow-[var(--shadow)] sm:p-8"
+                className="w-[min(calc(100dvw-1rem),1120px)] overflow-y-auto overflow-x-hidden rounded-l-[32px] border-[var(--line)] bg-[var(--drawer-surface,var(--popover))] p-5 shadow-[var(--shadow)] sm:p-8"
             >
                 <DrawerHeader className="px-0 pt-0 text-left">
                     <Badge className="w-fit" variant={tier.hasAccess ? "success" : "warning"}>
