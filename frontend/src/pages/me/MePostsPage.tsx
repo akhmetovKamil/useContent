@@ -39,6 +39,8 @@ export function MePostsPage() {
     const projectsQuery = useMyProjectsQuery(
         Boolean(token) && billingQuery.isSuccess && !projectsLocked
     )
+    const attachableProjects =
+        projectsQuery.data?.filter((project) => project.status === CONTENT_STATUS.PUBLISHED) ?? []
     const createPostMutation = useCreateMyPostMutation()
     const updatePostMutation = useUpdateMyPostMutation()
     const deletePostMutation = useDeleteMyPostMutation()
@@ -129,7 +131,7 @@ export function MePostsPage() {
                     accessPolicies={policiesQuery.data}
                     createError={createPostMutation.error}
                     isPending={createPostMutation.isPending || uploadAttachmentMutation.isPending}
-                    projectOptions={projectsQuery.data}
+                    projectOptions={attachableProjects}
                     projectsLocked={projectsLocked}
                     onSubmit={async (input, files) => {
                         const post = await createPostMutation.mutateAsync(input)

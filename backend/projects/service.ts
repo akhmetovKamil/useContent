@@ -255,12 +255,15 @@ export async function getAuthorProjectBySlugAndId(
 ): Promise<ProjectDoc> {
   const author = await getAuthorProfileBySlug(slug);
   const objectId = parseObjectId(projectId, "projectId");
-  const project = await repo.findPublishedProjectByIdAndAuthorId(
+  const project = await repo.findProjectByIdAndAuthorId(
     objectId,
     author._id,
   );
   if (!project) {
     throw APIError.notFound("project not found");
+  }
+  if (project.status !== CONTENT_STATUS.PUBLISHED) {
+    throw APIError.permissionDenied("project is not published");
   }
 
   const resolvedPolicy = resolveEntityPolicy(

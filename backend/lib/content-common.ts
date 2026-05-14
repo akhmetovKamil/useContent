@@ -1475,6 +1475,11 @@ export async function normalizeLinkedProjectIds(
     if (!project) {
       throw APIError.invalidArgument("linked project was not found");
     }
+    if (project.status !== CONTENT_STATUS.PUBLISHED) {
+      throw APIError.invalidArgument(
+        "linked project must be published before attaching it to a post",
+      );
+    }
   }
 
   return uniqueIds;
