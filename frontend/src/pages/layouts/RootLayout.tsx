@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { Link, Outlet, useLocation } from "react-router-dom"
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
 import { LockKeyhole } from "lucide-react"
 
 import { WorkspaceModeToggle } from "@/components/layout/WorkspaceModeToggle"
@@ -15,6 +15,7 @@ import { cn } from "@/utils/cn"
 
 export function RootLayout() {
     const location = useLocation()
+    const navigate = useNavigate()
     const token = useAuthStore((state) => state.token)
     const mode = useWorkspaceStore((state) => state.mode)
     const palette = useWorkspaceStore((state) => state.palette)
@@ -54,6 +55,12 @@ export function RootLayout() {
     useEffect(() => {
         document.documentElement.classList.toggle("dark", visibleMode === "author")
     }, [visibleMode])
+
+    useEffect(() => {
+        if (token && location.pathname === "/") {
+            navigate("/me/discover", { replace: true })
+        }
+    }, [location.pathname, navigate, token])
 
     useEffect(() => {
         if (hasAuthorProfile) {

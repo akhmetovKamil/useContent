@@ -24,7 +24,7 @@ export function WorkspaceModeToggle() {
 
         if (isAuthor) {
             setMode("reader")
-            navigate("/")
+            navigate("/me/discover")
             return
         }
 

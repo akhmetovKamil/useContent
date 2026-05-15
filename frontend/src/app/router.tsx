@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom"
+import { Navigate, createBrowserRouter } from "react-router-dom"
 
 import { RequireAuthor, RequireSession } from "@/components/routing/AuthGuards"
 import { AuthorAboutPage } from "../pages/author/AuthorAboutPage"
@@ -32,7 +32,7 @@ export const router = createBrowserRouter([
             {
                 element: <RequireSession />,
                 children: [
-                    { path: "me", element: <MePage /> },
+                    { path: "me", element: <Navigate replace to="/me/discover" /> },
                     { path: "me/discover", element: <MeDiscoverPage /> },
                     { path: "me/settings", element: <MePage /> },
                     { path: "me/profile", element: <MeProfilePage /> },
